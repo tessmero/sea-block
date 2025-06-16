@@ -122,7 +122,7 @@ function animate() {
 
   // Calculate delta time
   const currentTime = performance.now()
-  const dt = Math.min(100, (currentTime - lastTime))
+  const dt = Math.min(50, (currentTime - lastTime))
   const nSteps = Math.round(dt / STEP_DURATION)
   lastTime = currentTime
 
