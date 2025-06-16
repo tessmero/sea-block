@@ -137,11 +137,6 @@ export class MichaelTG extends TerrainGenerator<MichaelConfig> {
 
   isWaterTile(x: number, z: number): boolean {
     const result = this.getHeight(x, z) < this._flatConfigValues.waterLevel
-
-    if (x === 11 && z === 13) {
-      console.log('isWaterTile: ', result)
-    }
-
     return result
   }
 
