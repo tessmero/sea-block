@@ -1,17 +1,11 @@
 /**
- * @file Michael2-3B terrain generator
- * https://github.com/Michael2-3B/Procedural-Perlin-Terrain
- **/
-import { NumericParam } from './controls'
+ * @file michael-tg.ts
+ *
+ * Terrain generator implementation adapted from
+ * Michael2-3B/Procedural-Perlin-Terrain.
+ */
+import { NumericParam } from '../ui/controls-gui'
 import { TerrainGenerator, RGBA } from './terrain-generator'
-
-class SeedablePRNG {
-  constructor(private seed: number) {}
-  next(): number {
-    this.seed = (this.seed * 9301 + 49297) % 233280
-    return this.seed / 233280
-  }
-}
 
 export type MichaelConfig = {
   seed: NumericParam
@@ -33,6 +27,14 @@ export type MichaelConfig = {
     worldLight: NumericParam
     lightPosition: NumericParam
     lightHeight: NumericParam
+  }
+}
+
+class SeedablePRNG {
+  constructor(private seed: number) {}
+  next(): number {
+    this.seed = (this.seed * 9301 + 49297) % 233280
+    return this.seed / 233280
   }
 }
 
@@ -135,8 +137,8 @@ export class MichaelTG extends TerrainGenerator<MichaelConfig> {
     return Math.max(0, Math.min(254, 255 * Math.pow((value + 1) / 2 + peaks, exponent)))
   }
 
-  isWaterTile(x: number, z: number): boolean {
-    const result = this.getHeight(x, z) < this._flatConfigValues.waterLevel
+  isWaterTile(height: number): boolean {
+    const result = height <= this._flatConfigValues.waterLevel
     return result
   }
 

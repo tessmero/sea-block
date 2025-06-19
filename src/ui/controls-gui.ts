@@ -1,7 +1,7 @@
 /**
- * @file Controls
- * dat.gui user interface to control
- * terrain generator settings
+ * @file controls-gui.ts
+ *
+ * Used in main.js to build user interface to control terrain generator settings.
  */
 import * as dat from 'dat.gui'
 
@@ -15,14 +15,14 @@ export type NumericParam = {
 
 // nestable lists of numeric params
 // -> folders and items in dat.GUI interface
-export type ControlsConfig = {
-  [key: string]: NumericParam | ControlsConfig
+export type GeneratorConfig = {
+  [key: string]: NumericParam | GeneratorConfig
 }
 
 let _allControls: Record<string, dat.GUIController> = {}
 
 export function showControls(
-  config: ControlsConfig,
+  config: GeneratorConfig,
   onChange: (param: NumericParam) => void,
 ) {
   _allControls = {} // flat list of controls
@@ -50,7 +50,7 @@ export function showControls(
 
 function addControls(
   gui: dat.GUI,
-  config: ControlsConfig,
+  config: GeneratorConfig,
   onChange: (param: NumericParam) => void,
 ) {
   for (const key in config) {
@@ -69,7 +69,7 @@ function addControls(
     else {
       // Nested group
       const folder = gui.addFolder(camelCaseToLabel(key))
-      addControls(folder, entry as ControlsConfig, onChange)
+      addControls(folder, entry as GeneratorConfig, onChange)
     }
   }
 }

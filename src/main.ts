@@ -1,25 +1,29 @@
-import * as THREE from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
-import { BoxTerrain } from './box-terrain'
-import { Sphere } from './sphere'
-import { SphereGroup } from './sphere-group'
-import { TerrainGridConfig } from './terrain-grid-config'
-import {
-  CAMERA, CAMERA_LOOK_AT, PIXEL_SCALE, STEP_DURATION,
-} from './settings'
-import { MichaelTG } from './michael-tg'
-import { buildScene } from './scene'
-import { Vector } from './vector'
-import { NumericParam, showControls } from './controls'
-import { updatePlayerMovement, initMouseListeners } from './mouse'
+/**
+ * @file main.ts
+ *
+ * Entry point and main loop.
+ */
 
-let grid: TerrainGridConfig
+import * as THREE from 'three'
+import { Vector3 } from 'three'
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
+import { TerrainGridIndex } from './grid-logic/terrain-grid-index'
+import { TileGroup } from './groups/tile-group'
+import { SphereGroup } from './groups/sphere-group'
+import { Sphere } from './sphere'
+import { PIXEL_SCALE, CAMERA, CAMERA_LOOK_AT, STEP_DURATION } from './settings'
+import { MichaelTG } from './generators/michael-tg'
+import { buildScene } from './scene'
+import { NumericParam, showControls } from './ui/controls-gui'
+import { initMouseListeners, updatePlayerMovement } from './ui/mouse-input'
+
+let grid: TerrainGridIndex
 let scene: THREE.Scene
-let terrain: BoxTerrain
+let terrain: TileGroup
 let sphereGroup: SphereGroup
 let debugPoint: THREE.Object3D
 let player: Sphere
-let lastPlayerPosition: Vector
+let lastPlayerPosition: Vector3
 
 // Renderer
 const renderer = new THREE.WebGLRenderer({ antialias: true })
@@ -37,6 +41,9 @@ const camera = new THREE.PerspectiveCamera(
 const controls = new OrbitControls(camera, renderer.domElement)
 
 const config = MichaelTG.getDefaultConfig()
+/**
+ *
+ */
 function reset() {
   const built = buildScene(config)
   grid = built.grid
@@ -46,9 +53,9 @@ function reset() {
   debugPoint = built.debugPoint
 
   // Create a player sphere
-  player = sphereGroup.spheres[0]
+  player = sphereGroup.members[0]
   sphereGroup.setInstanceColor(0, new THREE.Color(0xff0000)) // Highlight player sphere
-  lastPlayerPosition = { ...player.position }
+  lastPlayerPosition = player.position.clone()
 
   camera.position.set(
     lastPlayerPosition.x + CAMERA.x,
@@ -56,6 +63,7 @@ function reset() {
     lastPlayerPosition.z + CAMERA.z)
 }
 reset()
+
 function onCtrlChange(param: NumericParam) {
   if (param.graphical) {
     terrain.resetColors() // only reset colors
@@ -97,6 +105,9 @@ initMouseListeners()
 //   }
 // })
 
+/**
+ *
+ */
 function centerOnPlayer() {
   if (!player) return
 
@@ -106,7 +117,7 @@ function centerOnPlayer() {
     camera.position.y, // y + (camera.position.y - lastPlayerPosition.y),
     z + (camera.position.z - lastPlayerPosition.z),
   )
-  lastPlayerPosition = { ...player.position }
+  lastPlayerPosition = player.position.clone()
   controls.target.set(x, CAMERA_LOOK_AT.y, z)
   controls.update()
 
@@ -117,6 +128,9 @@ centerOnPlayer()
 
 // Animation loop
 let lastTime = performance.now()
+/**
+ *
+ */
 function animate() {
   requestAnimationFrame(animate)
 
@@ -126,6 +140,7 @@ function animate() {
   const nSteps = Math.round(dt / STEP_DURATION)
   lastTime = currentTime
 
+  controls.update()
   centerOnPlayer()
   const pickedPoint = updatePlayerMovement(player, camera)
   if (pickedPoint) {
@@ -133,19 +148,16 @@ function animate() {
   }
 
   // update physics
-  controls.update()
-  for (let i = 0; i < nSteps; i++) {
-    terrain.step()
-    sphereGroup.step()
-  }
+  terrain.update(nSteps)
+  sphereGroup.update(nSteps)
 
-  // update instancedmeshes and render
+  // update instancedmeshes
   terrain.updateMesh()
   sphereGroup.updateMesh()
-
   terrain.mesh.frustumCulled = false
   sphereGroup.mesh.frustumCulled = false
 
+  // render scene
   renderer.render(scene, camera)
 }
 animate()

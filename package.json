@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "test": "mocha eslint-plugin-sb/tests/*.test.cjs",
     "dev": " npx concurrently \"npx vite build\" \"npx serve dist\"",
     "build:prod": "vite build --config vite.config.prod.js"
   },
@@ -15,9 +16,11 @@
     "@eslint/js": "^9.29.0",
     "@stylistic/eslint-plugin": "^4.4.1",
     "@types/dat.gui": "^0.7.13",
-    "@types/three": "^0.177.0",
+    "@types/three": "=0.177.0",
     "concurrently": "^9.1.2",
     "eslint": "^9.29.0",
+    "eslint-plugin-jsdoc": "^51.0.3",
+    "mocha": "^11.7.0",
     "serve": "^14.2.4",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.34.0",
