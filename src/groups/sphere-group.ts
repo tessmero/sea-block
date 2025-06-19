@@ -1,0 +1,83 @@
+/**
+ * @file sphere-group.ts
+ *
+ * Contains an array of Sphere instances and their meshes.
+ */
+import * as THREE from 'three'
+import { Vector3 } from 'three'
+import { Group, InstancedMember } from './group'
+import { Sphere } from '../sphere'
+import { SphereSim } from '../physics/sphere-sim'
+import { SPHERE_RADIUS } from '../settings'
+import { TileGroup } from '../groups/tile-group'
+
+// sphere that references position in instanced mesh
+class SphereIm extends InstancedMember implements Sphere {
+  public readonly velocity = new Vector3(0, 0, 0)
+}
+
+export class SphereGroup extends Group<Sphere, SphereSim> {
+  public terrain: TileGroup | null = null
+
+  constructor(
+    public n: number,
+    terrain: TileGroup,
+  ) {
+    super({
+      n,
+      sim: new SphereSim(terrain),
+      geometry: new THREE.SphereGeometry(SPHERE_RADIUS, 16, 16),
+      material: new THREE.MeshLambertMaterial({ color: 0xffffff }),
+    })
+  }
+
+  protected buildMembers() {
+    // all start invisible
+    const dummy = new THREE.Object3D()
+    dummy.scale.set(0, 0, 0)
+    dummy.updateMatrix()
+    const result = []
+    for (let i = 0; i < this.n; i++) {
+      this.mesh.setMatrixAt(i, dummy.matrix)
+    }
+
+    // const testPositions = Array.from({ length: 5 }, () => new THREE.Vector3(
+    //   (Math.random() - 0.5) * 20,
+    //   15 + Math.random() * 5,
+    //   (Math.random() - 0.5) * 20,
+    // ))
+
+    const spherePositions = [new Vector3(0,30,0)]
+
+    // give spheres unique colors
+    const sphereColors = Array.from({ length: this.n }, (_, i) =>
+      new THREE.Color().setHSL(i / 10, 0.8, 0.5),
+    )
+    for (let i = 0; i < spherePositions.length; i++) {
+      const sphere = new SphereIm(this.mesh, i)
+      sphere.position = spherePositions[i]
+      result.push(sphere)
+      this.setInstanceColor(i, sphereColors[i])
+    }
+
+    return result
+  }
+
+  updateMesh() {
+    const dummy = new THREE.Object3D()
+    dummy.scale.set(1, 1, 1)
+
+    for (let i = 0; i < this.n; i++) {
+      const sphere = this.members[i]
+      if (sphere) {
+        dummy.position.set(sphere.position.x, sphere.position.y, sphere.position.z)
+      }
+      else {
+        dummy.position.set(0, -9999, 0)
+      }
+      dummy.updateMatrix()
+      this.mesh.setMatrixAt(i, dummy.matrix)
+    }
+    this.mesh.instanceMatrix.needsUpdate = true
+  }
+}

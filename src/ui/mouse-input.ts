@@ -1,13 +1,22 @@
 /**
- * @file mouse.ts
+ * @file mouse-input.ts
+ *
+ * Mouse input to control player sphere.
  */
 
 import * as THREE from 'three'
-import { CAMERA_LOOK_AT, PLAYER_ACCEL, MOUSE_DEADZONE, MOUSE_MAX_RAD } from './settings'
+import { CAMERA_LOOK_AT, PLAYER_ACCEL, MOUSE_DEADZONE, MOUSE_MAX_RAD } from '../settings'
+import { Sphere } from '../sphere'
 
 let mouseX: number
 let mouseY: number
 
+/**
+ *
+ * @param player The sphere that the camera is centered on.
+ * @param camera The camera pointed at the sphere.
+ * @returns The picked point for debugging purposes.
+ */
 export function updatePlayerMovement(player: Sphere, camera: THREE.Camera): THREE.Vector3 | null {
   if (typeof mouseX !== 'number' || typeof mouseY !== 'number') {
     return null
@@ -15,8 +24,9 @@ export function updatePlayerMovement(player: Sphere, camera: THREE.Camera): THRE
   // chck if near center
   const dx = mouseX - window.innerWidth / 2
   const dy = mouseY - window.innerHeight / 2
-  const distance = Math.sqrt(dx * dx + dy * dy)
-  if (distance < 50) {
+  const mousePx = new THREE.Vector2(dx, dy)
+  const screenDistance = mousePx.length()
+  if (screenDistance < MOUSE_DEADZONE) {
     return null
   }
 
@@ -43,8 +53,7 @@ export function updatePlayerMovement(player: Sphere, camera: THREE.Camera): THRE
     ).normalize()
 
     // Accelerate player in this direction
-    const mousePx = new THREE.Vector2(dx, dy)
-    let mouseRatio = (mousePx.length() - MOUSE_DEADZONE) / (MOUSE_MAX_RAD - MOUSE_DEADZONE)
+    let mouseRatio = (screenDistance - MOUSE_DEADZONE) / (MOUSE_MAX_RAD - MOUSE_DEADZONE)
     mouseRatio = Math.min(1, Math.max(0, mouseRatio))
     dir.multiplyScalar(PLAYER_ACCEL * mouseRatio)
     player.velocity.x += dir.x
@@ -54,6 +63,9 @@ export function updatePlayerMovement(player: Sphere, camera: THREE.Camera): THRE
   return intersection
 }
 
+/**
+ *
+ */
 export function initMouseListeners() {
   const listenFor = ['mousemove', 'touchstart', 'touchmove']
   listenFor.forEach((eventType) => {

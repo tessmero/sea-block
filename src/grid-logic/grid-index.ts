@@ -1,33 +1,33 @@
-export class GridConfig {
-  private _widthSegments: number
-  private _depthSegments: number
-  private xzIndexMap: Map<string, number>
-  private indexXZMap: Map<number, { x: number, z: number }>
+/**
+ * @file grid-index.ts
+ *
+ * Relates two sets of logical indices for a grid of tiles.
+ *
+ * 1. The x/z tile coordinates, integers related to position in world.
+ * 2. The flat indices from 0 to n-1, used as index for TileGroup.
+ */
+export class GridIndex {
+  public readonly n: number
 
-  constructor(widthSegments: number, depthSegments: number) {
-    this._widthSegments = widthSegments
-    this._depthSegments = depthSegments
-    this.xzIndexMap = new Map()
-    this.indexXZMap = new Map()
-    for (let z = 0; z < depthSegments; z++) {
-      for (let x = 0; x < widthSegments; x++) {
-        const index = z * widthSegments + x
+  private xzIndexMap: Map<string, number> = new Map()
+  private indexXZMap: Map<number, { x: number, z: number }> = new Map()
+
+  constructor(
+    public readonly width: number,
+    public readonly depth: number,
+  ) {
+    this.n = width * depth
+
+    // iteate over grid cells
+    for (let z = 0; z < this.depth; z++) {
+      for (let x = 0; x < this.width; x++) {
+        const index = z * this.width + x
+
+        // add cell to indices
         this.xzIndexMap.set(`${x},${z}`, index)
         this.indexXZMap.set(index, { x, z })
       }
     }
-  }
-
-  get widthSegments(): number {
-    return this._widthSegments
-  }
-
-  get depthSegments(): number {
-    return this._depthSegments
-  }
-
-  get n(): number {
-    return this._widthSegments * this._depthSegments
   }
 
   xzToIndex(x: number, z: number): number {
@@ -41,6 +41,10 @@ export class GridConfig {
   /**
    * Update the mapping of logical (x1, z1) to new logical (x2, z2).
    * Throws if (x2, z2) already exists in the mapping.
+   * @param x1 The existing x-index.
+   * @param z1 The existing z-index.
+   * @param x2 The new x-index.
+   * @param z2 The new z-index.
    */
   updateMapping(x1: number, z1: number, x2: number, z2: number) {
     const key1 = `${x1},${z1}`
@@ -59,13 +63,11 @@ export class GridConfig {
 
   /**
    * Generator that yields { x, z, index } for each grid cell.
+   * @yields The x,z coordinates and flat index.
    */
   * cells(): Generator<{ x: number, z: number, index: number }> {
-    for (let z = 0; z < this._depthSegments; z++) {
-      for (let x = 0; x < this._widthSegments; x++) {
-        const index = this.xzToIndex(x, z)
-        yield { x, z, index }
-      }
+    for (let i = 0; i < this.n; i++) {
+      yield { index: i, ...this.indexToXZ(i) }
     }
   }
 }

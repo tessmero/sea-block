@@ -1,9 +1,15 @@
-import { ControlsConfig, NumericParam } from './controls'
+/**
+ * @file terrain-generator.ts
+ *
+ * Base class for generators that output terrain heights.
+ */
+
+import { GeneratorConfig, NumericParam } from '../ui/controls-gui'
 
 export type RGBA = [number, number, number, number]
 
-export abstract class TerrainGenerator<T extends ControlsConfig> {
-  static getDefaultConfig(): ControlsConfig {
+export abstract class TerrainGenerator<T extends GeneratorConfig> {
+  static getDefaultConfig(): GeneratorConfig {
     throw new Error(`getDefaultConfig is not implemented in ${this.constructor.name}`)
   }
 
@@ -11,7 +17,7 @@ export abstract class TerrainGenerator<T extends ControlsConfig> {
 
   public abstract getTileColor(x: number, z: number): RGBA
 
-  public abstract isWaterTile(x: number, z: number): boolean
+  public abstract isWaterTile(height: number): boolean
 
   protected _flatConfigValues: Record<string, number> = {}
 
@@ -23,7 +29,7 @@ export abstract class TerrainGenerator<T extends ControlsConfig> {
     this._parseFlatConfig(this.config)
   }
 
-  private _parseFlatConfig(config: ControlsConfig | NumericParam, key = '') {
+  private _parseFlatConfig(config: GeneratorConfig | NumericParam, key = '') {
     if (typeof config.value === 'number') {
       this._flatConfigValues[key] = config.value
     }
