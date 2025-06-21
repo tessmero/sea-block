@@ -10,7 +10,9 @@ export class GridIndex {
   public readonly n: number
 
   private xzIndexMap: Map<string, number> = new Map()
-  private indexXZMap: Map<number, { x: number, z: number }> = new Map()
+
+  private indexXZMap: Map<number, { x: number
+    z: number }> = new Map()
 
   constructor(
     public readonly width: number,
@@ -18,14 +20,21 @@ export class GridIndex {
   ) {
     this.n = width * depth
 
-    // iteate over grid cells
+    // iterate over grid cells
     for (let z = 0; z < this.depth; z++) {
       for (let x = 0; x < this.width; x++) {
         const index = z * this.width + x
 
         // add cell to indices
-        this.xzIndexMap.set(`${x},${z}`, index)
-        this.indexXZMap.set(index, { x, z })
+        this.xzIndexMap.set(
+          `${x},${z}`,
+          index,
+        )
+        this.indexXZMap.set(
+          index,
+          { x,
+            z },
+        )
       }
     }
   }
@@ -34,8 +43,10 @@ export class GridIndex {
     return this.xzIndexMap.get(`${x},${z}`) ?? -1
   }
 
-  indexToXZ(index: number): { x: number, z: number } {
-    return this.indexXZMap.get(index) ?? { x: -1, z: -1 }
+  indexToXZ(index: number): { x: number
+    z: number } {
+    return this.indexXZMap.get(index) ?? { x: -1,
+      z: -1 }
   }
 
   /**
@@ -57,8 +68,15 @@ export class GridIndex {
     // Remove old mapping
     this.xzIndexMap.delete(key1)
     // Add new mapping
-    this.xzIndexMap.set(key2, idx1)
-    this.indexXZMap.set(idx1, { x: x2, z: z2 })
+    this.xzIndexMap.set(
+      key2,
+      idx1,
+    )
+    this.indexXZMap.set(
+      idx1,
+      { x: x2,
+        z: z2 },
+    )
   }
 
   /**
@@ -67,7 +85,8 @@ export class GridIndex {
    */
   * cells(): Generator<{ x: number, z: number, index: number }> {
     for (let i = 0; i < this.n; i++) {
-      yield { index: i, ...this.indexToXZ(i) }
+      yield { index: i,
+        ...this.indexToXZ(i) }
     }
   }
 }

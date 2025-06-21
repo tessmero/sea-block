@@ -1,22 +1,21 @@
 /**
- * @file file-header.test.cjs
+ * @file file-header.test.ts
  *
  * Test for the file-header rule.
+ * In test context the filename is "file.ts".
  */
 
-const { RuleTester } = require('eslint')
+import { RuleTester } from '@typescript-eslint/rule-tester'
 const ruleTester = new RuleTester()
+import rule from '../rules/file-header'
 
-ruleTester.run(
-  'file-header',
-  require('../rules/file-header.cjs'),
+ruleTester.run('file-header', rule,
 
-  // in test context filename is "<input>"
   {
     valid: [{
       code: `
         /**
-         * @file <input>
+         * @file file.ts
          * 
          * This is a file.
          */
@@ -27,7 +26,7 @@ ruleTester.run(
     }, {
       code: `
         /**
-         * @file <input>
+         * @file file.ts
          * 
          * This is a file.
          * This is a second sentence.
@@ -50,24 +49,30 @@ ruleTester.run(
           constructor( param={} ){}
         }
       `,
-      errors: 1,
+      errors: [
+        { messageId: 'filename' },
+      ],
     }, {
       // no blank line before description
       code: `
         /**
-         * @file <input>
+         * @file file.ts
          * This is a file.
          */
       `,
-      errors: 1,
+      errors: [
+        { messageId: 'space' },
+      ],
     }, {
       // no description
       code: `
         /**
-         * @file <input>
+         * @file file.ts
          */
       `,
-      errors: 1,
+      errors: [
+        { messageId: 'sentence' },
+      ],
     }],
   },
 )

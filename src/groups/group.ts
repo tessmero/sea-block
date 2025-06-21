@@ -16,10 +16,13 @@ type GroupParams<T, S extends Simulation<T>> = {
 
 export abstract class Group<T, S extends Simulation<T>> {
   public readonly n: number // number of members
+
   public readonly sim: S // physics simulation
+
   public members: T[] = [] // sea-block objects (spheres or tiles)
 
   public readonly mesh: THREE.InstancedMesh
+
   public readonly colors: Float32Array
 
   constructor(params: GroupParams<T, S>) {
@@ -33,7 +36,10 @@ export abstract class Group<T, S extends Simulation<T>> {
 
     // Add per-instance color attribute
     this.colors = new Float32Array(this.n * 3)
-    this.mesh.instanceColor = new THREE.InstancedBufferAttribute(this.colors, 3)
+    this.mesh.instanceColor = new THREE.InstancedBufferAttribute(
+      this.colors,
+      3,
+    )
 
     const defaultColor = new THREE.Color(0xffffff)
     for (let i = 0; i < this.n; i++) {
@@ -60,7 +66,10 @@ export abstract class Group<T, S extends Simulation<T>> {
 
   setAllInstanceColors(colors: (THREE.Color | string | number)[]) {
     for (let i = 0; i < colors.length; i++) {
-      this.setInstanceColor(i, colors[i])
+      this.setInstanceColor(
+        i,
+        colors[i],
+      )
     }
   }
 
@@ -83,12 +92,15 @@ export abstract class Group<T, S extends Simulation<T>> {
 // helper to build members that refer to position in instanced mesh
 export class InstancedMember {
   private readonly posArray: THREE.TypedArray
+
   private readonly offset: number
+
   private static readonly positionDummy = new THREE.Vector3()
 
   constructor(
     mesh: THREE.InstancedMesh,
-    protected readonly index: number) {
+    protected readonly index: number,
+  ) {
     this.posArray = mesh.instanceMatrix.array
     this.offset = index * 16 + 12
   }

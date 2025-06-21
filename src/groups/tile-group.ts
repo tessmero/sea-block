@@ -5,37 +5,41 @@
  */
 import * as THREE from 'three'
 import { Vector3 } from 'three'
-import { TerrainGridIndex } from '../grid-logic/terrain-grid-index'
+import { GridLayout } from '../grid-logic/grid-layout'
 import { Group, InstancedMember } from './group'
-import { TILE_DILATE, WAVE_AMPLITUDE } from '../settings'
+import { TILE_DILATE } from '../settings'
+import { physicsConfig } from '../configs/physics-config'
 import { TerrainGenerator } from '../generators/terrain-generator'
-import { GeneratorConfig } from '../ui/controls-gui'
+import { Config } from '../configs/config'
 import { Tile } from '../tile'
 import { TileSim } from '../physics/tile-sim'
 
 export class TileGroup extends Group<Tile, TileSim> {
   boxPositions: { x: number, z: number }[] = []
-  terrainGenerator: TerrainGenerator<GeneratorConfig> | null = null
+
+  terrainGenerator: TerrainGenerator<Config> | null = null
+
   tileHeights: number[] = []
 
   private _offsetX: number = 0
+
   private _offsetZ: number = 0
 
   private readonly waterLevel: number
 
   private readonly amplitude: number = 20
+
   private readonly noiseScale: number = 1
 
-  private readonly wdScale: number = (1 + TILE_DILATE) // dilate tile size to overlap slightly
+  private readonly wdScale: number = 1 + TILE_DILATE // dilate tile size to overlap slightly
 
-  constructor(
-    public gridIndex: TerrainGridIndex,
-  ) {
+  constructor(public grid: GridLayout) {
     super({
-      sim: new TileSim(gridIndex),
-      n: gridIndex.n,
-      geometry: new THREE.BoxGeometry(1, 1, 1),
-      material: new THREE.MeshLambertMaterial({ color: 0xffff88, flatShading: true }),
+      sim: new TileSim(grid),
+      n: grid.n,
+      geometry: grid.geometry,
+      material: new THREE.MeshLambertMaterial({ color: 0xffff88,
+        flatShading: true }),
     })
 
     this.waterLevel = 132
@@ -43,33 +47,38 @@ export class TileGroup extends Group<Tile, TileSim> {
 
   private getTileAtIndex(idx: number): Tile {
     const matrix = new THREE.Matrix4()
-    this.mesh.getMatrixAt(idx, matrix)
+    this.mesh.getMatrixAt(
+      idx,
+      matrix,
+    )
     const position = new Vector3()
     const quaternion = new THREE.Quaternion()
     const scale = new Vector3()
-    matrix.decompose(position, quaternion, scale)
+    matrix.decompose(
+      position,
+      quaternion,
+      scale,
+    )
 
     // Get logical x/z for this index
-    const { x, z } = this.gridIndex.indexToXZ(idx)
-    const deltas = [[-1, 0], [1, 0], [0, -1], [0, 1]]
+    const { x, z } = this.grid.indexToXZ(idx)
+    const deltas = normalNeighborOffsets
     const neighbors = []
-    const { width, depth } = this.gridIndex
-    for (const [dx, dz] of deltas) {
+    const { width, depth } = this.grid
+    for (const { 'x': dx, 'z': dz } of deltas) {
       // get wrapped neighbor coords
       const ox = (x + dx + width) % width
       const oz = (z + dz + depth) % depth
-      const neighbor = this.gridIndex.xzToIndex(ox, oz)
+      const neighbor = this.grid.xzToIndex(ox, oz)
       neighbors.push(neighbor)
     }
 
-    const tile = new TileIm(
-      this,
-      idx,
-      neighbors,
-      false,
-    )
+    const tile = new TileIm(this, idx, neighbors, false)
 
-    this._updateTileMember(tile, this.tileHeights[idx])
+    this._updateTileMember(
+      tile,
+      this.tileHeights[idx],
+    )
 
     return tile
   }
@@ -93,8 +102,8 @@ export class TileGroup extends Group<Tile, TileSim> {
   protected buildMembers() {
     const result = []
     const dummy = new THREE.Object3D()
-    for (const { x, z, index } of this.gridIndex.cells()) {
-      const { x: wx, z: wz } = this.gridIndex.coordToPosition(x, z)
+    for (const { x, z, index } of this.grid.cells()) {
+      const { 'x': wx, 'z': wz } = this.grid.coordToPosition(x, z)
       const height = this.getTileHeight(x, z, index)
       const renderHeight = this.getNewRenderHeight(height, index)
       dummy.position.set(wx, renderHeight / 2, wz)
@@ -118,7 +127,10 @@ export class TileGroup extends Group<Tile, TileSim> {
       for (let i = 0; i < n; i++) {
         const height = this.tileHeights[i]
         if (this.terrainGenerator.isWaterTile(height)) {
-          const renderHeight = this.getAnimatedRenderHeight(height, this.sim.pos[i])
+          const renderHeight = this.getAnimatedRenderHeight(
+            height,
+            this.sim.pos[i],
+          )
           const box = this.boxPositions[i]
           dummy.position.set(box.x, renderHeight / 2, box.z)
           dummy.scale.set(1, renderHeight, 1)
@@ -130,23 +142,30 @@ export class TileGroup extends Group<Tile, TileSim> {
     }
   }
 
-  getNewRenderHeight(tileHeight:number, index:number) {
+  getNewRenderHeight(tileHeight: number, index: number) {
     if (this.terrainGenerator && this.terrainGenerator.isWaterTile(tileHeight)) {
       this.sim.resetTile(index)
-      return this.getAnimatedRenderHeight(tileHeight, this.sim.pos[index])
+      return this.getAnimatedRenderHeight(
+        tileHeight,
+        this.sim.pos[index],
+      )
     }
     else {
-      return this.getAnimatedRenderHeight(tileHeight, 0)
+      return this.getAnimatedRenderHeight(
+        tileHeight,
+        0,
+      )
     }
   }
 
   getAnimatedRenderHeight(tileHeight: number, wavePos: number) {
-    return tileHeight * this.amplitude / 255 + 1 + WAVE_AMPLITUDE * wavePos
+    const amp = physicsConfig.params.WAVE_AMPLITUDE.value
+    return tileHeight * this.amplitude / 255 + 1 + amp * wavePos
   }
 
   panToCenter(tileX: number, tileZ: number) {
-    const width = this.gridIndex.width
-    const depth = this.gridIndex.depth
+    const width = this.grid.width
+    const depth = this.grid.depth
 
     const newOffsetX = tileX - Math.floor(width / 2)
     const newOffsetZ = tileZ - Math.floor(depth / 2)
@@ -173,8 +192,8 @@ export class TileGroup extends Group<Tile, TileSim> {
    * @param dz The number of z grid cells (-1, 0, or 1)
    */
   pan(dx: number, dz: number) {
-    const width = this.gridIndex.width
-    const depth = this.gridIndex.depth
+    const width = this.grid.width
+    const depth = this.grid.depth
 
     const offsetX = this._offsetX
     const offsetZ = this._offsetZ
@@ -186,12 +205,16 @@ export class TileGroup extends Group<Tile, TileSim> {
       const newX = offsetX + (dx > 0 ? width : -1)
 
       for (let z = offsetZ; z < offsetZ + depth; z++) {
-        const index = this.gridIndex.xzToIndex(oldX, z)
-        this.gridIndex.updateMapping(oldX, z, newX, z)
-        const { x: worldX, z: worldZ } = this.gridIndex.coordToPosition(newX, z)
+        const index = this.grid.xzToIndex(oldX, z)
+        this.grid.updateMapping(oldX, z, newX, z)
+        const { 'x': worldX, 'z': worldZ } = this.grid.coordToPosition(newX, z)
         const height = this.getTileHeight(newX, z, index)
         const renderHeight = this.getNewRenderHeight(height, index)
-        dummy.position.set(worldX, renderHeight / 2, worldZ)
+        dummy.position.set(
+          worldX,
+          renderHeight / 2,
+          worldZ,
+        )
         this.boxPositions[index] = { x: worldX, z: worldZ }
         dummy.scale.set(1, renderHeight, 1)
         dummy.updateMatrix()
@@ -207,14 +230,18 @@ export class TileGroup extends Group<Tile, TileSim> {
       const newZ = offsetZ + (dz > 0 ? depth : -1)
 
       for (let x = offsetX; x < offsetX + width; x++) {
-        const index = this.gridIndex.xzToIndex(x, oldZ)
-        this.gridIndex.updateMapping(x, oldZ, x, newZ)
-        const { x: worldX, z: worldZ } = this.gridIndex.coordToPosition(x, newZ)
+        const index = this.grid.xzToIndex(x, oldZ)
+        this.grid.updateMapping(x, oldZ, x, newZ)
+        const { 'x': worldX, 'z': worldZ } = this.grid.coordToPosition(
+          x,
+          newZ,
+        )
         const height = this.getTileHeight(x, newZ, index)
-        const renderHeight = this.getNewRenderHeight(height,index)
+        const renderHeight = this.getNewRenderHeight(height, index)
         dummy.position.set(worldX, renderHeight / 2, worldZ)
         this.boxPositions[index] = { x: worldX, z: worldZ }
-        dummy.scale.set(1, renderHeight, 1)
+        dummy.scale.set(1, renderHeight, 1,
+        )
         dummy.updateMatrix()
         this.mesh.setMatrixAt(index, dummy.matrix)
 
@@ -232,9 +259,9 @@ export class TileGroup extends Group<Tile, TileSim> {
   public resetColors() {
     if (this.terrainGenerator) {
       this.terrainGenerator.loadConfig()
-      const n = this.gridIndex.n
+      const n = this.grid.n
       for (let i = 0; i < n; i++) {
-        const { x, z } = this.gridIndex.indexToXZ(i)
+        const { x, z } = this.grid.indexToXZ(i)
         this._updateTileColor(x, z, i)
       }
     }
@@ -253,7 +280,10 @@ export class TileGroup extends Group<Tile, TileSim> {
       if (color) {
         // Convert RGBA [0-255] to THREE.Color and set alpha if needed
         const [r, g, b] = color
-        this.setInstanceColor?.(index, new THREE.Color(r / 255, g / 255, b / 255))
+        this.setInstanceColor?.(
+          index,
+          new THREE.Color(r / 255, g / 255, b / 255),
+        )
         // Alpha (a) can be handled if you use a material that supports transparency
       }
     }
@@ -268,7 +298,7 @@ class TileIm extends InstancedMember implements Tile {
   constructor(
     private readonly group: TileGroup,
     index: number,
-    private readonly neighbors: number[],
+    private readonly normalNeighborIds: number[],
     public isWater: boolean,
   ) {
     super(group.mesh, index)
@@ -279,11 +309,24 @@ class TileIm extends InstancedMember implements Tile {
   }
 
   get normal(): Vector3 {
-    // Compute normal using adjacent tile heights (central differences)
-    const [hL, hR, hD, hU] = this.neighbors.map(i => this.group.members[i].height)
-    const sx = (hR - hL) * 0.5
-    const sz = (hU - hD) * 0.5
-    TileIm.dummy.set(-sx, 2, -sz).normalize()
-    return TileIm.dummy
+    const neighbors = this.normalNeighborIds.map(i => this.group.members[i].height)
+    return getNormal(neighbors)
   }
+}
+
+const normalNeighborOffsets = [
+  { x: 1, z: 0 },
+  { x: -1, z: 0 },
+  { x: 0, z: 1 },
+  { x: 0, z: -1 },
+]
+
+const dummy = new Vector3()
+function getNormal(neighbors): Vector3 {
+  // Compute normal using adjacent tile heights (central differences)
+  const [hL, hR, hD, hU] = neighbors
+  const sx = (hR - hL) * 0.5
+  const sz = (hU - hD) * 0.5
+  dummy.set(sx, 2, sz).normalize()
+  return dummy
 }

@@ -1,0 +1,11 @@
+{
+  "extension": ["ts"],
+  "spec": [
+    "src/**/*.test.ts",
+    "eslint-plugin-sb/tests/**/*.test.ts"
+  ],
+  "require": [
+    "ts-node/register",
+    "./tests/fixtures.ts"
+  ]
+}

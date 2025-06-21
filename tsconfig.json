@@ -1,14 +1,10 @@
 {
   "compilerOptions": {
-    "target": "es6",
-    "lib": ["es2017","dom"],
-    "module": "es6",
-    "moduleResolution": "node",
     "outDir": "dist",
     "rootDir": "src",
-    "strict": true,
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true
+    "target": "es2015",
+    "moduleResolution": "nodenext",
+    "module": "nodenext",
   },
   "include": ["src"]
 }

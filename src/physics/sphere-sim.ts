@@ -8,10 +8,12 @@ import { Sphere } from '../sphere'
 import { Tile } from '../tile'
 import { TileGroup } from '../groups/tile-group'
 import { Vector3 } from 'three'
+import { PhysicsValues } from '../configs/physics-config'
+import { SPHERE_RADIUS, COLLISION_KERNEL_RADIUS } from '../settings'
+import { STEP_DURATION } from '../settings'
 
 export class SphereSim extends Simulation<Sphere> {
-  constructor(
-    public readonly terrain: TileGroup, // the tiles to collide with
+  constructor(public readonly terrain: TileGroup, // the tiles to collide with
   ) {
     super()
   }
@@ -21,7 +23,11 @@ export class SphereSim extends Simulation<Sphere> {
     if (this.terrain) {
       for (const sphere of spheres) {
         if (sphere.position.y > -1000) {
-          sphereStep(sphere, this.terrain) // sphere-physics.js
+          sphereStep(
+            sphere,
+            this.terrain,
+            this.physicsValues,
+          ) // sphere-physics.js
         }
       }
     }
@@ -32,43 +38,41 @@ export class SphereSim extends Simulation<Sphere> {
         const sphereA = spheres[a]
         const sphereB = spheres[b]
         if (sphereA && sphereB) {
-          collideSphereWithSphere(sphereA, sphereB) // sphere-physics.js
+          collideSphereWithSphere(
+            sphereA,
+            sphereB,
+            this.physicsValues,
+          ) // sphere-physics.js
         }
       }
     }
   }
 }
 
-import {
-  GRAVITY,
-  AIR_RESISTANCE,
-  STEP_DURATION,
-  RESTITUTION,
-  SPHERE_RADIUS,
-  SPHERE_COHESION,
-  SPHERE_STIFFNESS,
-  SPHERE_DAMPING,
-  BUOYANT_FORCE,
-  PRESSURE_FORCE,
-  COLLISION_KERNEL_RADIUS,
-} from '../settings'
+export function sphereStep(sphere: Sphere, tileGroup: TileGroup, params: PhysicsValues) {
+  const { GRAVITY, AIR_RESISTANCE } = params
 
-export function sphereStep(sphere: Sphere, tileGroup: TileGroup) {
   // Apply gravity and air resistance
-  sphere.velocity.add(GRAVITY) // GRAVITY should be a THREE.Vector3
+  sphere.velocity.y -= GRAVITY
   sphere.velocity.multiplyScalar(1 - AIR_RESISTANCE)
 
   // Predict next position
   const futurePosition = sphere.position.clone().add(sphere.velocity.clone().multiplyScalar(STEP_DURATION))
 
   // Collide with terrain
-  collideWithTerrain(sphere, tileGroup, futurePosition)
+  collideWithTerrain(
+    sphere,
+    tileGroup,
+    futurePosition,
+    params,
+  )
 
   // Move to next position
   sphere.position = sphere.position.add(sphere.velocity.clone().multiplyScalar(STEP_DURATION))
 }
 
-export function collideSphereWithSphere(self: Sphere, neighbor: Sphere) {
+export function collideSphereWithSphere(self: Sphere, neighbor: Sphere, params: PhysicsValues) {
+  const { SPHERE_COHESION, SPHERE_STIFFNESS, SPHERE_DAMPING } = params
   const dx = neighbor.position.x - self.position.x
   const dy = neighbor.position.y - self.position.y
   const dz = neighbor.position.z - self.position.z
@@ -104,10 +108,15 @@ export function collideSphereWithSphere(self: Sphere, neighbor: Sphere) {
 }
 
 // Spiral kernel offsets, e.g. 5x5 grid spiraling outward from (0,0)
-const spiralKernel: Array<{ dx: number, dz: number }> = (() => {
+const spiralKernel: Array<{ dx: number
+  dz: number }> = (() => {
   const radius = COLLISION_KERNEL_RADIUS
-  const result: Array<{ dx: number, dz: number }> = []
-  let x = 0, z = 0, dx = 0, dz = -1
+  const result: Array<{ dx: number
+    dz: number }> = []
+  let x = 0,
+    z = 0,
+    dx = 0,
+    dz = -1
   const size = radius * 2 + 1
   const maxI = size * size
   for (let i = 0; i < maxI; i++) {
@@ -124,27 +133,41 @@ const spiralKernel: Array<{ dx: number, dz: number }> = (() => {
   return result
 })()
 
-function collideWithTerrain(self: Sphere, terrain: TileGroup, futurePosition: Vector3) {
-  const config = terrain.gridIndex
-  const { tileX, tileZ } = config.positionToCoord(futurePosition.x, futurePosition.z)
+function collideWithTerrain(self: Sphere, terrain: TileGroup, futurePosition: Vector3, params: PhysicsValues) {
+  const { BUOYANT_FORCE, PRESSURE_FORCE, RESTITUTION } = params
+
+  const config = terrain.grid
+  const { tileX, tileZ } = config.positionToCoord(
+    futurePosition.x,
+    futurePosition.z,
+  )
 
   for (const { dx, dz } of spiralKernel) {
     const nx = tileX + dx
     const nz = tileZ + dz
 
     // Get box position and scale from instance matrix
-    const idx = config.xzToIndex(nx, nz)
+    const idx = config.xzToIndex(
+      nx,
+      nz,
+    )
     if (idx === -1) continue // out of bounds
     const tile = terrain.members[idx]
 
-    const collision = checkBoxSphereCollision(tile, futurePosition)
+    const collision = checkBoxSphereCollision(
+      tile,
+      futurePosition,
+    )
     if (collision) {
       if (tile.isWater) {
         // apply upward buoyancy force
         self.velocity.y += BUOYANT_FORCE
 
         // apply downward pressure to the tile
-        terrain.sim.accelTile(idx, PRESSURE_FORCE)
+        terrain.sim.accelTile(
+          idx,
+          PRESSURE_FORCE,
+        )
       }
       else {
         // Adjust sphere position and velocity based on collision normal
@@ -159,9 +182,11 @@ function collideWithTerrain(self: Sphere, terrain: TileGroup, futurePosition: Ve
         const dvy = -(1 + RESTITUTION) * vDotN * collision.normal.y
         const dvz = -(1 + RESTITUTION) * vDotN * collision.normal.z
 
-        // this.velocity.x += dvx
-        // this.velocity.y += dvy
-        // this.velocity.z += dvz
+        /*
+                 * this.velocity.x += dvx
+                 * this.velocity.y += dvy
+                 * this.velocity.z += dvz
+                 */
 
         self.velocity.x += dvx
         self.velocity.y += dvy
@@ -181,7 +206,9 @@ function collideWithTerrain(self: Sphere, terrain: TileGroup, futurePosition: Ve
 function checkBoxSphereCollision(
   tile: Tile,
   sphere: Vector3,
-): { normal: Vector3, adjustedPosition: Vector3, centerOutside: boolean } | null {
+): { normal: Vector3
+  adjustedPosition: Vector3
+  centerOutside: boolean } | null {
   const { x, y, z } = tile.position
   const height = tile.height
 
@@ -224,7 +251,7 @@ function checkBoxSphereCollision(
   // Calculate adjusted position
   let adjustedPosition: Vector3
   const distance = Math.sqrt(distanceSq)
-  const centerOutside = (distance > 0)
+  const centerOutside = distance > 0
   if (centerOutside) {
     // Move out along the normal by (radius - penetration depth)
     const penetration = r - distance
@@ -255,5 +282,7 @@ function checkBoxSphereCollision(
     else if (axis === 5) adjustedPosition.z = maxZ + r
   }
 
-  return { normal, adjustedPosition, centerOutside }
+  return { normal,
+    adjustedPosition,
+    centerOutside }
 }

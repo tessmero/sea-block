@@ -1,18 +1,19 @@
 /**
- * @file file-header.cjs
+ * @file file-header.ts
  *
  * Rule to require file headers like this.
  */
+import path from 'path'
+import { ESLintUtils } from '@typescript-eslint/utils'
 
-const path = require('path')
-
-module.exports = {
+export default ESLintUtils.RuleCreator.withoutDocs({
+  // name: 'file-header',
   meta: {
     type: 'problem',
     docs: {
       description: 'Require a file-level JSDoc @file tag matching the filename and description format.',
     },
-    fixable: null,
+    fixable: undefined,
     schema: [],
     messages: {
       // missing jsdoc @file covered by jsdoc/require-file-overview
@@ -22,6 +23,7 @@ module.exports = {
       sentence: 'File description must start with an uppercase letter and end with a period.',
     },
   },
+  defaultOptions: [],
   create(context) {
     return {
       Program(_node) {
@@ -29,30 +31,30 @@ module.exports = {
         const comments = source.getAllComments()
         if (!comments.length || comments[0].type !== 'Block' || !comments[0].value.startsWith('*')) {
           // missing jsdoc @file covered by jsdoc/require-file-overview
-          // context.report({ messageId: 'missing' })
-          return // do nothing
+          return
         }
 
-        const loc = comments[0].loc // location in code to highlight
-        const jsdoc = comments[0].value // string content
-        let filename, description
+        const loc = comments[0].loc
+        const jsdoc = comments[0].value
+
+        let filename: string | undefined
+        let description: string | undefined
 
         // Match @file tag
         const fileTagMatch = jsdoc.match(/@file\s+([^\s]+)\s*([\s\S]*)/)
         if (fileTagMatch) {
-          filename = fileTagMatch[1] // "must-match-filename.ts"
-          description = fileTagMatch[2] // "Must start with uppercase letter and end with period."
-          description = description.replace(/^\s*\*\s?/gm, '').trim() // remove leading * from each line
+          filename = fileTagMatch[1]
+          description = fileTagMatch[2]
+          description = description.replace(/^\s*\*\s?/gm, '').trim()
         }
         else {
           // missing jsdoc @file covered by jsdoc/require-file-overview
-          // context.report({ loc, messageId: 'missing' })
-          return // do nothing
+          return
         }
 
         // second line must be empty
-        const allLines = jsdoc.split('\n').map(s => s.replace(/^\s*\*\s?/, '')) // remove leading *
-        if (allLines[2].trim() !== '') { // 3rd in array, includes a line for opening "/**"
+        const allLines = jsdoc.split('\n').map(s => s.replace(/^\s*\*\s?/, ''))
+        if (allLines[2]?.trim() !== '') {
           context.report({ loc, messageId: 'space' })
         }
 
@@ -73,4 +75,4 @@ module.exports = {
       },
     }
   },
-}
+})
