@@ -41,6 +41,11 @@ const camera = new THREE.PerspectiveCamera(
   0.1,
   1000,
 )
+window.camPosForTestSupport = () => {
+  const { x, y, z } = camera.position
+  return [x, y, z]
+}
+
 const controls = new OrbitControls(
   camera,
   renderer.domElement,

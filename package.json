@@ -4,7 +4,10 @@
   "main": "index.js",
   "scripts": {
     "dev": "concurrently \"npx vite build\" \"npx serve dist\"",
-    "build:prod": "vite build --config vite.config.prod.js"
+    "puppet": "vite build --config vite.config.prod.js && mocha --require node_modules/demo-tests/dist/mochaHooks.js",
+    "zip": "cp -r reports dist && cd dist && zip -r sea-block.zip .",
+    "build:prod": "npm run puppet && npm run zip",
+    "build:quickprod": "vite build --config vite.config.prod.js && npm run zip"
   },
   "keywords": [],
   "author": "",
@@ -30,6 +33,7 @@
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.34.0",
+    "demo-tests": "file:../demo-tests",
     "vite": "^6.3.5"
   },
   "dependencies": {
