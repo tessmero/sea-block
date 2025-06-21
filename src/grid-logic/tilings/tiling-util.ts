@@ -6,10 +6,8 @@
 
 import { HexTiling } from './hex-tiling'
 import { SquareTiling } from './square-tiling'
-import { TriangleTiling } from './triangle-tiling'
 
 const impls = {
-  triangle: TriangleTiling,
   square: SquareTiling,
   hex: HexTiling,
 }
