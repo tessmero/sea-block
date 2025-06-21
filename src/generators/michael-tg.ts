@@ -4,34 +4,12 @@
  * Terrain generator implementation adapted from
  * Michael2-3B/Procedural-Perlin-Terrain.
  */
-import { NumericParam } from '../ui/controls-gui'
 import { TerrainGenerator, RGBA } from './terrain-generator'
-
-export type MichaelConfig = {
-  seed: NumericParam
-  offsetX: NumericParam
-  offsetZ: NumericParam
-  noiseMapValues: {
-    persistence: NumericParam
-    amplitude: NumericParam
-    octaves: NumericParam
-    wavelength: NumericParam
-  }
-  terrainCustomization: {
-    exponent: NumericParam
-    peaks: NumericParam
-    waterLevel: NumericParam
-    beachSize: NumericParam
-  }
-  lighting: {
-    worldLight: NumericParam
-    lightPosition: NumericParam
-    lightHeight: NumericParam
-  }
-}
+import { MichaelConfig, michaelConfig } from '../configs/michael-config'
 
 class SeedablePRNG {
   constructor(private seed: number) {}
+
   next(): number {
     this.seed = (this.seed * 9301 + 49297) % 233280
     return this.seed / 233280
@@ -43,41 +21,23 @@ export class MichaelTG extends TerrainGenerator<MichaelConfig> {
 
   constructor(config: MichaelConfig) {
     super(config)
-    this.prng = new SeedablePRNG(config.seed.value)
+    this.prng = new SeedablePRNG(config.params.seed.value)
   }
 
   static getDefaultConfig(): MichaelConfig {
-    return {
-      seed: { value: 0, min: 0, max: 10000, step: 1 },
-      offsetX: { value: 0, min: -1000, max: 1000, step: 1 },
-      offsetZ: { value: 0, min: -1000, max: 1000, step: 1 },
-      noiseMapValues: {
-        persistence: { value: 0.5, min: 0, max: 1, step: 0.01 },
-        amplitude: { value: 1, min: 0, max: 10, step: 0.1 },
-        octaves: { value: 5, min: 1, max: 8, step: 1 },
-        wavelength: { value: 133, min: 1, max: 256, step: 1 },
-      },
-      terrainCustomization: {
-        exponent: { value: 3.3, min: 1, max: 10, step: 0.05 },
-        peaks: { value: 0.25, min: 0, max: 0.25, step: 0.01 },
-        waterLevel: { value: 132, min: 0, max: 255, step: 1 },
-        beachSize: { value: 12, min: 0, max: 255, step: 1 },
-      },
-      lighting: {
-        worldLight: { value: 160, min: 0, max: 255, step: 1, graphical: true },
-        lightPosition: { value: 225, min: 0, max: 360, step: 1, graphical: true },
-        lightHeight: { value: 60, min: -90, max: 90, step: 1, graphical: true },
-      },
-    }
+    return michaelConfig
   }
 
   // Deterministically generate a gradient vector for a grid point
   private gradient(ix: number, iy: number): [number, number] {
     // Simple hash: combine coordinates and seed, then use PRNG
-    const hash = (ix * 1836311903) ^ (iy * 2971215073) ^ this._flatConfigValues.seed
+    const hash = ix * 1836311903 ^ iy * 2971215073 ^ this._flatConfigValues.seed
     const prng = new SeedablePRNG(hash)
     const angle = prng.next() * Math.PI * 2
-    return [Math.cos(angle), Math.sin(angle)]
+    return [
+      Math.cos(angle),
+      Math.sin(angle),
+    ]
   }
 
   private dotProduct(v1: [number, number], v2: [number, number]): number {
@@ -85,7 +45,9 @@ export class MichaelTG extends TerrainGenerator<MichaelConfig> {
   }
 
   private easeInOutQuad(t: number): number {
-    return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t
+    return t < 0.5
+      ? 2 * t * t
+      : -1 + (4 - 2 * t) * t
   }
 
   private lerp(a: number, b: number, t: number): number {
@@ -118,7 +80,8 @@ export class MichaelTG extends TerrainGenerator<MichaelConfig> {
       const g01 = this.gradient(x0, y1)
       const g11 = this.gradient(x1, y1)
 
-      const dot00 = this.dotProduct(g00, [sx, sy])
+      const dot00 = this.dotProduct(g00, [sx, sy],
+      )
       const dot10 = this.dotProduct(g10, [sx - 1, sy])
       const dot01 = this.dotProduct(g01, [sx, sy - 1])
       const dot11 = this.dotProduct(g11, [sx - 1, sy - 1])
@@ -134,7 +97,12 @@ export class MichaelTG extends TerrainGenerator<MichaelConfig> {
       amp *= persistence
     }
     // Final height value
-    return Math.max(0, Math.min(254, 255 * Math.pow((value + 1) / 2 + peaks, exponent)))
+    return Math.max(0, Math.min(254,
+      255 * Math.pow(
+        (value + 1) / 2 + peaks,
+        exponent,
+      ),
+    ))
   }
 
   isWaterTile(height: number): boolean {
@@ -157,7 +125,11 @@ export class MichaelTG extends TerrainGenerator<MichaelConfig> {
     const y3 = this.getHeight(x + 1, y + 1)
 
     // Slope direction and components
-    const [slopeDirection, slopeX, slopeZ] = this.calculateSlopeDirection(y0, y1, y2, y3)
+    const [
+      slopeDirection,
+      slopeX,
+      slopeZ,
+    ] = this.calculateSlopeDirection(y0, y1, y2, y3)
 
     if (elevation < waterLevel) {
       // Water color
@@ -179,17 +151,46 @@ export class MichaelTG extends TerrainGenerator<MichaelConfig> {
     const light1 = 3 * (lightHeight + 90) / 180 + 1
     const light2 = 5 - light1
 
-    let lightHeightChange = (90 - lightHeight)
+    let lightHeightChange = 90 - lightHeight
     lightHeightChange /= 3 - (lightHeight + 90) / 90
 
-    const colors: RGBA = [0, 180 - depth / 2, 255 - depth / 4, 0.7]
+    const colors: RGBA = [
+      0,
+      180 - depth / 2,
+      255 - depth / 4,
+      0.7,
+    ]
 
-    colors[0] = Math.max(0, colors[0] - lightHeightChange / light1 + Math.min(0, lightHeight))
-    colors[1] = Math.max(0, colors[1] - lightHeightChange / 2 + Math.min(0, lightHeight))
-    colors[2] = Math.max(0, colors[2] - lightHeightChange / light2 + Math.min(0, lightHeight))
+    colors[0] = Math.max(
+      0,
+      colors[0] - lightHeightChange / light1 + Math.min(
+        0,
+        lightHeight,
+      ),
+    )
+    colors[1] = Math.max(
+      0,
+      colors[1] - lightHeightChange / 2 + Math.min(
+        0,
+        lightHeight,
+      ),
+    )
+    colors[2] = Math.max(
+      0,
+      colors[2] - lightHeightChange / light2 + Math.min(
+        0,
+        lightHeight,
+      ),
+    )
 
     for (let i = 0; i < 3; i++) {
-      colors[i] = Math.max(0, Math.min(255, colors[i] + worldLight - 255))
+      colors[i] = Math.max(
+        0,
+        Math.min(
+          255,
+          colors[i] + worldLight - 255,
+        ),
+      )
     }
     return colors
   }
@@ -205,40 +206,97 @@ export class MichaelTG extends TerrainGenerator<MichaelConfig> {
 
     if (elevation < waterLevel + beachSize) {
       colors = [
-        Math.min(elevation / 3 + 150 * 1.3, 255),
-        Math.min(elevation / 3 + 110 * 1.3, 215),
-        Math.min(elevation / 3 * 1.3, 105),
+        Math.min(
+          elevation / 3 + 150 * 1.3,
+          255,
+        ),
+        Math.min(
+          elevation / 3 + 110 * 1.3,
+          215,
+        ),
+        Math.min(
+          elevation / 3 * 1.3,
+          105,
+        ),
         1,
       ]
     }
     else if (elevation < 100) {
-      colors = [elevation, elevation + 88, elevation, 1]
+      colors = [
+        elevation,
+        elevation + 88,
+        elevation,
+        1,
+      ]
     }
     else if (elevation < 130) {
-      colors = [elevation, elevation + 58, elevation, 1]
+      colors = [
+        elevation,
+        elevation + 58,
+        elevation,
+        1,
+      ]
     }
     else if (elevation < 160) {
-      colors = [elevation, Math.min(elevation + 29, 255), elevation, 1]
+      colors = [
+        elevation,
+        Math.min(
+          elevation + 29,
+          255,
+        ),
+        elevation,
+        1,
+      ]
     }
     else if (elevation < 190) {
-      colors = [elevation - 10, elevation - 10, elevation, 1]
+      colors = [
+        elevation - 10,
+        elevation - 10,
+        elevation,
+        1,
+      ]
     }
     else if (elevation < 220) {
-      colors = [elevation - 40, elevation - 40, elevation - 30, 1]
+      colors = [
+        elevation - 40,
+        elevation - 40,
+        elevation - 30,
+        1,
+      ]
     }
     else {
       colors = [
-        Math.min(255, elevation + 10),
-        Math.min(255, elevation + 10),
-        Math.min(255, elevation + 20),
+        Math.min(
+          255,
+          elevation + 10,
+        ),
+        Math.min(
+          255,
+          elevation + 10,
+        ),
+        Math.min(
+          255,
+          elevation + 20,
+        ),
         1,
       ]
     }
 
-    colors = this.addShading(colors, slopeDirection, slopeX, slopeZ)
+    colors = this.addShading(
+      colors,
+      slopeDirection,
+      slopeX,
+      slopeZ,
+    )
 
     for (let i = 0; i < 3; i++) {
-      colors[i] = Math.max(0, Math.min(255, colors[i] + this._flatConfigValues.worldLight - 255))
+      colors[i] = Math.max(
+        0,
+        Math.min(
+          255,
+          colors[i] + this._flatConfigValues.worldLight - 255,
+        ),
+      )
     }
     return colors
   }
@@ -251,25 +309,51 @@ export class MichaelTG extends TerrainGenerator<MichaelConfig> {
   ): RGBA {
     const { lightPosition, lightHeight } = this._flatConfigValues
 
-    let lightHeightChange = (90 - lightHeight)
+    let lightHeightChange = 90 - lightHeight
     lightHeightChange /= 3 - (lightHeight + 90) / 90
 
     const light1 = 3 * (lightHeight + 90) / 180 + 1
     const light2 = 5 - light1
 
-    colors[0] = Math.max(0, colors[0] - lightHeightChange / light1 + Math.min(0, lightHeight))
-    colors[1] = Math.max(0, colors[1] - lightHeightChange / 2 + Math.min(0, lightHeight))
-    colors[2] = Math.max(0, colors[2] - lightHeightChange / light2 + Math.min(0, lightHeight))
+    colors[0] = Math.max(
+      0,
+      colors[0] - lightHeightChange / light1 + Math.min(
+        0,
+        lightHeight,
+      ),
+    )
+    colors[1] = Math.max(
+      0,
+      colors[1] - lightHeightChange / 2 + Math.min(
+        0,
+        lightHeight,
+      ),
+    )
+    colors[2] = Math.max(
+      0,
+      colors[2] - lightHeightChange / light2 + Math.min(
+        0,
+        lightHeight,
+      ),
+    )
 
     let diff = Math.abs(lightPosition - slopeDirection)
-    diff = diff > 180 ? 360 - diff : diff
+    diff = diff > 180
+      ? 360 - diff
+      : diff
 
     if (slopeX === 0 && slopeZ === 0) {
       diff = -(lightHeight - 90)
     }
 
     for (let i = 0; i < 3; i++) {
-      colors[i] = Math.min(255, Math.max(0, colors[i] - diff * Math.abs((lightHeight - 90) / 90)))
+      colors[i] = Math.min(
+        255,
+        Math.max(
+          0,
+          colors[i] - diff * Math.abs((lightHeight - 90) / 90),
+        ),
+      )
     }
     return colors
   }
@@ -288,9 +372,16 @@ export class MichaelTG extends TerrainGenerator<MichaelConfig> {
     const averageSlopeX = (slopeX0 + slopeX1) / 2
     const averageSlopeZ = (slopeZ0 + slopeZ1) / 2
 
-    let slopeDirection = Math.atan2(averageSlopeZ, averageSlopeX) * 180 / Math.PI
+    let slopeDirection = Math.atan2(
+      averageSlopeZ,
+      averageSlopeX,
+    ) * 180 / Math.PI
     slopeDirection = (slopeDirection + 360) % 360
 
-    return [slopeDirection, averageSlopeX, averageSlopeZ]
+    return [
+      slopeDirection,
+      averageSlopeX,
+      averageSlopeZ,
+    ]
   }
 }
