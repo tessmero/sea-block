@@ -4,12 +4,12 @@
  * Base class for generators that output terrain heights.
  */
 
-import { GeneratorConfig, NumericParam } from '../ui/controls-gui'
+import { Config, ConfigParam } from '../configs/config'
 
 export type RGBA = [number, number, number, number]
 
-export abstract class TerrainGenerator<T extends GeneratorConfig> {
-  static getDefaultConfig(): GeneratorConfig {
+export abstract class TerrainGenerator<T extends Config> {
+  static getDefaultConfig(): Config {
     throw new Error(`getDefaultConfig is not implemented in ${this.constructor.name}`)
   }
 
@@ -29,13 +29,19 @@ export abstract class TerrainGenerator<T extends GeneratorConfig> {
     this._parseFlatConfig(this.config)
   }
 
-  private _parseFlatConfig(config: GeneratorConfig | NumericParam, key = '') {
-    if (typeof config.value === 'number') {
-      this._flatConfigValues[key] = config.value
+  private _parseFlatConfig(config: Config | ConfigParam, key = '') {
+    if ('value' in config) {
+      this._flatConfigValues[key] = config.value as number
     }
     else {
-      for (const [key, value] of Object.entries(config)) {
-        this._parseFlatConfig(value, key)
+      for (const [
+        key,
+        value,
+      ] of Object.entries(config)) {
+        this._parseFlatConfig(
+          value,
+          key,
+        )
       }
     }
   }

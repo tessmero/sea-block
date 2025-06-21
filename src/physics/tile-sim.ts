@@ -6,15 +6,18 @@
 
 import { Simulation } from './simulation'
 import { Tile } from '../tile'
-import { GridIndex } from '../grid-logic/grid-index'
-import { WATER_FRICTION, WATER_CENTERING, WATER_DAMPING, WATER_SPRING } from '../settings'
+import { GridLayout } from '../grid-logic/grid-layout'
 
 export class TileSim extends Simulation<Tile> {
   private readonly n: number
+
   private readonly springs: Spring[]
+
   public readonly pos: Float32Array
+
   public readonly vel: Float32Array
-  constructor(private readonly grid: GridIndex) {
+
+  constructor(private readonly grid: GridLayout) {
     super()
 
     this.springs = buildSprings(grid)
@@ -25,6 +28,7 @@ export class TileSim extends Simulation<Tile> {
   }
 
   step(tiles: Tile[]) {
+    const { WATER_FRICTION, WATER_CENTERING, WATER_DAMPING, WATER_SPRING } = this.physicsValues
     const fricMul = 1 - WATER_FRICTION
 
     for (const { indexA, indexB, weight } of this.springs) {
@@ -69,11 +73,13 @@ export class TileSim extends Simulation<Tile> {
 
   // partially reset water tile that looped to opposite side
   resetTile(index: number) {
-    const limitPos = 2
+    const limitPos = 0// 3e-2
+    // this.pos[index] = -limitPos + 2 * limitPos * Math.random()
     this.pos[index] = Math.max(-limitPos, Math.min(limitPos, this.pos[index]))
 
     const limitVel = 1e-3
-    this.vel[index] = Math.max(-limitVel, Math.min(limitVel, this.vel[index]))
+    // this.vel[index] = -limitVel + 2 * limitVel * Math.random()
+    Math.max(-limitVel, Math.min(limitVel, this.vel[index]))
   }
 }
 
@@ -83,22 +89,17 @@ type Spring = {
   weight: number
 }
 
-function buildSprings(grid: GridIndex): Spring[] {
+function buildSprings(grid: GridLayout): Spring[] {
   const lowWeight = 1 / Math.SQRT2
-  const springSpecs: Array<[number, number, number]> = [
-    [1, 0, 1],
-    [-1, 0, 1],
-    [0, 1, 1],
-    [0, -1, 1],
-    [1, 1, lowWeight],
-    [1, -1, lowWeight],
-    [-1, -1, lowWeight],
-    [-1, 1, lowWeight],
-  ]
 
   const { width, depth } = grid
   const springs = []
   for (const { x, z, index } of grid.cells()) {
+    const springSpecs: number[][] = [
+      ...grid.getAdjacent(false).map(({ x, z }) => [x, z, 1]),
+      ...grid.getDiagonal(false).map(({ x, z }) => [x, z, lowWeight]),
+    ]
+
     for (const [dx, dz, weight] of springSpecs) {
       // get wrapped neighbor coords
       const ox = (x + dx + width) % width
