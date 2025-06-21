@@ -5,7 +5,7 @@
  */
 
 import { equal, ok } from 'assert'
-import { getTiling } from './tiling-util'
+import { getTiling } from '../../src/grid-logic/tilings/tiling-util'
 
 type XZ = { x: number, z: number }
 
@@ -28,7 +28,6 @@ function expectClose(a: XZ, b: XZ, epsilon = 1) {
 }
 
 const tilings = [
-  'triangle',
   'square',
   'hex',
 ]

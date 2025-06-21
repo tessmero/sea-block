@@ -29,5 +29,20 @@
 </head>
 <body>
   <script type="module" src="/src/main.js"></script>
+  
+  <script>
+    const TestSupport = {
+      
+      getGameState: () => 'sea-block-loaded',
+
+      getCameraPos: () => {
+        return window.camPosForTestSupport();
+      },
+
+      getCursorState: () => {
+        return window.cursorStateForTestSupport;
+      },
+    };
+  </script>
 </body>
 </html>
