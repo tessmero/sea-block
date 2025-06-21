@@ -1,7 +1,7 @@
 {
   "extension": ["ts"],
   "spec": [
-    "src/**/*.test.ts",
+    "tests/**/*.test.ts",
     "eslint-plugin-sb/tests/**/*.test.ts"
   ],
   "require": [
