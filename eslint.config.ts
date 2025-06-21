@@ -1,5 +1,5 @@
 /**
- * @file eslint.config.js
+ * @file eslint.config.ts
  *
  * Linting rules for sea-block.
  */
@@ -10,11 +10,12 @@ import stylistic from '@stylistic/eslint-plugin'
 import jsdoc from 'eslint-plugin-jsdoc'
 
 // rules defined in this repository (sea-block)
-import eslintPluginSb from './eslint-plugin-sb/index.cjs'
+import eslintPluginSb from './eslint-plugin-sb'
 
-export default tseslint.config(
+export default [
+  { ignores: ['**/node_modules/', 'dist/*'] },
   eslint.configs.recommended,
-  tseslint.configs.recommended,
+  ...tseslint.configs.recommended,
   stylistic.configs.recommended,
   jsdoc.configs['flat/recommended-typescript'],
   {
@@ -53,14 +54,4 @@ export default tseslint.config(
 
     },
   },
-  {
-    // overrides for local plugin source
-    files: ['eslint-plugin-sb/**/*.cjs'],
-    rules: {
-
-      // allow require
-      '@typescript-eslint/no-require-imports': 'off',
-      'no-undef': 'off',
-    },
-  },
-)
+]

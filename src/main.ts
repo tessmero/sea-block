@@ -6,22 +6,25 @@
 
 import * as THREE from 'three'
 import { Vector3 } from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
-import { TerrainGridIndex } from './grid-logic/terrain-grid-index'
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import { GridLayout } from './grid-logic/grid-layout'
 import { TileGroup } from './groups/tile-group'
 import { SphereGroup } from './groups/sphere-group'
 import { Sphere } from './sphere'
 import { PIXEL_SCALE, CAMERA, CAMERA_LOOK_AT, STEP_DURATION } from './settings'
+import { physicsConfig } from './configs/physics-config'
 import { MichaelTG } from './generators/michael-tg'
-import { buildScene } from './scene'
-import { NumericParam, showControls } from './ui/controls-gui'
-import { initMouseListeners, updatePlayerMovement } from './ui/mouse-input'
+import { buildScene, DebugElems } from './scene'
+import { showControls } from './ui/controls-gui'
+import { initMouseListeners, processMouse } from './ui/mouse-input'
+import { ConfigParam } from './configs/config'
+import { gridConfig } from './configs/grid-config'
 
-let grid: TerrainGridIndex
+let grid: GridLayout
 let scene: THREE.Scene
 let terrain: TileGroup
 let sphereGroup: SphereGroup
-let debugPoint: THREE.Object3D
+let debugElems: DebugElems
 let player: Sphere
 let lastPlayerPosition: Vector3
 
@@ -38,72 +41,80 @@ const camera = new THREE.PerspectiveCamera(
   0.1,
   1000,
 )
-const controls = new OrbitControls(camera, renderer.domElement)
+const controls = new OrbitControls(
+  camera,
+  renderer.domElement,
+)
 
-const config = MichaelTG.getDefaultConfig()
+const config = { params: {
+  // grid: gridConfig,
+  ...gridConfig.params,
+  terrainGenerator: MichaelTG.getDefaultConfig(),
+  physics: physicsConfig,
+} }
+
 /**
  *
  */
 function reset() {
-  const built = buildScene(config)
+  const built = buildScene(config.params.terrainGenerator)
+
   grid = built.grid
   scene = built.scene
   terrain = built.terrain
   sphereGroup = built.sphereGroup
-  debugPoint = built.debugPoint
+  debugElems = built.debugElems
 
   // Create a player sphere
   player = sphereGroup.members[0]
-  sphereGroup.setInstanceColor(0, new THREE.Color(0xff0000)) // Highlight player sphere
+  sphereGroup.setInstanceColor(
+    0,
+    new THREE.Color(0xff0000),
+  ) // Highlight player sphere
   lastPlayerPosition = player.position.clone()
 
   camera.position.set(
     lastPlayerPosition.x + CAMERA.x,
     CAMERA.y,
-    lastPlayerPosition.z + CAMERA.z)
+    lastPlayerPosition.z + CAMERA.z,
+  )
 }
 reset()
 
-function onCtrlChange(param: NumericParam) {
-  if (param.graphical) {
-    terrain.resetColors() // only reset colors
-  }
-  else {
+function onCtrlChange(param: ConfigParam) {
+  if (param.resetOnChange === 'full') {
     reset() // complete reset
   }
+  else if (param.resetOnChange === 'physics') {
+    sphereGroup.sim.resetParams()
+    terrain.sim.resetParams()
+  }
+  else {
+    // soft reset
+    terrain.resetColors()
+    debugElems.refresh()
+  }
 }
-showControls(config, onCtrlChange)
+showControls(
+  config,
+  onCtrlChange,
+)
 
 // Responsive resize
-window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight
-  camera.updateProjectionMatrix()
-  renderer.setSize(window.innerWidth, window.innerHeight)
-})
+window.addEventListener(
+  'resize',
+  () => {
+    camera.aspect = window.innerWidth / window.innerHeight
+    camera.updateProjectionMatrix()
+    renderer.setSize(
+      window.innerWidth,
+      window.innerHeight,
+    )
+  },
+)
 
 // listen for directional mouse/touch input
-initMouseListeners()
-
-// // listen for mouse clicks to hit tiles
-// const mouse = new THREE.Vector2()
-// const raycaster = new THREE.Raycaster()
-// window.addEventListener('click', (event) => {
-//   // pick tile on terrain
-//   mouse.x = (event.clientX / window.innerWidth) * 2 - 1
-//   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1
-//   raycaster.setFromCamera(mouse, camera)
-//   terrain.mesh.computeBoundingSphere()
-//   const intersects = raycaster.intersectObject(terrain.mesh)
-//   const instanceId = intersects[0]?.instanceId
-
-//   if (instanceId) {
-//     const { x, z } = grid.indexToXZ(instanceId)
-//     console.log(x, z)
-//   }
-//   else {
-//     console.log('No tile hit')
-//   }
-// })
+initMouseListeners(renderer.domElement)
 
 /**
  *
@@ -118,7 +129,8 @@ function centerOnPlayer() {
     z + (camera.position.z - lastPlayerPosition.z),
   )
   lastPlayerPosition = player.position.clone()
-  controls.target.set(x, CAMERA_LOOK_AT.y, z)
+  controls.target.set(x, CAMERA_LOOK_AT.y, z,
+  )
   controls.update()
 
   const { tileX, tileZ } = grid.positionToCoord(player.position.x, player.position.z)
@@ -128,6 +140,7 @@ centerOnPlayer()
 
 // Animation loop
 let lastTime = performance.now()
+
 /**
  *
  */
@@ -136,16 +149,13 @@ function animate() {
 
   // Calculate delta time
   const currentTime = performance.now()
-  const dt = Math.min(50, (currentTime - lastTime))
+  const dt = Math.min(50, currentTime - lastTime)
   const nSteps = Math.round(dt / STEP_DURATION)
   lastTime = currentTime
 
-  controls.update()
+  controls.update() // orbit controls
   centerOnPlayer()
-  const pickedPoint = updatePlayerMovement(player, camera)
-  if (pickedPoint) {
-    debugPoint.position.copy(pickedPoint)
-  }
+  processMouse({ terrain, player, camera, debugElems })
 
   // update physics
   terrain.update(nSteps)

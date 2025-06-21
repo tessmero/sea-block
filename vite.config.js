@@ -1,6 +1,7 @@
 /**
  * @file vite.config.js
- * Configuration for vite build used in "npm run dev"
+ *
+ * Configuration for vite build used in "npm run dev".
  */
 import { defineConfig } from 'vite'
 export default defineConfig({
