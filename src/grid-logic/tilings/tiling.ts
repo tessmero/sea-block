@@ -30,6 +30,6 @@ export abstract class Tiling {
   public readonly abstract geometry: BufferGeometry
 
   // indices for tiles neighboring (0,0)
-  public abstract getAdjacent(parity: boolean): XZ[] // share edge
-  public abstract getDiagonal(parity: boolean): XZ[] // share vertex
+  public abstract getAdjacent(x: number, z: number): XZ[] // share edge
+  public abstract getDiagonal(): XZ[] // share vertex
 }
