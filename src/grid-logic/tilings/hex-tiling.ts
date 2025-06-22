@@ -38,8 +38,13 @@ export class HexTiling extends Tiling {
     6, // radialSegments (hexagon)
   ).rotateY(Math.PI / 6) // Rotate so it's flat-topped
 
-  public getAdjacent(parity: boolean) {
-    return parity ? oddAdj : evenAdj
+  public getAdjacent(x: number, _z: number) {
+    if (Math.abs(x) % 2 === 1) {
+      return oddAdj
+    }
+    else {
+      return evenAdj
+    }
   }
 
   public getDiagonal() { return [] }

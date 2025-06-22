@@ -13,11 +13,7 @@ import { TileGroup } from '../groups/tile-group'
 
 // sphere that references position in instanced mesh
 class SphereIm extends InstancedMember implements Sphere {
-  public readonly velocity = new Vector3(
-    0,
-    0,
-    0,
-  )
+  public readonly velocity = new Vector3(0, 0, 0)
 }
 
 export class SphereGroup extends Group<Sphere, SphereSim> {
@@ -30,11 +26,7 @@ export class SphereGroup extends Group<Sphere, SphereSim> {
     super({
       n,
       sim: new SphereSim(terrain),
-      geometry: new THREE.SphereGeometry(
-        SPHERE_RADIUS,
-        16,
-        16,
-      ),
+      geometry: new THREE.SphereGeometry(SPHERE_RADIUS, 16, 16),
       material: new THREE.MeshLambertMaterial({ color: 0xffffff }),
     })
   }
@@ -42,18 +34,11 @@ export class SphereGroup extends Group<Sphere, SphereSim> {
   protected buildMembers() {
     // all start invisible
     const dummy = new THREE.Object3D()
-    dummy.scale.set(
-      0,
-      0,
-      0,
-    )
+    dummy.scale.set(0, 0, 0)
     dummy.updateMatrix()
     const result = []
     for (let i = 0; i < this.n; i++) {
-      this.mesh.setMatrixAt(
-        i,
-        dummy.matrix,
-      )
+      this.mesh.setMatrixAt(i, dummy.matrix)
     }
 
     /*
@@ -65,21 +50,13 @@ export class SphereGroup extends Group<Sphere, SphereSim> {
          */
 
     const spherePositions = [
-      new Vector3(
-        0,
-        30,
-        0,
-      ),
+      new Vector3(0, 30, 0),
     ]
 
     // give spheres unique colors
     const sphereColors = Array.from(
       { length: this.n },
-      (_, i) => new THREE.Color().setHSL(
-        i / 10,
-        0.8,
-        0.5,
-      ),
+      (_, i) => new THREE.Color().setHSL(i / 10, 0.8, 0.5),
     )
     for (let i = 0; i < spherePositions.length; i++) {
       const sphere = new SphereIm(
@@ -88,10 +65,7 @@ export class SphereGroup extends Group<Sphere, SphereSim> {
       )
       sphere.position = spherePositions[i]
       result.push(sphere)
-      this.setInstanceColor(
-        i,
-        sphereColors[i],
-      )
+      this.setInstanceColor(i, sphereColors[i])
     }
 
     return result
@@ -99,11 +73,7 @@ export class SphereGroup extends Group<Sphere, SphereSim> {
 
   updateMesh() {
     const dummy = new THREE.Object3D()
-    dummy.scale.set(
-      1,
-      1,
-      1,
-    )
+    dummy.scale.set(1, 1, 1)
 
     for (let i = 0; i < this.n; i++) {
       const sphere = this.members[i]
@@ -115,17 +85,10 @@ export class SphereGroup extends Group<Sphere, SphereSim> {
         )
       }
       else {
-        dummy.position.set(
-          0,
-          -9999,
-          0,
-        )
+        dummy.position.set(0, -9999, 0)
       }
       dummy.updateMatrix()
-      this.mesh.setMatrixAt(
-        i,
-        dummy.matrix,
-      )
+      this.mesh.setMatrixAt(i, dummy.matrix)
     }
     this.mesh.instanceMatrix.needsUpdate = true
   }
