@@ -84,14 +84,14 @@ export function processMouse(params: ProcessMousePArams): void {
       debugElems.normalArrow.setDirection(centerTile.normal)
     }
 
-    const adjOffsets = terrain.grid.getAdjacent(x % 2 === 1)
+    const adjOffsets = terrain.grid.getAdjacent(x, z)
     for (const [i, offset] of adjOffsets.entries()) {
       const adjIndex = grid.xzToIndex(x + offset.x, z + offset.z)
       const adjTile = terrain.members[adjIndex]
       debugTile(debugElems.adjacent[i], adjTile)
     }
 
-    const diagOffsets = terrain.grid.getDiagonal(x % 2 === 1)
+    const diagOffsets = terrain.grid.getDiagonal()
     for (const [i, offset] of diagOffsets.entries()) {
       const diagIndex = grid.xzToIndex(x + offset.x, z + offset.z)
       const diagTile = terrain.members[diagIndex]
@@ -145,7 +145,10 @@ export function initMouseListeners(element: HTMLCanvasElement) {
           mouseX = (event as MouseEvent).clientX
           mouseY = (event as MouseEvent).clientY
         }
-        event.preventDefault()
+
+        window
+
+          .event.preventDefault()
       },
     )
   }
