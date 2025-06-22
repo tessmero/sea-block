@@ -5,6 +5,7 @@
  */
 import { defineConfig } from 'vite'
 export default defineConfig({
+  base: './',
   build: {
 
     // use polling instead of intended vite watch

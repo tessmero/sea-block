@@ -10,6 +10,8 @@ import { gridConfig } from '../configs/grid-config'
 import { getTiling } from './tilings/tiling-util'
 import { Tiling } from './tilings/tiling'
 
+type XZ = { x: number, z: number }
+
 export class GridLayout extends GridIndex {
   private readonly _midX = this.width / 2
   private readonly _midZ = this.depth / 2
@@ -19,12 +21,12 @@ export class GridLayout extends GridIndex {
     return this.tiling.geometry
   }
 
-  getAdjacent(parity: boolean): { x: number, z: number }[] {
-    return this.tiling.getAdjacent(parity)
+  getAdjacent(x: number, z: number): XZ[] {
+    return this.tiling.getAdjacent(x, z)
   }
 
-  getDiagonal(parity: boolean): { x: number, z: number }[] {
-    return this.tiling.getDiagonal(parity)
+  getDiagonal(): XZ[] {
+    return this.tiling.getDiagonal()
   }
 
   /**
@@ -59,9 +61,9 @@ export class GridLayout extends GridIndex {
     }
 
     /*
-         * adjust every other tile to prevent two adjacent faces from aligning perfectly
-         * so we have the option to overlap them without flickering
-         */
+      * adjust every other tile to prevent two adjacent faces from aligning perfectly
+      * so we have the option to overlap them without flickering
+      */
     if (tileX % 2 === tileZ % 2) {
       result.x += TILE_DILATE / 2
       result.z += TILE_DILATE / 2
