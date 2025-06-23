@@ -25,16 +25,19 @@ export const gridConfig: GridConfig = {
   params: {
 
     tiling: {
-      value: 'hex',
+      value: 'octagon',
       options: [
+        'triangle',
         'square',
         'hex',
+        'octagon',
       ],
       resetOnChange: 'full',
     },
 
     debug: {
       value: 'none',
+      // value: 'pick-neighbors',
       options: [
         { value: 'none', tooltip: 'No debugging. Mouse input controls player movement' },
         { value: 'pick-direction', tooltip: 'Show picked point at sea level used for movement direction' },

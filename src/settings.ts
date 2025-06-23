@@ -9,7 +9,7 @@ import { Vector3 } from 'three'
 export const PIXEL_SCALE = 5 // physical device pixels
 export const SPHERE_RADIUS = 1 // size of sphere
 export const GRID_DETAIL = 50 // number of grid segments
-export const TILE_DILATE = 0.1 // expand grid tile by fraction of width and depth
+export const TILE_DILATE = 0 // expand grid tile by fraction of width and depth
 
 // camera relative to player x/z position
 const camScale = 25

@@ -34,32 +34,36 @@ export class TileGroup extends Group<Tile, TileSim> {
   private readonly wdScale: number = 1 + TILE_DILATE // dilate tile size to overlap slightly
 
   constructor(public grid: GridLayout) {
+    // count number of tiles per subgroup
+    const subgroups = grid.tiling.getGeometries().map(geometry => ({
+      n: 0,
+      geometry,
+      material: new THREE.MeshLambertMaterial({
+        color: 0xffff88,
+        flatShading: true,
+      }),
+    }))
+    const subgroupsByFlatIndex: { subgroupIndex: number, indexInSubgroup: number }[] = []
+
+    for (const { x, z } of grid.cells()) {
+      const sgIndex = grid.tiling.getShapeIndex(x, z)
+      subgroupsByFlatIndex.push({
+        subgroupIndex: sgIndex,
+        indexInSubgroup: subgroups[sgIndex].n,
+      })
+      subgroups[sgIndex].n++
+    }
+
     super({
       sim: new TileSim(grid),
-      n: grid.n,
-      geometry: grid.geometry,
-      material: new THREE.MeshLambertMaterial({ color: 0xffff88,
-        flatShading: true }),
+      subgroups,
+      subgroupsByFlatIndex,
     })
 
     this.waterLevel = 132
   }
 
   private getTileAtIndex(idx: number): Tile {
-    const matrix = new THREE.Matrix4()
-    this.mesh.getMatrixAt(
-      idx,
-      matrix,
-    )
-    const position = new Vector3()
-    const quaternion = new THREE.Quaternion()
-    const scale = new Vector3()
-    matrix.decompose(
-      position,
-      quaternion,
-      scale,
-    )
-
     // Get logical x/z for this index
     const { x, z } = this.grid.indexToXZ(idx)
     const deltas = normalNeighborOffsets
@@ -74,11 +78,7 @@ export class TileGroup extends Group<Tile, TileSim> {
     }
 
     const tile = new TileIm(this, idx, neighbors, false)
-
-    this._updateTileMember(
-      tile,
-      this.tileHeights[idx],
-    )
+    this._updateTileMember(tile, this.tileHeights[idx])
 
     return tile
   }
@@ -110,7 +110,7 @@ export class TileGroup extends Group<Tile, TileSim> {
       this.boxPositions[index] = { x: wx, z: wz }
       dummy.scale.set(this.wdScale, renderHeight, this.wdScale)
       dummy.updateMatrix()
-      this.mesh.setMatrixAt(index, dummy.matrix)
+      this.setMemberMatrix(index, dummy.matrix)
 
       // Set color if generator is present
       this._updateTileColor(x, z, index)
@@ -135,10 +135,9 @@ export class TileGroup extends Group<Tile, TileSim> {
           dummy.position.set(box.x, renderHeight / 2, box.z)
           dummy.scale.set(1, renderHeight, 1)
           dummy.updateMatrix()
-          this.mesh.setMatrixAt(i, dummy.matrix)
+          this.setMemberMatrix(i, dummy.matrix)
         }
       }
-      this.mesh.instanceMatrix.needsUpdate = true
     }
   }
 
@@ -218,7 +217,7 @@ export class TileGroup extends Group<Tile, TileSim> {
         this.boxPositions[index] = { x: worldX, z: worldZ }
         dummy.scale.set(1, renderHeight, 1)
         dummy.updateMatrix()
-        this.mesh.setMatrixAt(index, dummy.matrix)
+        this.setMemberMatrix(index, dummy.matrix)
 
         // Set color if generator is present
         this._updateTileColor(newX, z, index)
@@ -243,7 +242,7 @@ export class TileGroup extends Group<Tile, TileSim> {
         dummy.scale.set(1, renderHeight, 1,
         )
         dummy.updateMatrix()
-        this.mesh.setMatrixAt(index, dummy.matrix)
+        this.setMemberMatrix(index, dummy.matrix)
 
         // Set color if generator is present
         this._updateTileColor(x, newZ, index)
@@ -253,7 +252,6 @@ export class TileGroup extends Group<Tile, TileSim> {
 
     this._offsetX += dx
     this._offsetZ += dz
-    this.mesh.instanceMatrix.needsUpdate = true
   }
 
   public resetColors() {
@@ -265,7 +263,6 @@ export class TileGroup extends Group<Tile, TileSim> {
         this._updateTileColor(x, z, i)
       }
     }
-    this.mesh.instanceMatrix.needsUpdate = true
   }
 
   private _updateTileMember(tile: Tile, height: number) {
@@ -278,13 +275,11 @@ export class TileGroup extends Group<Tile, TileSim> {
     if (this.terrainGenerator) {
       const color = this.terrainGenerator.getTileColor(x, z)
       if (color) {
-        // Convert RGBA [0-255] to THREE.Color and set alpha if needed
         const [r, g, b] = color
-        this.setInstanceColor?.(
+        this.setInstanceColor(
           index,
           new THREE.Color(r / 255, g / 255, b / 255),
         )
-        // Alpha (a) can be handled if you use a material that supports transparency
       }
     }
   }
@@ -301,7 +296,8 @@ class TileIm extends InstancedMember implements Tile {
     private readonly normalNeighborIds: number[],
     public isWater: boolean,
   ) {
-    super(group.mesh, index)
+    const [subgroup, indexInSubgroup] = group.subgroupsByFlatIndex[index]
+    super(index, subgroup, indexInSubgroup)
   }
 
   get height(): number {
