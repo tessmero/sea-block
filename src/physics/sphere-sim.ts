@@ -212,12 +212,14 @@ function checkBoxSphereCollision(
   const { x, y, z } = tile.position
   const height = tile.height
 
-  const minX = x - 0.5
-  const maxX = x + 0.5
+  const xzRad = 2
+
+  const minX = x - xzRad
+  const maxX = x + xzRad
   const minY = y - height / 2
   const maxY = y + height / 2
-  const minZ = z - 0.5
-  const maxZ = z + 0.5
+  const minZ = z - xzRad
+  const maxZ = z + xzRad
   const r = SPHERE_RADIUS
 
   // Find closest point on box to sphere

@@ -5,14 +5,18 @@
  */
 
 import { HexTiling } from './hex-tiling'
+import { OctagonTiling } from './octagon-tiling'
 import { SquareTiling } from './square-tiling'
+import { TriangleTiling } from './triangle-tiling'
 
-const impls = {
+export const allTilings = {
+  triangle: TriangleTiling,
   square: SquareTiling,
   hex: HexTiling,
+  octagon: OctagonTiling,
 }
 
 export function getTiling(type: string) {
-  const TilingClass = impls[type]
+  const TilingClass = allTilings[type]
   return new TilingClass()
 }
