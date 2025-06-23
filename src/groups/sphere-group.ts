@@ -24,22 +24,28 @@ export class SphereGroup extends Group<Sphere, SphereSim> {
     terrain: TileGroup,
   ) {
     super({
-      n,
       sim: new SphereSim(terrain),
-      geometry: new THREE.SphereGeometry(SPHERE_RADIUS, 16, 16),
-      material: new THREE.MeshLambertMaterial({ color: 0xffffff }),
+      subgroups: [{
+        n,
+        geometry: new THREE.SphereGeometry(SPHERE_RADIUS, 16, 16),
+        material: new THREE.MeshLambertMaterial({ color: 0xffffff }),
+      }],
+      subgroupsByFlatIndex: Array.from({ length: n }, (_, i) => i + 1).map(i => ({
+        subgroupIndex: 0,
+        indexInSubgroup: i,
+      })),
     })
   }
 
   protected buildMembers() {
     // all start invisible
-    const dummy = new THREE.Object3D()
-    dummy.scale.set(0, 0, 0)
-    dummy.updateMatrix()
+    // const dummy = new THREE.Object3D()
+    // dummy.scale.set(0, 0, 0)
+    // dummy.updateMatrix()
     const result = []
-    for (let i = 0; i < this.n; i++) {
-      this.mesh.setMatrixAt(i, dummy.matrix)
-    }
+    // for (let i = 0; i < this.n; i++) {
+    //   this.mesh.setMatrixAt(i, dummy.matrix)
+    // }
 
     /*
          * const testPositions = Array.from({ length: 5 }, () => new THREE.Vector3(
@@ -60,8 +66,9 @@ export class SphereGroup extends Group<Sphere, SphereSim> {
     )
     for (let i = 0; i < spherePositions.length; i++) {
       const sphere = new SphereIm(
-        this.mesh,
-        i,
+        i, // index in group
+        this.subgroups[0], // only one subgroup
+        i, // index in subgroup
       )
       sphere.position = spherePositions[i]
       result.push(sphere)
@@ -88,8 +95,7 @@ export class SphereGroup extends Group<Sphere, SphereSim> {
         dummy.position.set(0, -9999, 0)
       }
       dummy.updateMatrix()
-      this.mesh.setMatrixAt(i, dummy.matrix)
+      this.setMemberMatrix(i, dummy.matrix)
     }
-    this.mesh.instanceMatrix.needsUpdate = true
   }
 }

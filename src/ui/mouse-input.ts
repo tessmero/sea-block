@@ -10,8 +10,10 @@ import { physicsConfig } from '../configs/physics-config'
 import { Sphere } from '../sphere'
 import { TileGroup } from '../groups/tile-group'
 import { DebugElems } from '../scene'
-import { gridConfig } from '../configs/grid-config'
+import { getGridValues, gridConfig } from '../configs/grid-config'
 import { Tile } from '../tile'
+
+let showDebugTiles = false
 
 let mouseX: number
 let mouseY: number
@@ -38,15 +40,14 @@ export function processMouse(params: ProcessMousePArams): void {
 
   const { terrain, player, camera, debugElems } = params
 
-  // pick tile on terrain
+  for (const subgoup of terrain.subgroups) {
+    subgoup.mesh.computeBoundingSphere()
+  }
+
+  // Plane at camera target y
   mouseVec.x = (mouseX / window.innerWidth) * 2 - 1
   mouseVec.y = -(mouseY / window.innerHeight) * 2 + 1
   raycaster.setFromCamera(mouseVec, camera)
-  terrain.mesh.computeBoundingSphere()
-  const intersects = raycaster.intersectObject(terrain.mesh)
-  const instanceId = intersects[0]?.instanceId
-
-  // Plane at camera target y
   raycaster.ray.intersectPlane(planeY, intersection)
 
   // Direction from player to intersection, zero y
@@ -70,13 +71,30 @@ export function processMouse(params: ProcessMousePArams): void {
     player.velocity.z += force.z
   }
 
+  // pick tile on terrain
+  let pickedMemberId = null
+  let closest = null
+  for (const subgroup of terrain.subgroups) {
+    const intersects = raycaster.intersectObject(subgroup.mesh)
+    for (const picked of intersects) {
+      if (picked.instanceId >= 0) {
+      // If this is the closest so far, store it
+        if (!closest || picked.distance < closest.distance) {
+          closest = picked
+          pickedMemberId = subgroup.memberIds[picked.instanceId]
+        }
+      }
+    }
+  }
+
   // update debug elements
+  showDebugTiles = getGridValues().debug === 'pick-neighbors'
   debugElems.directionPoint.position.copy(intersection)
-  if (instanceId) {
+  if (pickedMemberId) {
     const grid = terrain.grid
 
-    const centerTile = terrain.members[instanceId]
-    const { x, z } = grid.indexToXZ(instanceId)
+    const centerTile = terrain.members[pickedMemberId]
+    const { x, z } = grid.indexToXZ(pickedMemberId)
     debugTile(debugElems.center, centerTile)
 
     if (centerTile && centerTile.normal) {
@@ -84,18 +102,24 @@ export function processMouse(params: ProcessMousePArams): void {
       debugElems.normalArrow.setDirection(centerTile.normal)
     }
 
-    const adjOffsets = terrain.grid.getAdjacent(x, z)
+    const adjOffsets = terrain.grid.tiling.getAdjacent(x, z)
     for (const [i, offset] of adjOffsets.entries()) {
       const adjIndex = grid.xzToIndex(x + offset.x, z + offset.z)
       const adjTile = terrain.members[adjIndex]
       debugTile(debugElems.adjacent[i], adjTile)
     }
+    for (let i = adjOffsets.length; i < debugElems.adjacent.length; i++) {
+      debugElems.adjacent[i].visible = false
+    }
 
-    const diagOffsets = terrain.grid.getDiagonal()
+    const diagOffsets = terrain.grid.tiling.getDiagonal(x, z)
     for (const [i, offset] of diagOffsets.entries()) {
       const diagIndex = grid.xzToIndex(x + offset.x, z + offset.z)
       const diagTile = terrain.members[diagIndex]
       debugTile(debugElems.diagonal[i], diagTile)
+    }
+    for (let i = diagOffsets.length; i < debugElems.diagonal.length; i++) {
+      debugElems.diagonal[i].visible = false
     }
   }
   // return { directionPoint: intersection, pickedTileId: instanceId }
@@ -108,6 +132,7 @@ function debugTile(debugElem: THREE.Object3D, tile: Tile) {
   }
   const { x, y, z } = tile.position
   debugElem.position.set(x, y * 2, z)
+  debugElem.visible = showDebugTiles
 }
 
 export function initMouseListeners(element: HTMLCanvasElement) {
@@ -146,9 +171,7 @@ export function initMouseListeners(element: HTMLCanvasElement) {
           mouseY = (event as MouseEvent).clientY
         }
 
-        window
-
-          .event.preventDefault()
+        window.event.preventDefault()
       },
     )
   }

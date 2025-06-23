@@ -3,14 +3,9 @@
  *
  * Hexagonal grid tiling.
  */
-import { CylinderGeometry } from 'three'
 import { Tiling } from './tiling'
-import { TILE_DILATE } from '../../settings'
 
 type XZ = { x: number, z: number }
-
-// For flat-topped hex, width across flats is 1, so radius is 0.5
-const radius = 0.5
 
 const evenAdj = [
   { x: 1, z: 0 },
@@ -30,13 +25,16 @@ const oddAdj = [
   { x: -1, z: 1 },
 ]
 
+const radius = Math.sqrt(3) / 2
+
 export class HexTiling extends Tiling {
-  geometry = new CylinderGeometry(
-    radius * (1 + TILE_DILATE), // radiusTop
-    radius * (1 + TILE_DILATE), // radiusBottom
-    1, // height (Y axis)
-    6, // radialSegments (hexagon)
-  ).rotateY(Math.PI / 6) // Rotate so it's flat-topped
+  shapes = [{
+    n: 6,
+    radius,
+    angle: Math.PI / 6,
+  }]
+
+  getShapeIndex(_x: number, _z: number) { return 0 }
 
   public getAdjacent(x: number, _z: number) {
     if (Math.abs(x) % 2 === 1) {

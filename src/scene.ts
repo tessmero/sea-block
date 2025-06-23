@@ -26,10 +26,10 @@ export class DebugElems {
     const showNeighbors = gridVals.debug === 'pick-neighbors'
     this.center.visible = showNeighbors
     this.adjacent.forEach((e) => {
-      e.visible = showNeighbors
+      e.visible = e.visible && showNeighbors
     })
     this.diagonal.forEach((e) => {
-      e.visible = showNeighbors
+      e.visible = e.visible && showNeighbors
     })
 
     this.normalArrow.visible = gridVals.debug === 'pick-normal'
@@ -63,17 +63,14 @@ export function buildScene(config: MichaelConfig): {
   const terrain = new TileGroup(grid)
   terrain.terrainGenerator = new MichaelTG(config)
   terrain.build()
-  scene.add(terrain.mesh)
+  terrain.subgroups.forEach(subgroup => scene.add(subgroup.mesh))
 
   // Create spheres
-  const sphereGroup = new SphereGroup(
-    10,
-    terrain,
-  ).build()
-  scene.add(sphereGroup.mesh)
+  const sphereGroup = new SphereGroup(10, terrain).build()
+  sphereGroup.subgroups.forEach(subgroup => scene.add(subgroup.mesh))
 
   // small debug spheres
-  const n = 6, rad = 0.5
+  const n = 10, rad = 0.5
   const center = debugSphere(scene, rad, 'red')
   const adjacent = [], diagonal = []
   for (let i = 0; i < n; i++) {
@@ -101,11 +98,13 @@ export function buildScene(config: MichaelConfig): {
   debugElems.normalArrow = normalArrow
   debugElems.refresh()
 
-  return { grid,
+  return {
+    grid,
     scene,
     terrain,
     sphereGroup,
-    debugElems }
+    debugElems,
+  }
 }
 
 function debugSphere(scene: THREE.Scene, radius: number, color: THREE.ColorRepresentation): THREE.Mesh {

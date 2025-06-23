@@ -34,14 +34,8 @@ export abstract class TerrainGenerator<T extends Config> {
       this._flatConfigValues[key] = config.value as number
     }
     else {
-      for (const [
-        key,
-        value,
-      ] of Object.entries(config)) {
-        this._parseFlatConfig(
-          value,
-          key,
-        )
+      for (const [key, value] of Object.entries(config)) {
+        this._parseFlatConfig(value, key)
       }
     }
   }

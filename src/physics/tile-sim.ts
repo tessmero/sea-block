@@ -96,8 +96,8 @@ function buildSprings(grid: GridLayout): Spring[] {
   const springs = []
   for (const { x, z, index } of grid.cells()) {
     const springSpecs: number[][] = [
-      ...grid.getAdjacent(x, z).map(({ x, z }) => [x, z, 1]),
-      ...grid.getDiagonal().map(({ x, z }) => [x, z, lowWeight]),
+      ...grid.tiling.getAdjacent(x, z).map(({ x, z }) => [x, z, 1]),
+      ...grid.tiling.getDiagonal(x, z).map(({ x, z }) => [x, z, lowWeight]),
     ]
 
     for (const [dx, dz, weight] of springSpecs) {

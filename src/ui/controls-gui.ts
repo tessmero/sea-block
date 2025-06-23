@@ -101,12 +101,8 @@ function addControls(
     else if ('value' in entry && typeof entry.value === 'number') {
       // Numeric param
       const np = entry as NumericParam
-      const ctrl = gui.add(
-        np,
-        'value',
-        np.min,
-        np.max,
-      ).step(np.step)
+      const ctrl = gui.add(np, 'value', np.min, np.max)
+        .step(np.step)
         .name(np.label || camelCaseToLabel(key))
       if (onChange) {
         ctrl.onChange((value) => {
@@ -114,10 +110,7 @@ function addControls(
           onChange(np)
         })
       }
-      addTooltip(
-        ctrl,
-        np.tooltip,
-      )
+      addTooltip(ctrl, np.tooltip)
       _allControls[key] = ctrl
     }
     else {
@@ -141,10 +134,7 @@ function addTooltip(controller, text?: string) {
     return
   }
   const element = controller.__li || controller.domElement
-  element.setAttribute(
-    'title',
-    text,
-  )
+  element.setAttribute('title', text)
 }
 
 function camelCaseToLabel(input: string): string {
@@ -159,14 +149,8 @@ function camelCaseToLabel(input: string): string {
   }
   // Default: camelCase or PascalCase
   return input
-    .replace(
-      /([A-Z])/g,
-      ' $1',
-    ) // Insert space before each uppercase letter
-    .replace(
-      /^./,
-      str => str.toUpperCase(),
-    ) // Capitalize the first character
+    .replace(/([A-Z])/g, ' $1') // Insert space before each uppercase letter
+    .replace(/^./, str => str.toUpperCase()) // Capitalize the first character
     .trim()
 }
 
@@ -178,8 +162,5 @@ function camelCaseToLabel(input: string): string {
 
 function addButton(gui: dat.GUI, label: string, action: () => void) {
   const obj = { [label]: action }
-  gui.add(
-    obj,
-    label,
-  )
+  gui.add(obj, label)
 }

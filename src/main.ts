@@ -161,12 +161,6 @@ function animate() {
   terrain.update(nSteps)
   sphereGroup.update(nSteps)
 
-  // update instancedmeshes
-  terrain.updateMesh()
-  sphereGroup.updateMesh()
-  terrain.mesh.frustumCulled = false
-  sphereGroup.mesh.frustumCulled = false
-
   // render scene
   renderer.render(scene, camera)
 }
