@@ -3,9 +3,7 @@
  *
  * Simplest square tiling of the grid.
  */
-import { BoxGeometry } from 'three'
 import { Tiling } from './tiling'
-import { TILE_DILATE } from '../../settings'
 
 type XZ = { x: number, z: number }
 
@@ -24,22 +22,28 @@ const diagonal = [
 ]
 
 export class SquareTiling extends Tiling {
-  geometry = new BoxGeometry(
-    1 + TILE_DILATE,
-    1,
-    1 + TILE_DILATE,
-  )
+  shapes = [{
+    n: 4,
+    radius: Math.sqrt(2) / 2,
+    angle: Math.PI / 4,
+  }]
+
+  getShapeIndex(_x: number, _z: number) { return 0 }
 
   public getAdjacent() { return adjacent }
   public getDiagonal() { return diagonal }
 
   public positionToIndex(x: number, z: number): XZ {
-    return { x: Math.floor(x),
-      z: Math.floor(z) }
+    return {
+      x: Math.floor(x),
+      z: Math.floor(z),
+    }
   }
 
   public indexToPosition(x: number, z: number): XZ {
-    return { x: x + 0.5,
-      z: z + 0.5 }
+    return {
+      x: x + 0.5,
+      z: z + 0.5,
+    }
   }
 }

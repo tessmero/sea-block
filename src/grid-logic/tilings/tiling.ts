@@ -5,7 +5,8 @@
  * Determines the position, shape, and adjacency of tiles.
  */
 
-import { BufferGeometry } from 'three'
+import { BufferGeometry, CylinderGeometry } from 'three'
+import { TILE_DILATE } from '../../settings'
 
 /*
  * tile index (integers)
@@ -13,7 +14,19 @@ import { BufferGeometry } from 'three'
  */
 type XZ = { x: number, z: number }
 
+// regular polygon parameters
+export type TileShape = {
+  n: number
+  radius: number
+  angle: number
+}
+
 export abstract class Tiling {
+  public abstract shapes: TileShape[]
+
+  // pick shape for tile index
+  public abstract getShapeIndex(x: number, z: number): number
+
   /**
    * called in grid-layout
    * get tile index at position
@@ -26,10 +39,15 @@ export abstract class Tiling {
    */
   public abstract indexToPosition(x: number, z: number): XZ
 
-  // shape of tile
-  public readonly abstract geometry: BufferGeometry
-
-  // indices for tiles neighboring (0,0)
+  // get relative indices for tile neighbors
   public abstract getAdjacent(x: number, z: number): XZ[] // share edge
-  public abstract getDiagonal(): XZ[] // share vertex
+  public abstract getDiagonal(x: number, z: number): XZ[] // share vertex
+
+  public getGeometries(): BufferGeometry[] {
+    return this.shapes.map(({ n, radius, angle }) => new CylinderGeometry(
+      radius * (1 + TILE_DILATE),
+      radius * (1 + TILE_DILATE),
+      1, n,
+    ).rotateY(angle))
+  }
 }

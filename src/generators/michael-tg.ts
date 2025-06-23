@@ -266,18 +266,9 @@ export class MichaelTG extends TerrainGenerator<MichaelConfig> {
     }
     else {
       colors = [
-        Math.min(
-          255,
-          elevation + 10,
-        ),
-        Math.min(
-          255,
-          elevation + 10,
-        ),
-        Math.min(
-          255,
-          elevation + 20,
-        ),
+        Math.min(255, elevation + 10),
+        Math.min(255, elevation + 10),
+        Math.min(255, elevation + 20),
         1,
       ]
     }
@@ -290,13 +281,9 @@ export class MichaelTG extends TerrainGenerator<MichaelConfig> {
     )
 
     for (let i = 0; i < 3; i++) {
-      colors[i] = Math.max(
-        0,
-        Math.min(
-          255,
-          colors[i] + this._flatConfigValues.worldLight - 255,
-        ),
-      )
+      colors[i] = Math.max(0, Math.min(255,
+        colors[i] + this._flatConfigValues.worldLight - 255,
+      ))
     }
     return colors
   }

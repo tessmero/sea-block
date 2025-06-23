@@ -5,29 +5,14 @@
  */
 import { GridIndex } from './grid-index'
 import { TILE_DILATE } from '../settings'
-import { BufferGeometry } from 'three'
 import { gridConfig } from '../configs/grid-config'
 import { getTiling } from './tilings/tiling-util'
 import { Tiling } from './tilings/tiling'
-
-type XZ = { x: number, z: number }
 
 export class GridLayout extends GridIndex {
   private readonly _midX = this.width / 2
   private readonly _midZ = this.depth / 2
   public readonly tiling: Tiling = getTiling(gridConfig.params.tiling.value)
-
-  get geometry(): BufferGeometry {
-    return this.tiling.geometry
-  }
-
-  getAdjacent(x: number, z: number): XZ[] {
-    return this.tiling.getAdjacent(x, z)
-  }
-
-  getDiagonal(): XZ[] {
-    return this.tiling.getDiagonal()
-  }
 
   /**
    * Convert a world position (x, z) to grid coordinates (tileX, tileZ)
