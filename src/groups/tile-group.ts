@@ -6,13 +6,15 @@
 import * as THREE from 'three'
 import { Vector3 } from 'three'
 import { GridLayout } from '../grid-logic/grid-layout'
-import { Group, InstancedMember } from './group'
+import { Group } from './group'
 import { TILE_DILATE } from '../settings'
 import { physicsConfig } from '../configs/physics-config'
 import { TerrainGenerator } from '../generators/terrain-generator'
 import { Config } from '../configs/config'
 import { Tile } from '../tile'
 import { TileSim } from '../physics/tile-sim'
+import { extrude, TileMesh, TileMeshIm } from '../gfx/tile-mesh'
+import { style } from '../main'
 
 export class TileGroup extends Group<Tile, TileSim> {
   boxPositions: { x: number, z: number }[] = []
@@ -35,14 +37,12 @@ export class TileGroup extends Group<Tile, TileSim> {
 
   constructor(public grid: GridLayout) {
     // count number of tiles per subgroup
-    const subgroups = grid.tiling.getGeometries().map(geometry => ({
-      n: 0,
-      geometry,
-      material: new THREE.MeshLambertMaterial({
-        color: 0xffff88,
-        flatShading: true,
-      }),
-    }))
+    const subgroups = grid.tiling.shapes
+      .map(shape => extrude(shape))
+      .map(tileExt => ({
+        n: 0,
+        geometry: tileExt,
+      }))
     const subgroupsByFlatIndex: { subgroupIndex: number, indexInSubgroup: number }[] = []
 
     for (const { x, z } of grid.cells()) {
@@ -99,6 +99,12 @@ export class TileGroup extends Group<Tile, TileSim> {
     return result
   }
 
+  build() {
+    super.build()
+    this.resetColors() // set color for all tiles
+    return this
+  }
+
   protected buildMembers() {
     const result = []
     const dummy = new THREE.Object3D()
@@ -111,10 +117,6 @@ export class TileGroup extends Group<Tile, TileSim> {
       dummy.scale.set(this.wdScale, renderHeight, this.wdScale)
       dummy.updateMatrix()
       this.setMemberMatrix(index, dummy.matrix)
-
-      // Set color if generator is present
-      this._updateTileColor(x, z, index)
-
       result.push(this.getTileAtIndex(index))
     }
     return result
@@ -220,8 +222,8 @@ export class TileGroup extends Group<Tile, TileSim> {
         this.setMemberMatrix(index, dummy.matrix)
 
         // Set color if generator is present
-        this._updateTileColor(newX, z, index)
         this._updateTileMember(this.members[index], height)
+        this._updateTileColor(newX, z, index)
       }
     }
     else if (dz !== 0) {
@@ -245,8 +247,8 @@ export class TileGroup extends Group<Tile, TileSim> {
         this.setMemberMatrix(index, dummy.matrix)
 
         // Set color if generator is present
-        this._updateTileColor(x, newZ, index)
         this._updateTileMember(this.members[index], height)
+        this._updateTileColor(x, newZ, index)
       }
     }
 
@@ -272,20 +274,18 @@ export class TileGroup extends Group<Tile, TileSim> {
   }
 
   private _updateTileColor(x: number, z: number, index: number) {
-    if (this.terrainGenerator) {
-      const color = this.terrainGenerator.getTileColor(x, z)
-      if (color) {
-        const [r, g, b] = color
-        this.setInstanceColor(
-          index,
-          new THREE.Color(r / 255, g / 255, b / 255),
-        )
-      }
-    }
+    const isWater = this.members[index].isWater
+    const tileStyle = style.getTileStyle({
+      x, z, terrainGenerator: this.terrainGenerator,
+      land: !isWater, sea: isWater, // support @land and @sea conditions
+    })
+    const [subgroup, indexInSubgroup] = this.subgroupsByFlatIndex[index]
+    const tileMesh = subgroup.mesh as TileMesh
+    tileMesh.setTileStyle(indexInSubgroup, tileStyle)
   }
 }
 
-class TileIm extends InstancedMember implements Tile {
+class TileIm extends TileMeshIm implements Tile {
   private static readonly dummy = new Vector3()
 
   public wavePos: number = 0

@@ -4,13 +4,13 @@
  * Used in main.js to build user interface to control terrain generator settings.
  */
 import * as dat from 'dat.gui'
-import { Config, ConfigParam, NumericParam, OptionParam } from '../configs/config'
+import { Config, ConfigButton, ConfigItem, NumericParam, OptionParam } from '../configs/config'
 
 let _allControls: Record<string, dat.GUIController> = {}
 
 export function showControls(
   config: Config,
-  onChange: (param: ConfigParam) => void,
+  onChange: (param: ConfigItem) => void,
 ) {
   _allControls = {} // flat list of controls
 
@@ -48,7 +48,7 @@ export function showControls(
 function addControls(
   gui: dat.GUI,
   config: Config,
-  onChange: (param: NumericParam | OptionParam) => void,
+  onChange: (param: ConfigItem) => void,
 ) {
   const params = config.params
   for (const key in params) {
@@ -57,7 +57,20 @@ function addControls(
       continue
     }
 
-    if ('options' in entry && Array.isArray(entry.options)) {
+    if ('action' in entry) {
+      // button
+      const buttonItem = entry as ConfigButton
+      const label = entry.label || camelCaseToLabel(key)
+      const obj = { [label]: async () => {
+        await buttonItem.action()
+        if (!buttonItem.readonly) {
+          onChange(buttonItem)
+        }
+      } }
+      gui.add(obj, label)
+    }
+
+    else if ('options' in entry && Array.isArray(entry.options)) {
       // Dropdown (option param)
       const op = entry as OptionParam
       const labelVals = {}
@@ -69,11 +82,9 @@ function addControls(
           labelVals[opt.label || opt.value] = opt.value
         }
       }
-      const ctrl = gui.add(
-        op,
-        'value',
-        labelVals,
-      ).name(op.label || camelCaseToLabel(key))
+      const ctrl = gui.add(op, 'value', labelVals)
+        .name(op.label || camelCaseToLabel(key))
+        .listen()
 
       // Find the select element inside the controller
       const select = ctrl.domElement.querySelector('select')

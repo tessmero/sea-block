@@ -2,14 +2,22 @@
  * @file grid-config.ts
  *
  * Configuration for grid tile shape.
+ * Also used for debugging and style options.
  */
 
-import { Config, OptionParam } from './config'
+import { CustomStyle } from '../gfx/styles/custom-style'
+import { allStyles } from '../gfx/styles/styles-list'
+import { allTilings } from '../grid-logic/tilings/tiling-util'
+import { style } from '../main'
+import { Config, ConfigButton, OptionParam } from './config'
 
 // flat config types
 type GridParams = {
   tiling: OptionParam
   debug: OptionParam
+  style: OptionParam
+  copyStyle: ConfigButton
+  pasteStyle: ConfigButton
 }
 
 export interface GridConfig extends Config {
@@ -20,18 +28,17 @@ export type GridValues = {
   [K in keyof GridParams]: string
 }
 
+function randChoice(options: string[]) {
+  return options[Math.floor(Math.random() * options.length)]
+}
+
 // flat config details
 export const gridConfig: GridConfig = {
   params: {
 
     tiling: {
-      value: 'octagon',
-      options: [
-        'triangle',
-        'square',
-        'hex',
-        'octagon',
-      ],
+      value: randChoice(Object.keys(allTilings)),
+      options: Object.keys(allTilings),
       resetOnChange: 'full',
     },
 
@@ -41,9 +48,30 @@ export const gridConfig: GridConfig = {
       options: [
         { value: 'none', tooltip: 'No debugging. Mouse input controls player movement' },
         { value: 'pick-direction', tooltip: 'Show picked point at sea level used for movement direction' },
-        { value: 'pick-neighbors', tooltip: 'Show picked tile and neighboring tiles' },
-        { value: 'pick-normal', tooltip: 'Show picked tile and normal vector' },
+        { value: 'pick-tile', tooltip: 'Show picked tile, neighboring tiles, and normal vector' },
       ],
+      hidden: true,
+    },
+
+    style: {
+      value: randChoice(['default', 'tron', 'pastel', '???']),
+      options: Object.keys(allStyles),
+    },
+
+    copyStyle: {
+      value: 'Copy Style',
+      action: () => navigator.clipboard.writeText(
+        JSON.stringify(style.css, null, 2)),
+      readonly: true,
+    },
+
+    pasteStyle: {
+      value: 'Paste Style',
+      action: async () => {
+        const text = await navigator.clipboard.readText()
+        CustomStyle.setCustomCss(text)
+        gridConfig.params.style.value = 'custom'
+      },
     },
   },
 }

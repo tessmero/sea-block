@@ -14,19 +14,24 @@ export type Annotatable = {
 // nestable liss of named parameters
 export interface Config extends Annotatable {
   params: {
-    [key: string]: ConfigParam | Config
+    [key: string]: ConfigItem | Config
   }
 }
 
 // base type for bottom-level items
-export interface BaseParam extends Annotatable {
+export interface ConfigItem extends Annotatable {
   value: number | string
   resetOnChange?: 'physics' | 'full'
   hidden?: boolean
 }
 
+export interface ConfigButton extends ConfigItem {
+  action: () => void
+  readonly?: boolean
+}
+
 // numeric slider
-export interface NumericParam extends BaseParam {
+export interface NumericParam extends ConfigItem {
   value: number
   min?: number
   max?: number
@@ -34,11 +39,9 @@ export interface NumericParam extends BaseParam {
 }
 
 // dropdown list
-export interface OptionParam extends BaseParam {
+export interface OptionParam extends ConfigItem {
   value: string
   options: Option[]
 }
 
 export type Option = | string | { value: string, label?: string, tooltip?: string }
-
-export type ConfigParam = BaseParam | NumericParam | OptionParam

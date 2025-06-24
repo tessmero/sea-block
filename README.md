@@ -36,7 +36,7 @@ Check for syntax errors and enforce strong typing.
 npx tsc
 ```
 
-Enforce coding style preferences defined in `estlint.config.js`
+Enforce coding style preferences defined in `estlint.config.ts`
 
 ```
 npx eslint 

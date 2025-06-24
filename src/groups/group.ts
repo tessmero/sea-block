@@ -1,10 +1,17 @@
 /**
  * @file group.ts
  *
- * Base class for repeated objects that have physics and graphics.
+ * Base class for SphereGroup and TileGroup,
+ * repeated objects that have physics and graphics.
+ *
+ * A group has one or more subgroups.
+ * Subgroups are used for tilings that have multiple tile shapes,
+ * for example the octagon tiling has two subgroups (square and octagon).
  */
+import { TileMesh } from '../gfx/tile-mesh'
 import { Simulation } from '../physics/simulation'
 import * as THREE from 'three'
+import { Subgroup, SubgroupParams } from './subgroup'
 
 // parameters to construct group for type T (Sphere or Tile)
 type GroupParams<T, S extends Simulation<T>> = {
@@ -14,55 +21,6 @@ type GroupParams<T, S extends Simulation<T>> = {
     subgroupIndex: number
     indexInSubgroup: number
   }[]
-}
-
-export type SubgroupParams = {
-  n: number // number of members
-  geometry: THREE.BufferGeometry // shape to render
-  material: THREE.Material // material to render
-}
-
-class Subgroup {
-  private readonly n: number
-  public readonly mesh: THREE.InstancedMesh
-  public readonly colors: Float32Array
-  public readonly memberIds: number[] = []
-
-  constructor(
-    params: SubgroupParams,
-    public readonly offset: number,
-  ) {
-    this.mesh = new THREE.InstancedMesh(
-      params.geometry,
-      params.material,
-      params.n,
-    )
-
-    this.n = params.n
-
-    // Add per-instance color attribute
-    this.colors = new Float32Array(this.n * 3)
-    this.mesh.instanceColor = new THREE.InstancedBufferAttribute(
-      this.colors,
-      3,
-    )
-
-    const defaultColor = new THREE.Color(0xffffff)
-    for (let i = 0; i < this.n; i++) {
-      this.colors[i * 3 + 0] = defaultColor.r
-      this.colors[i * 3 + 1] = defaultColor.g
-      this.colors[i * 3 + 2] = defaultColor.b
-    }
-    this.mesh.instanceColor.needsUpdate = true
-  }
-
-  setInstanceColor(index: number, color: THREE.Color | string | number) {
-    const c = new THREE.Color(color)
-    this.colors[index * 3 + 0] = c.r
-    this.colors[index * 3 + 1] = c.g
-    this.colors[index * 3 + 2] = c.b
-    this.mesh.instanceColor!.needsUpdate = true
-  }
 }
 
 export abstract class Group<T, S extends Simulation<T>> {
@@ -97,19 +55,10 @@ export abstract class Group<T, S extends Simulation<T>> {
   // update gfx meshes, called just before render
   protected abstract updateMesh(): void
 
-  setInstanceColor(index: number, color: THREE.Color | string | number) {
+  setInstanceColor(index: number, color: THREE.Color) {
     // pick subgroup based on index
     const [subgroup, indexInSubgroup] = this.subgroupsByFlatIndex[index]
     subgroup.setInstanceColor(indexInSubgroup, color)
-  }
-
-  setAllInstanceColors(colors: (THREE.Color | string | number)[]) {
-    for (let i = 0; i < colors.length; i++) {
-      this.setInstanceColor(
-        i,
-        colors[i],
-      )
-    }
   }
 
   protected setMemberMatrix(index: number, matrix: THREE.Matrix4) {
@@ -133,9 +82,14 @@ export abstract class Group<T, S extends Simulation<T>> {
 
   private _needsUpdate() {
     this.subgroups.forEach(({ mesh }) => {
-      mesh.instanceMatrix.needsUpdate = true
-      mesh.instanceColor.needsUpdate = true
-      mesh.frustumCulled = false
+      if (mesh instanceof THREE.InstancedMesh) {
+        mesh.instanceMatrix.needsUpdate = true
+        mesh.instanceColor.needsUpdate = true
+        mesh.frustumCulled = false
+      }
+      else {
+        (mesh as TileMesh).queueUpdate()
+      }
     })
   }
 }
@@ -153,7 +107,13 @@ export class InstancedMember {
     subgroup: Subgroup,
     protected readonly indexInSubgroup: number,
   ) {
-    this.posArray = subgroup.mesh.instanceMatrix.array
+    if (subgroup.mesh instanceof THREE.InstancedMesh) {
+      this.posArray = subgroup.mesh.instanceMatrix.array
+    }
+    else {
+      throw new Error('should use TileMeshIm for subgroup with TileMesh')
+      // this.posArray = (subgroup.mesh as TileMesh).posArray
+    }
     this.offset = indexInSubgroup * 16 + 12 // start of position in three.js mesh array
   }
 
