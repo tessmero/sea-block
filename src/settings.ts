@@ -13,16 +13,8 @@ export const TILE_DILATE = 0 // expand grid tile by fraction of width and depth
 
 // camera relative to player x/z position
 const camScale = 25
-export const CAMERA: Vector3 = new Vector3(
-  camScale,
-  camScale,
-  camScale,
-)
-export const CAMERA_LOOK_AT: Vector3 = new Vector3(
-  0,
-  10,
-  0,
-)
+export const CAMERA: Vector3 = new Vector3(camScale, camScale, camScale)
+export const CAMERA_LOOK_AT: Vector3 = new Vector3(0, 10, 0)
 export const DEBUG_PICKED_POINT: boolean = false // show sphere at mouse target
 
 export const MOUSE_DEADZONE = 50 // (px) center of screen with zero force

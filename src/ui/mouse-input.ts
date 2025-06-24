@@ -40,9 +40,9 @@ export function processMouse(params: ProcessMousePArams): void {
 
   const { terrain, player, camera, debugElems } = params
 
-  for (const subgoup of terrain.subgroups) {
-    subgoup.mesh.computeBoundingSphere()
-  }
+  // for (const subgoup of terrain.subgroups) {
+  //   subgoup.mesh.computeBoundingSphere()
+  // }
 
   // Plane at camera target y
   mouseVec.x = (mouseX / window.innerWidth) * 2 - 1
@@ -72,23 +72,23 @@ export function processMouse(params: ProcessMousePArams): void {
   }
 
   // pick tile on terrain
-  let pickedMemberId = null
-  let closest = null
-  for (const subgroup of terrain.subgroups) {
-    const intersects = raycaster.intersectObject(subgroup.mesh)
-    for (const picked of intersects) {
-      if (picked.instanceId >= 0) {
-      // If this is the closest so far, store it
-        if (!closest || picked.distance < closest.distance) {
-          closest = picked
-          pickedMemberId = subgroup.memberIds[picked.instanceId]
-        }
-      }
-    }
-  }
+  const pickedMemberId = null
+  const closest = null
+  // for (const subgroup of terrain.subgroups) {
+  //   const intersects = raycaster.intersectObject(subgroup.mesh)
+  //   for (const picked of intersects) {
+  //     if (picked.instanceId >= 0) {
+  //     // If this is the closest so far, store it
+  //       if (!closest || picked.distance < closest.distance) {
+  //         closest = picked
+  //         pickedMemberId = subgroup.memberIds[picked.instanceId]
+  //       }
+  //     }
+  //   }
+  // }
 
   // update debug elements
-  showDebugTiles = getGridValues().debug === 'pick-neighbors'
+  showDebugTiles = getGridValues().debug === 'pick-tile'
   debugElems.directionPoint.position.copy(intersection)
   if (pickedMemberId) {
     const grid = terrain.grid

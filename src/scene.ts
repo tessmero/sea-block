@@ -11,6 +11,7 @@ import { GRID_DETAIL } from './settings'
 import { MichaelConfig } from './configs/michael-config'
 import { MichaelTG } from './generators/michael-tg'
 import { getGridValues } from './configs/grid-config'
+import { style } from './main'
 
 export class DebugElems {
   public directionPoint: THREE.Object3D
@@ -23,7 +24,7 @@ export class DebugElems {
     const gridVals = getGridValues()
     this.directionPoint.visible = gridVals.debug === 'pick-direction'
 
-    const showNeighbors = gridVals.debug === 'pick-neighbors'
+    const showNeighbors = gridVals.debug === 'pick-tile'
     this.center.visible = showNeighbors
     this.adjacent.forEach((e) => {
       e.visible = e.visible && showNeighbors
@@ -32,7 +33,7 @@ export class DebugElems {
       e.visible = e.visible && showNeighbors
     })
 
-    this.normalArrow.visible = gridVals.debug === 'pick-normal'
+    this.normalArrow.visible = gridVals.debug === 'pick-tile'
   }
 }
 
@@ -51,7 +52,7 @@ export function buildScene(config: MichaelConfig): {
 
   // Scene setup
   const scene = new THREE.Scene()
-  scene.background = new THREE.Color(0xaaccff)
+  scene.background = style.background
 
   // Lights
   scene.add(new THREE.AmbientLight(0xffffff, 1))
@@ -63,11 +64,11 @@ export function buildScene(config: MichaelConfig): {
   const terrain = new TileGroup(grid)
   terrain.terrainGenerator = new MichaelTG(config)
   terrain.build()
-  terrain.subgroups.forEach(subgroup => scene.add(subgroup.mesh))
+  terrain.subgroups.forEach(subgroup => subgroup.addToScene(scene))
 
   // Create spheres
   const sphereGroup = new SphereGroup(10, terrain).build()
-  sphereGroup.subgroups.forEach(subgroup => scene.add(subgroup.mesh))
+  sphereGroup.subgroups.forEach(subgroup => subgroup.addToScene(scene))
 
   // small debug spheres
   const n = 10, rad = 0.5

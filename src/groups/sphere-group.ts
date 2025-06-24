@@ -28,7 +28,7 @@ export class SphereGroup extends Group<Sphere, SphereSim> {
       subgroups: [{
         n,
         geometry: new THREE.SphereGeometry(SPHERE_RADIUS, 16, 16),
-        material: new THREE.MeshLambertMaterial({ color: 0xffffff }),
+        // material: new THREE.MeshLambertMaterial({ color: 0xffffff }),
       }],
       subgroupsByFlatIndex: Array.from({ length: n }, (_, i) => i + 1).map(i => ({
         subgroupIndex: 0,

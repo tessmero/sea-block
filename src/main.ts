@@ -17,8 +17,12 @@ import { MichaelTG } from './generators/michael-tg'
 import { buildScene, DebugElems } from './scene'
 import { showControls } from './ui/controls-gui'
 import { initMouseListeners, processMouse } from './ui/mouse-input'
-import { ConfigParam } from './configs/config'
+import { getStyle } from './gfx/styles/styles-list'
+import { CssStyle } from './gfx/styles/css-style'
+import { ConfigItem } from './configs/config'
 import { gridConfig } from './configs/grid-config'
+
+export let style: CssStyle = getStyle(gridConfig.params.style.value)
 
 let grid: GridLayout
 let scene: THREE.Scene
@@ -81,7 +85,7 @@ function reset() {
 }
 reset()
 
-function onCtrlChange(param: ConfigParam) {
+function onCtrlChange(param: ConfigItem) {
   if (param.resetOnChange === 'full') {
     reset() // complete reset
   }
@@ -91,6 +95,8 @@ function onCtrlChange(param: ConfigParam) {
   }
   else {
     // soft reset
+    style = getStyle(gridConfig.params.style.value)
+    scene.background = style.background
     terrain.resetColors()
     debugElems.refresh()
   }

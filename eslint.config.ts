@@ -13,13 +13,17 @@ import jsdoc from 'eslint-plugin-jsdoc'
 import eslintPluginSb from './eslint-plugin-sb'
 
 export default [
-  { ignores: ['**/node_modules/', 'dist/*'] },
+  {
+    plugins: { jsdoc, eslintPluginSb },
+  },
+  {
+    ignores: ['**/node_modules/', 'dist/*'],
+  },
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
   stylistic.configs.recommended,
   jsdoc.configs['flat/recommended-typescript'],
   {
-    plugins: { jsdoc, eslintPluginSb },
     rules: {
 
       // allow unused variables starting with underscores
@@ -52,6 +56,15 @@ export default [
       // // require a description in JSDoc blocks
       // 'jsdoc/require-description': 'warn',
 
+    },
+  },
+  {
+    // extra restrictions for graphics
+    files: ['src/gfx/**/*.ts'],
+    rules: {
+
+      // disallow import * as THREE from 'three'
+      'eslintPluginSb/no-three-namespace-import': 'warn',
     },
   },
 ]
