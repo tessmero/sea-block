@@ -4,7 +4,7 @@
  * Base class for generators that output terrain heights.
  */
 
-import { Config, ConfigParam } from '../configs/config'
+import { Config, ConfigItem } from '../configs/config'
 
 export type RGBA = [number, number, number, number]
 
@@ -29,7 +29,7 @@ export abstract class TerrainGenerator<T extends Config> {
     this._parseFlatConfig(this.config)
   }
 
-  private _parseFlatConfig(config: Config | ConfigParam, key = '') {
+  private _parseFlatConfig(config: Config | ConfigItem, key = '') {
     if ('value' in config) {
       this._flatConfigValues[key] = config.value as number
     }
