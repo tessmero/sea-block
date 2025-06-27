@@ -12,5 +12,7 @@ export type PhysicsValues = LeafKeyValueMap<PhysicsConfigTree>
 export abstract class Simulation<T> {
   abstract step(members: T[]): void
 
-  protected readonly physicsValues: PhysicsValues = physicsConfig.flatValues
+  protected get physicsValues(): PhysicsValues {
+    return physicsConfig.flatValues
+  }
 }
