@@ -6,13 +6,13 @@
 import { GridIndex } from './grid-index'
 import { TILE_DILATE } from '../settings'
 import { gridConfig } from '../configs/grid-config'
-import { getTiling } from './tilings/tiling-util'
+import { getTiling } from './tilings/tilings-list'
 import { Tiling } from './tilings/tiling'
 
 export class GridLayout extends GridIndex {
   private readonly _midX = this.width / 2
   private readonly _midZ = this.depth / 2
-  public readonly tiling: Tiling = getTiling(gridConfig.params.tiling.value)
+  public readonly tiling: Tiling = getTiling(gridConfig.flatValues.tiling)
 
   /**
    * Convert a world position (x, z) to grid coordinates (tileX, tileZ)

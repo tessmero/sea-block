@@ -1,5 +1,5 @@
 /**
- * @file tiling-util.ts
+ * @file tilings-list.ts
  *
  * Helper to lookup tiling subclass by name.
  */

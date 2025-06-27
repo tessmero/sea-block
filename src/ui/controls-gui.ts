@@ -4,31 +4,23 @@
  * Used in main.js to build user interface to control terrain generator settings.
  */
 import * as dat from 'dat.gui'
-import { Config, ConfigButton, ConfigItem, NumericParam, OptionParam } from '../configs/config'
+import { ConfigTree, ConfigButton, ConfigItem, NumericParam, OptionParam } from '../configs/config-tree'
 
 let _allControls: Record<string, dat.GUIController> = {}
 
+let gui: dat.GUI
+
 export function showControls(
-  config: Config,
+  config: ConfigTree,
   onChange: (param: ConfigItem) => void,
 ) {
   _allControls = {} // flat list of controls
 
-  // add controls container to document
-  const gui = new dat.GUI()
-
-  addButton(gui,
-    'tessmero/sea-block (Viewer)',
-    () => {
-      window.open('https://github.com/tessmero/sea-block', '_blank')
-    },
-  )
-  addButton(gui,
-    'Michael2-3B/Procedural-Perlin-Terrain',
-    () => {
-      window.open('https://github.com/Michael2-3B/Procedural-Perlin-Terrain', '_blank')
-    },
-  )
+  // add controls container to document and replace any existing
+  if (gui) {
+    gui.destroy()
+  }
+  gui = new dat.GUI()
 
   // build folders and items for terrain generator config
   addControls(
@@ -47,12 +39,12 @@ export function showControls(
 
 function addControls(
   gui: dat.GUI,
-  config: Config,
-  onChange: (param: ConfigItem) => void,
+  config: ConfigTree,
+  onChange: (param: ConfigItem | ConfigButton) => void,
 ) {
-  const params = config.params
-  for (const key in params) {
-    const entry = params[key]
+  const children = config.children
+  for (const key in children) {
+    const entry = children[key]
     if ('hidden' in entry && entry.hidden) {
       continue
     }
@@ -63,7 +55,7 @@ function addControls(
       const label = entry.label || camelCaseToLabel(key)
       const obj = { [label]: async () => {
         await buttonItem.action()
-        if (!buttonItem.readonly) {
+        if (!buttonItem.noEffect) {
           onChange(buttonItem)
         }
       } }
@@ -126,14 +118,14 @@ function addControls(
     }
     else {
       // Nested group
-      const folder = gui.addFolder(camelCaseToLabel(key))
+      const folder = gui.addFolder(entry.label || camelCaseToLabel(key))
       addTooltip(
         folder,
         entry.tooltip,
       )
       addControls(
         folder,
-        entry as Config,
+        entry as ConfigTree,
         onChange,
       )
     }
@@ -170,8 +162,3 @@ function camelCaseToLabel(input: string): string {
 // console.log(camelCaseToLabel('gravityForce')); // "Gravity Force"
 // console.log(camelCaseToLabel('WAVE_AMPLITUDE')); // "Wave Amplitude"
 // console.log(camelCaseToLabel('waveAmplitude')); // "Wave Amplitude"
-
-function addButton(gui: dat.GUI, label: string, action: () => void) {
-  const obj = { [label]: action }
-  gui.add(obj, label)
-}

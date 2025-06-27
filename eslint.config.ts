@@ -14,7 +14,7 @@ import eslintPluginSb from './eslint-plugin-sb'
 
 export default [
   {
-    plugins: { jsdoc, eslintPluginSb },
+    plugins: { jsdoc, sb: eslintPluginSb },
   },
   {
     ignores: ['**/node_modules/', 'dist/*'],
@@ -40,7 +40,7 @@ export default [
       'jsdoc/require-jsdoc': 'off',
 
       // require jsdoc descriptions start with uppercase, end with period
-      'jsdoc/require-description-complete-sentence': ['off', 'warn', { tags: ['param'] }],
+      'jsdoc/require-description-complete-sentence': ['off'], // 'warn', { tags: ['param'] }],
 
       // exclude sentence check for just @file (replaced by file-header)
       // 'jsdoc/require-description-complete-sentence': ['off', { tags: ['file'] }],
@@ -49,13 +49,16 @@ export default [
       'jsdoc/require-file-overview': 'warn',
 
       // Require filename and description following local rule
-      'eslintPluginSb/file-header': 'error',
+      'sb/file-header': 'error',
 
       'no-console': 'warn', // warning for console.log and console.error
 
       // // require a description in JSDoc blocks
       // 'jsdoc/require-description': 'warn',
 
+      // // disallow assigning UPPER_SNAKE_CASE variables
+      // 'sb/no-upper-snake-case-declare': 'error',
+      // 'sb/no-upper-snake-case-assign': 'error',
     },
   },
   {
@@ -64,7 +67,7 @@ export default [
     rules: {
 
       // disallow import * as THREE from 'three'
-      'eslintPluginSb/no-three-namespace-import': 'warn',
+      'sb/no-three-namespace-import': 'warn',
     },
   },
 ]

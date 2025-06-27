@@ -4,7 +4,8 @@
  * Default values and controls heirarchy for physics settings.
  */
 
-import { Config, NumericParam } from './config'
+import { ConfigTree, NumericParam } from './config-tree'
+import { ConfigView } from './config-view'
 
 const PLAYER_ACCEL = 8e-4 // strength of user direction force
 const GRAVITY = 5e-4
@@ -28,35 +29,29 @@ const BUOYANT_FORCE = 2e-4 // tile pushes sphere up
 const PRESSURE_FORCE = 4e-4 // sphere pushes tile down
 
 // flat config types
-type PhysicsParams = {
-  PLAYER_ACCEL: NumericParam
-  GRAVITY: NumericParam
-  AIR_RESISTANCE: NumericParam
-  RESTITUTION: NumericParam
-  SPHERE_COHESION: NumericParam
-  SPHERE_STIFFNESS: NumericParam
-  SPHERE_DAMPING: NumericParam
-  WATER_FRICTION: NumericParam
-  WATER_SPRING: NumericParam
-  WATER_CENTERING: NumericParam
-  WATER_DAMPING: NumericParam
-  WAVE_AMPLITUDE: NumericParam
-  BUOYANT_FORCE: NumericParam
-  PRESSURE_FORCE: NumericParam
-}
-
-export interface PhysicsConfig extends Config {
-  params: PhysicsParams
-}
-
-export type PhysicsValues = {
-  [K in keyof PhysicsParams]: number
+export interface PhysicsConfigTree extends ConfigTree {
+  children: {
+    PLAYER_ACCEL: NumericParam
+    GRAVITY: NumericParam
+    AIR_RESISTANCE: NumericParam
+    RESTITUTION: NumericParam
+    SPHERE_COHESION: NumericParam
+    SPHERE_STIFFNESS: NumericParam
+    SPHERE_DAMPING: NumericParam
+    WATER_FRICTION: NumericParam
+    WATER_SPRING: NumericParam
+    WATER_CENTERING: NumericParam
+    WATER_DAMPING: NumericParam
+    WAVE_AMPLITUDE: NumericParam
+    BUOYANT_FORCE: NumericParam
+    PRESSURE_FORCE: NumericParam
+  }
 }
 
 // flat config details
-export const physicsConfig: PhysicsConfig = {
+const physicsConfigTree: PhysicsConfigTree = {
   tooltip: 'settings for moving sphere and waves',
-  params: {
+  children: {
     PLAYER_ACCEL: { value: PLAYER_ACCEL,
       min: 1e-4,
       max: 5e-3,
@@ -127,15 +122,9 @@ export const physicsConfig: PhysicsConfig = {
 }
 
 // all physics settings trigger a soft reset (reload constants for sims)
-for (const key in physicsConfig.params) {
-  physicsConfig.params[key].resetOnChange = 'physics'
+for (const key in physicsConfigTree.children) {
+  physicsConfigTree.children[key].resetOnChange = 'physics'
 }
 
-// called in simulation constructor
-export function getPhysicsValues(): PhysicsValues {
-  const values = {} as PhysicsValues
-  for (const key in physicsConfig.params) {
-    values[key] = physicsConfig.params[key].value
-  }
-  return values
-}
+// export usable config
+export const physicsConfig = new ConfigView(physicsConfigTree)
