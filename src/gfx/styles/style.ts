@@ -5,13 +5,12 @@
  */
 
 import { Color } from 'three'
-import { TerrainGenerator } from '../../generators/terrain-generator'
-import { Config } from '../../configs/config'
+import { GeneratedTile } from '../../generators/terrain-generator'
 
 export type TileParams = {
   x: number
   z: number
-  terrainGenerator: TerrainGenerator<Config>
+  generatedTile: GeneratedTile
 
   // used as @condition in css
   sea?: boolean

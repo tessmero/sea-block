@@ -1,7 +1,7 @@
 /**
  * @file styles-list.ts
  *
- * Named color themes as css.
+ * Named color themes. .
  */
 
 import { CssStyle } from './css-style'
@@ -9,9 +9,7 @@ import { CustomStyle } from './custom-style'
 import { HueStyle } from './hue-style'
 
 export const allStyles = {
-  'default': {
-    sides: { lightness: '50%' },
-  },
+  'default': {}, // replaced with terrain generator style
   'tron': {
     'background': { value: '#000' },
     'top@land': { saturation: 0 },
@@ -23,8 +21,8 @@ export const allStyles = {
     'background': { value: '#ddd' },
     'top@land': { saturation: 0.2, lightness: '+.2' },
     'sides@land': { saturation: 0.2, lightness: '+.1' },
-    'top@sea': { saturation: 0.5 },
-    'sides@sea': { saturation: 0.5, lightness: -0.05 },
+    'top@sea': { saturation: 0.5, lightness: 0.6 },
+    'sides@sea': { saturation: 0.5, lightness: 0.5 },
   },
   '???': HueStyle, // random hue rotation
   'custom': CustomStyle, // style pasted by user

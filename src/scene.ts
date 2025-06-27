@@ -8,10 +8,8 @@ import { TileGroup } from './groups/tile-group'
 import { SphereGroup } from './groups/sphere-group'
 import { GridLayout } from './grid-logic/grid-layout'
 import { GRID_DETAIL } from './settings'
-import { MichaelConfig } from './configs/michael-config'
-import { MichaelTG } from './generators/michael-tg'
-import { getGridValues } from './configs/grid-config'
 import { style } from './main'
+import { gridConfig } from './configs/grid-config'
 
 export class DebugElems {
   public directionPoint: THREE.Object3D
@@ -21,10 +19,10 @@ export class DebugElems {
   public normalArrow: THREE.ArrowHelper
 
   public refresh(): void {
-    const gridVals = getGridValues()
-    this.directionPoint.visible = gridVals.debug === 'pick-direction'
+    const { debug } = gridConfig.flatValues
+    this.directionPoint.visible = debug === 'pick-direction'
 
-    const showNeighbors = gridVals.debug === 'pick-tile'
+    const showNeighbors = debug === 'pick-tile'
     this.center.visible = showNeighbors
     this.adjacent.forEach((e) => {
       e.visible = e.visible && showNeighbors
@@ -33,11 +31,11 @@ export class DebugElems {
       e.visible = e.visible && showNeighbors
     })
 
-    this.normalArrow.visible = gridVals.debug === 'pick-tile'
+    this.normalArrow.visible = debug === 'pick-tile'
   }
 }
 
-export function buildScene(config: MichaelConfig): {
+export function buildScene(): {
   grid: GridLayout
   terrain: TileGroup
   sphereGroup: SphereGroup
@@ -45,10 +43,7 @@ export function buildScene(config: MichaelConfig): {
   debugElems: DebugElems
 } {
   // Grid configuration
-  const grid = new GridLayout(
-    GRID_DETAIL,
-    GRID_DETAIL,
-  )
+  const grid = new GridLayout(GRID_DETAIL, GRID_DETAIL)
 
   // Scene setup
   const scene = new THREE.Scene()
@@ -62,7 +57,6 @@ export function buildScene(config: MichaelConfig): {
 
   // Terrain
   const terrain = new TileGroup(grid)
-  terrain.terrainGenerator = new MichaelTG(config)
   terrain.build()
   terrain.subgroups.forEach(subgroup => subgroup.addToScene(scene))
 

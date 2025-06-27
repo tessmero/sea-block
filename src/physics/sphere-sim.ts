@@ -3,12 +3,11 @@
  *
  * Physics simulation for spheres that collide with terrain and other spheres.
  */
-import { Simulation } from './simulation'
+import { PhysicsValues, Simulation } from './simulation'
 import { Sphere } from '../sphere'
 import { Tile } from '../tile'
 import { TileGroup } from '../groups/tile-group'
 import { Vector3 } from 'three'
-import { PhysicsValues } from '../configs/physics-config'
 import { SPHERE_RADIUS, COLLISION_KERNEL_RADIUS } from '../settings'
 import { STEP_DURATION } from '../settings'
 
@@ -275,6 +274,7 @@ function checkBoxSphereCollision(
     ]
     const minDist = Math.min(...dists)
     const axis = dists.indexOf(minDist)
+
     adjustedPosition = sphere.clone()
     if (axis === 0) adjustedPosition.x = minX - r
     else if (axis === 1) adjustedPosition.x = maxX + r

@@ -2,21 +2,23 @@
  * @file base-style.ts
  *
  * Defines the base background/sky color and provides tile
- * colors directly from the terrain generator.
+ * colors directly from generated tiles.
+ *
+ * The terrain generator may also have a default css style
+ * which is applied on top of these outputs using CssStyle.
  */
 
 import { Color } from 'three'
-import { Style, TileStyle } from './style'
+import { Style, TileParams, TileStyle } from './style'
 
 export class BaseStyle extends Style {
   background = new Color(0xaaccff)
 
-  getTileStyle(params): TileStyle {
-    const tgColor = params.terrainGenerator.getTileColor(params.x, params.z)
-    const [r, g, b] = tgColor.map(v => v / 255)
+  getTileStyle(params: TileParams): TileStyle {
+    const color = params.generatedTile.color
     return {
-      top: new Color(r, g, b),
-      sides: new Color(r, g, b),
+      top: color.clone(),
+      sides: color.clone(),
     }
   }
 }

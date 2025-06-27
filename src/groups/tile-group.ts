@@ -9,19 +9,16 @@ import { GridLayout } from '../grid-logic/grid-layout'
 import { Group } from './group'
 import { TILE_DILATE } from '../settings'
 import { physicsConfig } from '../configs/physics-config'
-import { TerrainGenerator } from '../generators/terrain-generator'
-import { Config } from '../configs/config'
+import { GeneratedTile } from '../generators/terrain-generator'
 import { Tile } from '../tile'
 import { TileSim } from '../physics/tile-sim'
 import { extrude, TileMesh, TileMeshIm } from '../gfx/tile-mesh'
-import { style } from '../main'
+import { generator, style } from '../main'
 
 export class TileGroup extends Group<Tile, TileSim> {
   boxPositions: { x: number, z: number }[] = []
 
-  terrainGenerator: TerrainGenerator<Config> | null = null
-
-  tileHeights: number[] = []
+  generatedTiles: GeneratedTile[] = []
 
   private _offsetX: number = 0
 
@@ -63,7 +60,7 @@ export class TileGroup extends Group<Tile, TileSim> {
     this.waterLevel = 132
   }
 
-  private getTileAtIndex(idx: number): Tile {
+  private buildTileMember(idx: number): Tile {
     // Get logical x/z for this index
     const { x, z } = this.grid.indexToXZ(idx)
     const deltas = normalNeighborOffsets
@@ -77,25 +74,22 @@ export class TileGroup extends Group<Tile, TileSim> {
       neighbors.push(neighbor)
     }
 
-    const tile = new TileIm(this, idx, neighbors, false)
-    this._updateTileMember(tile, this.tileHeights[idx])
+    const gTile = this.generatedTiles[idx]
+    const tile = new TileIm(this, idx, neighbors, gTile.isWater)
+    // tile.y = 2 * this.generatedTiles[idx].height
 
     return tile
   }
 
-  private getTileHeight(x: number, z: number, index: number): number {
-    let result = 1
-    if (this.terrainGenerator) {
-      result = this.terrainGenerator.getHeight(
-        x * this.noiseScale,
-        z * this.noiseScale,
-      )
-      if (result < this.waterLevel) {
-        result = this.waterLevel
-      }
+  private generateTile(x, z, index): GeneratedTile {
+    const result = generator.getTile(
+      x * this.noiseScale,
+      z * this.noiseScale,
+    )
+    this.generatedTiles[index] = result
+    if (index < this.members.length) {
+      this.members[index].isWater = result.isWater
     }
-
-    this.tileHeights[index] = result
     return result
   }
 
@@ -110,27 +104,27 @@ export class TileGroup extends Group<Tile, TileSim> {
     const dummy = new THREE.Object3D()
     for (const { x, z, index } of this.grid.cells()) {
       const { 'x': wx, 'z': wz } = this.grid.coordToPosition(x, z)
-      const height = this.getTileHeight(x, z, index)
-      const renderHeight = this.getNewRenderHeight(height, index)
+      const gTile = this.generateTile(x, z, index)
+      const renderHeight = this.getNewRenderHeight(gTile, index)
       dummy.position.set(wx, renderHeight / 2, wz)
       this.boxPositions[index] = { x: wx, z: wz }
       dummy.scale.set(this.wdScale, renderHeight, this.wdScale)
       dummy.updateMatrix()
       this.setMemberMatrix(index, dummy.matrix)
-      result.push(this.getTileAtIndex(index))
+      result.push(this.buildTileMember(index))
     }
     return result
   }
 
   updateMesh() {
-    if (this.terrainGenerator && this.sim) {
+    if (this.sim) {
       const dummy = new THREE.Object3D()
       const n = this.n
       for (let i = 0; i < n; i++) {
-        const height = this.tileHeights[i]
-        if (this.terrainGenerator.isWaterTile(height)) {
+        const gTile = this.generatedTiles[i]
+        if (gTile.isWater) {
           const renderHeight = this.getAnimatedRenderHeight(
-            height,
+            gTile.height,
             this.sim.pos[i],
           )
           const box = this.boxPositions[i]
@@ -143,24 +137,24 @@ export class TileGroup extends Group<Tile, TileSim> {
     }
   }
 
-  getNewRenderHeight(tileHeight: number, index: number) {
-    if (this.terrainGenerator && this.terrainGenerator.isWaterTile(tileHeight)) {
+  getNewRenderHeight(tile: GeneratedTile, index: number): number {
+    if (tile.isWater) {
       this.sim.resetTile(index)
       return this.getAnimatedRenderHeight(
-        tileHeight,
+        tile.height,
         this.sim.pos[index],
       )
     }
     else {
       return this.getAnimatedRenderHeight(
-        tileHeight,
+        tile.height,
         0,
       )
     }
   }
 
   getAnimatedRenderHeight(tileHeight: number, wavePos: number) {
-    const amp = physicsConfig.params.WAVE_AMPLITUDE.value
+    const amp = physicsConfig.flatValues.WAVE_AMPLITUDE
     return tileHeight * this.amplitude / 255 + 1 + amp * wavePos
   }
 
@@ -209,8 +203,8 @@ export class TileGroup extends Group<Tile, TileSim> {
         const index = this.grid.xzToIndex(oldX, z)
         this.grid.updateMapping(oldX, z, newX, z)
         const { 'x': worldX, 'z': worldZ } = this.grid.coordToPosition(newX, z)
-        const height = this.getTileHeight(newX, z, index)
-        const renderHeight = this.getNewRenderHeight(height, index)
+        const gTile = this.generateTile(newX, z, index)
+        const renderHeight = this.getNewRenderHeight(gTile, index)
         dummy.position.set(
           worldX,
           renderHeight / 2,
@@ -222,7 +216,6 @@ export class TileGroup extends Group<Tile, TileSim> {
         this.setMemberMatrix(index, dummy.matrix)
 
         // Set color if generator is present
-        this._updateTileMember(this.members[index], height)
         this._updateTileColor(newX, z, index)
       }
     }
@@ -237,17 +230,15 @@ export class TileGroup extends Group<Tile, TileSim> {
           x,
           newZ,
         )
-        const height = this.getTileHeight(x, newZ, index)
-        const renderHeight = this.getNewRenderHeight(height, index)
+        const gTile = this.generateTile(x, newZ, index)
+        const renderHeight = this.getNewRenderHeight(gTile, index)
         dummy.position.set(worldX, renderHeight / 2, worldZ)
         this.boxPositions[index] = { x: worldX, z: worldZ }
-        dummy.scale.set(1, renderHeight, 1,
-        )
+        dummy.scale.set(1, renderHeight, 1)
         dummy.updateMatrix()
         this.setMemberMatrix(index, dummy.matrix)
 
         // Set color if generator is present
-        this._updateTileMember(this.members[index], height)
         this._updateTileColor(x, newZ, index)
       }
     }
@@ -257,27 +248,21 @@ export class TileGroup extends Group<Tile, TileSim> {
   }
 
   public resetColors() {
-    if (this.terrainGenerator) {
-      this.terrainGenerator.loadConfig()
-      const n = this.grid.n
-      for (let i = 0; i < n; i++) {
-        const { x, z } = this.grid.indexToXZ(i)
-        this._updateTileColor(x, z, i)
-      }
-    }
-  }
-
-  private _updateTileMember(tile: Tile, height: number) {
-    if (this.terrainGenerator) {
-      tile.isWater = this.terrainGenerator.isWaterTile(height)
+    generator.refreshConfig()
+    const n = this.grid.n
+    for (let i = 0; i < n; i++) {
+      const { x, z } = this.grid.indexToXZ(i)
+      this._updateTileColor(x, z, i)
     }
   }
 
   private _updateTileColor(x: number, z: number, index: number) {
-    const isWater = this.members[index].isWater
+    const gTile = this.generatedTiles[index]
     const tileStyle = style.getTileStyle({
-      x, z, terrainGenerator: this.terrainGenerator,
-      land: !isWater, sea: isWater, // support @land and @sea conditions
+      x, z, generatedTile: gTile,
+
+      // support @land and @sea conditions in styles
+      land: !gTile.isWater, sea: gTile.isWater,
     })
     const [subgroup, indexInSubgroup] = this.subgroupsByFlatIndex[index]
     const tileMesh = subgroup.mesh as TileMesh

@@ -3,18 +3,14 @@
  *
  * Base class for physics simulations.
  */
-import { getPhysicsValues, PhysicsValues } from '../configs/physics-config'
+
+import { LeafKeyValueMap } from '../configs/config-view'
+import { physicsConfig, PhysicsConfigTree } from '../configs/physics-config'
+
+export type PhysicsValues = LeafKeyValueMap<PhysicsConfigTree>
 
 export abstract class Simulation<T> {
-  protected physicsValues: PhysicsValues
-
-  constructor() {
-    this.resetParams()
-  }
-
-  resetParams() {
-    this.physicsValues = getPhysicsValues()
-  }
-
   abstract step(members: T[]): void
+
+  protected readonly physicsValues: PhysicsValues = physicsConfig.flatValues
 }

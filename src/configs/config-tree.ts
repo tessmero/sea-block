@@ -1,7 +1,7 @@
 /**
- * @file config.ts
+ * @file config-tree.ts
  *
- * Base types for configurations that can be shown as
+ * Base types for nestable configurations that can be shown as
  * folders and items in user interface.
  */
 
@@ -11,11 +11,13 @@ export type Annotatable = {
   tooltip?: string
 }
 
-// nestable liss of named parameters
-export interface Config extends Annotatable {
-  params: {
-    [key: string]: ConfigItem | Config
-  }
+// nestable list of named parameters
+export interface ConfigTree extends Annotatable {
+  children: ConfigChildren
+}
+
+export type ConfigChildren = {
+  [key: string]: ConfigButton | ConfigItem | ConfigTree
 }
 
 // base type for bottom-level items
@@ -25,9 +27,9 @@ export interface ConfigItem extends Annotatable {
   hidden?: boolean
 }
 
-export interface ConfigButton extends ConfigItem {
+export interface ConfigButton extends Annotatable {
   action: () => void
-  readonly?: boolean
+  noEffect?: boolean // true for buttons that don't change anything
 }
 
 // numeric slider
@@ -44,4 +46,8 @@ export interface OptionParam extends ConfigItem {
   options: Option[]
 }
 
-export type Option = | string | { value: string, label?: string, tooltip?: string }
+export type Option = string | AnnotatedOption
+
+export interface AnnotatedOption extends Annotatable {
+  value: string
+}

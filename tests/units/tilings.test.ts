@@ -5,7 +5,7 @@
  */
 
 import { equal, ok } from 'assert'
-import { allTilings, getTiling } from '../../src/grid-logic/tilings/tiling-util'
+import { allTilings, getTiling } from '../../src/grid-logic/tilings/tilings-list'
 import { Tiling } from '../../src/grid-logic/tilings/tiling'
 
 type XZ = { x: number, z: number }

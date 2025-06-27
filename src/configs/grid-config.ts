@@ -5,27 +5,24 @@
  * Also used for debugging and style options.
  */
 
+import { allGenerators } from '../generators/generators-list'
 import { CustomStyle } from '../gfx/styles/custom-style'
 import { allStyles } from '../gfx/styles/styles-list'
-import { allTilings } from '../grid-logic/tilings/tiling-util'
+import { allTilings } from '../grid-logic/tilings/tilings-list'
 import { style } from '../main'
-import { Config, ConfigButton, OptionParam } from './config'
+import { ConfigButton, ConfigTree, OptionParam } from './config-tree'
+import { ConfigView } from './config-view'
 
 // flat config types
-type GridParams = {
-  tiling: OptionParam
-  debug: OptionParam
-  style: OptionParam
-  copyStyle: ConfigButton
-  pasteStyle: ConfigButton
-}
-
-export interface GridConfig extends Config {
-  params: GridParams
-}
-
-export type GridValues = {
-  [K in keyof GridParams]: string
+interface GridConfigTree extends ConfigTree {
+  children: {
+    generator: OptionParam
+    tiling: OptionParam
+    debug: OptionParam
+    style: OptionParam
+    copyStyle: ConfigButton
+    pasteStyle: ConfigButton
+  }
 }
 
 function randChoice(options: string[]) {
@@ -33,8 +30,14 @@ function randChoice(options: string[]) {
 }
 
 // flat config details
-export const gridConfig: GridConfig = {
-  params: {
+const gridConfigTree: GridConfigTree = {
+  children: {
+
+    generator: {
+      value: randChoice(Object.keys(allGenerators)),
+      options: Object.keys(allGenerators),
+      resetOnChange: 'full',
+    },
 
     tiling: {
       value: randChoice(Object.keys(allTilings)),
@@ -59,28 +62,22 @@ export const gridConfig: GridConfig = {
     },
 
     copyStyle: {
-      value: 'Copy Style',
+      label: 'Copy Style',
       action: () => navigator.clipboard.writeText(
         JSON.stringify(style.css, null, 2)),
-      readonly: true,
+      noEffect: true,
     },
 
     pasteStyle: {
-      value: 'Paste Style',
+      label: 'Paste Style',
       action: async () => {
         const text = await navigator.clipboard.readText()
         CustomStyle.setCustomCss(text)
-        gridConfig.params.style.value = 'custom'
+        gridConfigTree.children.style.value = 'custom'
       },
     },
   },
 }
 
-// called in scene debugElems.refresh
-export function getGridValues(): GridValues {
-  const values = {} as GridValues
-  for (const key in gridConfig.params) {
-    values[key] = gridConfig.params[key].value
-  }
-  return values
-}
+// usable config object
+export const gridConfig = new ConfigView(gridConfigTree)
