@@ -13,17 +13,18 @@ import { SphereGroup } from './groups/sphere-group'
 import { Sphere } from './sphere'
 import { PIXEL_SCALE, CAMERA, CAMERA_LOOK_AT, STEP_DURATION } from './settings'
 import { physicsConfig } from './configs/physics-config'
-import { MichaelTG } from './generators/michael-tg'
 import { buildScene, DebugElems } from './scene'
 import { showControls } from './ui/controls-gui'
 import { initMouseListeners, processMouse } from './ui/mouse-input'
 import { getStyle } from './gfx/styles/styles-list'
 import { CssStyle } from './gfx/styles/css-style'
-import { ConfigItem } from './configs/config'
+import { ConfigChildren, ConfigItem } from './configs/config-tree'
 import { gridConfig } from './configs/grid-config'
+import { TerrainGenerator } from './generators/terrain-generator'
+import { getGenerator } from './generators/generators-list'
 
-export let style: CssStyle = getStyle(gridConfig.params.style.value)
-
+export let generator: TerrainGenerator
+export let style: CssStyle
 let grid: GridLayout
 let scene: THREE.Scene
 let terrain: TileGroup
@@ -31,6 +32,10 @@ let sphereGroup: SphereGroup
 let debugElems: DebugElems
 let player: Sphere
 let lastPlayerPosition: Vector3
+
+let generatorName = gridConfig.flatValues.generator
+generator = getGenerator(generatorName)
+style = getStyle(gridConfig.flatValues.style) // default style depends on generator
 
 // Renderer
 const renderer = new THREE.WebGLRenderer({ antialias: true })
@@ -40,28 +45,21 @@ document.body.appendChild(renderer.domElement)
 
 // orbit camera
 const camera = new THREE.PerspectiveCamera(
-  60,
-  window.innerWidth / window.innerHeight,
-  0.1,
-  1000,
+  60, // FOV
+  window.innerWidth / window.innerHeight, // aspect
+  0.1, // near
+  1000, // far
 )
 const controls = new OrbitControls(
   camera,
   renderer.domElement,
 )
 
-const config = { params: {
-  // grid: gridConfig,
-  ...gridConfig.params,
-  terrainGenerator: MichaelTG.getDefaultConfig(),
-  physics: physicsConfig,
-} }
-
 /**
  *
  */
 function reset() {
-  const built = buildScene(config.params.terrainGenerator)
+  const built = buildScene()
 
   grid = built.grid
   scene = built.scene
@@ -83,28 +81,79 @@ function reset() {
     lastPlayerPosition.z + CAMERA.z,
   )
 }
+
 reset()
 
+// called when user switches terrain generators
+function onGeneratorChange(generatorName: string) {
+  // get TerrainGenerator instance
+  generator = getGenerator(generatorName)
+
+  // reload style in case default is selected, changes with generator
+  style = getStyle(gridConfig.flatValues.style)
+
+  reset() // full reset
+  rebuildControls() // show new generator controls
+}
+
+// called when user changes a setting
 function onCtrlChange(param: ConfigItem) {
+  // check for special case: generator changed
+  gridConfig.updateFlatValues()
+  const newGenName = gridConfig.flatValues.generator
+  if (newGenName !== generatorName) {
+    generatorName = newGenName
+    onGeneratorChange(generatorName) // do special reset
+    return // skip regular setting change below
+  }
+
+  // check for regular setting change
   if (param.resetOnChange === 'full') {
-    reset() // complete reset
+    reset() // hard reset
   }
   else if (param.resetOnChange === 'physics') {
-    sphereGroup.sim.resetParams()
-    terrain.sim.resetParams()
+    // soft reset (physics)
+    physicsConfig.updateFlatValues()
   }
   else {
-    // soft reset
-    style = getStyle(gridConfig.params.style.value)
+    // default soft reset (graphics)
+    style = getStyle(gridConfig.flatValues.style)
     scene.background = style.background
     terrain.resetColors()
     debugElems.refresh()
   }
 }
-showControls(
-  config,
-  onCtrlChange,
-)
+
+function rebuildControls() {
+  const topLinks: ConfigChildren = {
+    firstLink: { // link to this repo
+      label: 'tessmero/sea-block (Viewer)',
+      action: () => { window.open('https://github.com/tessmero/sea-block', '_blank') },
+      noEffect: true, // doesn't effect seablock
+    },
+    secondLink: { // link to terrain generator
+      label: generator.label,
+      action: () => { window.open(generator.url, '_blank') },
+      noEffect: true,
+    },
+  }
+
+  const displayTree: ConfigChildren = {
+    ...topLinks, // buttons
+    ...gridConfig.tree.children, // unpack grid/style controls at top level
+    physics: physicsConfig.tree,
+  }
+
+  if (generator.config) {
+    displayTree.terrainGenerator = generator.config.tree
+  }
+
+  showControls(
+    { children: displayTree },
+    onCtrlChange,
+  )
+}
+rebuildControls()
 
 // Responsive resize
 window.addEventListener(

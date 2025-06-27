@@ -10,7 +10,7 @@ import { physicsConfig } from '../configs/physics-config'
 import { Sphere } from '../sphere'
 import { TileGroup } from '../groups/tile-group'
 import { DebugElems } from '../scene'
-import { getGridValues, gridConfig } from '../configs/grid-config'
+import { gridConfig } from '../configs/grid-config'
 import { Tile } from '../tile'
 
 let showDebugTiles = false
@@ -62,11 +62,11 @@ export function processMouse(params: ProcessMousePArams): void {
   mouseVec.y = mouseY - window.innerHeight / 2
   const screenDistance = mouseVec.length()
 
-  if (gridConfig.params.debug.value === 'none') {
+  if (gridConfig.flatValues.debug === 'none') {
     // Accelerate player in this direction
     let mouseRatio = (screenDistance - MOUSE_DEADZONE) / (MOUSE_MAX_RAD - MOUSE_DEADZONE)
     mouseRatio = Math.min(1, Math.max(0, mouseRatio))
-    force.multiplyScalar(physicsConfig.params.PLAYER_ACCEL.value * mouseRatio)
+    force.multiplyScalar(physicsConfig.flatValues.PLAYER_ACCEL * mouseRatio)
     player.velocity.x += force.x
     player.velocity.z += force.z
   }
@@ -88,7 +88,7 @@ export function processMouse(params: ProcessMousePArams): void {
   // }
 
   // update debug elements
-  showDebugTiles = getGridValues().debug === 'pick-tile'
+  showDebugTiles = gridConfig.flatValues.debug === 'pick-tile'
   debugElems.directionPoint.position.copy(intersection)
   if (pickedMemberId) {
     const grid = terrain.grid
