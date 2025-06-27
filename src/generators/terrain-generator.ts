@@ -4,39 +4,26 @@
  * Base class for generators that output terrain heights.
  */
 
-import { Config, ConfigItem } from '../configs/config'
+import { Color } from 'three'
+import { Css } from '../gfx/styles/css-style'
+import { ConfigView } from '../configs/config-view'
+import { ConfigTree } from '../configs/config-tree'
 
-export type RGBA = [number, number, number, number]
+export type GeneratedTile = {
+  height: number
+  color: Color
+  isWater: boolean
+}
 
-export abstract class TerrainGenerator<T extends Config> {
-  static getDefaultConfig(): Config {
-    throw new Error(`getDefaultConfig is not implemented in ${this.constructor.name}`)
+export abstract class TerrainGenerator {
+  public abstract readonly label: string
+  public abstract readonly url: string
+  public abstract readonly config?: ConfigView<ConfigTree>
+  public abstract readonly style: Css
+
+  public refreshConfig(): void {
+    if (this.config) this.config.updateFlatValues()
   }
 
-  public abstract getHeight(x: number, z: number): number
-
-  public abstract getTileColor(x: number, z: number): RGBA
-
-  public abstract isWaterTile(height: number): boolean
-
-  protected _flatConfigValues: Record<string, number> = {}
-
-  constructor(public config: T) {
-    this.loadConfig()
-  }
-
-  public loadConfig() {
-    this._parseFlatConfig(this.config)
-  }
-
-  private _parseFlatConfig(config: Config | ConfigItem, key = '') {
-    if ('value' in config) {
-      this._flatConfigValues[key] = config.value as number
-    }
-    else {
-      for (const [key, value] of Object.entries(config)) {
-        this._parseFlatConfig(value, key)
-      }
-    }
-  }
+  public abstract getTile(x: number, z: number): GeneratedTile
 }

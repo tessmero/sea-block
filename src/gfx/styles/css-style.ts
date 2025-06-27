@@ -13,9 +13,7 @@ export type CssValue = string | number
 export type CssRuleset = Partial<Record<CssKey, CssValue>>
 
 export type Css = {
-  background?: CssRuleset
-  top?: CssRuleset
-  sides?: CssRuleset
+  [selector: string]: CssRuleset
 }
 
 export class CssStyle extends BaseStyle {
