@@ -5,10 +5,10 @@
  */
 
 import { CircleGeometry, CylinderGeometry, Matrix4, MeshBasicMaterial, TypedArray, Vector3 } from 'three'
-import { Subgroup } from '../groups/subgroup'
 import { ColoredMesh } from './colored-mesh'
 import { TileStyle } from './styles/style'
-import { TILE_DILATE } from '../settings'
+import { TileGroup } from '../groups/tile-group'
+import { Subgroup } from '../groups/subgroup'
 
 // extruded tile shape to render
 export type TileExt = {
@@ -21,15 +21,15 @@ export function extrude(shape): TileExt {
   const { n, radius, angle } = shape
   return {
     // // // regular polygon on top face
-    top: new CircleGeometry(radius * (1 + TILE_DILATE), n)
+    top: new CircleGeometry(radius, n)
       .rotateX(-Math.PI / 2) // align with xz plane facing up
       .rotateY(angle - Math.PI / 2)// angle of tile in grid
       .translate(0, 0.5, 0), // on top of tube
 
     // open-ended prism side faces
     sides: new CylinderGeometry(
-      radius * (1 + TILE_DILATE), // size
-      radius * (1 + TILE_DILATE), // size
+      radius, // size
+      radius, // size
       1, // height
       n, // radial segments
       1, // height segments
@@ -76,10 +76,20 @@ export class TileMesh {
   }
 
   queueUpdate() {
-    for (const mesh of Object.values(this._meshes)) {
+    for (const mesh of this._meshes) {
       mesh.instanceMatrix.needsUpdate = true
       mesh.instanceColor.needsUpdate = true
       mesh.frustumCulled = false
+    }
+  }
+
+  get count() {
+    return this._meshes[0].count
+  }
+
+  set count(c: number) {
+    for (const mesh of this._meshes) {
+      mesh.count = c
     }
   }
 }
@@ -88,26 +98,33 @@ export class TileMesh {
 export class TileMeshIm {
   private readonly parent: TileMesh
 
-  private readonly offset: number
-
-  private readonly posArrays: TypedArray[]
   private static readonly positionDummy = new Vector3()
 
   constructor(
     protected readonly index: number,
-    subgroup: Subgroup,
-    protected readonly indexInSubgroup: number,
-  ) {
+    protected readonly group: TileGroup,
+    protected readonly subgroup: Subgroup,
+  ) {}
+
+  get posArrays(): TypedArray[] {
+    const [subgroup, _indexInSubgroup] = this.group.subgroupsByFlatIndex[this.index]
+
     if (!(subgroup.mesh instanceof TileMesh)) {
       throw new Error(`invalid subgroup. mesh has type ${subgroup.mesh.constructor.name}`)
     }
-    this.parent = subgroup.mesh
 
-    // pick one to read positions from from
-    this.posArrays = this.parent._meshes.map(mesh => mesh.instanceMatrix.array)
+    return subgroup.mesh._meshes.map(m => m.instanceMatrix.array)
+  }
+
+  get offset() {
+    const [subgroup, indexInSubgroup] = this.group.subgroupsByFlatIndex[this.index]
+
+    if (subgroup !== this.subgroup) {
+      throw new Error('subgroup changed')
+    }
 
     // start of position in meshes arrays
-    this.offset = indexInSubgroup * 16 + 12
+    return indexInSubgroup * 16 + 12
   }
 
   get y(): number {

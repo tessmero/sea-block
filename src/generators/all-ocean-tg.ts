@@ -9,7 +9,9 @@ import { MichaelTG } from './michael-tg'
 import { GeneratedTile } from './terrain-generator'
 
 export class AllOceanTG extends MichaelTG {
-  public getTile(x: number, z: number): GeneratedTile {
+  public getTile(rawX: number, rawZ: number): GeneratedTile {
+    const x = rawX / this.xzScale
+    const z = rawZ / this.xzScale
     const elevation = this.getHeight(x, z)
     const color = this.waterColorLookup(132 - elevation)
     return {
