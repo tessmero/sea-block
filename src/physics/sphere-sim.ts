@@ -3,13 +3,15 @@
  *
  * Physics simulation for spheres that collide with terrain and other spheres.
  */
-import { PhysicsValues, Simulation } from './simulation'
+import { Simulation } from './simulation'
 import { Sphere } from '../sphere'
 import { Tile } from '../tile'
 import { TileGroup } from '../groups/tile-group'
 import { Vector3 } from 'three'
 import { SPHERE_RADIUS, COLLISION_KERNEL_RADIUS } from '../settings'
 import { STEP_DURATION } from '../settings'
+import { PhysicsConfig } from '../configs/physics-config'
+import { FlatConfigMap } from '../configs/config-view'
 
 export class SphereSim extends Simulation<Sphere> {
   constructor(public readonly terrain: TileGroup, // the tiles to collide with
@@ -25,7 +27,7 @@ export class SphereSim extends Simulation<Sphere> {
           sphereStep(
             sphere,
             this.terrain,
-            this.physicsValues,
+            this.flatConfig,
           ) // sphere-physics.js
         }
       }
@@ -40,7 +42,7 @@ export class SphereSim extends Simulation<Sphere> {
           collideSphereWithSphere(
             sphereA,
             sphereB,
-            this.physicsValues,
+            this.flatConfig,
           ) // sphere-physics.js
         }
       }
@@ -48,7 +50,7 @@ export class SphereSim extends Simulation<Sphere> {
   }
 }
 
-export function sphereStep(sphere: Sphere, tileGroup: TileGroup, params: PhysicsValues) {
+export function sphereStep(sphere: Sphere, tileGroup: TileGroup, params: FlatConfigMap<PhysicsConfig>) {
   const { GRAVITY, AIR_RESISTANCE } = params
 
   // Apply gravity and air resistance
@@ -70,7 +72,7 @@ export function sphereStep(sphere: Sphere, tileGroup: TileGroup, params: Physics
   sphere.position = sphere.position.add(sphere.velocity.clone().multiplyScalar(STEP_DURATION))
 }
 
-export function collideSphereWithSphere(self: Sphere, neighbor: Sphere, params: PhysicsValues) {
+export function collideSphereWithSphere(self: Sphere, neighbor: Sphere, params: FlatConfigMap<PhysicsConfig>) {
   const { SPHERE_COHESION, SPHERE_STIFFNESS, SPHERE_DAMPING } = params
   const dx = neighbor.position.x - self.position.x
   const dy = neighbor.position.y - self.position.y
@@ -132,11 +134,11 @@ const spiralKernel: Array<{ dx: number
   return result
 })()
 
-function collideWithTerrain(self: Sphere, terrain: TileGroup, futurePosition: Vector3, params: PhysicsValues) {
+function collideWithTerrain(self: Sphere, terrain: TileGroup, futurePosition: Vector3, params: FlatConfigMap<PhysicsConfig>) {
   const { BUOYANT_FORCE, PRESSURE_FORCE, RESTITUTION } = params
 
   const config = terrain.grid
-  const { tileX, tileZ } = config.positionToCoord(
+  const { x: tileX, z: tileZ } = config.positionToCoord(
     futurePosition.x,
     futurePosition.z,
   )
@@ -208,8 +210,9 @@ function checkBoxSphereCollision(
 ): { normal: Vector3
   adjustedPosition: Vector3
   centerOutside: boolean } | null {
-  const { x, y, z } = tile.position
+  const { x, z } = tile.position
   const height = tile.height
+  const y = height / 2
 
   const xzRad = 2
 

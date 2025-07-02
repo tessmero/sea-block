@@ -45,7 +45,8 @@ function addControls(
   const children = config.children
   for (const key in children) {
     const entry = children[key]
-    if ('hidden' in entry && entry.hidden) {
+
+    if (('hidden' in entry) && entry.hidden) {
       continue
     }
 

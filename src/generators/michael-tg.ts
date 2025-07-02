@@ -5,9 +5,8 @@
  * Michael2-3B/Procedural-Perlin-Terrain.
  */
 import { GeneratedTile, TerrainGenerator } from './terrain-generator'
-import { michaelConfig, MichaelConfigTree } from '../configs/michael-config'
+import { MichaelConfig, michaelConfig } from '../configs/michael-config'
 import { Color } from 'three'
-import { LeafKeyValueMap } from '../configs/config-view'
 
 type RGB = [number, number, number]
 
@@ -20,27 +19,32 @@ class SeedablePRNG {
   }
 }
 
-export class MichaelTG extends TerrainGenerator {
+export class MichaelTG extends TerrainGenerator<MichaelConfig> {
   label = 'Michael2-3B/Procedural-Perlin-Terrain'
   url = 'https://github.com/Michael2-3B/Procedural-Perlin-Terrain'
   config = michaelConfig
   style = { sides: { lightness: -0.1 } }
 
-  private flatConfig: LeafKeyValueMap<MichaelConfigTree>
   private prng: SeedablePRNG
+  protected xzScale: number
 
   public refreshConfig(): void {
     super.refreshConfig()
-    this.flatConfig = this.config.flatValues
+    this.xzScale = Math.pow(10, this.flatConfig.xzLogScale)
     this.prng = new SeedablePRNG(this.flatConfig.seed)
   }
 
-  public getTile(x: number, z: number): GeneratedTile {
+  public getTile(rawX: number, rawZ: number): GeneratedTile {
+    const x = rawX / this.xzScale
+    const z = rawZ / this.xzScale
+
     const rawHeight = this.getHeight(x, z)
-    const { waterLevel } = this.flatConfig
+    const { waterLevel, yScale } = this.flatConfig
+
+    const scaledHeight = (rawHeight - waterLevel) * yScale + waterLevel
 
     return {
-      height: Math.max(rawHeight, waterLevel),
+      height: Math.max(scaledHeight, waterLevel),
       color: this.getTileColor(x, z),
       isWater: rawHeight <= waterLevel,
     }

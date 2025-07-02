@@ -5,9 +5,7 @@
  */
 
 import { ConfigTree, NumericParam } from './config-tree'
-import { ConfigView } from './config-view'
 
-const PLAYER_ACCEL = 8e-4 // strength of user direction force
 const GRAVITY = 5e-4
 const AIR_RESISTANCE = 1e-2
 
@@ -29,9 +27,8 @@ const BUOYANT_FORCE = 2e-4 // tile pushes sphere up
 const PRESSURE_FORCE = 4e-4 // sphere pushes tile down
 
 // flat config types
-export interface PhysicsConfigTree extends ConfigTree {
+export interface PhysicsConfig extends ConfigTree {
   children: {
-    PLAYER_ACCEL: NumericParam
     GRAVITY: NumericParam
     AIR_RESISTANCE: NumericParam
     RESTITUTION: NumericParam
@@ -49,14 +46,9 @@ export interface PhysicsConfigTree extends ConfigTree {
 }
 
 // flat config details
-const physicsConfigTree: PhysicsConfigTree = {
-  tooltip: 'settings for moving sphere and waves',
+export const physicsConfig: PhysicsConfig = {
+  tooltip: 'settings for spheres and waves',
   children: {
-    PLAYER_ACCEL: { value: PLAYER_ACCEL,
-      min: 1e-4,
-      max: 5e-3,
-      step: 1e-4,
-      tooltip: 'strength of user input force' },
     GRAVITY: { value: GRAVITY,
       min: 1e-4,
       max: 5e-3,
@@ -122,9 +114,6 @@ const physicsConfigTree: PhysicsConfigTree = {
 }
 
 // all physics settings trigger a soft reset (reload constants for sims)
-for (const key in physicsConfigTree.children) {
-  physicsConfigTree.children[key].resetOnChange = 'physics'
+for (const key in physicsConfig.children) {
+  physicsConfig.children[key].resetOnChange = 'physics'
 }
-
-// export usable config
-export const physicsConfig = new ConfigView(physicsConfigTree)

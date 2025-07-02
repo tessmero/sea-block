@@ -6,6 +6,7 @@
 import { createNoise2D } from 'simplex-noise'
 import { Color } from 'three'
 import { GeneratedTile, TerrainGenerator } from './terrain-generator'
+import { ConfigChildren, ConfigTree } from '../configs/config-tree'
 
 const noise2D = createNoise2D()
 const perlinScale = 2e-3
@@ -16,7 +17,17 @@ function getPerlin(px, py) {
   )
 }
 
-export class SpaceQuestTG extends TerrainGenerator {
+// empty config type
+export interface SqtgConfig extends ConfigTree {
+  children: ConfigChildren
+}
+
+// empty config details
+export const sqtgConfig: SqtgConfig = {
+  children: {},
+}
+
+export class SpaceQuestTG extends TerrainGenerator<SqtgConfig> {
   label = 'space-quest'
   url = 'https://tessmero.github.io/space-quest'
   config = null // no settings to display

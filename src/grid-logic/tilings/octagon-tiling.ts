@@ -28,7 +28,7 @@ export class OctagonTiling extends Tiling {
   ]
 
   getShapeIndex(x: number, z: number) {
-    return (x + z) % 2
+    return Math.abs((x + z) % 2)
   }
 
   public positionToIndex(x: number, z: number): XZ {
@@ -43,7 +43,7 @@ export class OctagonTiling extends Tiling {
   }
 
   public getAdjacent(x: number, z: number) {
-    const isSquare = ((x + z) % 2) === 1
+    const isSquare = Math.abs((x + z) % 2) === 1
 
     if (isSquare) {
       return squareAdj

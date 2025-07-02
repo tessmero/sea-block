@@ -6,8 +6,8 @@
 
 import { Color } from 'three'
 import { Css } from '../gfx/styles/css-style'
-import { ConfigView } from '../configs/config-view'
 import { ConfigTree } from '../configs/config-tree'
+import { Configurable } from '../configurable'
 
 export type GeneratedTile = {
   height: number
@@ -15,15 +15,10 @@ export type GeneratedTile = {
   isWater: boolean
 }
 
-export abstract class TerrainGenerator {
+export abstract class TerrainGenerator<T extends ConfigTree> extends Configurable<T> {
   public abstract readonly label: string
   public abstract readonly url: string
-  public abstract readonly config?: ConfigView<ConfigTree>
   public abstract readonly style: Css
-
-  public refreshConfig(): void {
-    if (this.config) this.config.updateFlatValues()
-  }
 
   public abstract getTile(x: number, z: number): GeneratedTile
 }
