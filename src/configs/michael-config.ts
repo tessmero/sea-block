@@ -5,11 +5,12 @@
  */
 
 import { ConfigTree, NumericParam } from './config-tree'
-import { ConfigView } from './config-view'
 
 // config type
-export interface MichaelConfigTree extends ConfigTree {
+export interface MichaelConfig extends ConfigTree {
   children: {
+    xzLogScale: NumericParam
+    yScale: NumericParam
     seed: NumericParam
     offsetX: NumericParam
     offsetZ: NumericParam
@@ -34,9 +35,21 @@ export interface MichaelConfigTree extends ConfigTree {
 }
 
 // config details
-export const michaelConfigTree: MichaelConfigTree = {
+export const michaelConfig: MichaelConfig = {
   label: 'Terrain & Lighting',
   children: {
+    xzLogScale: { value: -0.4,
+      min: -1,
+      max: 1,
+      step: 0.01,
+      resetOnChange: 'full',
+    },
+    yScale: { value: 1,
+      min: 0.1,
+      max: 10,
+      step: 0.01,
+      resetOnChange: 'full',
+    },
     seed: { value: 0,
       min: 0,
       max: 10000,
@@ -114,5 +127,3 @@ export const michaelConfigTree: MichaelConfigTree = {
         step: 1 },
     } },
   } }
-
-export const michaelConfig = new ConfigView(michaelConfigTree)

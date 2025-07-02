@@ -61,12 +61,13 @@ export abstract class Group<T, S extends Simulation<T>> {
     subgroup.setInstanceColor(indexInSubgroup, color)
   }
 
-  protected setMemberMatrix(index: number, matrix: THREE.Matrix4) {
-    const [subgroup, indexInSubgroup] = this.subgroupsByFlatIndex[index]
+  protected setMemberMatrix(memberIndex: number, matrix: THREE.Matrix4) {
+    const [subgroup, indexInSubgroup] = this.subgroupsByFlatIndex[memberIndex]
     subgroup.mesh.setMatrixAt(indexInSubgroup, matrix)
   }
 
   build() {
+    this.sim.refreshConfig()
     this.members = this.buildMembers()
     this._needsUpdate()
     return this

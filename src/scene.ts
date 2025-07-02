@@ -19,7 +19,7 @@ export class DebugElems {
   public normalArrow: THREE.ArrowHelper
 
   public refresh(): void {
-    const { debug } = gridConfig.flatValues
+    const debug = gridConfig.children.debug.value
     this.directionPoint.visible = debug === 'pick-direction'
 
     const showNeighbors = debug === 'pick-tile'

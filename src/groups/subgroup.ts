@@ -56,4 +56,28 @@ export class Subgroup {
       throw new Error('subgroups with tile mesh should use setTileStyle')
     }
   }
+
+  private _counter: number
+
+  public resetCount() {
+    this._counter = 0
+  }
+
+  public reachedCountLimit() {
+    // check if reached allocated mesh count limit
+    // (this can happen when exiting tiles request to be rendered temporarily)
+    // do nothing and give up rendering any more tiles (tile-group.ts)
+    return this._counter >= this.n
+  }
+
+  public setMemberMatrix(memberIndex: number, matrix: THREE.Matrix4): number {
+    const indexInSubgroup = this._counter++
+    this.mesh.setMatrixAt(indexInSubgroup, matrix)
+    this.memberIds[indexInSubgroup] = memberIndex
+    return indexInSubgroup
+  }
+
+  public finalizeCount() {
+    this.mesh.count = this._counter
+  }
 }
