@@ -1,18 +1,13 @@
 /**
  * @file simulation.ts
  *
- * Base class for physics simulations.
+ * Base class for dynamic physics simulations.
  */
 
-import { LeafKeyValueMap } from '../configs/config-view'
-import { physicsConfig, PhysicsConfigTree } from '../configs/physics-config'
+import { physicsConfig, PhysicsConfig } from '../configs/physics-config'
+import { Configurable } from '../configurable'
 
-export type PhysicsValues = LeafKeyValueMap<PhysicsConfigTree>
-
-export abstract class Simulation<T> {
-  abstract step(members: T[]): void
-
-  protected get physicsValues(): PhysicsValues {
-    return physicsConfig.flatValues
-  }
+export abstract class Simulation<M> extends Configurable<PhysicsConfig> {
+  config = physicsConfig
+  abstract step(members: M[]): void
 }

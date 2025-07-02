@@ -4,63 +4,49 @@
  * Provides a flat, strong-typed view of a config tree.
  */
 
-import { ConfigItem, ConfigTree, NumericParam } from './config-tree'
+import { ConfigItem, ConfigTree } from './config-tree'
 
 export class ConfigView<T extends ConfigTree> {
-  public flatValues: LeafKeyValueMap<T>
+  public flatValues: FlatConfigMap<T>
 
   constructor(public readonly tree: T) {
     this.updateFlatValues()
   }
 
   updateFlatValues() {
-    this.flatValues = flattenTree(this.tree) as LeafKeyValueMap<T>
+    this.flatValues = flattenTree(this.tree)
   }
 }
-
-// helpers for types below
-type ValueOfParam<T> =
-  T extends NumericParam ? number : string
-type UnionToIntersection<U> =
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (U extends any ? (k: U) => void : never) extends (k: infer I) => void ? I : never
-
-// recursivley flatten bottom-level keys
-type LeafKeys<T extends ConfigTree> =
+// flat list of bottom-level keys
+type AllLeafKeys<T extends ConfigTree> =
   T extends { children: infer P }
-    ? {
-        [K in keyof P]:
-        P[K] extends ConfigTree
-          ? LeafKeys<P[K]>
-          : K
-      }[keyof P]
+    ? { [K in keyof P]: P[K] extends ConfigTree ? AllLeafKeys<P[K]> : K }[keyof P]
     : never
 
-// map leaf keys to value type (string or number)
-type LeafKeyMap<T> =
+// type for key K of tree T (string or number)
+type LeafValueType<T extends ConfigTree, K extends string> =
   T extends { children: infer P }
-    ? {
-        [K in keyof P & string]:
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        P[K] extends { children: any }
-          ? LeafKeyMap<P[K]>
-          : { key: K, value: ValueOfParam<P[K]> }
-      }[keyof P & string]
+    ? K extends keyof P
+      ? P[K] extends { value: infer V }
+        ? V
+        : never
+      : {
+          [K2 in keyof P]: P[K2] extends ConfigTree
+            ? LeafValueType<P[K2], K>
+            : never
+        }[keyof P]
     : never
 
-// map leaf keys to typed values
-export type LeafKeyValueMap<T> =
-  UnionToIntersection<
-    LeafKeyMap<T> extends { key: infer K, value: infer V }
-      ? { [P in K & string]: V }
-      : never
-  >
+// flat key -> value map
+export type FlatConfigMap<T extends ConfigTree> = {
+  [K in AllLeafKeys<T> & string]: LeafValueType<T, K>
+}
 
-// used in ConfigView
-function flattenTree<T extends ConfigTree>(
+// get flat view of a tree with type T
+export function flattenTree<T extends ConfigTree>(
   tree: T,
   out: Record<string, string | number> = {},
-): Record<LeafKeys<T>, string | number> {
+): FlatConfigMap<T> {
   for (const [name, child] of Object.entries(tree.children)) {
     if ('action' in child) {
       // button, do nothing
@@ -72,5 +58,5 @@ function flattenTree<T extends ConfigTree>(
       flattenTree(child as ConfigTree, out)
     }
   }
-  return out
+  return out as FlatConfigMap<T>
 }

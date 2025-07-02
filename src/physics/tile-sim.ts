@@ -4,6 +4,8 @@
  * Physics simulation for water tiles that oscillate up and down.
  */
 
+// let DEBUG_lastTiles = null
+
 import { Simulation } from './simulation'
 import { Tile } from '../tile'
 import { GridLayout } from '../grid-logic/grid-layout'
@@ -28,7 +30,14 @@ export class TileSim extends Simulation<Tile> {
   }
 
   step(tiles: Tile[]) {
-    const { WATER_FRICTION, WATER_CENTERING, WATER_DAMPING, WATER_SPRING } = this.physicsValues
+    // debug
+    // DEBUG_lastTiles = tiles
+
+    const {
+      WATER_FRICTION, WATER_CENTERING,
+      WATER_DAMPING, WATER_SPRING,
+    } = this.flatConfig
+
     const fricMul = 1 - WATER_FRICTION
 
     for (const { indexA, indexB, weight } of this.springs) {
@@ -60,10 +69,20 @@ export class TileSim extends Simulation<Tile> {
     }
   }
 
+  getWavePos(i: number) {
+    return this.pos[i] * this.flatConfig.WAVE_AMPLITUDE
+  }
+
   // used for debugging
-  hitTile(x: number, z: number): void {
-    const acc = 2e-3
-    const i = this.grid.xzToIndex(x, z)
+  hitTile(x: number, z: number, i: number): void {
+    // // debug
+    // if (DEBUG_lastTiles) {
+    //   const tile = DEBUG_lastTiles[i]
+    //   console.log(`hit tile ${x}, ${z}, ${i},
+    //   ${tile.position.x.toFixed(3)},${tile.position.z.toFixed(3)}`)
+    // }
+
+    const acc = -2e-3
     this.vel[i] += acc
   }
 
