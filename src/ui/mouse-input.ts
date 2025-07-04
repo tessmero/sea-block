@@ -14,9 +14,9 @@ import { MouseState } from '../games/game'
 
 let showDebugTiles = false
 
-let mouseX: number
-let mouseY: number
-const mouseVec = new THREE.Vector2()
+let onScreen = false
+const screenPos = new THREE.Vector2()
+const dummy = new THREE.Vector2()
 
 const planeY = new THREE.Plane(
   new THREE.Vector3(0, 1, 0), -CAMERA_LOOK_AT.y,
@@ -31,8 +31,8 @@ export type ProcessMouseParams = {
 }
 
 export function processMouse(params: ProcessMouseParams): MouseState {
-  if (typeof mouseX !== 'number' || typeof mouseY !== 'number') {
-    return
+  if (!onScreen) {
+    return null
   }
 
   const { terrain, camera, debugElems } = params
@@ -42,14 +42,14 @@ export function processMouse(params: ProcessMouseParams): MouseState {
   // }
 
   // Plane at camera target y
-  mouseVec.x = (mouseX / window.innerWidth) * 2 - 1
-  mouseVec.y = -(mouseY / window.innerHeight) * 2 + 1
-  raycaster.setFromCamera(mouseVec, camera)
+  dummy.x = (screenPos.x / window.innerWidth) * 2 - 1
+  dummy.y = -(screenPos.y / window.innerHeight) * 2 + 1
+  raycaster.setFromCamera(dummy, camera)
   raycaster.ray.intersectPlane(planeY, intersection)
 
   // pick tile on terrain
   const { x, z } = terrain.grid.positionToCoord(intersection.x, intersection.z)
-  const pickedMemberId = terrain.grid.xzToIndex(x, z)
+  const pickedTile = terrain.grid.xzToIndex(x, z)
 
   // // pick tile precisely, not supported since addding TileMesh
   // const closest = null
@@ -79,7 +79,8 @@ export function processMouse(params: ProcessMouseParams): MouseState {
   const debug = gridConfig.children.debug.value
   showDebugTiles = debug === 'pick-tile'
   debugElems.directionPoint.position.copy(intersection)
-  if (pickedMemberId !== -1) {
+  if (pickedTile) {
+    const { i: pickedMemberId } = pickedTile
     const grid = terrain.grid
 
     const centerTile = terrain.members[pickedMemberId]
@@ -95,28 +96,32 @@ export function processMouse(params: ProcessMouseParams): MouseState {
     const adjOffsets = terrain.grid.tiling.getAdjacent(x, z)
     for (const [i, offset] of adjOffsets.entries()) {
       const adjIndex = grid.xzToIndex(x + offset.x, z + offset.z)
-      const adjTile = terrain.members[adjIndex]
-      debugTile(debugElems.adjacent[i], adjTile)
+      if (adjIndex) {
+        const adjTile = terrain.members[adjIndex.i]
+        debugTile(debugElems.adjacent[i], adjTile)
+      }
     }
-    for (let i = adjOffsets.length; i < debugElems.adjacent.length; i++) {
-      debugElems.adjacent[i].visible = false
-    }
+    // for (let i = adjOffsets.length; i < debugElems.adjacent.length; i++) {
+    //   debugElems.adjacent[i].visible = false
+    // }
 
     const diagOffsets = terrain.grid.tiling.getDiagonal(x, z)
     for (const [i, offset] of diagOffsets.entries()) {
       const diagIndex = grid.xzToIndex(x + offset.x, z + offset.z)
-      const diagTile = terrain.members[diagIndex]
-      debugTile(debugElems.diagonal[i], diagTile)
+      if (diagIndex) {
+        const diagTile = terrain.members[diagIndex.i]
+        debugTile(debugElems.diagonal[i], diagTile)
+      }
     }
-    for (let i = diagOffsets.length; i < debugElems.diagonal.length; i++) {
-      debugElems.diagonal[i].visible = false
-    }
+    // for (let i = diagOffsets.length; i < debugElems.diagonal.length; i++) {
+    //   debugElems.diagonal[i].visible = false
+    // }
   }
 
   return {
-    screenPos: mouseVec,
+    screenPos,
     intersection,
-    x, z, index: pickedMemberId,
+    pickedTile,
   }
 }
 
@@ -135,10 +140,7 @@ export function initMouseListeners(element: HTMLCanvasElement) {
   for (const eventType of forgetOn) {
     element.addEventListener(
       eventType,
-      () => {
-        mouseX = null
-        mouseY = null
-      },
+      () => { onScreen = false },
     )
   }
   const pollOn = [
@@ -153,20 +155,21 @@ export function initMouseListeners(element: HTMLCanvasElement) {
         if ('touches' in event && (event as TouchEvent).touches.length > 0) {
           const touch = (event as TouchEvent).touches[0]
           if (typeof touch.clientX === 'number' && typeof touch.clientY === 'number') {
-            mouseX = touch.clientX
-            mouseY = touch.clientY
+            screenPos.x = touch.clientX
+            screenPos.y = touch.clientY
           }
           else {
-            mouseX = touch.pageX
-            mouseY = touch.pageY
+            screenPos.x = touch.pageX
+            screenPos.y = touch.pageY
           }
         }
         else if ('clientX' in event && 'clientY' in event) {
-          mouseX = (event as MouseEvent).clientX
-          mouseY = (event as MouseEvent).clientY
+          screenPos.x = (event as MouseEvent).clientX
+          screenPos.y = (event as MouseEvent).clientY
         }
 
-        window.event.preventDefault()
+        onScreen = true
+        event.preventDefault()
       },
     )
   }

@@ -38,7 +38,7 @@ style = getStyle(gfxConfig.flatValues.style) // default style depends on generat
 // Renderer
 const renderer = new THREE.WebGLRenderer({ antialias: true })
 renderer.setSize(window.innerWidth, window.innerHeight)
-renderer.setPixelRatio(1 / gfxConfig.flatValues.pixelScale)
+renderer.setPixelRatio(window.devicePixelRatio / gfxConfig.flatValues.pixelScale)
 document.body.appendChild(renderer.domElement)
 
 // orbit camera
