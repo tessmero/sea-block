@@ -5,7 +5,7 @@
  */
 import * as THREE from 'three'
 import { Vector3 } from 'three'
-import { GridLayout } from '../grid-logic/grid-layout'
+import { TiledGrid, TilePosition } from '../grid-logic/tiled-grid'
 import { Group } from './group'
 import { GeneratedTile } from '../generators/terrain-generator'
 import { Tile } from '../tile'
@@ -14,9 +14,10 @@ import { extrude, TileMesh, TileMeshIm } from '../gfx/tile-mesh'
 import { generator, style } from '../main'
 import { gfxConfig } from '../configs/gfx-config'
 import { TileStyle } from '../gfx/styles/style'
+import { TileIndex } from '../grid-logic/indexed-grid'
 
 // (ms) duration of tile entrance and exit animation
-const ENTR_DURATION = 500
+const ENTR_DURATION = 300
 const EXIT_DURATION = 300
 
 const dummy = new THREE.Object3D()
@@ -30,12 +31,11 @@ type RenderableTile = {
 }
 
 export class TileGroup extends Group<Tile, TileSim> {
-  boxPositions: { x: number, z: number }[] = []
+  tilePositions: TilePosition[] = [] // grid tiling data
+  generatedTiles: RenderableTile[] = [] // gfx data
 
-  generatedTiles: RenderableTile[] = []
-
+  // current panning position
   private _offsetX: number = 0
-
   private _offsetZ: number = 0
 
   private readonly waterLevel: number
@@ -44,7 +44,7 @@ export class TileGroup extends Group<Tile, TileSim> {
 
   private readonly terrainXzScale: number = 1
 
-  constructor(public grid: GridLayout) {
+  constructor(public grid: TiledGrid) {
     // count number of tiles per subgroup
     const subgroups = grid.tiling.shapes
       .map(shape => extrude(shape))
@@ -54,7 +54,7 @@ export class TileGroup extends Group<Tile, TileSim> {
       }))
     const subgroupsByFlatIndex: { subgroupIndex: number, indexInSubgroup: number }[] = []
 
-    for (const { x, z } of grid.cells()) {
+    for (const { x, z } of grid.tileIndices) {
       const sgIndex = grid.tiling.getShapeIndex(x, z)
       subgroupsByFlatIndex.push({
         subgroupIndex: sgIndex,
@@ -72,22 +72,21 @@ export class TileGroup extends Group<Tile, TileSim> {
     this.waterLevel = 132
   }
 
-  private buildTileMember(idx: number): Tile {
-    // Get logical x/z for this index
-    const { x, z } = this.grid.indexToXZ(idx)
+  private buildTileMember(idx: TileIndex): Tile {
+    const { i, x, z } = idx
     const deltas = normalNeighborOffsets
-    const neighbors = []
+    const neighbors: number[] = []
     const { width, depth } = this.grid
     for (const { 'x': dx, 'z': dz } of deltas) {
       // get wrapped neighbor coords
       const ox = (x + dx + width) % width
       const oz = (z + dz + depth) % depth
-      const neighbor = this.grid.xzToIndex(ox, oz)
+      const neighbor = this.grid.xzToIndex(ox, oz).i
       neighbors.push(neighbor)
     }
 
-    const gTile = this.generatedTiles[idx].gTile
-    const tile = new TileIm(this, idx, neighbors, gTile.isWater)
+    const gTile = this.generatedTiles[i].gTile
+    const tile = new TileIm(this, i, neighbors, gTile.isWater)
     // tile.y = 2 * this.generatedTiles[idx].height
 
     return tile
@@ -116,16 +115,17 @@ export class TileGroup extends Group<Tile, TileSim> {
 
   protected buildMembers() {
     const result = []
-    for (const { x, z, index } of this.grid.cells()) {
-      const { 'x': wx, 'z': wz } = this.grid.coordToPosition(x, z)
-      this.generateTile(x, z, index)
+    for (const idx of this.grid.tileIndices) {
+      const { i, x, z } = idx
+      const { 'x': wx, 'z': wz } = this.grid.indexToPosition(idx)
+      this.generateTile(x, z, i)
       const renderHeight = 1// placeholder // this.getNewRenderHeight(gTile, index)
       dummy.position.set(wx, renderHeight / 2, wz)
-      this.boxPositions[index] = { x: wx, z: wz }
+      this.tilePositions[i] = { x: wx, z: wz }
       dummy.scale.set(1, renderHeight, 1)
       dummy.updateMatrix()
-      this.setMemberMatrix(index, dummy.matrix)
-      result.push(this.buildTileMember(index))
+      this.setMemberMatrix(i, dummy.matrix)
+      result.push(this.buildTileMember(idx))
     }
     return result
   }
@@ -140,8 +140,9 @@ export class TileGroup extends Group<Tile, TileSim> {
     }
 
     for (let memberIndex = 0; memberIndex < n; memberIndex++) {
-      const { x, z } = this.grid.indexToXZ(memberIndex)
-      const box = this.boxPositions[memberIndex]
+      const tileIndex = this.grid.tileIndices[memberIndex]
+      const { x, z } = tileIndex
+      const box = this.tilePositions[memberIndex]
       const dx = box.x - this.centerXZ.x
       const dz = box.z - this.centerXZ.z
       const dSquared = dx * dx + dz * dz
@@ -150,6 +151,11 @@ export class TileGroup extends Group<Tile, TileSim> {
       if (dSquared < maxD2) {
         // tile is inside visible radius
 
+        if (rTile && rTile.exitStartTime) {
+          // tile just left radius and returned
+          rTile.exitStartTime = null
+          rTile.entranceStartTime = Date.now()
+        }
         if (!rTile) {
           rTile = this.generateTile(x, z, memberIndex)
         }
@@ -169,8 +175,7 @@ export class TileGroup extends Group<Tile, TileSim> {
 
         // have this member rendered
         // always re-apply mesh instance colors
-        rTile.exitStartTime = null
-        if (!this._updateRenderStyle(memberIndex, rTile)) {
+        if (!this._updateRenderInstance(tileIndex, rTile)) {
           // break // reached count limit
         }
       }
@@ -179,7 +184,6 @@ export class TileGroup extends Group<Tile, TileSim> {
 
         if (rTile && rTile.style) {
           // tile was generated and previously rendered
-          rTile.entranceStartTime = Date.now() // re-queue entrance animation
 
           if (!rTile.exitStartTime) {
             // tile just left visible radius
@@ -190,14 +194,14 @@ export class TileGroup extends Group<Tile, TileSim> {
           if (elapsed < EXIT_DURATION) {
             // special case, tile recently left visible radius
             // render even though outside of visible radius
-            if (!this._updateRenderStyle(memberIndex, rTile)) {
+            if (!this._updateRenderInstance(tileIndex, rTile)) {
               // break // reached count limit (subgroup.ts)
             }
           }
           else {
             // tile out of radius an will not be rendered
-            rTile.exitStartTime = null
-            rTile.style = null
+            // rTile.exitStartTime = null
+            // rTile.style = null
           }
         }
       }
@@ -226,11 +230,11 @@ export class TileGroup extends Group<Tile, TileSim> {
     }
   }
 
-  _entranceAnim(entrTime: number): number {
-    if (entrTime > ENTR_DURATION) {
+  _boundaryAnim(time: number, duration: number): number {
+    if (time > duration) {
       return 0
     }
-    const t = Math.min(entrTime / ENTR_DURATION, 1) // Normalize to [0,1]
+    const t = Math.min(time / duration, 1) // Normalize to [0,1]
     const progress = 1 - Math.pow(1 - t, 4)
     const axisVal = (1 - progress)
     return axisVal
@@ -286,19 +290,10 @@ export class TileGroup extends Group<Tile, TileSim> {
       const newX = offsetX + (dx > 0 ? width : -1)
 
       for (let z = offsetZ; z < offsetZ + depth; z++) {
-        const index = this.grid.xzToIndex(oldX, z)
-        this.grid.updateMapping(oldX, z, newX, z)
-        const { 'x': worldX, 'z': worldZ } = this.grid.coordToPosition(newX, z)
-        this.generatedTiles[index] = null
-        // this.generateTile(newX, z, index)
-        // const renderHeight = this.getNewRenderHeight(gTile, index)
-        // dummy.position.set(worldX,renderHeight / 2,worldZ )
-        this.boxPositions[index] = { x: worldX, z: worldZ }
-
-        // dummy.scale.set(1, renderHeight, 1)
-        // dummy.updateMatrix()
-        // this.setMemberMatrix(index, dummy.matrix)
-        // this._updateTileColor(newX, z, index)
+        const idx = this.grid.xzToIndex(oldX, z)
+        this.grid.updateMapping(idx, newX, z)
+        this.generatedTiles[idx.i] = null
+        this.tilePositions[idx.i] = this.grid.indexToPosition(idx)
       }
     }
     else if (dz !== 0) {
@@ -306,19 +301,10 @@ export class TileGroup extends Group<Tile, TileSim> {
       const newZ = offsetZ + (dz > 0 ? depth : -1)
 
       for (let x = offsetX; x < offsetX + width; x++) {
-        const index = this.grid.xzToIndex(x, oldZ)
-        this.grid.updateMapping(x, oldZ, x, newZ)
-        const { 'x': worldX, 'z': worldZ } = this.grid.coordToPosition(x, newZ)
-        this.generatedTiles[index] = null
-        // this.generateTile(x, newZ, index)
-        // const renderHeight = this.getNewRenderHeight(gTile, index)
-        // dummy.position.set(worldX, renderHeight / 2, worldZ)
-        this.boxPositions[index] = { x: worldX, z: worldZ }
-
-        // dummy.scale.set(1, renderHeight, 1)
-        // dummy.updateMatrix()
-        // this.setMemberMatrix(index, dummy.matrix)
-        // this._updateTileColor(x, newZ, index)
+        const idx = this.grid.xzToIndex(x, oldZ)
+        this.grid.updateMapping(idx, x, newZ)
+        this.generatedTiles[idx.i] = null
+        this.tilePositions[idx.i] = this.grid.indexToPosition(idx)
       }
     }
 
@@ -328,28 +314,13 @@ export class TileGroup extends Group<Tile, TileSim> {
 
   public resetColors() {
     generator.refreshConfig()
-    for (const [memberIndex, _rTile] of this.generatedTiles.entries()) {
-      const { x, z } = this.grid.indexToXZ(memberIndex)
-      this.generateTile(x, z, memberIndex) // replace rTile at memberIndex
-      // if (rTile && rTile.style) {
-      //   // rTile.style = null // queue style update on next render
-
-      //   // compute styled colors
-      //   const { x, z } = this.grid.indexToXZ(memberIndex)
-      //   const newTile = this.generateTile(x, z, memberIndex)
-      //   const { gTile } = newTile
-      //   newTile.style = style.getTileStyle({
-      //     x, z, generatedTile: gTile,
-
-      //     // support @land and @sea conditions in styles
-      //     land: !gTile.isWater, sea: gTile.isWater,
-      //   })
-      // }
+    for (const { x, z, i } of this.grid.tileIndices) {
+      this.generateTile(x, z, i)
     }
   }
 
-  private _updateRenderStyle(memberIndex: number, rTile: RenderableTile): boolean {
-    const { x, z } = this.grid.indexToXZ(memberIndex)
+  private _updateRenderInstance(tileIndex: TileIndex, rTile: RenderableTile): boolean {
+    const { x, z, i: memberIndex } = tileIndex
     if (typeof x === 'undefined') {
       throw new Error(`grid has no xz for memberIndex ${memberIndex}`)
     }
@@ -372,7 +343,7 @@ export class TileGroup extends Group<Tile, TileSim> {
 
     const { gTile, style } = rTile
 
-    const box = this.boxPositions[memberIndex]
+    const box = this.tilePositions[memberIndex]
 
     // distance to truncate from bottom of tile
     const cutoff = -gfxConfig.flatValues.extendBottom / this.amplitude
@@ -388,15 +359,17 @@ export class TileGroup extends Group<Tile, TileSim> {
       renderHeight = this.getNewRenderHeight(gTile, memberIndex)
     }
     this.members[memberIndex].height = renderHeight // height for sphere collision
-    let elapsed
+    let anim
     const { entranceStartTime, exitStartTime } = rTile
     if (exitStartTime) {
-      elapsed = EXIT_DURATION - (Date.now() - exitStartTime)
+      const elapsed = EXIT_DURATION - (Date.now() - exitStartTime)
+      anim = this._boundaryAnim(elapsed, EXIT_DURATION)
     }
     else {
-      elapsed = Date.now() - entranceStartTime
+      const elapsed = Date.now() - entranceStartTime
+      anim = this._boundaryAnim(elapsed, ENTR_DURATION)
     }
-    const entranceOffset = -Math.min(renderHeight - cutoff, this._entranceAnim(elapsed))
+    const entranceOffset = -Math.min(renderHeight - cutoff, anim)
     dummy.position.set(box.x, Math.max(cutoff, renderHeight / 2 + cutoff / 2 + entranceOffset), box.z)
     dummy.scale.set(1, Math.max(0, renderHeight + entranceOffset - cutoff), 1)
     // dummy.scale.set(1, renderHeight - cutoff, 1)
