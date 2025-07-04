@@ -151,7 +151,7 @@ function collideWithTerrain(self: Sphere, terrain: TileGroup, futurePosition: Ve
     const idx = config.xzToIndex(
       nx,
       nz,
-    )
+    ).i
     if (idx === -1) continue // out of bounds
     const tile = terrain.members[idx]
 

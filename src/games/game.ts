@@ -15,6 +15,7 @@ import { OrbitControls } from 'three/examples/jsm/Addons.js'
 import { Configurable } from '../configurable'
 import { ConfigTree } from '../configs/config-tree'
 import { TileGroup } from '../groups/tile-group'
+import { TileIndex } from '../grid-logic/indexed-grid'
 
 // parameters to reset a game
 export type GameContext = {
@@ -34,11 +35,7 @@ export interface GameUpdateContext extends GameContext {
 export type MouseState = {
   screenPos: Vector2 // point in viewport
   intersection: Vector3 // picked point in world
-
-  // picked tile in world
-  x: number
-  z: number
-  index: number
+  pickedTile: TileIndex // picked tile in world
 }
 
 export abstract class Game<T extends ConfigTree> extends Configurable<T> {

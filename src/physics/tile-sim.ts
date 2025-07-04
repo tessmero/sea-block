@@ -8,7 +8,7 @@
 
 import { Simulation } from './simulation'
 import { Tile } from '../tile'
-import { GridLayout } from '../grid-logic/grid-layout'
+import { TiledGrid } from '../grid-logic/tiled-grid'
 
 export class TileSim extends Simulation<Tile> {
   private readonly n: number
@@ -19,7 +19,7 @@ export class TileSim extends Simulation<Tile> {
 
   public readonly vel: Float32Array
 
-  constructor(private readonly grid: GridLayout) {
+  constructor(private readonly grid: TiledGrid) {
     super()
 
     this.springs = buildSprings(grid)
@@ -108,12 +108,12 @@ type Spring = {
   weight: number
 }
 
-function buildSprings(grid: GridLayout): Spring[] {
+function buildSprings(grid: TiledGrid): Spring[] {
   const lowWeight = 1 / Math.SQRT2
 
   const { width, depth } = grid
   const springs = []
-  for (const { x, z, index } of grid.cells()) {
+  for (const { x, z, i: index } of grid.tileIndices) {
     const springSpecs: number[][] = [
       ...grid.tiling.getAdjacent(x, z).map(({ x, z }) => [x, z, 1]),
       ...grid.tiling.getDiagonal(x, z).map(({ x, z }) => [x, z, lowWeight]),
@@ -123,7 +123,7 @@ function buildSprings(grid: GridLayout): Spring[] {
       // get wrapped neighbor coords
       const ox = (x + dx + width) % width
       const oy = (z + dz + depth) % depth
-      const indexB = grid.xzToIndex(ox, oy)
+      const indexB = grid.xzToIndex(ox, oy).i
 
       if (index < indexB) { // prevent duplicating
         springs.push({ indexA: index, indexB, weight })

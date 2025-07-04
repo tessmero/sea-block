@@ -6,7 +6,7 @@
 import * as THREE from 'three'
 import { TileGroup } from './groups/tile-group'
 import { SphereGroup } from './groups/sphere-group'
-import { GridLayout } from './grid-logic/grid-layout'
+import { TiledGrid } from './grid-logic/tiled-grid'
 import { GRID_DETAIL } from './settings'
 import { style } from './main'
 import { gridConfig } from './configs/grid-config'
@@ -36,14 +36,14 @@ export class DebugElems {
 }
 
 export function buildScene(): {
-  grid: GridLayout
+  grid: TiledGrid
   terrain: TileGroup
   sphereGroup: SphereGroup
   scene: THREE.Scene
   debugElems: DebugElems
 } {
   // Grid configuration
-  const grid = new GridLayout(GRID_DETAIL, GRID_DETAIL)
+  const grid = new TiledGrid(GRID_DETAIL, GRID_DETAIL)
 
   // Scene setup
   const scene = new THREE.Scene()
