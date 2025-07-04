@@ -25,7 +25,7 @@ const dummyVec = new THREE.Vector3()
 
 type RenderableTile = {
   gTile: GeneratedTile // includes base color
-  entranceStartTime: number // time when entered visible radius
+  entranceStartTime?: number // time when entered visible radius
   exitStartTime?: number // time when exited visible radius
   style?: TileStyle // computed colors, assigned on first render
 }
@@ -95,7 +95,6 @@ export class TileGroup extends Group<Tile, TileSim> {
   private generateTile(x, z, index): RenderableTile {
     const result = {
       gTile: generator.getTile(x, z),
-      entranceStartTime: Date.now(),
     }
     this.generatedTiles[index] = result
 
@@ -151,10 +150,10 @@ export class TileGroup extends Group<Tile, TileSim> {
       if (dSquared < maxD2) {
         // tile is inside visible radius
 
-        if (rTile && rTile.exitStartTime) {
-          // tile just left radius and returned
-          rTile.exitStartTime = null
+        if (rTile && !rTile.entranceStartTime) {
+          // tile just entered radius
           rTile.entranceStartTime = Date.now()
+          rTile.exitStartTime = null
         }
         if (!rTile) {
           rTile = this.generateTile(x, z, memberIndex)
@@ -187,6 +186,7 @@ export class TileGroup extends Group<Tile, TileSim> {
 
           if (!rTile.exitStartTime) {
             // tile just left visible radius
+            rTile.entranceStartTime = null
             rTile.exitStartTime = Date.now()
           }
 
