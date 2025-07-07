@@ -4,23 +4,22 @@
  * Base type for visual styles.
  */
 
-import { Color } from 'three'
-import { GeneratedTile } from '../../generators/terrain-generator'
+import type { Color } from 'three'
+import type { GeneratedTile } from '../../generators/terrain-generator'
+import type { TileExt } from '../tile-mesh'
 
-export type TileParams = {
+export interface TileParams {
   x: number
   z: number
   generatedTile: GeneratedTile
 
   // used as @condition in css
-  sea?: boolean
-  land?: boolean
+  sea?: boolean // eslint-disable-line @typescript-eslint/naming-convention
+  land?: boolean // eslint-disable-line @typescript-eslint/naming-convention
 }
 
-export type TileStyle = {
-  top: Color
-  sides: Color
-}
+// style for one tile = color for each part of extruded tile
+export type TileStyle = Record<keyof TileExt, Color>
 
 export abstract class Style {
   public abstract background: Color

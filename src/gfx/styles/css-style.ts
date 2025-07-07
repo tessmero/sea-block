@@ -5,15 +5,39 @@
  */
 
 import { Color } from 'three'
+import type { TileExt } from '../tile-mesh'
+import { typedEntries } from '../../typed-entries'
+import { StartSequenceGame } from '../../games/start-sequence-game'
 import { BaseStyle } from './base-style'
-import { TileParams, TileStyle } from './style'
+import type { TileParams, TileStyle } from './style'
 
-export type CssKey = 'value' | 'red' | 'green' | 'blue' | 'hue' | 'saturation' | 'lightness'
+export type Css = Partial<Record<Selector, CssRuleset>>
+
+// top level keys in css object
+type RulesetSelectorKey = 'background' | keyof TileExt
+type AtCondition = 'land' | 'sea'
+type Selector = RulesetSelectorKey | `${keyof TileExt}@${AtCondition}`
+interface SimpleParsedSelector {
+  key: RulesetSelectorKey
+}
+interface ConditionalParsedSelector {
+  key: keyof TileExt // only tile tile parts can have at conditions
+  atCondition: AtCondition
+}
+type ParsedSelector = SimpleParsedSelector | ConditionalParsedSelector
+
+// types for css rules keys
+const CSS_KEYS = ['value', 'red', 'green', 'blue', 'hue', 'saturation', 'lightness'] as const
+type CssKey = typeof CSS_KEYS[number]
+function isCssKey(key: string): key is CssKey {
+  return (CSS_KEYS as ReadonlyArray<string>).includes(key)
+}
+type RuleKey = CssKey | `${CssKey}@${AtCondition}`
 export type CssValue = string | number
-export type CssRuleset = Partial<Record<CssKey, CssValue>>
-
-export type Css = {
-  [selector: string]: CssRuleset
+export type CssRuleset = Partial<Record<RuleKey, CssValue>>
+interface ParsedRuleKey {
+  key: CssKey // any css key can have at condition
+  atCondition?: AtCondition
 }
 
 export class CssStyle extends BaseStyle {
@@ -25,35 +49,100 @@ export class CssStyle extends BaseStyle {
   // override non-background colors
   public getTileStyle(params: TileParams): TileStyle {
     const result = super.getTileStyle(params)
-    for (const [selector, ruleset] of Object.entries(this.css)) {
-      const [key, atCondition] = selector.split('@')
-      if (key !== 'background' && shouldParse(atCondition, params)) {
-        result[key] = applyRuleset(result[key], ruleset, params)
+    for (const [rawSelector, ruleset] of typedEntries(this.css)) {
+      const selector = parseSelector(rawSelector)
+      const { key } = selector
+      if (key !== 'background') {
+        let shouldParse = true
+        if ('atCondition' in selector) {
+          shouldParse = checkIfShouldParse(selector.atCondition, params)
+        }
+        if (shouldParse) {
+          result[key] = applyRuleset(result[key], ruleset, params)
+        }
       }
     }
+
+    // apply start sequence transformation
+    // if (StartSequenceGame.saturationPct !== '100%') {
+    const anim = StartSequenceGame.saturationMultiplier
+    // const sMult = Math.pow(0.2 + 0.8 * anim, 2) // saturation multiplier
+    const lMult = Math.pow(0.2 + 0.8 * anim, -1) // lightness multiplier
+    for (const key in result) {
+      // result[key] = ruleHandlers['saturation'](result[key], StartSequenceGame.saturationPct)
+      const color = result[key] as Color
+      color.getHSL(hsl)
+      if (key === 'top') {
+        hsl.l *= lMult
+      }
+      hsl.h -= 0.95 * (1 - anim) // rotate hues
+      // hsl.s *= sMult
+      // hsl.l = 1 - (1 - hsl.l) * (0.5 + 0.5 * anim)
+      color.setHSL(hsl.h, hsl.s, hsl.l)
+    }
+
     return result
   }
 }
 
-function applyRuleset(color: Color, ruleset?: CssRuleset, params?: TileParams): Color {
+export function applyRuleset(color: Color, ruleset: CssRuleset | undefined, params?: TileParams): Color {
   if (!ruleset) {
     return color
   }
   for (const [rawKey, value] of Object.entries(ruleset)) {
-    const [cssKey, atCondition] = rawKey.split('@')
-    if (shouldParse(atCondition, params)) {
-      color = ruleHandlers[cssKey](color, value)
+    const { key, atCondition } = parseRuleKey(rawKey)
+    if (checkIfShouldParse(atCondition, params)) {
+      color = ruleHandlers[key](color, value)
     }
   }
   return color
 }
 
-function shouldParse(atCondition: string, params?: TileParams): boolean {
+function parseSelector(selector: Selector): ParsedSelector {
+  const [key, rawAt] = selector.split('@')
+  const atCondition = parseAtCondition(rawAt)
+  if (key === 'background') {
+    if (atCondition) {
+      throw new Error('@ condition not allowed for background')
+    }
+    return { key }
+  }
+  if (key === 'top' || key === 'sides') {
+    if (atCondition) {
+      return { key, atCondition }
+    }
+    return { key }
+  }
+
+  throw new Error(`unrecognized selector ${selector}`)
+}
+
+function parseRuleKey(ruleKey: string): ParsedRuleKey {
+  const [key, rawAt] = ruleKey.split('@') as [string, string?]
+  if (!isCssKey(key)) {
+    throw new Error(`Unrecognized CSS key: ${key}`)
+  }
+  const atCondition = parseAtCondition(rawAt)
+  if (atCondition) {
+    return { key, atCondition }
+  }
+  return { key }
+}
+
+function parseAtCondition(raw: string | undefined): AtCondition | undefined {
+  if (raw === 'land' || raw === 'sea') return raw
+  if (typeof raw === 'string') {
+    throw new Error(`unreconized @ condition "${raw}"`)
+  }
+  return undefined
+}
+
+function checkIfShouldParse(atCondition: AtCondition | undefined, params: TileParams | undefined): boolean {
   if (!atCondition || !params) {
     return true
   }
 
-  return params[atCondition]
+  return params[atCondition] ?? false
 }
 
 // function that parses one css value and updates color

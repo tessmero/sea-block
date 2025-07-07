@@ -6,9 +6,10 @@
 
 import { equal, ok } from 'assert'
 import { allTilings, getTiling } from '../../src/grid-logic/tilings/tilings-list'
-import { Tiling } from '../../src/grid-logic/tilings/tiling'
+import type { Tiling } from '../../src/grid-logic/tilings/tiling'
+import { typedEntries } from '../../src/typed-entries'
 
-type XZ = { x: number, z: number }
+interface XZ { x: number, z: number }
 
 function expectMatch(idx1: XZ, idx2: XZ) {
   equal(idx1.x, idx2.x)
@@ -20,7 +21,7 @@ function expectClose(a: XZ, b: XZ, epsilon = 1.5) {
   ok(Math.abs(a.z - b.z) < epsilon, `z not close: ${a.z} vs ${b.z}`)
 }
 
-const testPoints: XZ[] = [
+const testPoints: Array<XZ> = [
   { x: 0, z: 0 },
   { x: 10.5, z: -3.2 },
   { x: -15.7, z: 42.1 },
@@ -33,7 +34,7 @@ for (let i = 0; i < 100; i++) {
   })
 }
 
-Object.keys(allTilings).forEach((name) => {
+typedEntries(allTilings).forEach(([name, _]) => {
   const tiling: Tiling = getTiling(name)
   describe(`${name} indexing for ${testPoints.length} test points`, function () {
     it('has consistent round-trip: position -> index -> position -> index', function () {

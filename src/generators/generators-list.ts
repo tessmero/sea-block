@@ -4,22 +4,22 @@
  * Helper to lookup terrain generator by name.
  */
 
-import { ConfigTree } from '../configs/config-tree'
-import { allStyles } from '../gfx/styles/styles-list'
+import type { ConfigTree } from '../configs/config-tree'
+import { DefaultStyle } from '../gfx/styles/default-style'
 import { AllOceanTG } from './all-ocean-tg'
 import { MichaelTG } from './michael-tg'
 import { SpaceQuestTG } from './space-quest-tg'
-import { TerrainGenerator } from './terrain-generator'
+import type { TerrainGenerator } from './terrain-generator'
 
-export const allGenerators: Record<string, TerrainGenerator<ConfigTree>> = {
+export const allGenerators = {
   'Michael2-3B': new MichaelTG(),
   'space-quest': new SpaceQuestTG(),
   'all-ocean': new AllOceanTG(),
-}
+} as const satisfies Record<string, TerrainGenerator<ConfigTree>>
 
-export function getGenerator(name: string): TerrainGenerator<ConfigTree> {
+export function getGenerator(name: keyof typeof allGenerators): TerrainGenerator<ConfigTree> {
   const result = allGenerators[name]
   result.refreshConfig()
-  allStyles.default = result.style
+  DefaultStyle.setDefaultCss(result.style)
   return result
 }

@@ -4,9 +4,11 @@
  * Terrain generator implementation adapted from
  * Michael2-3B/Procedural-Perlin-Terrain.
  */
-import { GeneratedTile, TerrainGenerator } from './terrain-generator'
-import { MichaelConfig, michaelConfig } from '../configs/michael-config'
 import { Color } from 'three'
+import type { MichaelConfig } from '../configs/michael-config'
+import { michaelConfig } from '../configs/michael-config'
+import type { GeneratedTile } from './terrain-generator'
+import { TerrainGenerator } from './terrain-generator'
 
 type RGB = [number, number, number]
 
