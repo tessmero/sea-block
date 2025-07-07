@@ -4,12 +4,12 @@
  * Base class for generators that output terrain heights.
  */
 
-import { Color } from 'three'
-import { Css } from '../gfx/styles/css-style'
-import { ConfigTree } from '../configs/config-tree'
+import type { Color } from 'three'
+import type { Css } from '../gfx/styles/css-style'
+import type { ConfigTree } from '../configs/config-tree'
 import { Configurable } from '../configurable'
 
-export type GeneratedTile = {
+export interface GeneratedTile {
   height: number
   color: Color
   isWater: boolean

@@ -6,14 +6,15 @@
 
 // let DEBUG_lastTiles = null
 
+import type { Tile } from '../tile'
+import type { TiledGrid } from '../grid-logic/tiled-grid'
+import type { TileIndex } from '../grid-logic/indexed-grid'
 import { Simulation } from './simulation'
-import { Tile } from '../tile'
-import { TiledGrid } from '../grid-logic/tiled-grid'
 
 export class TileSim extends Simulation<Tile> {
   private readonly n: number
 
-  private readonly springs: Spring[]
+  private readonly springs: Array<Spring>
 
   public readonly pos: Float32Array
 
@@ -29,7 +30,7 @@ export class TileSim extends Simulation<Tile> {
     this.vel = new Float32Array(this.n)
   }
 
-  step(tiles: Tile[]) {
+  step(tiles: Array<Tile>) {
     // debug
     // DEBUG_lastTiles = tiles
 
@@ -86,8 +87,8 @@ export class TileSim extends Simulation<Tile> {
     this.vel[i] += acc
   }
 
-  accelTile(index: number, accel: number): void {
-    this.vel[index] -= accel
+  accelTile(idx: TileIndex, accel: number): void {
+    this.vel[idx.i] -= accel
   }
 
   // partially reset water tile that looped to opposite side
@@ -102,28 +103,32 @@ export class TileSim extends Simulation<Tile> {
   }
 }
 
-type Spring = {
+interface Spring {
   indexA: number
   indexB: number
   weight: number
 }
 
-function buildSprings(grid: TiledGrid): Spring[] {
+function buildSprings(grid: TiledGrid): Array<Spring> {
   const lowWeight = 1 / Math.SQRT2
 
   const { width, depth } = grid
-  const springs = []
+  const springs: Array<Spring> = []
   for (const { x, z, i: index } of grid.tileIndices) {
-    const springSpecs: number[][] = [
+    const springSpecs: Array<Array<number>> = [
       ...grid.tiling.getAdjacent(x, z).map(({ x, z }) => [x, z, 1]),
       ...grid.tiling.getDiagonal(x, z).map(({ x, z }) => [x, z, lowWeight]),
     ]
 
     for (const [dx, dz, weight] of springSpecs) {
       // get wrapped neighbor coords
-      const ox = (x + dx + width) % width
-      const oy = (z + dz + depth) % depth
-      const indexB = grid.xzToIndex(ox, oy).i
+      const wrappedX = (x + dx + width) % width
+      const wrappedZ = (z + dz + depth) % depth
+      const neighborIdx = grid.xzToIndex(wrappedX, wrappedZ)
+      if (!neighborIdx) {
+        throw new Error(`initial grid is missing tile (${wrappedX},${wrappedZ})`)
+      }
+      const indexB = neighborIdx.i
 
       if (index < indexB) { // prevent duplicating
         springs.push({ indexA: index, indexB, weight })

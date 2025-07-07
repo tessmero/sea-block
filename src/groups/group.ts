@@ -8,30 +8,30 @@
  * Subgroups are used for tilings that have multiple tile shapes,
  * for example the octagon tiling has two subgroups (square and octagon).
  */
-import { TileMesh } from '../gfx/tile-mesh'
-import { Simulation } from '../physics/simulation'
 import * as THREE from 'three'
-import { Subgroup, SubgroupParams } from './subgroup'
+import type { Simulation } from '../physics/simulation'
+import type { SubgroupParams } from './subgroup'
+import { Subgroup } from './subgroup'
 
 // parameters to construct group for type T (Sphere or Tile)
-type GroupParams<T, S extends Simulation<T>> = {
+interface GroupParams<T, S extends Simulation<T>> {
   sim: S // physics simulation for type T
-  subgroups: SubgroupParams[]
-  subgroupsByFlatIndex: {
+  subgroups: Array<SubgroupParams>
+  subgroupsByFlatIndex: Array<{
     subgroupIndex: number
     indexInSubgroup: number
-  }[]
+  }>
 }
 
 export abstract class Group<T, S extends Simulation<T>> {
   public readonly n: number // number of members
 
   public readonly sim: S // physics simulation
-  public readonly subgroupsByFlatIndex: [Subgroup, number][]
+  public readonly subgroupsByFlatIndex: Array<[Subgroup, number]>
 
-  public members: T[] = [] // sea-block objects (spheres or tiles)
+  public members: Array<T> = [] // sea-block objects (spheres or tiles)
 
-  public readonly subgroups: Subgroup[] = []
+  public readonly subgroups: Array<Subgroup> = []
 
   constructor(params: GroupParams<T, S>) {
     this.sim = params.sim
@@ -50,7 +50,7 @@ export abstract class Group<T, S extends Simulation<T>> {
   }
 
   // build members and init instanced meshes
-  protected abstract buildMembers(): T[]
+  protected abstract buildMembers(): Array<T>
 
   // update gfx meshes, called just before render
   protected abstract updateMesh(): void
@@ -85,11 +85,13 @@ export abstract class Group<T, S extends Simulation<T>> {
     this.subgroups.forEach(({ mesh }) => {
       if (mesh instanceof THREE.InstancedMesh) {
         mesh.instanceMatrix.needsUpdate = true
-        mesh.instanceColor.needsUpdate = true
+        if (mesh.instanceColor) {
+          mesh.instanceColor.needsUpdate = true
+        }
         mesh.frustumCulled = false
       }
       else {
-        (mesh as TileMesh).queueUpdate()
+        mesh.queueUpdate()
       }
     })
   }

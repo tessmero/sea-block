@@ -9,17 +9,17 @@
  * tile index (integers)
  * or, tile position (floats near index)
  */
-type XZ = { x: number, z: number }
+interface XZ { x: number, z: number }
 
 // regular polygon shape
-export type TileShape = {
+export interface TileShape {
   n: number
   radius: number
   angle: number
 }
 
 export abstract class Tiling {
-  public abstract shapes: TileShape[]
+  public abstract shapes: Array<TileShape>
 
   // pick shape for tile index
   public abstract getShapeIndex(x: number, z: number): number
@@ -37,6 +37,6 @@ export abstract class Tiling {
   public abstract indexToPosition(x: number, z: number): XZ
 
   // get relative indices for tile neighbors
-  public abstract getAdjacent(x: number, z: number): XZ[] // share edge
-  public abstract getDiagonal(x: number, z: number): XZ[] // share vertex
+  public abstract getAdjacent(x: number, z: number): Array<XZ> // share edge
+  public abstract getDiagonal(x: number, z: number): Array<XZ> // share vertex
 }

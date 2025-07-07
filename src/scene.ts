@@ -1,41 +1,39 @@
 /**
  * @file scene.ts
  *
- * The sea-block scene which may be re-built after startup.
+ * The sea-block three.js scene which may be re-built after startup.
  */
 import * as THREE from 'three'
 import { TileGroup } from './groups/tile-group'
 import { SphereGroup } from './groups/sphere-group'
 import { TiledGrid } from './grid-logic/tiled-grid'
 import { GRID_DETAIL } from './settings'
-import { style } from './main'
-import { gridConfig } from './configs/grid-config'
+import type { SeaBlock } from './sea-block'
 
 export class DebugElems {
   public directionPoint: THREE.Object3D
   public center: THREE.Object3D
-  public adjacent: THREE.Object3D[]
-  public diagonal: THREE.Object3D[]
+  public adjacent: Array<THREE.Object3D>
+  public diagonal: Array<THREE.Object3D>
   public normalArrow: THREE.ArrowHelper
 
-  public refresh(): void {
-    const debug = gridConfig.children.debug.value
+  public refresh(debug: 'none' | 'pick-direction' | 'pick-tile'): void {
     this.directionPoint.visible = debug === 'pick-direction'
 
-    const showNeighbors = debug === 'pick-tile'
-    this.center.visible = showNeighbors
+    const shouldShowNeighbors = debug === 'pick-tile'
+    this.center.visible = shouldShowNeighbors
     this.adjacent.forEach((e) => {
-      e.visible = e.visible && showNeighbors
+      e.visible = e.visible && shouldShowNeighbors
     })
     this.diagonal.forEach((e) => {
-      e.visible = e.visible && showNeighbors
+      e.visible = e.visible && shouldShowNeighbors
     })
 
     this.normalArrow.visible = debug === 'pick-tile'
   }
 }
 
-export function buildScene(): {
+export function buildScene(seaBlock: SeaBlock): {
   grid: TiledGrid
   terrain: TileGroup
   sphereGroup: SphereGroup
@@ -47,7 +45,7 @@ export function buildScene(): {
 
   // Scene setup
   const scene = new THREE.Scene()
-  scene.background = style.background
+  scene.background = seaBlock.style.background
 
   // Lights
   scene.add(new THREE.AmbientLight(0xffffff, 1))
@@ -67,7 +65,8 @@ export function buildScene(): {
   // small debug spheres
   const n = 10, rad = 0.5
   const center = debugSphere(scene, rad, 'red')
-  const adjacent = [], diagonal = []
+  const adjacent: Array<THREE.Mesh> = []
+  const diagonal: Array<THREE.Mesh> = []
   for (let i = 0; i < n; i++) {
     adjacent.push(debugSphere(scene, rad, 'yellow'))
     diagonal.push(debugSphere(scene, rad, 'blue'))
@@ -91,7 +90,6 @@ export function buildScene(): {
   debugElems.adjacent = adjacent
   debugElems.diagonal = diagonal
   debugElems.normalArrow = normalArrow
-  debugElems.refresh()
 
   return {
     grid,
