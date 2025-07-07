@@ -4,12 +4,14 @@
  * Named color themes. .
  */
 
+import type { Css } from './css-style'
 import { CssStyle } from './css-style'
 import { CustomStyle } from './custom-style'
+import { DefaultStyle } from './default-style'
 import { HueStyle } from './hue-style'
 
 export const allStyles = {
-  'default': {}, // replaced with terrain generator style
+  'default': DefaultStyle, // replaced with terrain generator style
   'tron': {
     'background': { value: '#000' },
     'top@land': { saturation: 0 },
@@ -26,7 +28,7 @@ export const allStyles = {
   },
   '???': HueStyle, // random hue rotation
   'custom': CustomStyle, // style pasted by user
-}
+} as const satisfies Record<string, typeof HueStyle | typeof CustomStyle | Css>
 
 export function getStyle(name: string): CssStyle {
   const classOrCss = allStyles[name]

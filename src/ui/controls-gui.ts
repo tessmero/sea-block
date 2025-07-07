@@ -3,8 +3,8 @@
  *
  * Used in main.js to build user interface to control terrain generator settings.
  */
-import * as dat from 'dat.gui'
-import { ConfigTree, ConfigButton, ConfigItem, NumericParam, OptionParam } from '../configs/config-tree'
+import * as dat from 'lil-gui'
+import type { ConfigTree, ConfigButton, ConfigItem, NumericItem, OptionItem } from '../configs/config-tree'
 
 let _allControls: Record<string, dat.GUIController> = {}
 
@@ -20,7 +20,11 @@ export function showControls(
   if (gui) {
     gui.destroy()
   }
-  gui = new dat.GUI()
+  gui = new dat.GUI({
+    closeFolders: true, // start with folders collapsed
+    container: document.getElementById('controls-container'),
+  })
+  gui.close() // start collapsed
 
   // build folders and items for terrain generator config
   addControls(
@@ -46,17 +50,17 @@ function addControls(
   for (const key in children) {
     const entry = children[key]
 
-    if (('hidden' in entry) && entry.hidden) {
+    if ('isHidden' in entry && entry.isHidden) {
       continue
     }
 
     if ('action' in entry) {
       // button
-      const buttonItem = entry as ConfigButton
-      const label = entry.label || camelCaseToLabel(key)
+      const buttonItem = entry
+      const label = entry.label ?? camelCaseToLabel(key)
       const obj = { [label]: async () => {
         await buttonItem.action()
-        if (!buttonItem.noEffect) {
+        if (!buttonItem.hasNoEffect) {
           onChange(buttonItem)
         }
       } }
@@ -65,18 +69,18 @@ function addControls(
 
     else if ('options' in entry && Array.isArray(entry.options)) {
       // Dropdown (option param)
-      const op = entry as OptionParam
+      const op = entry as OptionItem
       const labelVals = {}
       for (const opt of op.options) {
         if (typeof opt === 'string') {
           labelVals[opt] = opt
         }
         else {
-          labelVals[opt.label || opt.value] = opt.value
+          labelVals[opt.label ?? opt.value] = opt.value
         }
       }
       const ctrl = gui.add(op, 'value', labelVals)
-        .name(op.label || camelCaseToLabel(key))
+        .name(op.label ?? camelCaseToLabel(key))
         .listen()
 
       // Find the select element inside the controller
@@ -104,14 +108,18 @@ function addControls(
     }
     else if ('value' in entry && typeof entry.value === 'number') {
       // Numeric param
-      const np = entry as NumericParam
+      const np = entry as NumericItem
       const ctrl = gui.add(np, 'value', np.min, np.max)
-        .step(np.step)
-        .name(np.label || camelCaseToLabel(key))
+        .name(np.label ?? camelCaseToLabel(key))
+      if (np.step) {
+        ctrl.step(np.step)
+      }
       if (onChange) {
         ctrl.onChange((value) => {
-          np.value = value
-          onChange(np)
+          if (typeof value === 'number') {
+            np.value = value
+            onChange(np)
+          }
         })
       }
       addTooltip(ctrl, np.tooltip)
@@ -119,7 +127,7 @@ function addControls(
     }
     else {
       // Nested group
-      const folder = gui.addFolder(entry.label || camelCaseToLabel(key))
+      const folder = gui.addFolder(entry.label ?? camelCaseToLabel(key))
       addTooltip(
         folder,
         entry.tooltip,
@@ -133,11 +141,11 @@ function addControls(
   }
 }
 
-function addTooltip(controller, text?: string) {
+function addTooltip(controller: dat.GUIController | dat.GUI, text?: string) {
   if (typeof text !== 'string' || text.trim() === '') {
     return
   }
-  const element = controller.__li || controller.domElement
+  const element = controller.domElement
   element.setAttribute('title', text)
 }
 

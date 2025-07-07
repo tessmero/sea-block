@@ -3,12 +3,13 @@
  *
  * A square terrain tile (water or solid).
  */
-import { Vector3 } from 'three'
+import type { Vector3 } from 'three'
 
-export type Tile = {
+export interface Tile {
   position: Vector3
   height: number
   normal: Vector3
 
+  isVisible: boolean
   isWater: boolean
 }

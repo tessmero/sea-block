@@ -5,7 +5,7 @@
  */
 import { Tiling } from './tiling'
 
-type XZ = { x: number, z: number }
+interface XZ { x: number, z: number }
 
 const TRI_SIDE = 2
 const TRI_RAD = TRI_SIDE / Math.sqrt(3) // Distance from center to vertex
