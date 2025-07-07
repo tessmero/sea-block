@@ -4,41 +4,41 @@
  * Controls heirarchy and default values for terrain generator.
  */
 
-import { ConfigTree, NumericParam } from './config-tree'
+import type { ConfigTree, NumericItem } from './config-tree'
 
 // config type
 export interface MichaelConfig extends ConfigTree {
   children: {
-    xzLogScale: NumericParam
-    yScale: NumericParam
-    seed: NumericParam
-    offsetX: NumericParam
-    offsetZ: NumericParam
+    xzLogScale: NumericItem
+    yScale: NumericItem
+    seed: NumericItem
+    offsetX: NumericItem
+    offsetZ: NumericItem
     noiseMapValues: { children: {
-      persistence: NumericParam
-      amplitude: NumericParam
-      octaves: NumericParam
-      wavelength: NumericParam
+      persistence: NumericItem
+      amplitude: NumericItem
+      octaves: NumericItem
+      wavelength: NumericItem
     } }
     terrainCustomization: { children: {
-      exponent: NumericParam
-      peaks: NumericParam
-      waterLevel: NumericParam
-      beachSize: NumericParam
+      exponent: NumericItem
+      peaks: NumericItem
+      waterLevel: NumericItem
+      beachSize: NumericItem
     } }
     lighting: { children: {
-      worldLight: NumericParam
-      lightPosition: NumericParam
-      lightHeight: NumericParam
+      worldLight: NumericItem
+      lightPosition: NumericItem
+      lightHeight: NumericItem
     } }
   }
 }
 
 // config details
 export const michaelConfig: MichaelConfig = {
-  label: 'Terrain & Lighting',
+  label: 'Michael2-3B Terrain Config',
   children: {
-    xzLogScale: { value: -0.4,
+    xzLogScale: { value: -0.6,
       min: -1,
       max: 1,
       step: 0.01,
@@ -90,7 +90,7 @@ export const michaelConfig: MichaelConfig = {
     } },
 
     terrainCustomization: { children: {
-      exponent: { value: 3.3,
+      exponent: { value: 5,
         min: 1,
         max: 10,
         step: 0.05,

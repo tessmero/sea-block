@@ -3,6 +3,7 @@
  *
  * Style pasted by user.
  */
+import type { Css } from './css-style'
 import { CssStyle } from './css-style'
 
 export class CustomStyle extends CssStyle {
@@ -10,7 +11,7 @@ export class CustomStyle extends CssStyle {
 
   // called when user clicks paste style
   public static setCustomCss(css: string) {
-    CustomStyle.css = JSON.parse(css)
+    CustomStyle.css = JSON.parse(css) as Css
   }
 
   // called when colors are refreshed in custom style

@@ -6,15 +6,15 @@
 
 import * as THREE from 'three'
 import { CAMERA_LOOK_AT } from '../settings'
-import { TileGroup } from '../groups/tile-group'
-import { DebugElems } from '../scene'
+import type { TileGroup } from '../groups/tile-group'
+import type { DebugElems } from '../scene'
 import { gridConfig } from '../configs/grid-config'
-import { Tile } from '../tile'
-import { MouseState } from '../games/game'
+import type { Tile } from '../tile'
+import type { MouseState } from '../games/game'
 
-let showDebugTiles = false
+let shouldShowDebugTiles = false
+let isOnScreen = false
 
-let onScreen = false
 const screenPos = new THREE.Vector2()
 const dummy = new THREE.Vector2()
 
@@ -24,15 +24,15 @@ const planeY = new THREE.Plane(
 const raycaster = new THREE.Raycaster()
 const intersection = new THREE.Vector3()
 
-export type ProcessMouseParams = {
+export interface ProcessMouseParams {
   terrain: TileGroup
   camera: THREE.Camera
   debugElems: DebugElems
 }
 
-export function processMouse(params: ProcessMouseParams): MouseState {
-  if (!onScreen) {
-    return null
+export function processMouse(params: ProcessMouseParams): MouseState | undefined {
+  if (!isOnScreen) {
+    return undefined
   }
 
   const { terrain, camera, debugElems } = params
@@ -77,7 +77,7 @@ export function processMouse(params: ProcessMouseParams): MouseState {
 
   // update debug elements
   const debug = gridConfig.children.debug.value
-  showDebugTiles = debug === 'pick-tile'
+  shouldShowDebugTiles = debug === 'pick-tile'
   debugElems.directionPoint.position.copy(intersection)
   if (pickedTile) {
     const { i: pickedMemberId } = pickedTile
@@ -88,7 +88,7 @@ export function processMouse(params: ProcessMouseParams): MouseState {
     // ${centerTile.position.x.toFixed(3)},${centerTile.position.z.toFixed(3)}`)
     debugTile(debugElems.center, centerTile)
 
-    if (centerTile && centerTile.normal) {
+    if (centerTile?.normal) {
       debugTile(debugElems.normalArrow, centerTile)
       debugElems.normalArrow.setDirection(centerTile.normal)
     }
@@ -121,7 +121,7 @@ export function processMouse(params: ProcessMouseParams): MouseState {
   return {
     screenPos,
     intersection,
-    pickedTile,
+    pickedTileIndex: pickedTile,
   }
 }
 
@@ -132,7 +132,7 @@ function debugTile(debugElem: THREE.Object3D, tile: Tile) {
   }
   const { x, y, z } = tile.position
   debugElem.position.set(x, y * 2, z)
-  debugElem.visible = showDebugTiles
+  debugElem.visible = shouldShowDebugTiles
 }
 
 export function initMouseListeners(element: HTMLCanvasElement) {
@@ -140,7 +140,7 @@ export function initMouseListeners(element: HTMLCanvasElement) {
   for (const eventType of forgetOn) {
     element.addEventListener(
       eventType,
-      () => { onScreen = false },
+      () => { isOnScreen = false },
     )
   }
   const pollOn = [
@@ -168,7 +168,7 @@ export function initMouseListeners(element: HTMLCanvasElement) {
           screenPos.y = (event as MouseEvent).clientY
         }
 
-        onScreen = true
+        isOnScreen = true
         event.preventDefault()
       },
     )

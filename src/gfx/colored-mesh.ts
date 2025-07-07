@@ -13,7 +13,7 @@ export class ColoredMesh extends InstancedMesh {
     this.colors[index * 3 + 0] = color.r
     this.colors[index * 3 + 1] = color.g
     this.colors[index * 3 + 2] = color.b
-    this.instanceColor.needsUpdate = true
+    this.instanceColor!.needsUpdate = true
   }
 }
 

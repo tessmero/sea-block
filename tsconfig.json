@@ -5,6 +5,7 @@
     "target": "es2015",
     "moduleResolution": "nodenext",
     "module": "nodenext",
+    "strictNullChecks": true,
   },
   "include": ["src"]
 }

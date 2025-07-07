@@ -9,7 +9,8 @@
  */
 
 import { Color } from 'three'
-import { Style, TileParams, TileStyle } from './style'
+import type { TileParams, TileStyle } from './style'
+import { Style } from './style'
 
 export class BaseStyle extends Style {
   background = new Color(0xaaccff)

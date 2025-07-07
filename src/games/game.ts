@@ -9,16 +9,16 @@
  * and sphereGroup (with SphereSim).
  */
 
-import { Camera, Vector2, Vector3 } from 'three'
-import { SphereGroup } from '../groups/sphere-group'
-import { OrbitControls } from 'three/examples/jsm/Addons.js'
+import type { Camera, Vector2, Vector3 } from 'three'
+import type { OrbitControls } from 'three/examples/jsm/Addons.js'
+import type { SphereGroup } from '../groups/sphere-group'
 import { Configurable } from '../configurable'
-import { ConfigTree } from '../configs/config-tree'
-import { TileGroup } from '../groups/tile-group'
-import { TileIndex } from '../grid-logic/indexed-grid'
+import type { ConfigTree } from '../configs/config-tree'
+import type { TileGroup } from '../groups/tile-group'
+import type { TileIndex } from '../grid-logic/indexed-grid'
 
 // parameters to reset a game
-export type GameContext = {
+export interface GameContext {
   terrain: TileGroup
   sphereGroup: SphereGroup
   camera: Camera
@@ -32,13 +32,15 @@ export interface GameUpdateContext extends GameContext {
 }
 
 // mouse input in terms of viewport and tile grid
-export type MouseState = {
+export interface MouseState {
   screenPos: Vector2 // point in viewport
   intersection: Vector3 // picked point in world
-  pickedTile: TileIndex // picked tile in world
+  pickedTileIndex?: TileIndex // picked tile in world
 }
 
 export abstract class Game<T extends ConfigTree> extends Configurable<T> {
   public abstract reset(context: GameContext): void
+  public resetCamera(_context: GameContext): void {}
+
   public abstract update(context: GameUpdateContext): void
 }

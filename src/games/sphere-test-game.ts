@@ -1,17 +1,18 @@
 /**
- * @file sphere-game.ts
+ * @file sphere-test-game.ts
  *
  * Original sea-block moving sphere controls impemented as a game.
  */
 import { Color, Vector2, Vector3 } from 'three'
-import { Game, GameContext, GameUpdateContext } from './game'
-import { Sphere } from '../sphere'
+import type { Sphere } from '../sphere'
 import { CAMERA, CAMERA_LOOK_AT } from '../settings'
-import { ConfigTree, NumericParam } from '../configs/config-tree'
+import type { ConfigTree, NumericItem } from '../configs/config-tree'
+import { Game } from './game'
+import type { GameContext, GameUpdateContext } from './game'
 
 export interface SphereGameConfig extends ConfigTree {
   children: {
-    PLAYER_ACCEL: NumericParam
+    PLAYER_ACCEL: NumericItem
   }
 }
 
@@ -22,7 +23,6 @@ export const sphereGameConfig: SphereGameConfig = {
       max: 10e-5,
       step: 1e-6,
       tooltip: 'strength of user input force',
-      resetOnChange: 'physics',
     },
 
   },
@@ -33,7 +33,7 @@ export const MOUSE_MAX_RAD = 200 // (px) radius with max force
 const mouseVec = new Vector2()
 const force = new Vector3()
 
-export class SphereGame extends Game<SphereGameConfig> {
+export class SphereTestGame extends Game<SphereGameConfig> {
   config = sphereGameConfig
   private player: Sphere
   private lastPlayerPosition: Vector3
@@ -43,19 +43,26 @@ export class SphereGame extends Game<SphereGameConfig> {
 
     // Create a player sphere
     this.player = sphereGroup.members[0]
+    this.player.isGhost = false
+    this.player.isFish = false
+    this.player.isVisible = true
     sphereGroup.setInstanceColor(0, new Color(0xff0000))
+    const { x, z } = this.player.position
+    this.player.position = new Vector3(x, 30, z)
     this.lastPlayerPosition = this.player.position.clone()
 
-    camera.position.set(
-      this.lastPlayerPosition.x + CAMERA.x,
-      CAMERA.y,
-      this.lastPlayerPosition.z + CAMERA.z,
-    )
+    // hide other spheres
+    for (let i = 1; i < sphereGroup.members.length; i++) {
+      sphereGroup.members[i].isGhost = true
+    }
 
+    // position camera and grid on player
+    camera.position.set(x + CAMERA.x, CAMERA.y, z + CAMERA.z)
     this.centerOnPlayer(context)
   }
 
   public update(context: GameUpdateContext): void {
+    // pan grid if necessary
     this.centerOnPlayer(context)
 
     const { mouseState, dt } = context

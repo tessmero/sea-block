@@ -4,7 +4,7 @@
  * Default values and controls heirarchy for physics settings.
  */
 
-import { ConfigTree, NumericParam } from './config-tree'
+import type { ConfigTree, NumericItem } from './config-tree'
 
 const GRAVITY = 5e-4
 const AIR_RESISTANCE = 1e-2
@@ -29,19 +29,19 @@ const PRESSURE_FORCE = 4e-4 // sphere pushes tile down
 // flat config types
 export interface PhysicsConfig extends ConfigTree {
   children: {
-    GRAVITY: NumericParam
-    AIR_RESISTANCE: NumericParam
-    RESTITUTION: NumericParam
-    SPHERE_COHESION: NumericParam
-    SPHERE_STIFFNESS: NumericParam
-    SPHERE_DAMPING: NumericParam
-    WATER_FRICTION: NumericParam
-    WATER_SPRING: NumericParam
-    WATER_CENTERING: NumericParam
-    WATER_DAMPING: NumericParam
-    WAVE_AMPLITUDE: NumericParam
-    BUOYANT_FORCE: NumericParam
-    PRESSURE_FORCE: NumericParam
+    GRAVITY: NumericItem
+    AIR_RESISTANCE: NumericItem
+    RESTITUTION: NumericItem
+    SPHERE_COHESION: NumericItem
+    SPHERE_STIFFNESS: NumericItem
+    SPHERE_DAMPING: NumericItem
+    WATER_FRICTION: NumericItem
+    WATER_SPRING: NumericItem
+    WATER_CENTERING: NumericItem
+    WATER_DAMPING: NumericItem
+    WAVE_AMPLITUDE: NumericItem
+    BUOYANT_FORCE: NumericItem
+    PRESSURE_FORCE: NumericItem
   }
 }
 
@@ -63,15 +63,15 @@ export const physicsConfig: PhysicsConfig = {
       max: 1,
       step: 0.01,
       tooltip: 'fraction of sphere speed maintained in solid terrain bounce' },
-    SPHERE_COHESION: { value: SPHERE_COHESION, hidden: true,
+    SPHERE_COHESION: { value: SPHERE_COHESION, isHidden: true,
       min: 0,
       max: 0.01,
       step: 1e-4 },
-    SPHERE_STIFFNESS: { value: SPHERE_STIFFNESS, hidden: true,
+    SPHERE_STIFFNESS: { value: SPHERE_STIFFNESS, isHidden: true,
       min: 0,
       max: 0.01,
       step: 1e-4 },
-    SPHERE_DAMPING: { value: SPHERE_DAMPING, hidden: true,
+    SPHERE_DAMPING: { value: SPHERE_DAMPING, isHidden: true,
       min: 0,
       max: 0.01,
       step: 1e-5 },

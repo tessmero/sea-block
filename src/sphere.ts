@@ -5,9 +5,12 @@
  * Collides with water and solid terrain.
  */
 
-import { Vector3 } from 'three'
+import type { Vector3 } from 'three'
 
-export type Sphere = {
+export interface Sphere {
   position: Vector3
   velocity: Vector3
+  isVisible: boolean
+  isGhost: boolean // ghosts don't collide with anything
+  isFish: boolean // like ghost, but still effects water
 }

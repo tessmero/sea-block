@@ -5,7 +5,7 @@
  */
 import { Tiling } from './tiling'
 
-type XZ = { x: number, z: number }
+interface XZ { x: number, z: number }
 
 const adjacent = [
   { x: 1, z: 0 },

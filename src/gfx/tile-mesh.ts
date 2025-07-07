@@ -4,19 +4,21 @@
  * Used to render groups of tiles as two instanced meshes (tops and sides).
  */
 
-import { CircleGeometry, CylinderGeometry, Matrix4, MeshBasicMaterial, TypedArray, Vector3 } from 'three'
+import type { Matrix4, TypedArray } from 'three'
+import { CircleGeometry, CylinderGeometry, MeshBasicMaterial, Vector3 } from 'three'
+import type { TileGroup } from '../groups/tile-group'
+import type { Subgroup } from '../groups/subgroup'
+import type { TileShape } from '../grid-logic/tilings/tiling'
 import { ColoredMesh } from './colored-mesh'
-import { TileStyle } from './styles/style'
-import { TileGroup } from '../groups/tile-group'
-import { Subgroup } from '../groups/subgroup'
+import type { TileStyle } from './styles/style'
 
 // extruded tile shape to render
-export type TileExt = {
+export interface TileExt {
   top: CircleGeometry // flat polygon top
   sides: CylinderGeometry // open prism sides
 }
 
-export function extrude(shape): TileExt {
+export function extrude(shape: TileShape): TileExt {
   // return cap and tube geometry for each tile shape
   const { n, radius, angle } = shape
   return {
@@ -40,15 +42,16 @@ export function extrude(shape): TileExt {
 }
 
 export class TileMesh {
-  public readonly _names: string[] = []
-  public readonly _meshes: ColoredMesh[] = []
+  public readonly _names: Array<keyof TileStyle> = []
+  public readonly _meshes: Array<ColoredMesh> = []
   constructor(
     private readonly ext: TileExt,
     private readonly n: number,
   ) {
-    for (const [name, geometry] of Object.entries(ext)) {
+    let name: keyof TileExt
+    for (name in ext) {
       const mesh = new ColoredMesh(
-        geometry,
+        ext[name],
         new MeshBasicMaterial({ color: 0xffffff }),
         n,
       )
@@ -78,7 +81,9 @@ export class TileMesh {
   queueUpdate() {
     for (const mesh of this._meshes) {
       mesh.instanceMatrix.needsUpdate = true
-      mesh.instanceColor.needsUpdate = true
+      if (mesh.instanceColor) {
+        mesh.instanceColor.needsUpdate = true
+      }
       mesh.frustumCulled = false
     }
   }
@@ -106,7 +111,7 @@ export class TileMeshIm {
     protected readonly subgroup: Subgroup,
   ) {}
 
-  get posArrays(): TypedArray[] {
+  get posArrays(): Array<TypedArray> {
     const [subgroup, _indexInSubgroup] = this.group.subgroupsByFlatIndex[this.index]
 
     if (!(subgroup.mesh instanceof TileMesh)) {

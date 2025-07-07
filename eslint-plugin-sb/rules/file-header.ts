@@ -11,7 +11,7 @@ export default ESLintUtils.RuleCreator.withoutDocs({
   meta: {
     type: 'problem',
     docs: {
-      description: 'Require a file-level JSDoc @file tag matching the filename and description format.',
+      description: 'Require JSDoc @file tag with correct filename and formatted description.',
     },
     fixable: undefined,
     schema: [],

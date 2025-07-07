@@ -3,15 +3,15 @@
  *
  * Physics simulation for spheres that collide with terrain and other spheres.
  */
-import { Simulation } from './simulation'
-import { Sphere } from '../sphere'
-import { Tile } from '../tile'
-import { TileGroup } from '../groups/tile-group'
 import { Vector3 } from 'three'
+import type { Sphere } from '../sphere'
+import type { Tile } from '../tile'
+import type { TileGroup } from '../groups/tile-group'
 import { SPHERE_RADIUS, COLLISION_KERNEL_RADIUS } from '../settings'
 import { STEP_DURATION } from '../settings'
-import { PhysicsConfig } from '../configs/physics-config'
-import { FlatConfigMap } from '../configs/config-view'
+import type { PhysicsConfig } from '../configs/physics-config'
+import type { FlatConfigMap } from '../configs/config-view'
+import { Simulation } from './simulation'
 
 export class SphereSim extends Simulation<Sphere> {
   constructor(public readonly terrain: TileGroup, // the tiles to collide with
@@ -19,7 +19,7 @@ export class SphereSim extends Simulation<Sphere> {
     super()
   }
 
-  step(spheres: Sphere[]) {
+  step(spheres: Array<Sphere>) {
     // collide spheres with terrain
     if (this.terrain) {
       for (const sphere of spheres) {
@@ -35,51 +35,68 @@ export class SphereSim extends Simulation<Sphere> {
 
     // collide spheres with each other
     for (let a = 0; a < spheres.length; a++) {
+      const sphereA = spheres[a]
+      if (!sphereA || sphereA.isGhost) {
+        continue
+      }
       for (let b = a + 1; b < spheres.length; b++) {
-        const sphereA = spheres[a]
         const sphereB = spheres[b]
-        if (sphereA && sphereB) {
-          collideSphereWithSphere(
-            sphereA,
-            sphereB,
-            this.flatConfig,
-          ) // sphere-physics.js
+        if (!sphereB || sphereB.isGhost) {
+          continue
         }
+        collideSphereWithSphere(
+          sphereA,
+          sphereB,
+          this.flatConfig,
+        )
       }
     }
   }
 }
 
-export function sphereStep(sphere: Sphere, tileGroup: TileGroup, params: FlatConfigMap<PhysicsConfig>) {
+function sphereStep(sphere: Sphere, tileGroup: TileGroup, params: FlatConfigMap<PhysicsConfig>) {
   const { GRAVITY, AIR_RESISTANCE } = params
 
   // Apply gravity and air resistance
-  sphere.velocity.y -= GRAVITY
+  if (!sphere.isGhost) sphere.velocity.y -= GRAVITY
   sphere.velocity.multiplyScalar(1 - AIR_RESISTANCE)
 
   // Predict next position
   const futurePosition = sphere.position.clone().add(sphere.velocity.clone().multiplyScalar(STEP_DURATION))
 
-  // Collide with terrain
-  collideWithTerrain(
-    sphere,
-    tileGroup,
-    futurePosition,
-    params,
-  )
+  if (sphere.isGhost) {
+    // ghosts just move to tile height
+    const { x, z } = tileGroup.grid.positionToCoord(sphere.position.x, sphere.position.z)
+    const idx = tileGroup.grid.xzToIndex(x, z)
+    if (idx) {
+      const height = tileGroup.members[idx.i].height
+      futurePosition.y = height
+    }
+    sphere.velocity.y = 0
+  }
+  else {
+    // Collide with land and water
+    collideWithTerrain(
+      sphere,
+      tileGroup,
+      futurePosition,
+      params,
+    )
+  }
 
   // Move to next position
   sphere.position = sphere.position.add(sphere.velocity.clone().multiplyScalar(STEP_DURATION))
 }
 
-export function collideSphereWithSphere(self: Sphere, neighbor: Sphere, params: FlatConfigMap<PhysicsConfig>) {
+function collideSphereWithSphere(
+  self: Sphere, neighbor: Sphere, params: FlatConfigMap<PhysicsConfig>): void {
   const { SPHERE_COHESION, SPHERE_STIFFNESS, SPHERE_DAMPING } = params
   const dx = neighbor.position.x - self.position.x
   const dy = neighbor.position.y - self.position.y
   const dz = neighbor.position.z - self.position.z
   const distSq = dx * dx + dy * dy + dz * dz
 
-  if (distSq === 0) return
+  if (distSq === 0) return // same position, give up
 
   const minDist = 2 * SPHERE_RADIUS
   if (distSq < minDist * minDist) {
@@ -111,34 +128,36 @@ export function collideSphereWithSphere(self: Sphere, neighbor: Sphere, params: 
 // Spiral kernel offsets, e.g. 5x5 grid spiraling outward from (0,0)
 const spiralKernel: Array<{ dx: number
   dz: number }> = (() => {
-  const radius = COLLISION_KERNEL_RADIUS
-  const result: Array<{ dx: number
-    dz: number }> = []
-  let x = 0,
-    z = 0,
-    dx = 0,
-    dz = -1
-  const size = radius * 2 + 1
-  const maxI = size * size
-  for (let i = 0; i < maxI; i++) {
-    if (Math.abs(x) <= radius && Math.abs(z) <= radius) {
-      result.push({ dx: x, dz: z })
-    }
-    if (x === z || (x < 0 && x === -z) || (x > 0 && x === 1 - z)) {
+    const radius = COLLISION_KERNEL_RADIUS
+    const result: Array<{ dx: number
+      dz: number }> = []
+    let x = 0,
+      z = 0,
+      dx = 0,
+      dz = -1
+    const size = radius * 2 + 1
+    const maxI = size * size
+    for (let i = 0; i < maxI; i++) {
+      if (Math.abs(x) <= radius && Math.abs(z) <= radius) {
+        result.push({ dx: x, dz: z })
+      }
+      if (x === z || (x < 0 && x === -z) || (x > 0 && x === 1 - z)) {
       // Change direction
-      [dx, dz] = [-dz, dx]
+        [dx, dz] = [-dz, dx]
+      }
+      x += dx
+      z += dz
     }
-    x += dx
-    z += dz
-  }
-  return result
-})()
+    return result
+  })()
 
-function collideWithTerrain(self: Sphere, terrain: TileGroup, futurePosition: Vector3, params: FlatConfigMap<PhysicsConfig>) {
+function collideWithTerrain(
+  self: Sphere, terrain: TileGroup, futurePosition: Vector3, params: FlatConfigMap<PhysicsConfig>,
+) {
   const { BUOYANT_FORCE, PRESSURE_FORCE, RESTITUTION } = params
 
-  const config = terrain.grid
-  const { x: tileX, z: tileZ } = config.positionToCoord(
+  const grid = terrain.grid
+  const { x: tileX, z: tileZ } = grid.positionToCoord(
     futurePosition.x,
     futurePosition.z,
   )
@@ -148,12 +167,9 @@ function collideWithTerrain(self: Sphere, terrain: TileGroup, futurePosition: Ve
     const nz = tileZ + dz
 
     // Get box position and scale from instance matrix
-    const idx = config.xzToIndex(
-      nx,
-      nz,
-    ).i
-    if (idx === -1) continue // out of bounds
-    const tile = terrain.members[idx]
+    const idx = grid.xzToIndex(nx, nz)
+    if (!idx) continue // out of bounds
+    const tile = terrain.members[idx.i]
 
     const collision = checkBoxSphereCollision(
       tile,
@@ -165,12 +181,11 @@ function collideWithTerrain(self: Sphere, terrain: TileGroup, futurePosition: Ve
         self.velocity.y += BUOYANT_FORCE
 
         // apply downward pressure to the tile
-        terrain.sim.accelTile(
-          idx,
-          PRESSURE_FORCE,
-        )
+        terrain.sim.accelTile(idx, PRESSURE_FORCE)
       }
-      else {
+      else if (!self.isFish) {
+        // non-fish, non-ghost sphere colliding with solid terrain
+
         // Adjust sphere position and velocity based on collision normal
         self.position = collision.adjustedPosition
 
@@ -204,12 +219,18 @@ function collideWithTerrain(self: Sphere, terrain: TileGroup, futurePosition: Ve
   }
 }
 
+type BoxCollision = {
+  normal: Vector3
+  adjustedPosition: Vector3
+  isCenterOutside: boolean
+}
+
+const adjustedPosition = new Vector3()
+
 function checkBoxSphereCollision(
   tile: Tile,
   sphere: Vector3,
-): { normal: Vector3
-  adjustedPosition: Vector3
-  centerOutside: boolean } | null {
+): BoxCollision | null {
   const { x, z } = tile.position
   const height = tile.height
   const y = height / 2
@@ -253,13 +274,12 @@ function checkBoxSphereCollision(
   // }
 
   // Calculate adjusted position
-  let adjustedPosition: Vector3
   const distance = Math.sqrt(distanceSq)
-  const centerOutside = distance > 0
-  if (centerOutside) {
+  const isCenterOutside = distance > 0
+  if (isCenterOutside) {
     // Move out along the normal by (radius - penetration depth)
     const penetration = r - distance
-    adjustedPosition = new Vector3(
+    adjustedPosition.set(
       sphere.x + normal.x * penetration,
       sphere.y + normal.y * penetration,
       sphere.z + normal.z * penetration,
@@ -278,7 +298,7 @@ function checkBoxSphereCollision(
     const minDist = Math.min(...dists)
     const axis = dists.indexOf(minDist)
 
-    adjustedPosition = sphere.clone()
+    adjustedPosition.copy(sphere)
     if (axis === 0) adjustedPosition.x = minX - r
     else if (axis === 1) adjustedPosition.x = maxX + r
     else if (axis === 2) adjustedPosition.y = minY - r
@@ -289,5 +309,5 @@ function checkBoxSphereCollision(
 
   return { normal,
     adjustedPosition,
-    centerOutside }
+    isCenterOutside }
 }

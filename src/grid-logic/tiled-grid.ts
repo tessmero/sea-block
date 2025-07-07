@@ -1,14 +1,25 @@
 /**
  * @file tiled-grid.ts
  *
- * Extended grid index with tile shapes and world positions.
+ * Extended indexed-grid where square grid cells are
+ * mapped 1-to-1 with tile shapes and positions.
+ *
+ * The tiling also defines adjacency between neighboring tiles.
+ *
+ * When a tile swaps to the opposite edge during panning,
+ * it's shape and (torroidally-wrapped) adjacent neighbors
+ * are assumed to be unchanged.
+ *
+ * Basically, tilings should be simple alternating patterns
+ * and width/depth should always be even numbers.
  */
-import { IndexedGrid, TileIndex } from './indexed-grid'
 import { gridConfig } from '../configs/grid-config'
+import type { TileIndex } from './indexed-grid'
+import { IndexedGrid } from './indexed-grid'
 import { getTiling } from './tilings/tilings-list'
-import { Tiling } from './tilings/tiling'
+import type { Tiling } from './tilings/tiling'
 
-export type TilePosition = { x: number, z: number }
+export interface TilePosition { x: number, z: number }
 
 export class TiledGrid extends IndexedGrid {
   public readonly tiling: Tiling = getTiling(gridConfig.children.tiling.value)

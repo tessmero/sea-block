@@ -5,15 +5,18 @@
  */
 import * as THREE from 'three'
 import { Vector3 } from 'three'
-import { Group, InstancedMember } from './group'
-import { Sphere } from '../sphere'
+import type { Sphere } from '../sphere'
 import { SphereSim } from '../physics/sphere-sim'
 import { SPHERE_RADIUS } from '../settings'
-import { TileGroup } from '../groups/tile-group'
+import type { TileGroup } from '../groups/tile-group'
+import { Group, InstancedMember } from './group'
 
 // sphere that references position in instanced mesh
 class SphereIm extends InstancedMember implements Sphere {
   public readonly velocity = new Vector3(0, 0, 0)
+  public isGhost = true
+  public isVisible = false
+  public isFish = false
 }
 
 export class SphereGroup extends Group<Sphere, SphereSim> {
@@ -30,19 +33,19 @@ export class SphereGroup extends Group<Sphere, SphereSim> {
         geometry: new THREE.SphereGeometry(SPHERE_RADIUS, 16, 16),
         // material: new THREE.MeshLambertMaterial({ color: 0xffffff }),
       }],
-      subgroupsByFlatIndex: Array.from({ length: n }, (_, i) => i + 1).map(i => ({
+      subgroupsByFlatIndex: Array.from({ length: n }, (_, i) => i).map(i => ({
         subgroupIndex: 0,
         indexInSubgroup: i,
       })),
     })
   }
 
-  protected buildMembers() {
+  protected buildMembers(): Array<Sphere> {
     // all start invisible
     // const dummy = new THREE.Object3D()
     // dummy.scale.set(0, 0, 0)
     // dummy.updateMatrix()
-    const result = []
+    const result: Array<Sphere> = []
     // for (let i = 0; i < this.n; i++) {
     //   this.mesh.setMatrixAt(i, dummy.matrix)
     // }
@@ -57,6 +60,7 @@ export class SphereGroup extends Group<Sphere, SphereSim> {
 
     const spherePositions = [
       new Vector3(0, 30, 0),
+      new Vector3(0, 20, 0),
     ]
 
     // give spheres unique colors
@@ -80,7 +84,6 @@ export class SphereGroup extends Group<Sphere, SphereSim> {
 
   updateMesh() {
     const dummy = new THREE.Object3D()
-    dummy.scale.set(1, 1, 1)
 
     for (let i = 0; i < this.n; i++) {
       const sphere = this.members[i]
@@ -90,6 +93,13 @@ export class SphereGroup extends Group<Sphere, SphereSim> {
           sphere.position.y,
           sphere.position.z,
         )
+
+        if (sphere.isVisible) {
+          dummy.scale.set(1, 1, 1)
+        }
+        else {
+          dummy.scale.set(0, 0, 0)
+        }
       }
       else {
         dummy.position.set(0, -9999, 0)

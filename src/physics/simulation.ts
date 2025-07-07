@@ -4,10 +4,11 @@
  * Base class for dynamic physics simulations.
  */
 
-import { physicsConfig, PhysicsConfig } from '../configs/physics-config'
+import type { PhysicsConfig } from '../configs/physics-config'
+import { physicsConfig } from '../configs/physics-config'
 import { Configurable } from '../configurable'
 
 export abstract class Simulation<M> extends Configurable<PhysicsConfig> {
   config = physicsConfig
-  abstract step(members: M[]): void
+  abstract step(members: Array<M>): void
 }

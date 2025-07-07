@@ -6,7 +6,7 @@
  */
 
 import { MichaelTG } from './michael-tg'
-import { GeneratedTile } from './terrain-generator'
+import type { GeneratedTile } from './terrain-generator'
 
 export class AllOceanTG extends MichaelTG {
   public getTile(rawX: number, rawZ: number): GeneratedTile {

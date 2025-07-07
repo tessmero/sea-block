@@ -3,7 +3,8 @@
  *
  * Rule to disallow `import * as ...` and default import from 'three'.
  */
-import { ESLintUtils, TSESTree } from '@typescript-eslint/utils'
+import type { TSESTree } from '@typescript-eslint/utils'
+import { ESLintUtils } from '@typescript-eslint/utils'
 
 export default ESLintUtils.RuleCreator.withoutDocs({
   meta: {

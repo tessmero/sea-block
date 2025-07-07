@@ -5,7 +5,7 @@
  */
 import { Tiling } from './tiling'
 
-type XZ = { x: number, z: number }
+interface XZ { x: number, z: number }
 
 // Geometric constants for octagon-square tiling
 const SQ_SIDE = 1 // Side length of the squares and octagons

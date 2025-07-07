@@ -5,8 +5,9 @@
  */
 import { createNoise2D } from 'simplex-noise'
 import { Color } from 'three'
-import { GeneratedTile, TerrainGenerator } from './terrain-generator'
-import { ConfigChildren, ConfigTree } from '../configs/config-tree'
+import type { ConfigChildren, ConfigTree } from '../configs/config-tree'
+import type { GeneratedTile } from './terrain-generator'
+import { TerrainGenerator } from './terrain-generator'
 
 const noise2D = createNoise2D()
 const perlinScale = 2e-3
@@ -30,7 +31,7 @@ export const sqtgConfig: SqtgConfig = {
 export class SpaceQuestTG extends TerrainGenerator<SqtgConfig> {
   label = 'space-quest'
   url = 'https://tessmero.github.io/space-quest'
-  config = null // no settings to display
+  config = sqtgConfig // no settings to display
   style = {
     'background': { value: '#000' },
     'sides@land': { lightness: -0.1 },
@@ -67,21 +68,18 @@ export class SpaceQuestTG extends TerrainGenerator<SqtgConfig> {
     }
 
     const sColor = pickColorForPixel(colorData, x, z)
-    const color = new Color(sColor)
+    const color = sColor ? new Color(sColor) : new Color()
     return {
       height, color, isWater,
     }
   }
 }
 
-function pickColorForPixel(data: ColorData, rawx, rawy) {
+function pickColorForPixel(data: ColorData, rawx: number, rawy: number) {
   const { scale, colors } = data
   const x = rawx
   const y = rawy
-
-  const height = scale
-    ? noise2D(x * scale, y * scale) // compute perlin with given scale
-    : global.worldGrid.getPerlin(x, y) // use world grid perlin if scale omitted
+  const height = noise2D(x * scale, y * scale) // compute perlin with given scale
 
   const entries = Object.entries(colors)
   const n = entries.length
@@ -93,7 +91,7 @@ function pickColorForPixel(data: ColorData, rawx, rawy) {
     let to = _to
     if ((to === 1) && ((i + 1) < n)) {
       const [_nextCol, nextCrit] = entries[i + 1]
-      if ('from' in nextCrit) {
+      if (typeof nextCrit.from === 'number') {
         to = nextCrit.from
       }
     }
@@ -109,12 +107,12 @@ function pickColorForPixel(data: ColorData, rawx, rawy) {
   return null
 }
 
-type ColorData = {
+interface ColorData {
   scale: number
   colors: Record<string, CDRange>
 }
 
-type CDRange = {
+interface CDRange {
   from?: number
   to?: number
   data?: ColorData

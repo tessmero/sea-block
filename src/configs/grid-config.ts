@@ -2,24 +2,24 @@
  * @file grid-config.ts
  *
  * Configuration for grid tile shape.
- * Also used for debugging and style options.
+ * Also used for any top-level config items.
  */
 
+import { allGames } from '../games/games-list'
 import { allGenerators } from '../generators/generators-list'
 import { allTilings } from '../grid-logic/tilings/tilings-list'
-import { ConfigTree, OptionParam } from './config-tree'
+import type { ConfigTree, OptionItem } from './config-tree'
 
 // flat config types
-interface GridConfig extends ConfigTree {
+export interface GridConfig extends ConfigTree {
   children: {
-    generator: OptionParam
-    tiling: OptionParam
-    mouseControl: OptionParam
-    debug: OptionParam
+    generator: OptionItem & { value: keyof typeof allGenerators }
+    tiling: OptionItem & { value: keyof typeof allTilings }
+    game: OptionItem & { value: keyof typeof allGames }
+    debug: OptionItem & { value: 'none' | 'pick-direction' | 'pick-tile' }
   }
 }
-
-function randChoice(options: string[]) {
+function randChoice<T extends ReadonlyArray<string>>(options: T): T[number] {
   return options[Math.floor(Math.random() * options.length)]
 }
 
@@ -34,19 +34,16 @@ export const gridConfig: GridConfig = {
     },
 
     tiling: {
-      value: randChoice(['square', 'hex', 'octagon']), // randChoice(Object.keys(allTilings)),
+      value: randChoice(['square', 'octagon'] as const),
+      // value: randChoice(Object.keys(allTilings) as Array<keyof typeof allTilings>),
       options: Object.keys(allTilings),
       resetOnChange: 'full',
     },
 
-    mouseControl: {
-      // value: 'touch-water',
-      value: 'direct-sphere',
-      options: [
-        'touch-water',
-        'direct-sphere',
-      ],
-      hidden: true,
+    game: {
+      // effective starting game is always start-squence (main.ts)
+      value: 'free-cam',
+      options: Object.keys(allGames),
     },
 
     debug: {
@@ -57,7 +54,7 @@ export const gridConfig: GridConfig = {
         { value: 'pick-direction', tooltip: 'Show picked point at sea level used for movement direction' },
         { value: 'pick-tile', tooltip: 'Show picked tile, neighboring tiles, and normal vector' },
       ],
-      hidden: true,
+      isHidden: true,
     },
 
   },
