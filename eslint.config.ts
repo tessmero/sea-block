@@ -9,6 +9,7 @@ import tseslint from 'typescript-eslint'
 import jsdoc from 'eslint-plugin-jsdoc'
 import importPlugin from 'eslint-plugin-import'
 import stylistic from '@stylistic/eslint-plugin'
+import unusedImports from 'eslint-plugin-unused-imports'
 
 // rules defined in this repository (sea-block)
 import eslintPluginSb from './eslint-plugin-sb'
@@ -16,11 +17,14 @@ import eslintPluginSb from './eslint-plugin-sb'
 export default tseslint.config(
   eslint.configs.recommended,
   tseslint.configs.recommended,
-
-  // @ts-expect-error works despite typescript error
   stylistic.configs.recommended,
   {
-    plugins: { import: importPlugin, jsdoc, sb: eslintPluginSb },
+    plugins: {
+      'import': importPlugin,
+      jsdoc,
+      'sb': eslintPluginSb,
+      'unused-imports': unusedImports,
+    },
   },
   {
     ignores: ['**/node_modules/', 'dist/**'],
@@ -34,12 +38,12 @@ export default tseslint.config(
       }],
 
       // limit lines per file
-      'max-lines': ['warn', { max: 400,
+      'max-lines': ['warn', { max: 600,
         // skipBlankLines: true, skipComments: true
       }],
 
       // limit lines per function
-      'max-lines-per-function': ['warn', { max: 100,
+      'max-lines-per-function': ['warn', { max: 120,
         // skipBlankLines: true, skipComments: true
       }],
 
@@ -57,10 +61,15 @@ export default tseslint.config(
       // require Array or ReadonlyArray generic type instead of []
       '@typescript-eslint/array-type': ['error', { default: 'generic' }],
 
-      // allow unused variables starting with underscores
-      '@typescript-eslint/no-unused-vars': ['warn',
+      // replace @typescript-eslint/no-unused-vars
+      // with rules from unused-imports plugin
+      '@typescript-eslint/no-unused-vars': 'off',
+      'unused-imports/no-unused-imports': 'error',
+      'unused-imports/no-unused-vars': ['warn',
         {
           vars: 'local',
+
+          // allow unused variables starting with underscores
           argsIgnorePattern: '^_',
           varsIgnorePattern: '^_',
           caughtErrorsIgnorePattern: '^_',
@@ -90,6 +99,11 @@ export default tseslint.config(
       // // disallow assigning UPPER_SNAKE_CASE variables
       // 'sb/no-upper-snake-case-declare': 'error',
       // 'sb/no-upper-snake-case-assign': 'error',
+
+      // disallow importing main.ts entry point (circular import)
+      'no-restricted-imports': [
+        'error', { patterns: ['**/main'] },
+      ],
     },
   },
   {
@@ -99,6 +113,30 @@ export default tseslint.config(
 
       // disallow import * as THREE from 'three'
       'sb/no-three-namespace-import': 'warn',
+    },
+  },
+  {
+    // restrict "constructor" in classes for named implementations
+    files: [
+      // implementations must not define constructors (they register with base class)
+      'src/grid-logic/tilings/**/*.ts',
+      'src/generators/**/*.ts',
+      'src/games/**/*.ts',
+      'src/configs/**/*.ts',
+      'src/gfx/2d/flat-transition.ts',
+      'src/gfx/3d/drop-transition.ts',
+      // 'src/gfx/styles/**/*.ts',
+    ],
+    ignores: [
+      // base classes are exempt (they define protected constructor)
+      'src/grid-logic/tilings/tiling.ts',
+      'src/generators/terrain-generator.ts',
+      'src/games/game.ts',
+      'src/configs/configurable.ts',
+      // 'src/games/styeles/style.ts',
+    ],
+    rules: {
+      'sb/no-constructor': 'warn',
     },
   },
 
@@ -135,6 +173,12 @@ export default tseslint.config(
           // types must be PascalCase
           selector: ['typeLike'],
           format: ['PascalCase'],
+        },
+        {
+          // Generic type parameter must start with letter T, followed by any uppercase letter.
+          selector: 'typeParameter',
+          format: ['PascalCase'],
+          custom: { regex: '^T[A-Z]', match: true },
         },
       ],
     },

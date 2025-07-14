@@ -37,7 +37,7 @@ export class TileSim extends Simulation<Tile> {
     const {
       WATER_FRICTION, WATER_CENTERING,
       WATER_DAMPING, WATER_SPRING,
-    } = this.flatConfig
+    } = this.config.flatConfig
 
     const fricMul = 1 - WATER_FRICTION
 
@@ -71,7 +71,7 @@ export class TileSim extends Simulation<Tile> {
   }
 
   getWavePos(i: number) {
-    return this.pos[i] * this.flatConfig.WAVE_AMPLITUDE
+    return this.pos[i] * this.config.flatConfig.WAVE_AMPLITUDE
   }
 
   // used for debugging

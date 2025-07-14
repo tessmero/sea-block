@@ -22,6 +22,8 @@ const diagonal = [
 ]
 
 export class SquareTiling extends Tiling {
+  static { Tiling.register('square', () => new SquareTiling()) }
+
   shapes = [{
     n: 4,
     radius: Math.sqrt(2) / 2,

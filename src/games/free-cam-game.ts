@@ -6,27 +6,11 @@
 import { Color, Vector2, Vector3 } from 'three'
 import type { Sphere } from '../sphere'
 import { CAMERA, CAMERA_LOOK_AT } from '../settings'
-import type { ConfigTree, NumericItem } from '../configs/config-tree'
 import type { TileIndex } from '../grid-logic/indexed-grid'
+import type { SeaBlock } from '../sea-block'
+import { freeCamGameConfig } from '../configs/free-cam-game-config'
 import { Game } from './game'
-import type { GameContext, GameUpdateContext, MouseState } from './game'
-
-export interface FreeCamGameConfig extends ConfigTree {
-  children: {
-    CAM_ACCEL: NumericItem
-  }
-}
-
-export const freeCamGameConfig: FreeCamGameConfig = {
-  children: {
-    CAM_ACCEL: { value: 5e-5, // strength of user direction force
-      min: 0,
-      max: 10e-5,
-      step: 1e-6,
-      tooltip: 'camera movement acceleration',
-    },
-  },
-}
+import type { GameUpdateContext, MouseState } from './game'
 
 export const MOUSE_DEADZONE = 50 // (px) center of screen with zero force
 export const MOUSE_MAX_RAD = 200 // (px) radius with max force
@@ -36,17 +20,42 @@ const lastScreenPosDummy = new Vector2()
 
 let _lastPickedTileIndex: TileIndex | undefined = undefined
 
-export class FreeCamGame extends Game<FreeCamGameConfig> {
-  config = freeCamGameConfig
-  protected cameraAnchor: Sphere
-  private waveMaker: Sphere
+// const btnWidth = 60
+// const btnHeight = 20
+
+export class FreeCamGame extends Game {
+  static {
+    Game.register('free-cam', {
+      factory: () => new FreeCamGame(),
+      elements: [
+        // {
+        //   layoutKey: 'randomize',
+        //   imageLoader: simpleButtonLoader(btnWidth, btnHeight, 'RANDOMIZE'),
+        //   clickAction: (seaBlock: SeaBlock) => {
+        //     const tilingItem = seaBlock.config.tree.children.tiling
+        //     tilingItem.value = randChoice(TILING_NAMES)
+        //     seaBlock.onCtrlChange(tilingItem)
+        //   },
+        // },
+      ],
+      layout: {
+        // randomize: { width: btnWidth, height: btnHeight, right: 2, bottom: 2 },
+      },
+    })
+  }
+
+  public readonly config = freeCamGameConfig
+
+  // assigned post-construction in reset()
+  protected cameraAnchor!: Sphere
+  private waveMaker!: Sphere
 
   private hasMouseMoved: boolean = false // has user actually interacted since reset
   private lastScreenPos?: Vector2
 
   protected _lastAnchorPosition = new Vector3()
 
-  public reset(context: GameContext): void {
+  public reset(context: SeaBlock): void {
     const { sphereGroup } = context
 
     this.hasMouseMoved = false
@@ -72,7 +81,7 @@ export class FreeCamGame extends Game<FreeCamGameConfig> {
     this.centerOnAnchor(context)
   }
 
-  public resetCamera(context: GameContext): void {
+  public resetCamera(context: SeaBlock): void {
     // position camera
     const { x, z } = this.cameraAnchor.position
     context.camera.position.set(x + CAMERA.x, CAMERA.y, z + CAMERA.z)
@@ -102,7 +111,9 @@ export class FreeCamGame extends Game<FreeCamGameConfig> {
   }
 
   public update(context: GameUpdateContext): void {
-    const { mouseState, dt } = context
+    this.flatUi.update(context)
+
+    const { seaBlock, mouseState, dt } = context
 
     if (!this.hasMouseMoved && mouseState?.screenPos) {
       if (!this.lastScreenPos) {
@@ -124,7 +135,7 @@ export class FreeCamGame extends Game<FreeCamGameConfig> {
     }
 
     // pan grid if necessary
-    this.centerOnAnchor(context)
+    this.centerOnAnchor(seaBlock)
 
     // accel wave maker towards center
     this.updateWaveMaker(dt, mouseState, true)
@@ -138,7 +149,7 @@ export class FreeCamGame extends Game<FreeCamGameConfig> {
 
     // check if picked visible tile
     if (pickedTileIndex) {
-      const tile = context.terrain.members[pickedTileIndex.i]
+      const tile = seaBlock.terrain.members[pickedTileIndex.i]
       if (tile.isVisible) {
         if (_lastPickedTileIndex !== pickedTileIndex) {
           _lastPickedTileIndex = pickedTileIndex
@@ -158,7 +169,7 @@ export class FreeCamGame extends Game<FreeCamGameConfig> {
     }
 
     // accel cam anchor towards picked intersection point
-    const { CAM_ACCEL } = this.flatConfig
+    const { CAM_ACCEL } = this.config.flatConfig
     mouseVec.x = screenPos.x - window.innerWidth / 2
     mouseVec.y = screenPos.y - window.innerHeight / 2
     const screenDistance = mouseVec.length()
@@ -180,9 +191,9 @@ export class FreeCamGame extends Game<FreeCamGameConfig> {
     sphere.velocity.z += force.z
   }
 
-  protected centerOnAnchor(context: GameContext) {
+  protected centerOnAnchor(context: SeaBlock) {
     const { cameraAnchor } = this
-    const { terrain, camera, controls } = context
+    const { terrain, camera, orbitControls: controls } = context
 
     if (!cameraAnchor) return
 

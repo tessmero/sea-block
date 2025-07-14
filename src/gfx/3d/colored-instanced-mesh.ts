@@ -1,5 +1,5 @@
 /**
- * @file colored-mesh.ts
+ * @file colored-instanced-mesh.ts
  *
  * InstancedMesh with per-instance colors.
  */

@@ -13,6 +13,7 @@ const TRI_RAD = TRI_SIDE / Math.sqrt(3) // Distance from center to vertex
 const TRI_HEIGHT = TRI_SIDE * Math.sqrt(3) / 2 // Height of equilateral triangle with side 1
 
 export class TriangleTiling extends Tiling {
+  static { Tiling.register('triangle', () => new TriangleTiling()) }
   shapes = [
     {
       n: 3,

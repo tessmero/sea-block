@@ -5,43 +5,27 @@
  * Michael2-3B/Procedural-Perlin-Terrain.
  */
 import { Color } from 'three'
-import type { MichaelConfig } from '../configs/michael-config'
 import { michaelConfig } from '../configs/michael-config'
+import { SeedablePRNG } from '../rng-util'
 import type { GeneratedTile } from './terrain-generator'
 import { TerrainGenerator } from './terrain-generator'
 
 type RGB = [number, number, number]
 
-class SeedablePRNG {
-  constructor(private seed: number) {}
+export class MichaelTG extends TerrainGenerator {
+  static { TerrainGenerator.register('Michael2-3B', () => new MichaelTG()) }
 
-  next(): number {
-    this.seed = (this.seed * 9301 + 49297) % 233280
-    return this.seed / 233280
-  }
-}
-
-export class MichaelTG extends TerrainGenerator<MichaelConfig> {
   label = 'Michael2-3B/Procedural-Perlin-Terrain'
   url = 'https://github.com/Michael2-3B/Procedural-Perlin-Terrain'
   config = michaelConfig
   style = { sides: { lightness: -0.1 } }
-
-  private prng: SeedablePRNG
-  protected xzScale: number
-
-  public refreshConfig(): void {
-    super.refreshConfig()
-    this.xzScale = Math.pow(10, this.flatConfig.xzLogScale)
-    this.prng = new SeedablePRNG(this.flatConfig.seed)
-  }
 
   public getTile(rawX: number, rawZ: number): GeneratedTile {
     const x = rawX / this.xzScale
     const z = rawZ / this.xzScale
 
     const rawHeight = this.getHeight(x, z)
-    const { waterLevel, yScale } = this.flatConfig
+    const { waterLevel, yScale } = this.config.flatConfig
 
     const scaledHeight = (rawHeight - waterLevel) * yScale + waterLevel
 
@@ -55,7 +39,7 @@ export class MichaelTG extends TerrainGenerator<MichaelConfig> {
   // Deterministically generate a gradient vector for a grid point
   private gradient(ix: number, iy: number): [number, number] {
     // Simple hash: combine coordinates and seed, then use PRNG
-    const hash = ix * 1836311903 ^ iy * 2971215073 ^ this.flatConfig.seed
+    const hash = ix * 1836311903 ^ iy * 2971215073 ^ this.config.flatConfig.seed
     const prng = new SeedablePRNG(hash)
     const angle = prng.next() * Math.PI * 2
     return [
@@ -82,7 +66,7 @@ export class MichaelTG extends TerrainGenerator<MichaelConfig> {
     const {
       offsetX, offsetZ, amplitude, peaks, exponent,
       persistence, octaves, wavelength,
-    } = this.flatConfig
+    } = this.config.flatConfig
 
     let value = 0
     let wl = wavelength
@@ -135,7 +119,7 @@ export class MichaelTG extends TerrainGenerator<MichaelConfig> {
     y: number,
   ): Color {
     const elevation = this.getHeight(x, y)
-    const { waterLevel } = this.flatConfig
+    const { waterLevel } = this.config.flatConfig
 
     // Neighboring heights for slope calculation
     const y0 = elevation
@@ -166,7 +150,7 @@ export class MichaelTG extends TerrainGenerator<MichaelConfig> {
   }
 
   protected waterColorLookup(depth: number): Color {
-    const { worldLight, lightHeight } = this.flatConfig
+    const { worldLight, lightHeight } = this.config.flatConfig
     const light1 = 3 * (lightHeight + 90) / 180 + 1
     const light2 = 5 - light1
 
@@ -220,7 +204,7 @@ export class MichaelTG extends TerrainGenerator<MichaelConfig> {
     slopeX: number,
     slopeZ: number,
   ): Color {
-    const { waterLevel, beachSize, worldLight } = this.flatConfig
+    const { waterLevel, beachSize, worldLight } = this.config.flatConfig
     let rgb: RGB
 
     if (elevation < waterLevel + beachSize) {
@@ -301,7 +285,7 @@ export class MichaelTG extends TerrainGenerator<MichaelConfig> {
     slopeX: number,
     slopeZ: number,
   ): RGB {
-    const { lightPosition, lightHeight } = this.flatConfig
+    const { lightPosition, lightHeight } = this.config.flatConfig
 
     let lightHeightChange = 90 - lightHeight
     lightHeightChange /= 3 - (lightHeight + 90) / 90

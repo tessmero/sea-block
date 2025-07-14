@@ -10,12 +10,13 @@
  */
 import * as THREE from 'three'
 import type { Simulation } from '../physics/simulation'
+import type { SeaBlock } from '../sea-block'
 import type { SubgroupParams } from './subgroup'
 import { Subgroup } from './subgroup'
 
-// parameters to construct group for type T (Sphere or Tile)
-interface GroupParams<T, S extends Simulation<T>> {
-  sim: S // physics simulation for type T
+// parameters to construct group for type TMember (Sphere or Tile)
+interface GroupParams<TMember, TSim extends Simulation<TMember>> {
+  sim: TSim // physics simulation for type TMember
   subgroups: Array<SubgroupParams>
   subgroupsByFlatIndex: Array<{
     subgroupIndex: number
@@ -23,17 +24,17 @@ interface GroupParams<T, S extends Simulation<T>> {
   }>
 }
 
-export abstract class Group<T, S extends Simulation<T>> {
+export abstract class Group<TMember, TSim extends Simulation<TMember>> {
   public readonly n: number // number of members
 
-  public readonly sim: S // physics simulation
+  public readonly sim: TSim // physics simulation
   public readonly subgroupsByFlatIndex: Array<[Subgroup, number]>
 
-  public members: Array<T> = [] // sea-block objects (spheres or tiles)
+  public members: Array<TMember> = [] // sea-block objects (spheres or tiles)
 
   public readonly subgroups: Array<Subgroup> = []
 
-  constructor(params: GroupParams<T, S>) {
+  constructor(params: GroupParams<TMember, TSim>) {
     this.sim = params.sim
 
     // count total members and assign offsets to subgroups
@@ -50,10 +51,10 @@ export abstract class Group<T, S extends Simulation<T>> {
   }
 
   // build members and init instanced meshes
-  protected abstract buildMembers(): Array<T>
+  protected abstract buildMembers(): Array<TMember>
 
   // update gfx meshes, called just before render
-  protected abstract updateMesh(): void
+  protected abstract updateMesh(seaBlock: SeaBlock): void
 
   setInstanceColor(index: number, color: THREE.Color) {
     // pick subgroup based on index
@@ -67,17 +68,17 @@ export abstract class Group<T, S extends Simulation<T>> {
   }
 
   build() {
-    this.sim.refreshConfig()
+    this.sim.config.refreshConfig()
     this.members = this.buildMembers()
     this._needsUpdate()
     return this
   }
 
-  update(nSteps: number) {
+  update(seaBlock: SeaBlock, nSteps: number) {
     for (let i = 0; i < nSteps; i++) {
       this.sim.step(this.members)
     }
-    this.updateMesh()
+    this.updateMesh(seaBlock)
     this._needsUpdate()
   }
 

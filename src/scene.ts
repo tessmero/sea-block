@@ -9,13 +9,39 @@ import { SphereGroup } from './groups/sphere-group'
 import { TiledGrid } from './grid-logic/tiled-grid'
 import { GRID_DETAIL } from './settings'
 import type { SeaBlock } from './sea-block'
+import { Tiling } from './grid-logic/tilings/tiling'
 
+// extra meshes to show when debugging is enabled
 export class DebugElems {
   public directionPoint: THREE.Object3D
   public center: THREE.Object3D
-  public adjacent: Array<THREE.Object3D>
-  public diagonal: Array<THREE.Object3D>
+  public adjacent: Array<THREE.Mesh>
+  public diagonal: Array<THREE.Mesh>
   public normalArrow: THREE.ArrowHelper
+
+  constructor(scene: THREE.Scene) {
+  // small debug spheres
+    const n = 10, rad = 0.5
+    this.center = debugSphere(scene, rad, 'red')
+    this.adjacent = []
+    this.diagonal = []
+    for (let i = 0; i < n; i++) {
+      this.adjacent.push(debugSphere(scene, rad, 'yellow'))
+      this.diagonal.push(debugSphere(scene, rad, 'blue'))
+    }
+
+    // big debug sphere
+    this.directionPoint = debugSphere(scene, 3, 'red')
+
+    // debug arrow
+    this.normalArrow = new THREE.ArrowHelper(
+      new THREE.Vector3(0, 1, 0), // direction
+      new THREE.Vector3(0, 0, 0), // origin
+      4, // length
+      'red', // color
+    )
+    scene.add(this.normalArrow)
+  }
 
   public refresh(debug: 'none' | 'pick-direction' | 'pick-tile'): void {
     this.directionPoint.visible = debug === 'pick-direction'
@@ -41,7 +67,8 @@ export function buildScene(seaBlock: SeaBlock): {
   debugElems: DebugElems
 } {
   // Grid configuration
-  const grid = new TiledGrid(GRID_DETAIL, GRID_DETAIL)
+  const tiling = Tiling.create(seaBlock.config.flatConfig.tiling)
+  const grid = new TiledGrid(GRID_DETAIL, GRID_DETAIL, tiling)
 
   // Scene setup
   const scene = new THREE.Scene()
@@ -54,7 +81,7 @@ export function buildScene(seaBlock: SeaBlock): {
   scene.add(directionalLight)
 
   // Terrain
-  const terrain = new TileGroup(grid)
+  const terrain = new TileGroup(grid, seaBlock)
   terrain.build()
   terrain.subgroups.forEach(subgroup => subgroup.addToScene(scene))
 
@@ -62,34 +89,7 @@ export function buildScene(seaBlock: SeaBlock): {
   const sphereGroup = new SphereGroup(10, terrain).build()
   sphereGroup.subgroups.forEach(subgroup => subgroup.addToScene(scene))
 
-  // small debug spheres
-  const n = 10, rad = 0.5
-  const center = debugSphere(scene, rad, 'red')
-  const adjacent: Array<THREE.Mesh> = []
-  const diagonal: Array<THREE.Mesh> = []
-  for (let i = 0; i < n; i++) {
-    adjacent.push(debugSphere(scene, rad, 'yellow'))
-    diagonal.push(debugSphere(scene, rad, 'blue'))
-  }
-
-  // big debug sphere
-  const directionPoint = debugSphere(scene, 3, 'red')
-
-  // debug arrow
-  const normalArrow = new THREE.ArrowHelper(
-    new THREE.Vector3(0, 1, 0), // direction
-    new THREE.Vector3(0, 0, 0), // origin
-    4, // length
-    'red', // color
-  )
-  scene.add(normalArrow)
-
-  const debugElems = new DebugElems()
-  debugElems.directionPoint = directionPoint
-  debugElems.center = center
-  debugElems.adjacent = adjacent
-  debugElems.diagonal = diagonal
-  debugElems.normalArrow = normalArrow
+  const debugElems = new DebugElems(scene)
 
   return {
     grid,

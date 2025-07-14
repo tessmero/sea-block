@@ -28,6 +28,8 @@ const oddAdj = [
 const radius = Math.sqrt(3) / 2
 
 export class HexTiling extends Tiling {
+  static { Tiling.register('hex', () => new HexTiling()) }
+
   shapes = [{
     n: 6,
     radius,

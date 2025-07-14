@@ -16,39 +16,34 @@ export type ConfigChildren = Record<string, ConfigButton | ConfigItem | ConfigTr
 
 // common properties for both folders and items
 export interface Annotatable {
-  label?: string
-  tooltip?: string
+  readonly label?: string
+  readonly tooltip?: string
 }
 
 // common properties for bottom-level configurable items
 export interface BaseItem extends Annotatable {
   value: number | string
-  resetOnChange?: 'physics' | 'full'
-  isHidden?: boolean
+  readonly resetOnChange?: 'physics' | 'full'
+  readonly isHidden?: boolean
 }
 
 export interface ConfigButton extends Annotatable {
-  action: () => void | Promise<void>
-  hasNoEffect?: boolean // true for buttons that don't change anything
+  readonly action: () => void | Promise<void>
+  readonly hasNoEffect?: boolean // true for buttons that don't change anything
 }
 
 // numeric slider
 export interface NumericItem extends BaseItem {
   value: number
-  min?: number
-  max?: number
-  step?: number
+  readonly min?: number
+  readonly max?: number
+  readonly step?: number
 }
 
 // dropdown list
-export interface OptionItem extends BaseItem {
-  value: string
-  options: Array<Option>
+export interface OptionItem<TOption extends string = string> extends BaseItem {
+  value: TOption
+  readonly options: ReadonlyArray<TOption>
 }
 
 export type ConfigItem = OptionItem | NumericItem
-export type Option = string | AnnotatedOption
-
-export interface AnnotatedOption extends Annotatable {
-  value: string
-}

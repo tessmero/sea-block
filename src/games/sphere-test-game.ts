@@ -6,39 +6,32 @@
 import { Color, Vector2, Vector3 } from 'three'
 import type { Sphere } from '../sphere'
 import { CAMERA, CAMERA_LOOK_AT } from '../settings'
-import type { ConfigTree, NumericItem } from '../configs/config-tree'
+import type { SeaBlock } from '../sea-block'
 import { Game } from './game'
-import type { GameContext, GameUpdateContext } from './game'
+import type { GameUpdateContext } from './game'
 
-export interface SphereGameConfig extends ConfigTree {
-  children: {
-    PLAYER_ACCEL: NumericItem
-  }
-}
+const PLAYER_ACCEL = 5e-5 // strength of user direction force
 
-export const sphereGameConfig: SphereGameConfig = {
-  children: {
-    PLAYER_ACCEL: { value: 5e-5, // strength of user direction force
-      min: 0,
-      max: 10e-5,
-      step: 1e-6,
-      tooltip: 'strength of user input force',
-    },
+const MOUSE_DEADZONE = 50 // (px) center of screen with zero force
+const MOUSE_MAX_RAD = 200 // (px) radius with max force
 
-  },
-}
-
-export const MOUSE_DEADZONE = 50 // (px) center of screen with zero force
-export const MOUSE_MAX_RAD = 200 // (px) radius with max force
 const mouseVec = new Vector2()
 const force = new Vector3()
 
-export class SphereTestGame extends Game<SphereGameConfig> {
-  config = sphereGameConfig
-  private player: Sphere
-  private lastPlayerPosition: Vector3
+export class SphereTestGame extends Game {
+  static {
+    Game.register('sphere-test', {
+      factory: () => new SphereTestGame(),
+      elements: [],
+      layout: {},
+    })
+  }
 
-  public reset(context: GameContext): void {
+  // assigned in reset
+  private player!: Sphere
+  private lastPlayerPosition!: Vector3
+
+  public reset(context: SeaBlock): void {
     const { sphereGroup, camera } = context
 
     // Create a player sphere
@@ -62,8 +55,10 @@ export class SphereTestGame extends Game<SphereGameConfig> {
   }
 
   public update(context: GameUpdateContext): void {
+    this.flatUi.update(context)
+
     // pan grid if necessary
-    this.centerOnPlayer(context)
+    this.centerOnPlayer(context.seaBlock)
 
     const { mouseState, dt } = context
     if (!mouseState) {
@@ -72,7 +67,6 @@ export class SphereTestGame extends Game<SphereGameConfig> {
 
     const { screenPos, intersection } = mouseState
     const { player } = this
-    const { PLAYER_ACCEL } = this.flatConfig
 
     // Direction from player to intersection, zero y
     force.set(
@@ -94,9 +88,9 @@ export class SphereTestGame extends Game<SphereGameConfig> {
     player.velocity.z += force.z
   }
 
-  private centerOnPlayer(context: GameContext) {
+  private centerOnPlayer(context: SeaBlock) {
     const { player, lastPlayerPosition } = this
-    const { terrain, camera, controls } = context
+    const { terrain, camera, orbitControls: controls } = context
 
     if (!player) return
 

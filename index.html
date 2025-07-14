@@ -38,6 +38,13 @@
       border: 1px solid black;
       position: absolute; /* Needed for absolute positioning of lil-gui if needed */
     }
+
+    @font-face {
+      font-family: 'Micro5';
+      src: url('./fonts/ttf/Micro5-Regular.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+    }
   </style>
 
   
@@ -45,9 +52,10 @@
 <body>
   
 
-<canvas id="threeCanvas" style="z-index:1;"></canvas>
+<canvas id="backCanvas" style="z-index:1;"></canvas>
+<canvas id="frontCanvas" style="z-index:2;pointer-events: none;"></canvas>
 
-  <div id="controls-container" style="z-index:2"></div>
+  <div id="controls-container" style="z-index:3"></div>
   <script type="module" src="/src/main.js"></script>
 </body>
 </html>

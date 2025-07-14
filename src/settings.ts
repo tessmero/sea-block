@@ -2,7 +2,6 @@
  * @file settings.ts
  *
  * Core settings for sea-block.
- * Default terrain generator settings can be found in generator implementations.
  */
 import { Vector3 } from 'three'
 

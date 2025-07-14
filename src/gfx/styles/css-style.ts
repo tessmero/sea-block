@@ -1,11 +1,11 @@
 /**
  * @file css-style.ts
  *
- * Transform/replace colors in from default style based on css rules.
+ * Transform/replace base style based on css rules.
  */
 
 import { Color } from 'three'
-import type { TileExt } from '../tile-mesh'
+import type { TilePart } from '../3d/tile-mesh'
 import { typedEntries } from '../../typed-entries'
 import { StartSequenceGame } from '../../games/start-sequence-game'
 import { BaseStyle } from './base-style'
@@ -14,21 +14,21 @@ import type { TileParams, TileStyle } from './style'
 export type Css = Partial<Record<Selector, CssRuleset>>
 
 // top level keys in css object
-type RulesetSelectorKey = 'background' | keyof TileExt
+type RulesetSelectorKey = 'background' | TilePart
 type AtCondition = 'land' | 'sea'
-type Selector = RulesetSelectorKey | `${keyof TileExt}@${AtCondition}`
+type Selector = RulesetSelectorKey | `${TilePart}@${AtCondition}`
 interface SimpleParsedSelector {
   key: RulesetSelectorKey
 }
 interface ConditionalParsedSelector {
-  key: keyof TileExt // only tile tile parts can have at conditions
+  key: TilePart // only tile tile parts can have at conditions
   atCondition: AtCondition
 }
 type ParsedSelector = SimpleParsedSelector | ConditionalParsedSelector
 
 // types for css rules keys
 const CSS_KEYS = ['value', 'red', 'green', 'blue', 'hue', 'saturation', 'lightness'] as const
-type CssKey = typeof CSS_KEYS[number]
+type CssKey = (typeof CSS_KEYS)[number]
 function isCssKey(key: string): key is CssKey {
   return (CSS_KEYS as ReadonlyArray<string>).includes(key)
 }
@@ -63,22 +63,20 @@ export class CssStyle extends BaseStyle {
       }
     }
 
+    if (StartSequenceGame.isColorTransformEnabled) {
     // apply start sequence transformation
-    // if (StartSequenceGame.saturationPct !== '100%') {
-    const anim = StartSequenceGame.saturationMultiplier
-    // const sMult = Math.pow(0.2 + 0.8 * anim, 2) // saturation multiplier
-    const lMult = Math.pow(0.2 + 0.8 * anim, -1) // lightness multiplier
-    for (const key in result) {
+      const anim = StartSequenceGame.colorTransformAnim
+      const lMult = Math.pow(0.2 + 0.8 * anim, -1) // lightness multiplier
+      for (const key in result) {
       // result[key] = ruleHandlers['saturation'](result[key], StartSequenceGame.saturationPct)
-      const color = result[key] as Color
-      color.getHSL(hsl)
-      if (key === 'top') {
-        hsl.l *= lMult
+        const color = result[key] as Color
+        color.getHSL(hsl)
+        if (key === 'top') {
+          hsl.l *= lMult
+        }
+        hsl.h -= 0.95 * (1 - anim) // rotate hues
+        color.setHSL(hsl.h, hsl.s, hsl.l)
       }
-      hsl.h -= 0.95 * (1 - anim) // rotate hues
-      // hsl.s *= sMult
-      // hsl.l = 1 - (1 - hsl.l) * (0.5 + 0.5 * anim)
-      color.setHSL(hsl.h, hsl.s, hsl.l)
     }
 
     return result

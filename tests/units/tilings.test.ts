@@ -5,9 +5,16 @@
  */
 
 import { equal, ok } from 'assert'
-import { allTilings, getTiling } from '../../src/grid-logic/tilings/tilings-list'
-import type { Tiling } from '../../src/grid-logic/tilings/tiling'
-import { typedEntries } from '../../src/typed-entries'
+import * as fs from 'fs'
+import * as path from 'path'
+import { Tiling } from '../../src/grid-logic/tilings/tiling'
+import { TILING_NAMES } from '../../src/imp-names'
+
+// include source files (populate registry for Tiling.create)
+const tilingsDir = path.join(__dirname, '../../src/grid-logic/tilings')
+fs.readdirSync(tilingsDir).forEach((f) => {
+  require(path.join(tilingsDir, f)) // eslint-disable-line @typescript-eslint/no-require-imports
+})
 
 interface XZ { x: number, z: number }
 
@@ -34,8 +41,8 @@ for (let i = 0; i < 100; i++) {
   })
 }
 
-typedEntries(allTilings).forEach(([name, _]) => {
-  const tiling: Tiling = getTiling(name)
+TILING_NAMES.forEach((name) => {
+  const tiling = Tiling.create(name)
   describe(`${name} indexing for ${testPoints.length} test points`, function () {
     it('has consistent round-trip: position -> index -> position -> index', function () {
       for (const point of testPoints) {
