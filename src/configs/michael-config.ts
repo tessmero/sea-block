@@ -4,38 +4,10 @@
  * Controls heirarchy and default values for terrain generator.
  */
 
-import type { ConfigTree, NumericItem } from './config-tree'
+import { Configurable } from './configurable'
+import type { ConfigTree } from './config-tree'
 
-// config type
-export interface MichaelConfig extends ConfigTree {
-  children: {
-    xzLogScale: NumericItem
-    yScale: NumericItem
-    seed: NumericItem
-    offsetX: NumericItem
-    offsetZ: NumericItem
-    noiseMapValues: { children: {
-      persistence: NumericItem
-      amplitude: NumericItem
-      octaves: NumericItem
-      wavelength: NumericItem
-    } }
-    terrainCustomization: { children: {
-      exponent: NumericItem
-      peaks: NumericItem
-      waterLevel: NumericItem
-      beachSize: NumericItem
-    } }
-    lighting: { children: {
-      worldLight: NumericItem
-      lightPosition: NumericItem
-      lightHeight: NumericItem
-    } }
-  }
-}
-
-// config details
-export const michaelConfig: MichaelConfig = {
+const michaelConfigTree = {
   label: 'Michael2-3B Terrain Config',
   children: {
     xzLogScale: { value: -0.6,
@@ -126,4 +98,11 @@ export const michaelConfig: MichaelConfig = {
         max: 90,
         step: 1 },
     } },
-  } }
+  } } satisfies ConfigTree
+
+// register Configurable
+export class MichaelConfig extends Configurable<typeof michaelConfigTree> {
+  static { Configurable.register('michael', () => new MichaelConfig()) }
+  tree = michaelConfigTree
+}
+export const michaelConfig = Configurable.create('michael') as MichaelConfig

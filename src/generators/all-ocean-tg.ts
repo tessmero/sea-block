@@ -6,9 +6,11 @@
  */
 
 import { MichaelTG } from './michael-tg'
-import type { GeneratedTile } from './terrain-generator'
+import { TerrainGenerator, type GeneratedTile } from './terrain-generator'
 
 export class AllOceanTG extends MichaelTG {
+  static { TerrainGenerator.register('all-ocean', () => new AllOceanTG()) }
+
   public getTile(rawX: number, rawZ: number): GeneratedTile {
     const x = rawX / this.xzScale
     const z = rawZ / this.xzScale

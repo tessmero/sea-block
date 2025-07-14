@@ -1,21 +1,20 @@
 /**
- * @file tile-group-renderer.ts
+ * @file tile-group-gfx-helper.ts
  *
  * Used by tile-group.ts to render land and sea tiles.
  *
- * Handles visible radius, tile entrance exit animations,
+ * Handles visible radius, tile enter/exit animations,
  * and styles.
  */
 
 import { Object3D } from 'three'
-import type { GfxConfig } from '../configs/gfx-config'
-import { gfxConfig } from '../configs/gfx-config'
-import { Configurable } from '../configurable'
-import type { GeneratedTile } from '../generators/terrain-generator'
-import type { TileIndex } from '../grid-logic/indexed-grid'
-import type { RenderableTile, TileGroup } from '../groups/tile-group'
-import { seaBlock } from '../main'
+import { gfxConfig } from '../../configs/gfx-config'
+import type { GeneratedTile } from '../../generators/terrain-generator'
+import type { TileIndex } from '../../grid-logic/indexed-grid'
+import type { RenderableTile, TileGroup } from '../../groups/tile-group'
+import type { CssStyle } from '../styles/css-style'
 import type { TileMesh } from './tile-mesh'
+import { DropTransition } from './drop-transition'
 
 const dummy = new Object3D()
 
@@ -23,18 +22,16 @@ const dummy = new Object3D()
 const ENTR_DURATION = 300
 const EXIT_DURATION = 300
 
-export class TileGroupRenderer extends Configurable<GfxConfig> {
-  config = gfxConfig
+export class TileGroupGfxHelper {
+  public readonly config = gfxConfig
 
   public readonly amplitude: number = 20
 
-  constructor(private readonly group: TileGroup) {
-    super()
-  }
+  constructor(private readonly group: TileGroup) { }
 
-  updateTileMeshes() {
+  updateTileMeshes(style: CssStyle) {
     const { group } = this
-    const maxD2 = Math.pow(this.flatConfig.visibleRadius, 2)
+    const maxD2 = Math.pow(this.config.flatConfig.visibleRadius, 2)
 
     // reset index of mesh instances for rendering
     for (const subgroup of group.subgroups) {
@@ -67,7 +64,7 @@ export class TileGroupRenderer extends Configurable<GfxConfig> {
           const { gTile } = rTile
 
           // compute styled colors only on first render
-          rTile.style = seaBlock.style.getTileStyle({
+          rTile.style = style.getTileStyle({
             x, z, generatedTile: gTile,
 
             // support @land and @sea conditions in styles
@@ -146,7 +143,7 @@ export class TileGroupRenderer extends Configurable<GfxConfig> {
     const box = group.tilePositions[memberIndex]
 
     // distance to truncate from bottom of tile
-    const cutoff = -this.flatConfig.extendBottom / this.amplitude
+    const cutoff = -this.config.flatConfig.extendBottom / this.amplitude
 
     let renderHeight: number
     if (gTile.isWater) {
@@ -160,6 +157,7 @@ export class TileGroupRenderer extends Configurable<GfxConfig> {
     }
     group.members[memberIndex].height = renderHeight // height for sphere collision
 
+    // compute tile animation (enter/exit at visible radius)
     let anim = 1
     const { entranceStartTime, exitStartTime } = rTile
     if (exitStartTime) {
@@ -171,15 +169,22 @@ export class TileGroupRenderer extends Configurable<GfxConfig> {
       anim = this._boundaryAnim(elapsed, ENTR_DURATION)
     }
     const entranceOffset = -Math.min(renderHeight - cutoff, anim)
-    dummy.position.set(box.x, Math.max(cutoff, renderHeight / 2 + cutoff / 2 + entranceOffset), box.z)
+
+    // compute tile animation (global drop-transition)
+    const transitionOffset = DropTransition.tileOffset
+
+    dummy.position.set(
+      box.x,
+      Math.max(cutoff, renderHeight / 2 + cutoff / 2 + entranceOffset) + transitionOffset,
+      box.z,
+    )
     dummy.scale.set(1, Math.max(0, renderHeight + entranceOffset - cutoff), 1)
-    // dummy.scale.set(1, renderHeight - cutoff, 1)
     dummy.updateMatrix()
     const newIndexInSubgroup = subgroup.setMemberMatrix(memberIndex, dummy.matrix)
     group.subgroupsByFlatIndex[memberIndex] = [subgroup, newIndexInSubgroup]
     if (style) {
       const tileMesh = subgroup.mesh as TileMesh
-      tileMesh.setTileStyle(newIndexInSubgroup, style)
+      tileMesh.setInstanceStyle(newIndexInSubgroup, style)
     }
     return true // yes successful
   }

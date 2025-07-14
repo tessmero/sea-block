@@ -1,7 +1,7 @@
 /**
  * @file controls-gui.ts
  *
- * Used in main.js to build user interface to control terrain generator settings.
+ * Used in sea-block.ts to display config tree as html elements.
  */
 import * as dat from 'lil-gui'
 import type { ConfigTree, ConfigButton, ConfigItem, NumericItem, OptionItem } from '../configs/config-tree'
@@ -75,24 +75,24 @@ function addControls(
         if (typeof opt === 'string') {
           labelVals[opt] = opt
         }
-        else {
-          labelVals[opt.label ?? opt.value] = opt.value
-        }
+        // else {
+        //   labelVals[opt.label ?? opt.value] = opt.value
+        // }
       }
       const ctrl = gui.add(op, 'value', labelVals)
         .name(op.label ?? camelCaseToLabel(key))
         .listen()
 
-      // Find the select element inside the controller
-      const select = ctrl.domElement.querySelector('select')
-      if (select) {
-        for (const [i, option] of op.options.entries()) {
-          if (typeof option !== 'string' && option.tooltip) {
-            // set tooltip for one option in dropdown
-            select.options[i].title = option.tooltip
-          }
-        }
-      }
+      // // Find the select element inside the controller
+      // const select = ctrl.domElement.querySelector('select')
+      // if (select) {
+      //   for (const [i, option] of op.options.entries()) {
+      //     if (typeof option !== 'string' && option.tooltip) {
+      //       // set tooltip for one option in dropdown
+      //       select.options[i].title = option.tooltip
+      //     }
+      //   }
+      // }
 
       if (onChange) {
         ctrl.onChange((value) => {
@@ -128,6 +128,7 @@ function addControls(
     else {
       // Nested group
       const folder = gui.addFolder(entry.label ?? camelCaseToLabel(key))
+
       addTooltip(
         folder,
         entry.tooltip,

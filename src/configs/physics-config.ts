@@ -4,7 +4,8 @@
  * Default values and controls heirarchy for physics settings.
  */
 
-import type { ConfigTree, NumericItem } from './config-tree'
+import { Configurable } from './configurable'
+import type { ConfigTree } from './config-tree'
 
 const GRAVITY = 5e-4
 const AIR_RESISTANCE = 1e-2
@@ -26,27 +27,7 @@ const WAVE_AMPLITUDE = 10 // how far water tile moves
 const BUOYANT_FORCE = 2e-4 // tile pushes sphere up
 const PRESSURE_FORCE = 4e-4 // sphere pushes tile down
 
-// flat config types
-export interface PhysicsConfig extends ConfigTree {
-  children: {
-    GRAVITY: NumericItem
-    AIR_RESISTANCE: NumericItem
-    RESTITUTION: NumericItem
-    SPHERE_COHESION: NumericItem
-    SPHERE_STIFFNESS: NumericItem
-    SPHERE_DAMPING: NumericItem
-    WATER_FRICTION: NumericItem
-    WATER_SPRING: NumericItem
-    WATER_CENTERING: NumericItem
-    WATER_DAMPING: NumericItem
-    WAVE_AMPLITUDE: NumericItem
-    BUOYANT_FORCE: NumericItem
-    PRESSURE_FORCE: NumericItem
-  }
-}
-
-// flat config details
-export const physicsConfig: PhysicsConfig = {
+const physicsConfigTree = {
   tooltip: 'settings for spheres and waves',
   children: {
     GRAVITY: { value: GRAVITY,
@@ -111,9 +92,16 @@ export const physicsConfig: PhysicsConfig = {
       step: 1e-5,
       tooltip: 'force of sphere pushing down on water tile' },
   },
-}
+} satisfies ConfigTree
 
 // all physics settings trigger a soft reset (reload constants for sims)
-for (const key in physicsConfig.children) {
-  physicsConfig.children[key].resetOnChange = 'physics'
+for (const key in physicsConfigTree.children) {
+  physicsConfigTree.children[key].resetOnChange = 'physics'
 }
+
+// register Configurable
+class PhysicsConfig extends Configurable<typeof physicsConfigTree> {
+  static { Configurable.register('physics', () => new PhysicsConfig()) }
+  tree = physicsConfigTree
+}
+export const physicsConfig = Configurable.create('physics') as PhysicsConfig

@@ -9,9 +9,11 @@ import type { Tile } from '../tile'
 import type { TileGroup } from '../groups/tile-group'
 import { SPHERE_RADIUS, COLLISION_KERNEL_RADIUS } from '../settings'
 import { STEP_DURATION } from '../settings'
-import type { PhysicsConfig } from '../configs/physics-config'
-import type { FlatConfigMap } from '../configs/config-view'
+import type { physicsConfig } from '../configs/physics-config'
+import type { FlatConfigMap } from '../configs/configurable'
 import { Simulation } from './simulation'
+
+type PhysParams = FlatConfigMap<typeof physicsConfig.tree>
 
 export class SphereSim extends Simulation<Sphere> {
   constructor(public readonly terrain: TileGroup, // the tiles to collide with
@@ -27,7 +29,7 @@ export class SphereSim extends Simulation<Sphere> {
           sphereStep(
             sphere,
             this.terrain,
-            this.flatConfig,
+            this.config.flatConfig,
           ) // sphere-physics.js
         }
       }
@@ -47,14 +49,14 @@ export class SphereSim extends Simulation<Sphere> {
         collideSphereWithSphere(
           sphereA,
           sphereB,
-          this.flatConfig,
+          this.config.flatConfig,
         )
       }
     }
   }
 }
 
-function sphereStep(sphere: Sphere, tileGroup: TileGroup, params: FlatConfigMap<PhysicsConfig>) {
+function sphereStep(sphere: Sphere, tileGroup: TileGroup, params: PhysParams) {
   const { GRAVITY, AIR_RESISTANCE } = params
 
   // Apply gravity and air resistance
@@ -89,7 +91,7 @@ function sphereStep(sphere: Sphere, tileGroup: TileGroup, params: FlatConfigMap<
 }
 
 function collideSphereWithSphere(
-  self: Sphere, neighbor: Sphere, params: FlatConfigMap<PhysicsConfig>): void {
+  self: Sphere, neighbor: Sphere, params: PhysParams): void {
   const { SPHERE_COHESION, SPHERE_STIFFNESS, SPHERE_DAMPING } = params
   const dx = neighbor.position.x - self.position.x
   const dy = neighbor.position.y - self.position.y
@@ -152,7 +154,7 @@ const spiralKernel: Array<{ dx: number
   })()
 
 function collideWithTerrain(
-  self: Sphere, terrain: TileGroup, futurePosition: Vector3, params: FlatConfigMap<PhysicsConfig>,
+  self: Sphere, terrain: TileGroup, futurePosition: Vector3, params: PhysParams,
 ) {
   const { BUOYANT_FORCE, PRESSURE_FORCE, RESTITUTION } = params
 

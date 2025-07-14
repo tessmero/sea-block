@@ -13,19 +13,20 @@
  * Basically, tilings should be simple alternating patterns
  * and width/depth should always be even numbers.
  */
-import { gridConfig } from '../configs/grid-config'
 import type { TileIndex } from './indexed-grid'
 import { IndexedGrid } from './indexed-grid'
-import { getTiling } from './tilings/tilings-list'
 import type { Tiling } from './tilings/tiling'
 
 export interface TilePosition { x: number, z: number }
 
 export class TiledGrid extends IndexedGrid {
-  public readonly tiling: Tiling = getTiling(gridConfig.children.tiling.value)
-
   private readonly _midX = this.width / 2
   private readonly _midZ = this.depth / 2
+
+  constructor(width: number, depth: number,
+    public readonly tiling: Tiling) {
+    super(width, depth)
+  }
 
   /**
    * Convert a world position (x, z) to grid coordinates (tileX, tileZ)

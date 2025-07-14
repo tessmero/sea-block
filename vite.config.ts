@@ -1,9 +1,11 @@
 /**
- * @file vite.config.js
+ * @file vite.config.ts
  *
  * Configuration for vite build used in "npm run dev".
  */
+
 import { defineConfig } from 'vite'
+
 export default defineConfig({
   base: './',
   build: {

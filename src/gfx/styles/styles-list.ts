@@ -15,7 +15,7 @@ export const allStyles = {
   'tron': {
     'background': { value: '#000' },
     'top@land': { saturation: 0 },
-    'sides@land': { saturation: 0, lightness: -0.2 },
+    'sides@land': { saturation: 0, lightness: '-0.2' },
     'top@sea': { value: '#000' },
     'sides@sea': { value: '#6ee2ff' },
   },

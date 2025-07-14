@@ -22,8 +22,10 @@
 
 import fileHeader from './rules/file-header'
 import noThreeNamespaceImport from './rules/no-three-namespace-import'
+import noConstructor from './rules/no-constructor'
 
 const rules = {
+  'no-constructor': noConstructor,
   'file-header': fileHeader,
   'no-three-namespace-import': noThreeNamespaceImport,
 } as const

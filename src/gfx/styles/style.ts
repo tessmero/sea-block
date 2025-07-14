@@ -6,8 +6,10 @@
 
 import type { Color } from 'three'
 import type { GeneratedTile } from '../../generators/terrain-generator'
-import type { TileExt } from '../tile-mesh'
+import type { CompositeStyle } from '../composite-element'
+import type { TilePart } from '../3d/tile-mesh'
 
+// tile-specific params needed to pick colors
 export interface TileParams {
   x: number
   z: number
@@ -16,10 +18,12 @@ export interface TileParams {
   // used as @condition in css
   sea?: boolean // eslint-disable-line @typescript-eslint/naming-convention
   land?: boolean // eslint-disable-line @typescript-eslint/naming-convention
+
+  specialState?: 'start-sequence' | undefined
 }
 
-// style for one tile = color for each part of extruded tile
-export type TileStyle = Record<keyof TileExt, Color>
+// colors for a tile
+export type TileStyle = CompositeStyle<TilePart>
 
 export abstract class Style {
   public abstract background: Color

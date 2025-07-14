@@ -45,7 +45,7 @@ npx eslint
 Run unit tests defined in `tests`
 
 ```
-npx mocha
+npm run test
 ```
 
 Output minified product in `dist`

@@ -4,7 +4,15 @@
  * Boilerplate helper that wraps Object.entries and maintains key and value types.
  */
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+// For this file, allow single-character generic types and '{}' empty type.
+/* eslint @typescript-eslint/no-empty-object-type: 0 */
+/* eslint @typescript-eslint/naming-convention: 0 */
+
+//
+export function typedKeys<T extends {}>(object: T): ReadonlyArray<keyof T> {
+  return Object.keys(object) as unknown as ReadonlyArray<keyof T>
+}
+
 export function typedEntries<T extends {}>(object: T): ReadonlyArray<Entry<T>> {
   return Object.entries(object) as unknown as ReadonlyArray<Entry<T>>
 }
@@ -14,7 +22,6 @@ type TupleEntry<T extends ReadonlyArray<unknown>, I extends Array<unknown> = [],
     ? TupleEntry<Tail, [...I, unknown], R | [`${I['length']}`, Head]>
     : R
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 type ObjectEntry<T extends {}>
   = T extends object
     ? { [K in keyof T]: [K, Required<T>[K]] }[keyof T] extends infer E
@@ -26,7 +33,6 @@ type ObjectEntry<T extends {}>
         : never
     : never
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export type Entry<T extends {}>
   = T extends readonly [unknown, ...Array<unknown>]
     ? TupleEntry<T>

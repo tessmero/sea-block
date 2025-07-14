@@ -14,6 +14,8 @@ const OCT_RADIUS = OCT_SIDE / (2 * Math.sin(Math.PI / 8)) // Circumradius of oct
 const SQ_RADIUS = SQ_SIDE / Math.sqrt(2) / 2 // Circumradius of square
 
 export class OctagonTiling extends Tiling {
+  static { Tiling.register('octagon', () => new OctagonTiling()) }
+
   shapes = [
     {
       n: 8,

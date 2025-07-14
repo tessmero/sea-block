@@ -8,5 +8,11 @@
       "**/dist": true
     },
     "typescript.tsdk": "node_modules/typescript/lib",
+    "eslint.rules.customizations": [
+      {
+        "rule": "*",
+        "severity": "warn"
+      }
+    ]
   }
   

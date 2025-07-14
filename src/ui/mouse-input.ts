@@ -11,11 +11,13 @@ import type { DebugElems } from '../scene'
 import { gridConfig } from '../configs/grid-config'
 import type { Tile } from '../tile'
 import type { MouseState } from '../games/game'
+import type { LayeredViewport } from '../gfx/layered-viewport'
 
 let shouldShowDebugTiles = false
 let isOnScreen = false
 
 const screenPos = new THREE.Vector2()
+const lvPos = new THREE.Vector2()
 const dummy = new THREE.Vector2()
 
 const planeY = new THREE.Plane(
@@ -25,6 +27,7 @@ const raycaster = new THREE.Raycaster()
 const intersection = new THREE.Vector3()
 
 export interface ProcessMouseParams {
+  layeredViewport: LayeredViewport
   terrain: TileGroup
   camera: THREE.Camera
   debugElems: DebugElems
@@ -76,7 +79,7 @@ export function processMouse(params: ProcessMouseParams): MouseState | undefined
   // }
 
   // update debug elements
-  const debug = gridConfig.children.debug.value
+  const debug = gridConfig.tree.children.debug.value
   shouldShowDebugTiles = debug === 'pick-tile'
   debugElems.directionPoint.position.copy(intersection)
   if (pickedTile) {
@@ -118,8 +121,12 @@ export function processMouse(params: ProcessMouseParams): MouseState | undefined
     // }
   }
 
+  lvPos.x = screenPos.x * params.layeredViewport.pixelRatio
+  lvPos.y = screenPos.y * params.layeredViewport.pixelRatio
+
   return {
     screenPos,
+    lvPos,
     intersection,
     pickedTileIndex: pickedTile,
   }
@@ -135,42 +142,80 @@ function debugTile(debugElem: THREE.Object3D, tile: Tile) {
   debugElem.visible = shouldShowDebugTiles
 }
 
-export function initMouseListeners(element: HTMLCanvasElement) {
+export function initMouseListeners(
+  layeredViewport: LayeredViewport,
+  clickCallback: (Vector2) => void,
+  unclickCallback: () => void,
+) {
+  const { backCanvas } = layeredViewport
+
   const forgetOn = ['mouseleave']
   for (const eventType of forgetOn) {
-    element.addEventListener(
+    backCanvas.addEventListener(
       eventType,
       () => { isOnScreen = false },
     )
   }
-  const pollOn = [
+
+  const moveOn = [
     'mousemove',
-    'touchstart',
     'touchmove',
   ]
-  for (const eventType of pollOn) {
-    element.addEventListener(
+  for (const eventType of moveOn) {
+    backCanvas.addEventListener(
       eventType,
       (event: Event) => {
-        if ('touches' in event && (event as TouchEvent).touches.length > 0) {
-          const touch = (event as TouchEvent).touches[0]
-          if (typeof touch.clientX === 'number' && typeof touch.clientY === 'number') {
-            screenPos.x = touch.clientX
-            screenPos.y = touch.clientY
-          }
-          else {
-            screenPos.x = touch.pageX
-            screenPos.y = touch.pageY
-          }
-        }
-        else if ('clientX' in event && 'clientY' in event) {
-          screenPos.x = (event as MouseEvent).clientX
-          screenPos.y = (event as MouseEvent).clientY
-        }
-
-        isOnScreen = true
+        _processMousePos(event)
         event.preventDefault()
       },
     )
   }
+
+  const downOn = [
+    'mousedown',
+    // 'touchstart'
+  ]
+  for (const eventType of downOn) {
+    backCanvas.addEventListener(
+      eventType,
+      (event: Event) => {
+        _processMousePos(event)
+        clickCallback(screenPos)
+        event.preventDefault()
+      },
+    )
+  }
+
+  const upOn = [
+    'mouseup',
+  ]
+  for (const eventType of upOn) {
+    backCanvas.addEventListener(
+      eventType,
+      (event: Event) => {
+        unclickCallback()
+        event.preventDefault()
+      },
+    )
+  }
+}
+
+function _processMousePos(event: Event) {
+  if ('touches' in event && (event as TouchEvent).touches.length > 0) {
+    const touch = (event as TouchEvent).touches[0]
+    if (typeof touch.clientX === 'number' && typeof touch.clientY === 'number') {
+      screenPos.x = touch.clientX
+      screenPos.y = touch.clientY
+    }
+    else {
+      screenPos.x = touch.pageX
+      screenPos.y = touch.pageY
+    }
+  }
+  else if ('clientX' in event && 'clientY' in event) {
+    screenPos.x = (event as MouseEvent).clientX
+    screenPos.y = (event as MouseEvent).clientY
+  }
+
+  isOnScreen = true
 }

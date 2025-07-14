@@ -5,13 +5,13 @@
  * for example the octagon tiling has two subgroups (square and octagon).
  */
 import * as THREE from 'three'
-import type { TileExt } from '../gfx/tile-mesh'
-import { TileMesh } from '../gfx/tile-mesh'
-import { ColoredMesh } from '../gfx/colored-mesh'
+import type { TileGeom } from '../gfx/3d/tile-mesh'
+import { TileMesh } from '../gfx/3d/tile-mesh'
+import { ColoredMesh } from '../gfx/3d/colored-instanced-mesh'
 
 export interface SubgroupParams {
   n: number // number of members
-  geometry: THREE.BufferGeometry | TileExt // shape to render
+  geometry: THREE.BufferGeometry | TileGeom // shape to render
 }
 
 export class Subgroup {
@@ -45,7 +45,7 @@ export class Subgroup {
       scene.add(this.mesh)
     }
     else {
-      scene.add(...(this.mesh)._meshes)
+      scene.add(...(this.mesh).meshes)
     }
   }
 
@@ -58,7 +58,7 @@ export class Subgroup {
     }
   }
 
-  private _counter: number
+  private _counter: number = 0
 
   public resetCount() {
     this._counter = 0

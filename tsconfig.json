@@ -5,7 +5,10 @@
     "target": "es2015",
     "moduleResolution": "nodenext",
     "module": "nodenext",
-    "strictNullChecks": true,
+    "strictNullChecks": true, 
+    
+    // classes must define readonly properties in constructor
+    "strictPropertyInitialization": true,
   },
   "include": ["src"]
 }

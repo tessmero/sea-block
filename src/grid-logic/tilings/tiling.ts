@@ -5,6 +5,8 @@
  * Determines the position, shape, and adjacency of tiles.
  */
 
+import type { TilingName } from '../../imp-names'
+
 /*
  * tile index (integers)
  * or, tile position (floats near index)
@@ -39,4 +41,26 @@ export abstract class Tiling {
   // get relative indices for tile neighbors
   public abstract getAdjacent(x: number, z: number): Array<XZ> // share edge
   public abstract getDiagonal(x: number, z: number): Array<XZ> // share vertex
+
+  // static registry pattern
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  static _registry: Record<TilingName, () => Tiling> = {} as any
+
+  protected constructor() {}
+
+  static register(name: TilingName, factory: () => Tiling): void {
+    if (name in this._registry) {
+      throw new Error(`TerrainGenerator already registered: '${name}'`)
+    }
+    this._registry[name] = factory
+  }
+
+  static create(name: TilingName): Tiling {
+    const factory = this._registry[name]
+    if (!factory) {
+      throw new Error(`tiling '${name}' not registered`)
+    }
+    const instance = factory()
+    return instance
+  }
 }

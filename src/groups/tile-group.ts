@@ -4,7 +4,7 @@
  * Mannages an array of Tile instances and performs panning
  * by transfering tiles from one edge to the opposite edge.
  *
- * Uses gfx/tile-group-renderer.ts to manage tile meshes.
+ * Uses gfx/tile-group-gfx-helper.ts to manage tile meshes.
  */
 import * as THREE from 'three'
 import type { Vector3 } from 'three'
@@ -12,11 +12,11 @@ import type { TiledGrid, TilePosition } from '../grid-logic/tiled-grid'
 import type { GeneratedTile } from '../generators/terrain-generator'
 import type { Tile } from '../tile'
 import { TileSim } from '../physics/tile-sim'
-import { extrude, TileMeshIm } from '../gfx/tile-mesh'
+import { extrude, TileMeshIm } from '../gfx/3d/tile-mesh'
 import type { TileStyle } from '../gfx/styles/style'
 import type { TileIndex } from '../grid-logic/indexed-grid'
-import { TileGroupRenderer } from '../gfx/tile-group-renderer'
-import { seaBlock } from '../main'
+import { TileGroupGfxHelper } from '../gfx/3d/tile-group-gfx-helper'
+import type { SeaBlock } from '../sea-block'
 import { Group } from './group'
 
 const dummy = new THREE.Object3D()
@@ -32,13 +32,18 @@ export interface RenderableTile {
 export class TileGroup extends Group<Tile, TileSim> {
   public readonly tilePositions: Array<TilePosition> = [] // grid tiling data
   public readonly generatedTiles: Array<RenderableTile | null> = [] // gfx data
-  public readonly tileGroupRenderer: TileGroupRenderer
+  public readonly tileGroupRenderer: TileGroupGfxHelper
 
   // current panning position
   private _offsetX = 0
   private _offsetZ = 0
 
-  constructor(public grid: TiledGrid) {
+  private get generator() { return this.seaBlock.generator }
+
+  constructor(
+    public grid: TiledGrid,
+    private readonly seaBlock: SeaBlock,
+  ) {
     // count number of tiles per subgroup
     const subgroups = grid.tiling.shapes
       .map(shape => extrude(shape))
@@ -63,12 +68,12 @@ export class TileGroup extends Group<Tile, TileSim> {
       subgroupsByFlatIndex,
     })
 
-    this.tileGroupRenderer = new TileGroupRenderer(this)
-    this.tileGroupRenderer.refreshConfig()
+    this.tileGroupRenderer = new TileGroupGfxHelper(this)
+    this.tileGroupRenderer.config.refreshConfig()
   }
 
-  protected updateMesh(): void {
-    this.tileGroupRenderer.updateTileMeshes()
+  protected updateMesh(seaBlock: SeaBlock): void {
+    this.tileGroupRenderer.updateTileMeshes(seaBlock.style)
   }
 
   private buildTileMember(idx: TileIndex): Tile {
@@ -91,9 +96,11 @@ export class TileGroup extends Group<Tile, TileSim> {
   }
 
   public generateTile(idx: TileIndex): RenderableTile {
+    // console.log(`generate tile ${this.generator.constructor.name} ${this.generator.flatConfig.peaks}`)
+
     const { i, x, z } = idx
     const result = {
-      gTile: seaBlock.generator.getTile(x, z),
+      gTile: this.generator.getTile(x, z),
     }
     this.generatedTiles[i] = result
 
@@ -201,12 +208,13 @@ export class TileGroup extends Group<Tile, TileSim> {
   }
 
   public resetColors() {
-    seaBlock.generator.refreshConfig()
-    for (const gTile of this.generatedTiles) {
-      if (gTile) {
-        gTile.style = undefined
-      }
-    }
+    // this.generator.refreshConfig()
+    this.generatedTiles.fill(null)
+    // for (const gTile of this.generatedTiles) {
+    //   if (gTile) {
+    //     gTile.style = undefined
+    //   }
+    // }
   }
 }
 

@@ -6,22 +6,11 @@
 
 import { CustomStyle } from '../gfx/styles/custom-style'
 import { allStyles } from '../gfx/styles/styles-list'
-import { seaBlock } from '../main'
-import type { ConfigButton, ConfigTree, NumericItem, OptionItem } from './config-tree'
-
-export interface GfxConfig extends ConfigTree {
-  children: {
-    pixelScale: NumericItem
-    visibleRadius: NumericItem
-    extendBottom: NumericItem
-    style: OptionItem
-    copyStyle: ConfigButton
-    pasteStyle: ConfigButton
-  }
-}
+import { Configurable } from './configurable'
+import type { ConfigTree } from './config-tree'
 
 // performance details
-export const gfxConfig: GfxConfig = {
+const gfxConfigTree = {
   label: 'Graphics',
   children: {
     pixelScale: {
@@ -50,8 +39,9 @@ export const gfxConfig: GfxConfig = {
 
     copyStyle: {
       label: 'Copy Style',
-      action: () => navigator.clipboard.writeText(
-        JSON.stringify(seaBlock.style.css, null, 2)),
+      action: () => {},
+      // action: () => navigator.clipboard.writeText(
+      //   JSON.stringify(seaBlock.style.css, null, 2)),
       hasNoEffect: true,
     },
 
@@ -60,8 +50,15 @@ export const gfxConfig: GfxConfig = {
       action: async () => {
         const text = await navigator.clipboard.readText()
         CustomStyle.setCustomCss(text)
-        gfxConfig.children.style.value = 'custom'
+        gfxConfigTree.children.style.value = 'custom'
       },
     },
   },
+} satisfies ConfigTree
+
+// register Configurable
+class GfxConfig extends Configurable<typeof gfxConfigTree> {
+  static { Configurable.register('gfx', () => new GfxConfig()) }
+  tree = gfxConfigTree
 }
+export const gfxConfig = Configurable.create('gfx') as GfxConfig
