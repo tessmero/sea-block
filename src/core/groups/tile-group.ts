@@ -1,38 +1,30 @@
 /**
  * @file tile-group.ts
  *
- * Mannages an array of Tile instances and performs panning
+ * Terrain and water tiles in a grid, which can be panned
  * by transfering tiles from one edge to the opposite edge.
  *
- * Uses gfx/tile-group-gfx-helper.ts to manage tile meshes.
+ * Uses gfx/tile-group-gfx-helper.ts to manage meshes.
  */
 import * as THREE from 'three'
 import type { Vector3 } from 'three'
 import type { TiledGrid, TilePosition } from '../grid-logic/tiled-grid'
-import type { GeneratedTile } from '../generators/terrain-generator'
 import type { Tile } from '../tile'
-import { TileSim } from '../physics/tile-sim'
-import { extrude, TileMeshIm } from '../gfx/3d/tile-mesh'
-import type { TileStyle } from '../gfx/styles/style'
+import { WaterSim } from '../physics/water-sim'
 import type { TileIndex } from '../grid-logic/indexed-grid'
-import { TileGroupGfxHelper } from '../gfx/3d/tile-group-gfx-helper'
-import type { SeaBlock } from '../sea-block'
+import type { RenderableTile } from '../../gfx/3d/tile-group-gfx-helper'
+import { TileGroupGfxHelper } from '../../gfx/3d/tile-group-gfx-helper'
+import { extrude, TileMeshIm } from '../../gfx/3d/tile-mesh'
+import type { SeaBlock } from '../../sea-block'
+import { gfxConfig } from '../../configs/gfx-config'
 import { Group } from './group'
 
 const dummy = new THREE.Object3D()
 const dummyVec = new THREE.Vector3()
-
-export interface RenderableTile {
-  gTile: GeneratedTile // includes base color
-  entranceStartTime?: number // time when entered visible radius
-  exitStartTime?: number // time when exited visible radius
-  style?: TileStyle // computed colors, assigned on first render
-}
-
-export class TileGroup extends Group<Tile, TileSim> {
+export class TileGroup extends Group<Tile, WaterSim> {
   public readonly tilePositions: Array<TilePosition> = [] // grid tiling data
   public readonly generatedTiles: Array<RenderableTile | null> = [] // gfx data
-  public readonly tileGroupRenderer: TileGroupGfxHelper
+  public readonly gfxHelper: TileGroupGfxHelper
 
   // current panning position
   private _offsetX = 0
@@ -63,17 +55,17 @@ export class TileGroup extends Group<Tile, TileSim> {
     }
 
     super({
-      sim: new TileSim(grid),
+      sim: new WaterSim(grid),
       subgroups,
       subgroupsByFlatIndex,
     })
 
-    this.tileGroupRenderer = new TileGroupGfxHelper(this)
-    this.tileGroupRenderer.config.refreshConfig()
+    this.gfxHelper = new TileGroupGfxHelper(this)
+    gfxConfig.refreshConfig()
   }
 
-  protected updateMesh(seaBlock: SeaBlock): void {
-    this.tileGroupRenderer.updateTileMeshes(seaBlock.style)
+  protected updateMeshes(seaBlock: SeaBlock): void {
+    this.gfxHelper.updateTileMeshes(seaBlock.style)
   }
 
   private buildTileMember(idx: TileIndex): Tile {
@@ -107,6 +99,7 @@ export class TileGroup extends Group<Tile, TileSim> {
     // update water if called after members constructed
     if (i < this.members.length) {
       this.members[i].isWater = result.gTile.isWater
+      this.members[i].isFlora = result.gTile.isFlora
     }
 
     return result
@@ -210,6 +203,7 @@ export class TileGroup extends Group<Tile, TileSim> {
   public resetColors() {
     // this.generator.refreshConfig()
     this.generatedTiles.fill(null)
+    this.gfxHelper.liveRenderHeights.fill(NaN)
     // for (const gTile of this.generatedTiles) {
     //   if (gTile) {
     //     gTile.style = undefined
@@ -222,6 +216,7 @@ class TileIm extends TileMeshIm implements Tile {
   public wavePos = 0
   public height = 0
   public isWater = false
+  public isFlora = false
   public isVisible = false
 
   constructor(

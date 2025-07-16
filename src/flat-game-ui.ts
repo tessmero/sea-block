@@ -6,13 +6,13 @@
  */
 
 import type { Vector2 } from 'three'
-import type { GameUpdateContext, MouseState } from '../games/game'
-import type { FlatButton } from '../gfx/2d/flat-button'
-import type { LayeredViewport } from '../gfx/layered-viewport'
-import type { ComputedRects, CssLayout } from '../gui-layout-parser'
-import { parseLayoutRectangles } from '../gui-layout-parser'
-import type { SeaBlock } from '../sea-block'
-import { playSound } from '../sounds'
+import type { ComputedRects, CssLayout } from './util/layout-parser'
+import { parseLayoutRectangles } from './util/layout-parser'
+import type { FlatButton } from './gfx/2d/flat-button'
+import type { LayeredViewport } from './gfx/layered-viewport'
+import type { GameUpdateContext, MouseState } from './games/game'
+import { playSound } from './sounds'
+import type { SeaBlock } from './sea-block'
 
 export class FlatGameUi {
   public layoutRectangles: ComputedRects = {}
@@ -40,10 +40,12 @@ export class FlatGameUi {
       const { x, y, w, h } = this.layoutRectangles[name]
       if ((p.x > x) && (p.x < (x + w)) && (p.y > y) && (p.y < (y + h))) {
         // console.log(`picked button: ${name}`)
+        document.documentElement.style.cursor = 'pointer'
         return name
       }
     }
     // console.log('picked no button ')
+    document.documentElement.style.cursor = 'default'
     return undefined
   }
 
@@ -113,6 +115,8 @@ export class FlatGameUi {
       )
       this.clickedBtn = undefined
     }
-    seaBlock.orbitControls.enabled = true
+    if (seaBlock.game.enableOrbitControls()) {
+      seaBlock.orbitControls.enabled = true
+    }
   }
 }

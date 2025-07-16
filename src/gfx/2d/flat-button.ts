@@ -5,8 +5,7 @@
  */
 
 import { Color } from 'three'
-import type { CompositeElement, CompositeStyle } from '../composite-element'
-import { soundsLoaded } from '../../sounds'
+import type { CompositeColors, CompositeElement } from '../composite-element'
 
 // enum
 export const BUTTON_PARTS = ['background', 'border'] as const
@@ -16,26 +15,28 @@ export type ButtonPart = (typeof BUTTON_PARTS)[number]
 export const BUTTON_STATES = ['default', 'hovered', 'clicked'] as const
 export type ButtonState = (typeof BUTTON_STATES)[number]
 
-export type ButtonStyle = CompositeStyle<ButtonPart>
+export type ButtonColors = CompositeColors<ButtonPart>
 
 export type ButtonParams = {
   width: number
   height: number
-  styles: Record<ButtonState, ButtonStyle>
+  styles: Record<ButtonState, ButtonColors>
   label: string
+  font: string
+  hotkey?: string
 }
 
-const simpleButtonFont = '25px "Micro5"'
-
 // helper to build imageLoader for GameElement
-export function simpleButtonLoader(width: number, height: number, label: string) {
+export function simpleButtonLoader(
+  width: number, height: number,
+  label: string, font: string = '35px "Micro5"') {
   return async () => {
     // wait for fonts from urls defined in index.html
-    await document.fonts.load(simpleButtonFont)
+    await document.fonts.load(font)
     await document.fonts.ready
 
     // wait for sounds defined in sounds.ts
-    await soundsLoaded()
+    // await soundsLoaded()
 
     // emulate slowness
     // await new Promise(resolve => setTimeout(resolve, 1000))
@@ -48,6 +49,7 @@ export function simpleButtonLoader(width: number, height: number, label: string)
         hovered: { background: new Color(0xcccccc), border: new Color('black') },
         clicked: { background: new Color('black'), border: new Color('white') },
       },
+      font,
     })
     return btn
   }
@@ -63,19 +65,19 @@ export class FlatButton implements CompositeElement<ButtonPart> {
   public readonly images: Record<ButtonState, OffscreenCanvas>
 
   constructor(params: ButtonParams) {
-    const { width, height, label, styles } = params
+    const { width, height, label, styles, font } = params
     this.width = width
     this.height = height
     this.label = label
 
     this.images = {
-      default: this.buildButtonImage(styles.default),
-      hovered: this.buildButtonImage(styles.hovered),
-      clicked: this.buildButtonImage(styles.clicked),
+      default: this.buildButtonImage(styles.default, font),
+      hovered: this.buildButtonImage(styles.hovered, font),
+      clicked: this.buildButtonImage(styles.clicked, font),
     }
   }
 
-  private buildButtonImage(style: ButtonStyle): OffscreenCanvas {
+  private buildButtonImage(style: ButtonColors, font: string): OffscreenCanvas {
     const { width, height, label } = this
     const buffer = new OffscreenCanvas(width, height)
 
@@ -90,10 +92,10 @@ export class FlatButton implements CompositeElement<ButtonPart> {
     ctx.fillRect(0, 0, width, height)
 
     ctx.strokeStyle = 'black'
-    ctx.strokeRect(0, 0, width, height)
+    ctx.strokeRect(0, 0, width - 0.5, height - 0.5)
 
     ctx.fillStyle = 'black'
-    ctx.font = simpleButtonFont
+    ctx.font = font
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
     ctx.fillText(label, width / 2, height / 2)

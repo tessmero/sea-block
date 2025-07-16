@@ -10,11 +10,12 @@
 import { Object3D } from 'three'
 import { gfxConfig } from '../../configs/gfx-config'
 import type { GeneratedTile } from '../../generators/terrain-generator'
-import type { TileIndex } from '../../grid-logic/indexed-grid'
-import type { RenderableTile, TileGroup } from '../../groups/tile-group'
-import type { CssStyle } from '../styles/css-style'
-import type { TileMesh } from './tile-mesh'
+import type { StyleParser } from '../../util/style-parser'
+import type { TileGroup } from '../../core/groups/tile-group'
+import type { TileColors } from '../styles/style'
+import type { TileIndex } from '../../core/grid-logic/indexed-grid'
 import { DropTransition } from './drop-transition'
+import type { TileMesh } from './tile-mesh'
 
 const dummy = new Object3D()
 
@@ -22,16 +23,24 @@ const dummy = new Object3D()
 const ENTR_DURATION = 300
 const EXIT_DURATION = 300
 
+export interface RenderableTile {
+  gTile: GeneratedTile // includes base color
+  entranceStartTime?: number // time when entered visible radius
+  exitStartTime?: number // time when exited visible radius
+  colors?: TileColors // computed colors, assigned on first render
+}
+
 export class TileGroupGfxHelper {
-  public readonly config = gfxConfig
-
   public readonly amplitude: number = 20
+  public readonly liveRenderHeights: Array<number> // used for flora gfx
 
-  constructor(private readonly group: TileGroup) { }
+  constructor(private readonly group: TileGroup) {
+    this.liveRenderHeights = new Array(group.n).fill(NaN)
+  }
 
-  updateTileMeshes(style: CssStyle) {
+  updateTileMeshes(style: StyleParser) {
     const { group } = this
-    const maxD2 = Math.pow(this.config.flatConfig.visibleRadius, 2)
+    const maxD2 = Math.pow(gfxConfig.flatConfig.visibleRadius, 2)
 
     // reset index of mesh instances for rendering
     for (const subgroup of group.subgroups) {
@@ -59,12 +68,12 @@ export class TileGroupGfxHelper {
           rTile = group.generateTile(tileIndex)
         }
 
-        // update mesh for group member index
-        if (!rTile.style) {
+        // compute new colors if necessary
+        if (!rTile.colors) {
           const { gTile } = rTile
 
           // compute styled colors only on first render
-          rTile.style = style.getTileStyle({
+          rTile.colors = style.getTileColors({
             x, z, generatedTile: gTile,
 
             // support @land and @sea conditions in styles
@@ -82,7 +91,7 @@ export class TileGroupGfxHelper {
         // tile is outside visible radius
         group.members[memberIndex].isVisible = false
 
-        if (rTile?.style) {
+        if (rTile?.colors) {
           // tile was generated and previously rendered
 
           if (!rTile.exitStartTime) {
@@ -103,6 +112,7 @@ export class TileGroupGfxHelper {
             // tile out of radius an will not be rendered
             // rTile.exitStartTime = null
             // rTile.style = null
+            this.liveRenderHeights[memberIndex] = NaN
           }
         }
       }
@@ -138,12 +148,12 @@ export class TileGroupGfxHelper {
       throw new Error('subgroup changed')
     }
 
-    const { gTile, style } = rTile
+    const { gTile, colors } = rTile
 
     const box = group.tilePositions[memberIndex]
 
     // distance to truncate from bottom of tile
-    const cutoff = -this.config.flatConfig.extendBottom / this.amplitude
+    const cutoff = -gfxConfig.flatConfig.extendBottom / this.amplitude
 
     let renderHeight: number
     if (gTile.isWater) {
@@ -179,12 +189,15 @@ export class TileGroupGfxHelper {
       box.z,
     )
     dummy.scale.set(1, Math.max(0, renderHeight + entranceOffset - cutoff), 1)
+
+    this.liveRenderHeights[memberIndex] = dummy.position.y + dummy.scale.y / 2
+
     dummy.updateMatrix()
     const newIndexInSubgroup = subgroup.setMemberMatrix(memberIndex, dummy.matrix)
     group.subgroupsByFlatIndex[memberIndex] = [subgroup, newIndexInSubgroup]
-    if (style) {
+    if (colors) {
       const tileMesh = subgroup.mesh as TileMesh
-      tileMesh.setInstanceStyle(newIndexInSubgroup, style)
+      tileMesh.setColorsForInstance(newIndexInSubgroup, colors)
     }
     return true // yes successful
   }

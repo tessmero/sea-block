@@ -17,9 +17,7 @@ let didConstruct = false
 let didInit = false
 
 export class LayeredViewport {
-  public readonly config = gfxConfig
-
-  // assigned in init(), called in main.ts
+  // members assigned in init(), called in main.ts
   public backCanvas!: HTMLCanvasElement
   public frontCanvas!: HTMLCanvasElement
   public backRenderer!: WebGLRenderer
@@ -34,20 +32,20 @@ export class LayeredViewport {
     didConstruct = true
   }
 
-  // convert browser px to big pixels
-  get pixelRatio() { return 1 / this.config.flatConfig.pixelScale }
+  // convert pixels to big pixels
+  get pixelRatio() { return window.devicePixelRatio / gfxConfig.flatConfig.pixelScale }
 
   // called when viewport changes shape (sea-block.ts)
   handleResize() {
-    const { pixelScale } = this.config.flatConfig
-    this.w = window.innerWidth / pixelScale
-    this.h = window.innerHeight / pixelScale
+    const pixelRatio = this.pixelRatio
+    this.w = window.innerWidth * pixelRatio
+    this.h = window.innerHeight * pixelRatio
 
     this.backRenderer.setSize(
       window.innerWidth,
       window.innerHeight,
     )
-    this.backRenderer.setPixelRatio(1 / pixelScale)
+    this.backRenderer.setPixelRatio(pixelRatio)
 
     this.frontCanvas.width = this.w
     this.frontCanvas.height = this.h
@@ -63,11 +61,22 @@ export class LayeredViewport {
     this.frontCanvas = document.getElementById('frontCanvas') as HTMLCanvasElement
 
     // three.js Renderer for back canvas
-    this.backRenderer = new WebGLRenderer({ canvas: this.backCanvas, antialias: false })
+    this.backRenderer = new WebGLRenderer({
+      canvas: this.backCanvas,
+      antialias: true,
+    })
 
     // 2D graphics context for front canvas
     this.ctx = this.frontCanvas.getContext('2d') as CanvasRenderingContext2D
 
     this.handleResize()
   }
+
+  // // called after launch to switch to renering sharp pixels
+  // resetRenderer(antialias = false) {
+  //   this.backRenderer = new WebGLRenderer({
+  //     canvas: this.backCanvas,
+  //     antialias: antialias,
+  //   })
+  // }
 }

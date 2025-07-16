@@ -7,18 +7,26 @@
 // @ts-expect-error make vite build include all sources
 import.meta.glob('./**/*.ts', { eager: true })
 
+import { gfxConfig } from './configs/gfx-config'
 import { LayeredViewport } from './gfx/layered-viewport'
-import { randomTransition } from './gfx/transition'
+import { TILING_NAMES } from './imp-names'
 import { SeaBlock } from './sea-block'
+import { randChoice } from './util/rng'
 
-export const layeredViewport = new LayeredViewport()
-layeredViewport.config.refreshConfig()
+const layeredViewport = new LayeredViewport()
+gfxConfig.refreshConfig()
 layeredViewport.init()
 
 const seaBlock = new SeaBlock(layeredViewport)
 
 // load default config
 seaBlock.config.refreshConfig()
+
+// set temprary config values until user clicks launch
+seaBlock.config.flatConfig.generator = 'all-ocean'
+seaBlock.config.flatConfig.style = 'black-and-white'
+seaBlock.config.flatConfig.game = 'splash-screen'
+seaBlock.config.flatConfig.tiling = randChoice(TILING_NAMES)
 
 // init game and 3D scene
 seaBlock.init()
@@ -27,21 +35,21 @@ seaBlock.reset()
 // show controls gui on startup
 // seaBlock.rebuildControls()
 
-// allow skipping start sequence with escape key
-function handleEscapePress(event) {
-  if (event.key === 'Escape') {
-    // seaBlock.game.traveled = seaBlock.game.distForFreeCam
-    seaBlock.transition = randomTransition(seaBlock.layeredViewport)
-    seaBlock.isCovering = true
+// // allow skipping start sequence with escape key
+// function handleEscapePress(event) {
+//   if (event.key === 'Escape') {
+//     // seaBlock.game.traveled = seaBlock.game.distForFreeCam
+//     seaBlock.transition = randomTransition(seaBlock.layeredViewport)
+//     seaBlock.isCovering = true
 
-    // document.removeEventListener('keydown', handleEscapePress)
-  }
-}
-document.addEventListener('keydown', handleEscapePress)
+//     // document.removeEventListener('keydown', handleEscapePress)
+//   }
+// }
+// document.addEventListener('keydown', handleEscapePress)
 
 // Animation loop
 let lastTime = performance.now()
-function animate() {
+async function animate() {
   requestAnimationFrame(animate) // queue next loop
 
   // Calculate delta time since last loop
@@ -49,6 +57,6 @@ function animate() {
   const dt = Math.min(50, currentTime - lastTime)
   lastTime = currentTime
 
-  seaBlock.animate(dt) // update everything
+  await seaBlock.animate(dt) // update everything
 }
 animate() // start first loop

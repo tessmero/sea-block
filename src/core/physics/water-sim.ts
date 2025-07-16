@@ -1,5 +1,5 @@
 /**
- * @file tile-sim.ts
+ * @file water-sim.ts
  *
  * Physics simulation for water tiles that oscillate up and down.
  */
@@ -9,23 +9,17 @@
 import type { Tile } from '../tile'
 import type { TiledGrid } from '../grid-logic/tiled-grid'
 import type { TileIndex } from '../grid-logic/indexed-grid'
-import { Simulation } from './simulation'
+import { physicsConfig } from '../../configs/physics-config'
+import { TileSim } from './tile-sim'
 
-export class TileSim extends Simulation<Tile> {
-  private readonly n: number
-
-  private readonly springs: Array<Spring>
-
+export class WaterSim extends TileSim {
+  // y position and velocity for each tile
   public readonly pos: Float32Array
-
   public readonly vel: Float32Array
 
-  constructor(private readonly grid: TiledGrid) {
-    super()
+  constructor(grid: TiledGrid) {
+    super(grid)
 
-    this.springs = buildSprings(grid)
-
-    this.n = grid.n
     this.pos = new Float32Array(this.n)
     this.vel = new Float32Array(this.n)
   }
@@ -37,7 +31,7 @@ export class TileSim extends Simulation<Tile> {
     const {
       WATER_FRICTION, WATER_CENTERING,
       WATER_DAMPING, WATER_SPRING,
-    } = this.config.flatConfig
+    } = physicsConfig.flatConfig
 
     const fricMul = 1 - WATER_FRICTION
 
@@ -71,7 +65,7 @@ export class TileSim extends Simulation<Tile> {
   }
 
   getWavePos(i: number) {
-    return this.pos[i] * this.config.flatConfig.WAVE_AMPLITUDE
+    return this.pos[i] * physicsConfig.flatConfig.WAVE_AMPLITUDE
   }
 
   // used for debugging
@@ -101,39 +95,4 @@ export class TileSim extends Simulation<Tile> {
     // this.vel[index] = -limitVel + 2 * limitVel * Math.random()
     Math.max(-limitVel, Math.min(limitVel, this.vel[index]))
   }
-}
-
-interface Spring {
-  indexA: number
-  indexB: number
-  weight: number
-}
-
-function buildSprings(grid: TiledGrid): Array<Spring> {
-  const lowWeight = 1 / Math.SQRT2
-
-  const { width, depth } = grid
-  const springs: Array<Spring> = []
-  for (const { x, z, i: index } of grid.tileIndices) {
-    const springSpecs: Array<Array<number>> = [
-      ...grid.tiling.getAdjacent(x, z).map(({ x, z }) => [x, z, 1]),
-      ...grid.tiling.getDiagonal(x, z).map(({ x, z }) => [x, z, lowWeight]),
-    ]
-
-    for (const [dx, dz, weight] of springSpecs) {
-      // get wrapped neighbor coords
-      const wrappedX = (x + dx + width) % width
-      const wrappedZ = (z + dz + depth) % depth
-      const neighborIdx = grid.xzToIndex(wrappedX, wrappedZ)
-      if (!neighborIdx) {
-        throw new Error(`initial grid is missing tile (${wrappedX},${wrappedZ})`)
-      }
-      const indexB = neighborIdx.i
-
-      if (index < indexB) { // prevent duplicating
-        springs.push({ indexA: index, indexB, weight })
-      }
-    }
-  }
-  return springs
 }

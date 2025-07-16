@@ -14,6 +14,10 @@
           background:transparent; 
       display: block; width: 100vw; height: 100vh; 
 
+    }
+
+    canvas:not(.splash) {
+
       image-rendering: optimizeSpeed;             /* Older versions of FF          */
       image-rendering: -moz-crisp-edges;          /* FF 6.0+                       */
       image-rendering: -webkit-optimize-contrast; /* Safari                        */
@@ -52,8 +56,13 @@
 <body>
   
 
-<canvas id="backCanvas" style="z-index:1;"></canvas>
-<canvas id="frontCanvas" style="z-index:2;pointer-events: none;"></canvas>
+<canvas id="backCanvas" class="splash"></canvas>
+<style>
+  #backCanvas {
+    z-index:1;
+  }
+</style>
+<canvas id="frontCanvas" style="z-index:2;"></canvas>
 
   <div id="controls-container" style="z-index:3"></div>
   <script type="module" src="/src/main.js"></script>

@@ -19,7 +19,7 @@ export class AllOceanTG extends MichaelTG {
     return {
       height: 132,
       color,
-      isWater: true,
+      isWater: true, isFlora: false,
     }
   }
 }

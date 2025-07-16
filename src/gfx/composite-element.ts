@@ -11,6 +11,6 @@ export type CompositeElement<TPart extends string> = {
 }
 
 // colors for each part of a composite
-export type CompositeStyle<TPart extends string = string> = {
+export type CompositeColors<TPart extends string = string> = {
   [partName in TPart]: Color
 }

@@ -6,7 +6,7 @@
 
 import { Color, InstancedBufferAttribute, InstancedMesh } from 'three'
 
-export class ColoredMesh extends InstancedMesh {
+export class ColoredInstancedMesh extends InstancedMesh {
   public readonly colors: Float32Array = initMeshColors(this)
 
   setInstanceColor(index: number, color: Color) {

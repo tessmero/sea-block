@@ -12,6 +12,8 @@ import type { LayeredViewport } from './layered-viewport'
 
 const totalDuration = 1500 // ms
 
+let isFirstUncover = true
+
 export function randomTransition(layeredViewport: LayeredViewport): Transition {
   // const name = randChoice(TRANSITION_NAMES)
   const name = 'flat'
@@ -37,7 +39,14 @@ export abstract class Transition {
   update(dt: number) {
     // describe elapsed time range as fraction of animation
     const start = this.elapsed / totalDuration
-    this.elapsed += dt
+
+    if (this.didFinishCover && isFirstUncover) {
+      this.elapsed += 0.4 * dt // slow down first uncover
+    }
+    else {
+      this.elapsed += dt
+    }
+
     const end = this.elapsed / totalDuration
 
     if (!this.didFinishCover && end >= 0.5) {
@@ -52,6 +61,7 @@ export abstract class Transition {
       // signal to end transition
       this.cleanupUncover()
       this.didFinishUncover = true
+      isFirstUncover = false
       return
     }
 

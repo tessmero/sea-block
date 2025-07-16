@@ -7,11 +7,11 @@
 import { equal, ok } from 'assert'
 import * as fs from 'fs'
 import * as path from 'path'
-import { Tiling } from '../../src/grid-logic/tilings/tiling'
+import { Tiling } from '../../src/core/grid-logic/tilings/tiling'
 import { TILING_NAMES } from '../../src/imp-names'
 
 // include source files (populate registry for Tiling.create)
-const tilingsDir = path.join(__dirname, '../../src/grid-logic/tilings')
+const tilingsDir = path.join(__dirname, '../../src/core/grid-logic/tilings')
 fs.readdirSync(tilingsDir).forEach((f) => {
   require(path.join(tilingsDir, f)) // eslint-disable-line @typescript-eslint/no-require-imports
 })

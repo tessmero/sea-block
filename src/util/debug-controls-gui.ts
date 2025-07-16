@@ -1,19 +1,18 @@
 /**
- * @file controls-gui.ts
+ * @file debug-controls-gui.ts
  *
  * Used in sea-block.ts to display config tree as html elements.
  */
 import * as dat from 'lil-gui'
-import type { ConfigTree, ConfigButton, ConfigItem, NumericItem, OptionItem } from '../configs/config-tree'
+import type { ConfigTree, NumericItem, OptionItem } from '../configs/config-tree'
+import type { SeaBlock } from '../sea-block'
 
 let _allControls: Record<string, dat.GUIController> = {}
 
 let gui: dat.GUI
 
-export function showControls(
-  config: ConfigTree,
-  onChange: (param: ConfigItem) => void,
-) {
+export function showControls(seaBlock: SeaBlock) {
+  const config = seaBlock.config.tree
   _allControls = {} // flat list of controls
 
   // add controls container to document and replace any existing
@@ -30,7 +29,7 @@ export function showControls(
   addControls(
     gui,
     config,
-    onChange,
+    seaBlock,
   )
 
   // // add test button
@@ -44,7 +43,7 @@ export function showControls(
 function addControls(
   gui: dat.GUI,
   config: ConfigTree,
-  onChange: (param: ConfigItem | ConfigButton) => void,
+  seaBlock: SeaBlock,
 ) {
   const children = config.children
   for (const key in children) {
@@ -59,9 +58,9 @@ function addControls(
       const buttonItem = entry
       const label = entry.label ?? camelCaseToLabel(key)
       const obj = { [label]: async () => {
-        await buttonItem.action()
+        await buttonItem.action(seaBlock)
         if (!buttonItem.hasNoEffect) {
-          onChange(buttonItem)
+          seaBlock.onCtrlChange(buttonItem)
         }
       } }
       gui.add(obj, label)
@@ -94,12 +93,10 @@ function addControls(
       //   }
       // }
 
-      if (onChange) {
-        ctrl.onChange((value) => {
-          op.value = value
-          onChange(op)
-        })
-      }
+      ctrl.onChange((value) => {
+        op.value = value
+        seaBlock.onCtrlChange(op)
+      })
       addTooltip(
         ctrl,
         op.tooltip,
@@ -114,14 +111,12 @@ function addControls(
       if (np.step) {
         ctrl.step(np.step)
       }
-      if (onChange) {
-        ctrl.onChange((value) => {
-          if (typeof value === 'number') {
-            np.value = value
-            onChange(np)
-          }
-        })
-      }
+      ctrl.onChange((value) => {
+        if (typeof value === 'number') {
+          np.value = value
+          seaBlock.onCtrlChange(np)
+        }
+      })
       addTooltip(ctrl, np.tooltip)
       _allControls[key] = ctrl
     }
@@ -136,7 +131,7 @@ function addControls(
       addControls(
         folder,
         entry as ConfigTree,
-        onChange,
+        seaBlock,
       )
     }
   }

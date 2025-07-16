@@ -13,6 +13,7 @@
  * Basically, tilings should be simple alternating patterns
  * and width/depth should always be even numbers.
  */
+import type { Spring } from '../physics/tile-sim'
 import type { TileIndex } from './indexed-grid'
 import { IndexedGrid } from './indexed-grid'
 import type { Tiling } from './tilings/tiling'
@@ -22,6 +23,9 @@ export interface TilePosition { x: number, z: number }
 export class TiledGrid extends IndexedGrid {
   private readonly _midX = this.width / 2
   private readonly _midZ = this.depth / 2
+
+  // set when used for water of flora simulation (tile-sim.ts)
+  public springsForTileSim?: ReadonlyArray<Spring>
 
   constructor(width: number, depth: number,
     public readonly tiling: Tiling) {

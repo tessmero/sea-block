@@ -7,7 +7,7 @@ import * as THREE from 'three'
 import { Vector3 } from 'three'
 import type { Sphere } from '../sphere'
 import { SphereSim } from '../physics/sphere-sim'
-import { SPHERE_RADIUS } from '../settings'
+import { SPHERE_RADIUS } from '../../settings'
 import type { TileGroup } from '../groups/tile-group'
 import { Group, InstancedMember } from './group'
 
@@ -33,6 +33,8 @@ export class SphereGroup extends Group<Sphere, SphereSim> {
         geometry: new THREE.SphereGeometry(SPHERE_RADIUS, 16, 16),
         // material: new THREE.MeshLambertMaterial({ color: 0xffffff }),
       }],
+
+      // one subgroup with indices matching group member indices
       subgroupsByFlatIndex: Array.from({ length: n }, (_, i) => i).map(i => ({
         subgroupIndex: 0,
         indexInSubgroup: i,
@@ -82,7 +84,7 @@ export class SphereGroup extends Group<Sphere, SphereSim> {
     return result
   }
 
-  updateMesh() {
+  updateMeshes() {
     const dummy = new THREE.Object3D()
 
     for (let i = 0; i < this.n; i++) {

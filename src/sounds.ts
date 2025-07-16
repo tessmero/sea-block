@@ -4,7 +4,7 @@
  * List all sound effects to load.
  */
 import { Howl, Howler } from 'howler'
-import { typedEntries } from './typed-entries'
+import { typedEntries } from './util/typed-entries'
 
 // Define your sound settings in a single object
 const SOUND_SPECS = {

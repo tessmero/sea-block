@@ -4,11 +4,11 @@
  * Like sphere-test, but without the sphere.
  */
 import { Color, Vector2, Vector3 } from 'three'
-import type { Sphere } from '../sphere'
-import { CAMERA, CAMERA_LOOK_AT } from '../settings'
-import type { TileIndex } from '../grid-logic/indexed-grid'
+import { CAMERA_LOOK_AT } from '../settings'
 import type { SeaBlock } from '../sea-block'
 import { freeCamGameConfig } from '../configs/free-cam-game-config'
+import type { Sphere } from '../core/sphere'
+import type { TileIndex } from '../core/grid-logic/indexed-grid'
 import { Game } from './game'
 import type { GameUpdateContext, MouseState } from './game'
 
@@ -48,7 +48,7 @@ export class FreeCamGame extends Game {
 
   // assigned post-construction in reset()
   protected cameraAnchor!: Sphere
-  private waveMaker!: Sphere
+  protected waveMaker!: Sphere
 
   private hasMouseMoved: boolean = false // has user actually interacted since reset
   private lastScreenPos?: Vector2
@@ -66,7 +66,7 @@ export class FreeCamGame extends Game {
     this.cameraAnchor.isGhost = true
     this.cameraAnchor.isVisible = false
     sphereGroup.setInstanceColor(0, new Color(0x00ff00))
-    const { x, z } = this.cameraAnchor.position
+    const { x, z } = context.terrain.centerXZ // this.cameraAnchor.position
     this.cameraAnchor.position = new Vector3(x, 30, z)
     this._lastAnchorPosition.copy(this.cameraAnchor.position)
 
@@ -84,7 +84,8 @@ export class FreeCamGame extends Game {
   public resetCamera(context: SeaBlock): void {
     // position camera
     const { x, z } = this.cameraAnchor.position
-    context.camera.position.set(x + CAMERA.x, CAMERA.y, z + CAMERA.z)
+    const cam = this.getCamOffset()
+    context.camera.position.set(x + cam.x, cam.y, z + cam.z)
   }
 
   protected updateWaveMaker(dt: number, mouseState: MouseState | undefined, canIdle: boolean): void {
@@ -132,6 +133,12 @@ export class FreeCamGame extends Game {
           // console.log(`mouse did not move`)
         }
       }
+
+      const { orbitControls, terrain } = seaBlock
+      const { x, z } = terrain.centerXZ
+      const cto = this.getCamTargetOffset()
+      orbitControls.target.set(x + cto.x, cto.y, z + cto.z)
+      orbitControls.update()
     }
 
     // pan grid if necessary

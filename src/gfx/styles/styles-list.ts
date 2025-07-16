@@ -4,14 +4,22 @@
  * Named color themes. .
  */
 
-import type { Css } from './css-style'
-import { CssStyle } from './css-style'
-import { CustomStyle } from './custom-style'
-import { DefaultStyle } from './default-style'
-import { HueStyle } from './hue-style'
+import { StyleParser, type CssStyle } from '../../util/style-parser'
+import { getRandomHueStyle } from './hue-style'
 
-export const allStyles = {
-  'default': DefaultStyle, // replaced with terrain generator style
+// placeholder for style pasted by user.
+export const customStyle = {
+  css: {}, // set when user clicks paste style
+}
+
+export const STYLES = {
+  'default': {}, // replaced when terrain generator is selected
+  'black-and-white': {
+    'background': { value: '#fff' },
+    'top': { value: '#fff' },
+    'sides': { value: '#000' },
+    'top@land': { saturation: 0 },
+  },
   'tron': {
     'background': { value: '#000' },
     'top@land': { saturation: 0 },
@@ -26,14 +34,10 @@ export const allStyles = {
     'top@sea': { saturation: 0.5, lightness: 0.6 },
     'sides@sea': { saturation: 0.5, lightness: 0.5 },
   },
-  '???': HueStyle, // random hue rotation
-  'custom': CustomStyle, // style pasted by user
-} as const satisfies Record<string, typeof HueStyle | typeof CustomStyle | Css>
+  '???': getRandomHueStyle(), // randomized hue rotation
+  'custom': {}, // replaced when user clicks "paste style"
+} satisfies Record<string, CssStyle>
 
-export function getStyle(name: string): CssStyle {
-  const classOrCss = allStyles[name]
-  if (typeof classOrCss === 'function') {
-    return new classOrCss()
-  }
-  return new CssStyle(classOrCss)
+export function getStyle(name: string): StyleParser {
+  return new StyleParser(STYLES[name])
 }

@@ -1,20 +1,18 @@
 /**
  * @file start-sequence-game.ts
  *
- * Game implementation active during loading and title screens.
- *
  * Shifts settings gradually by hackilly adjusting flatConfig values directly.
  * Changes are lost on refreshing configurables.
  */
 
 import { Vector3 } from 'three'
-import { typedEntries } from '../typed-entries'
 import { gfxConfig } from '../configs/gfx-config'
 import { simpleButtonLoader } from '../gfx/2d/flat-button'
 import { randomTransition } from '../gfx/transition'
 import type { SeaBlock } from '../sea-block'
 import { freeCamGameConfig } from '../configs/free-cam-game-config'
 import { michaelConfig } from '../configs/michael-config'
+import { typedEntries } from '../util/typed-entries'
 import { FreeCamGame } from './free-cam-game'
 import type { GameUpdateContext } from './game'
 import { Game } from './game'
@@ -29,7 +27,8 @@ export class StartSequenceGame extends FreeCamGame {
       elements: [
         {
           layoutKey: 'skip',
-          imageLoader: simpleButtonLoader(btnWidth, btnHeight, 'SKIP'),
+          hotkey: 'Escape',
+          imageLoader: simpleButtonLoader(btnWidth, btnHeight, 'SKIP', '25px "Micro5"'),
           clickAction: (seaBlock: SeaBlock) => {
             seaBlock.config.tree.children.game.value = 'free-cam'
             seaBlock.transition = randomTransition(seaBlock.layeredViewport)
@@ -44,16 +43,17 @@ export class StartSequenceGame extends FreeCamGame {
     })
   }
 
-  public static isColorTransformEnabled = true
+  public static isColorTransformEnabled = false
   public static colorTransformAnim = 0// '0%'
 
   public readonly distForFreeCam = 300 // distance to travel before switch to user-controlled accel
   public traveled = 0 // distance
   public static wasSkipped = false
 
-  reset(context) {
+  reset(context: SeaBlock) {
     super.reset(context)
 
+    StartSequenceGame.isColorTransformEnabled = true
     StartSequenceGame.wasSkipped = false
 
     this.traveled = 0
@@ -71,7 +71,19 @@ export class StartSequenceGame extends FreeCamGame {
       }
     }
 
-    // StartSequenceGame.saturationPct = `${initial.saturation * 100}%`
+    const { sphereGroup, camera, orbitControls } = context
+
+    // hide all spheres
+    for (let i = 0; i < sphereGroup.members.length; i++) {
+      // sphereGroup.members[i].isGhost = true
+      sphereGroup.members[i].isVisible = false
+    }
+
+    // reset camera
+    const { x, z } = context.terrain.centerXZ
+    const cam = this.getCamOffset()
+    camera.position.set(x + cam.x, cam.y, z + cam.z)
+    orbitControls.update()
   }
 
   public update(context: GameUpdateContext): void {
@@ -120,7 +132,7 @@ export class StartSequenceGame extends FreeCamGame {
     this.updateWaveMaker(dt, mouseState, false)
 
     // accel camera anchor towards fixed direction
-    const { CAM_ACCEL } = this.config.flatConfig
+    const { CAM_ACCEL } = freeCamGameConfig.flatConfig
     this.accelSphere(this.cameraAnchor, target, dt * CAM_ACCEL)
 
     // compute distance traveled this update
@@ -207,22 +219,12 @@ const allSegments: Record<string, Segment> = {
   //   isFinished: false,
   // },
 
-  // // view becomes less pixelated in beginning
-  // 'pixel-ratio': {
-  //   distances: [10, 20],
-  //   multipliers: [10, 1],
-  //   apply: (value) => {
-  //     seaBlock.renderer.setPixelRatio(1 / (seaBlock.flatConfig.pixelScale * value))
-  //   },
-  //   isFinished: false,
-  // },
-
   // fraction of visible radius increases in beginning
   'visible-radius': {
     distances: [0, 180],
     multipliers: [0.15, 1],
-    apply: (value, seaBlock) => {
-      seaBlock.tileRenderer.config.flatConfig.visibleRadius = gfxConfig.tree.children.visibleRadius.value * value
+    apply: (value) => {
+      gfxConfig.flatConfig.visibleRadius = gfxConfig.tree.children.visibleRadius.value * value
     },
     isFinished: false,
   },

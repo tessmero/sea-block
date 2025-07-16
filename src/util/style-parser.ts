@@ -1,54 +1,37 @@
 /**
- * @file css-style.ts
+ * @file style-parser.ts
  *
- * Transform/replace base style based on css rules.
+ * Parse css rulesets invloving rgb / hsl to transform
+ * background and tile colors.
  */
 
 import { Color } from 'three'
-import type { TilePart } from '../3d/tile-mesh'
-import { typedEntries } from '../../typed-entries'
-import { StartSequenceGame } from '../../games/start-sequence-game'
-import { BaseStyle } from './base-style'
-import type { TileParams, TileStyle } from './style'
+import type { TilePart } from '../gfx/3d/tile-mesh'
+import type { TileColoringParams, TileColors } from '../gfx/styles/style'
+import { StartSequenceGame } from '../games/start-sequence-game'
+import { typedEntries } from './typed-entries'
 
-export type Css = Partial<Record<Selector, CssRuleset>>
+export type CssStyle = Partial<Record<Selector, CssRuleset>>
 
-// top level keys in css object
-type RulesetSelectorKey = 'background' | TilePart
-type AtCondition = 'land' | 'sea'
-type Selector = RulesetSelectorKey | `${TilePart}@${AtCondition}`
-interface SimpleParsedSelector {
-  key: RulesetSelectorKey
-}
-interface ConditionalParsedSelector {
-  key: TilePart // only tile tile parts can have at conditions
-  atCondition: AtCondition
-}
-type ParsedSelector = SimpleParsedSelector | ConditionalParsedSelector
+const defaultBackground = new Color(0xaaccff) // base background color
 
-// types for css rules keys
-const CSS_KEYS = ['value', 'red', 'green', 'blue', 'hue', 'saturation', 'lightness'] as const
-type CssKey = (typeof CSS_KEYS)[number]
-function isCssKey(key: string): key is CssKey {
-  return (CSS_KEYS as ReadonlyArray<string>).includes(key)
-}
-type RuleKey = CssKey | `${CssKey}@${AtCondition}`
-export type CssValue = string | number
-export type CssRuleset = Partial<Record<RuleKey, CssValue>>
-interface ParsedRuleKey {
-  key: CssKey // any css key can have at condition
-  atCondition?: AtCondition
-}
-
-export class CssStyle extends BaseStyle {
-  constructor(public readonly css: Css) { super() }
+export class StyleParser {
+  constructor(public readonly css: CssStyle) {}
 
   // overrid backgrond (no @conditions allowed)
-  public background: Color = applyRuleset(this.background, this.css.background)
+  public getBackgroundColor(): Color {
+    return applyRuleset(defaultBackground, this.css.background)
+  }
 
   // override non-background colors
-  public getTileStyle(params: TileParams): TileStyle {
-    const result = super.getTileStyle(params)
+  public getTileColors(params: TileColoringParams): TileColors {
+    // get base color from generator
+    const result = {
+      top: params.generatedTile.color.clone(),
+      sides: params.generatedTile.color.clone(),
+    }
+
+    // apply transformations
     for (const [rawSelector, ruleset] of typedEntries(this.css)) {
       const selector = parseSelector(rawSelector)
       const { key } = selector
@@ -63,8 +46,9 @@ export class CssStyle extends BaseStyle {
       }
     }
 
+    // check for special case
     if (StartSequenceGame.isColorTransformEnabled) {
-    // apply start sequence transformation
+      // apply start sequence transformation
       const anim = StartSequenceGame.colorTransformAnim
       const lMult = Math.pow(0.2 + 0.8 * anim, -1) // lightness multiplier
       for (const key in result) {
@@ -83,7 +67,39 @@ export class CssStyle extends BaseStyle {
   }
 }
 
-export function applyRuleset(color: Color, ruleset: CssRuleset | undefined, params?: TileParams): Color {
+ // top level keys in css object
+ type RulesetSelectorKey = 'background' | TilePart
+ type AtCondition = 'land' | 'sea'
+ type Selector = RulesetSelectorKey | `${TilePart}@${AtCondition}`
+interface SimpleParsedSelector {
+  key: RulesetSelectorKey
+}
+interface ConditionalParsedSelector {
+  key: TilePart // only tile tile parts can have at conditions
+  atCondition: AtCondition
+}
+ type ParsedSelector = SimpleParsedSelector | ConditionalParsedSelector
+
+// types for css rules keys
+const CSS_KEYS = ['value', 'red', 'green', 'blue', 'hue', 'saturation', 'lightness'] as const
+ type CssKey = (typeof CSS_KEYS)[number]
+function isCssKey(key: string): key is CssKey {
+  return (CSS_KEYS as ReadonlyArray<string>).includes(key)
+}
+ type RuleKey = CssKey | `${CssKey}@${AtCondition}`
+export type CssValue = string | number
+export type CssRuleset = Partial<Record<RuleKey, CssValue>>
+interface ParsedRuleKey {
+  key: CssKey // any css key can have at condition
+  atCondition?: AtCondition
+}
+
+// transform given color based on rules and tile-specific params
+export function applyRuleset(
+  color: Color,
+  ruleset: CssRuleset | undefined,
+  params?: TileColoringParams,
+): Color {
   if (!ruleset) {
     return color
   }
@@ -135,7 +151,10 @@ function parseAtCondition(raw: string | undefined): AtCondition | undefined {
   return undefined
 }
 
-function checkIfShouldParse(atCondition: AtCondition | undefined, params: TileParams | undefined): boolean {
+function checkIfShouldParse(
+  atCondition: AtCondition | undefined,
+  params: TileColoringParams | undefined,
+): boolean {
   if (!atCondition || !params) {
     return true
   }

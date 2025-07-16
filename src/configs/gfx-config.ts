@@ -4,8 +4,8 @@
  * Settings for graphics, performance, and styles.
  */
 
-import { CustomStyle } from '../gfx/styles/custom-style'
-import { allStyles } from '../gfx/styles/styles-list'
+import { STYLES } from '../gfx/styles/styles-list'
+import type { SeaBlock } from '../sea-block'
 import { Configurable } from './configurable'
 import type { ConfigTree } from './config-tree'
 
@@ -14,9 +14,9 @@ const gfxConfigTree = {
   label: 'Graphics',
   children: {
     pixelScale: {
-      value: 4,
+      value: 6,
       min: 1,
-      max: 5,
+      max: 8,
       step: 1,
     },
     visibleRadius: {
@@ -34,14 +34,13 @@ const gfxConfigTree = {
 
     style: {
       value: 'default', // randChoice(['default', 'tron', 'pastel', '???']),
-      options: Object.keys(allStyles),
+      options: Object.keys(STYLES),
     },
 
     copyStyle: {
       label: 'Copy Style',
-      action: () => {},
-      // action: () => navigator.clipboard.writeText(
-      //   JSON.stringify(seaBlock.style.css, null, 2)),
+      action: (seaBlock: SeaBlock) => navigator.clipboard.writeText(
+        JSON.stringify(seaBlock.style.css, null, 2)),
       hasNoEffect: true,
     },
 
@@ -49,7 +48,7 @@ const gfxConfigTree = {
       label: 'Paste Style',
       action: async () => {
         const text = await navigator.clipboard.readText()
-        CustomStyle.setCustomCss(text)
+        STYLES.custom = JSON.parse(text)
         gfxConfigTree.children.style.value = 'custom'
       },
     },

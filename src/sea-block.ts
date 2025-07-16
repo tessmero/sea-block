@@ -6,39 +6,39 @@
 
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import { buildScene } from './scene'
-import type { ConfigItem } from './configs/config-tree'
+import type { ConfigButton, ConfigItem } from './configs/config-tree'
 import { TerrainGenerator } from './generators/terrain-generator'
-import type { CssStyle } from './gfx/styles/css-style'
 import type { TileGroupGfxHelper } from './gfx/3d/tile-group-gfx-helper'
-import type { SphereGroup } from './groups/sphere-group'
-import type { TileGroup } from './groups/tile-group'
-import type { DebugElems } from './scene'
-import { getStyle } from './gfx/styles/styles-list'
-import { initMouseListeners, processMouse } from './ui/mouse-input'
-import { STEP_DURATION } from './settings'
-import { showControls } from './ui/controls-gui'
-import { alignMeshInGuiGroup } from './gfx/3d/ui-gfx-helper'
+import { getStyle, STYLES } from './gfx/styles/styles-list'
+import { initMouseListeners, processMouse } from './mouse-input'
+import { GRID_DETAIL, STEP_DURATION } from './settings'
 import type { CompositeMesh } from './gfx/3d/composite-mesh'
 import { Transition } from './gfx/transition'
 import { GAME_NAMES, type GameName, type GeneratorName } from './imp-names'
 import type { DepthElement, FlatElement, GameElement } from './games/game'
 import { Game } from './games/game'
 import type { LayeredViewport } from './gfx/layered-viewport'
-import { DefaultStyle } from './gfx/styles/default-style'
 import type { ButtonState, FlatButton } from './gfx/2d/flat-button'
 import { StartSequenceGame } from './games/start-sequence-game'
 import { freeCamGameConfig } from './configs/free-cam-game-config'
 import { seaBlockConfig } from './configs/sea-block-config'
+import { buildScene } from './gfx/3d/scene'
+import { SphereGroup } from './core/groups/sphere-group'
+import { TileGroup } from './core/groups/tile-group'
+import { alignMeshInGuiGroup } from './gfx/3d/camera-locked-gfx-helper'
+import { showControls as showDebugControls } from './util/debug-controls-gui'
+import type { StyleParser } from './util/style-parser'
+import { FloraGroup } from './core/groups/flora-group'
+import { Tiling } from './core/grid-logic/tilings/tiling'
+import { TiledGrid } from './core/grid-logic/tiled-grid'
+import { gfxConfig } from './configs/gfx-config'
+import { physicsConfig } from './configs/physics-config'
+import { playSound } from './sounds'
 
 // can only be constructed once
 let didConstruct = false
 let didInit = false
 let didLoadAssets = false
-
-// prepare to detect changed terrain generator or game
-let lastGeneratorName: GeneratorName
-let lastGameName: GameName
 
 // all game-specific meshes and images, loaded once on startup
 const elementsPerGame: Record<string, Array<LoadedElement>> = {}
@@ -50,8 +50,10 @@ type LoadedElement = LoadedMesh | LoadedImage
 
 // result of loading a DepthElement (game.ts)
 type LoadedMesh = {
-  mesh: CompositeMesh
+  mesh: CompositeMesh | THREE.Object3D
   layoutKey?: string // optional, indicates camera-locked
+  clickAction?: (SeaBlock) => void
+  hotkey?: string
 }
 
 // result of loading a FlatElement (game.ts)
@@ -59,19 +61,22 @@ type LoadedImage = {
   image: FlatButton// OffscreenCanvas
   layoutKey: string // required
   clickAction?: (SeaBlock) => void
+  hotkey?: string
 }
 
 export class SeaBlock {
   public readonly config = seaBlockConfig
 
   // properties assigned in init
+  currentGeneratorName!: GeneratorName
   generator!: TerrainGenerator
-  style!: CssStyle
+  style!: StyleParser
   scene!: THREE.Scene
   terrain!: TileGroup
-  tileRenderer!: TileGroupGfxHelper
+  tileGfx!: TileGroupGfxHelper
+  floraGroup!: FloraGroup
   sphereGroup!: SphereGroup
-  debugElems!: DebugElems
+  currentGameName!: GameName
   game!: Game // current game
   camera!: THREE.PerspectiveCamera
   orbitControls!: OrbitControls
@@ -79,10 +84,7 @@ export class SeaBlock {
   // defined only during transition sequence
   transition?: Transition
 
-  public readonly renderer: THREE.WebGLRenderer
   constructor(public readonly layeredViewport: LayeredViewport) {
-    this.renderer = this.layeredViewport.backRenderer
-
     if (didConstruct) {
       throw new Error('SeaBlock constructed multiple times')
     }
@@ -93,7 +95,7 @@ export class SeaBlock {
   setGame(game: GameName) {
     this.config.tree.children.game.value = game
     this.config.flatConfig.game = game
-    lastGameName = game
+    this.currentGameName = game
   }
 
   init() {
@@ -103,12 +105,14 @@ export class SeaBlock {
     didInit = true
 
     // load default settings
-    lastGameName = this.config.flatConfig.game
-    // this.game = Game.create(lastGameName, this)
-    lastGeneratorName = this.config.flatConfig.generator
-    this.generator = TerrainGenerator.create(lastGeneratorName)
-    DefaultStyle.setDefaultCss(this.generator.style)
-    this.style = getStyle(this.config.flatConfig.style) // default style depends on generator
+    this.currentGameName = this.config.flatConfig.game
+    // this.game = Game.create(this.currentGameName, this)
+    this.currentGeneratorName = this.config.flatConfig.generator
+    this.generator = TerrainGenerator.create(this.currentGeneratorName)
+
+    // default style depends on generator
+    STYLES.default = this.generator.style
+    this.style = getStyle(this.config.flatConfig.style)
 
     // orbit camera
     this.camera = new THREE.PerspectiveCamera(
@@ -119,15 +123,16 @@ export class SeaBlock {
     )
     this.orbitControls = new OrbitControls(
       this.camera,
-      this.layeredViewport.backCanvas,
+      this.layeredViewport.frontCanvas,
     )
+    this.orbitControls.enabled = false
 
     // Responsive resize
     window.addEventListener('resize', () => this.onResize())
 
     // listen for directional mouse/touch input
-    initMouseListeners(this.layeredViewport,
-      (_mousePos) => { // mousedown click
+    initMouseListeners(this.layeredViewport, {
+      click: (_mousePos) => { // mousedown click
         const mouseState = processMouse(this)
         if (mouseState && didLoadAssets) {
           this.game.flatUi.click(this, mouseState)
@@ -136,11 +141,28 @@ export class SeaBlock {
           // console.log('no mouse state after click')
         }
       },
-      () => { // mouseup unclick
+      unclick: () => { // mouseup unclick
         const mouseState = processMouse(this)
         this.game.flatUi.unclick(this, mouseState)
       },
-    )
+    })
+
+    window.addEventListener('keydown', (event) => {
+      if (!didLoadAssets) {
+        return
+      }
+      const elems = elementsPerGame[this.currentGameName]
+      for (const { hotkey, clickAction, layoutKey } of elems) {
+        if (hotkey === event.key && clickAction) {
+          clickAction(this)
+          if (layoutKey) {
+            // display button as pressed
+            this.repaintButton(layoutKey, 'clicked')
+            playSound('click')
+          }
+        }
+      }
+    })
 
     // start loading assets to populate elementsPerGame
     const loadPromises: Record<string, Array<Promise<LoadedElement>>> = {}
@@ -150,15 +172,12 @@ export class SeaBlock {
         if ('imageLoader' in ge) {
           const flatElem = obj as FlatElement
           const image = await flatElem.imageLoader()
-          return { image,
-            layoutKey: flatElem.layoutKey,
-            clickAction: flatElem.clickAction,
-          }
+          return { image, ...flatElem } satisfies LoadedElement
         }
         else {
           const depthElem = obj as DepthElement
           const mesh = await depthElem.meshLoader()
-          return { mesh, layoutKey: depthElem.layoutKey }
+          return { mesh, layoutKey: depthElem.layoutKey } satisfies LoadedElement
         }
       })
     }
@@ -171,10 +190,10 @@ export class SeaBlock {
 
   public isCovering = false // true during first half of transition animation
 
-  animate(dt: number) {
-    const { layeredViewport, transition, game,
-      renderer, scene, terrain, camera,
-      debugElems, sphereGroup,
+  async animate(dt: number) {
+    const { transition,
+      scene, camera, terrain, sphereGroup, floraGroup,
+      game,
     } = this
 
     if (transition) {
@@ -184,13 +203,14 @@ export class SeaBlock {
         this.isCovering = false
 
         // old scene just hidden from view
-        this.onMidTransition()
+        await this.onMidTransition()
         transition.cleanupCover()
         // this.rebuildControls()
       }
       if (transition.didFinishUncover) {
         // console.log('finish transition')
         this.transition = undefined // transition just finished
+        this.updateFrontCanvas()
       }
     }
 
@@ -200,7 +220,7 @@ export class SeaBlock {
     // }
 
     // update game
-    const mouseState = processMouse({ terrain, camera, debugElems, layeredViewport })
+    const mouseState = processMouse(this)
     game.update({ seaBlock: this, dt, mouseState })
 
     // update game's camera-locked meshes
@@ -209,10 +229,15 @@ export class SeaBlock {
     // update physics
     const nSteps = Math.round(dt / STEP_DURATION)
     terrain.update(this, nSteps)
+    floraGroup.update(this, nSteps)
     sphereGroup.update(this, nSteps)
 
     // render scene
-    renderer.render(scene, camera)
+    this.layeredViewport.backRenderer.render(scene, camera)
+
+    // debug
+    // const dist = camera.position.distanceTo(this.orbitControls.target)
+    // console.log(dist)
   }
 
   private onResize() {
@@ -222,6 +247,7 @@ export class SeaBlock {
     this.camera.updateProjectionMatrix()
     this.game.flatUi.refreshLayout(this.layeredViewport)
     this.updateFrontCanvas()
+    this.transition?.cleanupCover()
 
     // // align camera-locked meshes
     // for (const [_gameName, elems] of Object.entries(elementsPerGame)) {
@@ -260,7 +286,7 @@ export class SeaBlock {
           }
         }
         else {
-          // 2d image
+          // 2d flat button
         }
       }
     }
@@ -271,24 +297,36 @@ export class SeaBlock {
    *
    */
   public reset() {
-    const built = buildScene(this)
-
-    this.scene = built.scene
+    const tiling = Tiling.create(this.config.flatConfig.tiling)
+    const grid = new TiledGrid(GRID_DETAIL, GRID_DETAIL, tiling)
+    this.terrain = new TileGroup(grid, this).build()
+    this.floraGroup = new FloraGroup(this.terrain).build()
+    this.sphereGroup = new SphereGroup(10, this.terrain).build()
+    this.scene = buildScene(this)
     this.scene.add(cameraLockedGroup)
-    this.terrain = built.terrain
-    this.tileRenderer = this.terrain.tileGroupRenderer
-    this.sphereGroup = built.sphereGroup
-    this.debugElems = built.debugElems
+    if (didLoadAssets) {
+      for (const [_gameName, loadedElems] of Object.entries(elementsPerGame)) {
+        for (const elem of loadedElems) {
+          if ('mesh' in elem) {
+            this.scene.add(elem.mesh)
+          }
+        }
+      }
+    }
+    this.tileGfx = this.terrain.gfxHelper
 
-    this.debugElems.refresh(this.config.flatConfig.debug)
+    // this.debugElems.refresh(this.config.flatConfig.debug)
     if (!this.game) {
-      this.game = Game.create(lastGameName, this)
+      this.game = Game.create(this.currentGameName, this)
     }
     // this.game.refreshConfig()
     freeCamGameConfig.refreshConfig()
     this.game.reset(this)
     this.game.resetCamera(this)
-    this.game.flatUi.refreshLayout(this.layeredViewport)
+    if (this.game.enableOrbitControls()) {
+      this.orbitControls.enabled = true
+    }
+    // this.game.flatUi.refreshLayout(this.layeredViewport)
   }
 
   // called when user switches games
@@ -300,7 +338,7 @@ export class SeaBlock {
   private showHideGameSpecificElems() {
     const frontImages: Array<LoadedImage> = []
     for (const [gameName, elements] of Object.entries(elementsPerGame)) {
-      const shouldBeVisible = gameName === this.config.flatConfig.game
+      const shouldBeVisible = gameName === this.currentGameName
       for (const loaded of elements) {
         if ('mesh' in loaded) {
           // 3d object
@@ -321,7 +359,7 @@ export class SeaBlock {
     if (this.transition) {
       return // disable clicking during transition
     }
-    const match = elementsPerGame[lastGameName].find(e => e.layoutKey === layoutKey)
+    const match = elementsPerGame[this.currentGameName].find(e => e.layoutKey === layoutKey)
     if (match && ('clickAction' in match) && match.clickAction) {
       match.clickAction(this)
     }
@@ -368,34 +406,19 @@ export class SeaBlock {
     }
   }
 
-  // called when user switches terrain generators
-  private onGeneratorChange() {
-    // console.log(`on generator change ${this.config.flatConfig.generator}`)
-
-    this.generator = TerrainGenerator.create(this.config.flatConfig.generator)
-
-    // reload style in case default is selected, changes with generator
-    DefaultStyle.setDefaultCss(this.generator.style)
-    // this.style = getStyle(this.config.flatConfig.style)
-
-    // this.renderer.setPixelRatio(1 / this.config.flatConfig.pixelScale)
-    // this.reset() // full reset
-    // this.rebuildControls() // show new generator controls
-  }
-
   // called when user changes a setting
-  public onCtrlChange(item: ConfigItem) {
-    const { generator, tileRenderer, terrain, sphereGroup, renderer, scene, debugElems } = this
+  public onCtrlChange(item: ConfigItem | ConfigButton) {
+    const { generator, terrain, scene } = this
 
     this.config.refreshConfig()
-    debugElems.refresh(this.config.flatConfig.debug)
-    tileRenderer.config.refreshConfig()
+    // debugElems.refresh(this.config.flatConfig.debug)
+    gfxConfig.refreshConfig()
     generator.refreshConfig()
 
     // check for special case: game changed
     const newGameName = this.config.flatConfig.game
-    if (newGameName !== lastGameName) {
-      lastGameName = newGameName
+    if (newGameName !== this.currentGameName) {
+      this.currentGameName = newGameName
       this.onGameChange() // do special reset
       return // skip regular settings change below
     }
@@ -413,24 +436,51 @@ export class SeaBlock {
     }
     else if (item.resetOnChange === 'physics') {
       // soft reset (physics)
-      sphereGroup.sim.config.refreshConfig()
-      terrain.sim.config.refreshConfig()
+      physicsConfig.refreshConfig()
     }
     else {
       // soft reset (graphics)
       StartSequenceGame.isColorTransformEnabled = false
       this.style = getStyle(this.config.flatConfig.style)
-      renderer.setPixelRatio(1 / this.config.flatConfig.pixelScale)
-      scene.background = this.style.background
+      scene.background = this.style.getBackgroundColor()
       terrain.resetColors()
+      this.onResize()
     }
 
     // allow any config change to escape from special start seq colors
-    StartSequenceGame.isColorTransformEnabled = lastGameName === 'start-sequence'
+    StartSequenceGame.isColorTransformEnabled = this.currentGameName === 'start-sequence'
   }
 
-  private onMidTransition() {
-    const { generator, tileRenderer, terrain, renderer, scene } = this
+  private async onMidTransition() {
+    if (this.currentGameName === 'splash-screen') {
+      // just clicked "launch"
+      document.documentElement.requestFullscreen()
+
+      // replace back canvas and renderer
+      const renderer = this.layeredViewport.backRenderer
+      renderer.dispose()
+      renderer.domElement.remove()
+      const newCanvas = document.createElement('canvas') as HTMLCanvasElement
+      newCanvas.id = 'backCanvas'
+      document.body.appendChild(newCanvas)
+      this.layeredViewport.backCanvas = newCanvas
+      this.layeredViewport.backRenderer = new THREE.WebGLRenderer({
+        canvas: this.layeredViewport.backCanvas,
+        antialias: false,
+      })
+      this.layeredViewport.handleResize()
+
+      // wait two animation frames
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            resolve()
+          })
+        })
+      })
+    }
+
+    const { generator, terrain, scene } = this
 
     if (!this.didBuildControls) {
       this.rebuildControls() // build for first time after user skipped start
@@ -439,38 +489,33 @@ export class SeaBlock {
     StartSequenceGame.isColorTransformEnabled = false
     this.config.refreshConfig()
     generator.refreshConfig()
-    tileRenderer.config.refreshConfig()
+    gfxConfig.refreshConfig()
     freeCamGameConfig.refreshConfig()
     // console.log(`mid transition refreshed game: ${this.config.flatConfig.game}`)
 
-    const newGenName = this.config.flatConfig.generator
-    if (newGenName !== lastGeneratorName) {
-      lastGeneratorName = newGenName
-      this.onGeneratorChange() // do special reset
-    }
+    // act as though generator changed
+    this.currentGeneratorName = this.config.flatConfig.generator
+    this.generator = TerrainGenerator.create(this.currentGeneratorName)
+    STYLES.default = this.generator.style
+    this.style = getStyle(this.config.flatConfig.style)
+    scene.background = this.style.getBackgroundColor()
 
-    // check for special case: game changed
-    const newGameName = this.config.flatConfig.game
-    if (newGameName !== lastGameName) {
-      StartSequenceGame.isColorTransformEnabled = newGameName === 'start-sequence'
-
-      // maintain special color if  start sequcne was interrupted with skip button
-      if (StartSequenceGame.wasSkipped) {
-        StartSequenceGame.isColorTransformEnabled = true
-      }
-
-      // console.log('special case: game changed')
-      lastGameName = newGameName
-      this.onGameChange() // do special reset
-      terrain.resetColors()
-      return // skip regular settings change below
-    }
+    // act as though game changed
+    this.currentGameName = this.config.flatConfig.game
+    this.game = Game.create(this.currentGameName, this)
+    StartSequenceGame.isColorTransformEnabled = this.currentGameName === 'start-sequence'
+    this.showHideGameSpecificElems()
+    terrain.resetColors()
 
     // soft reset (graphics)
     this.style = getStyle(this.config.flatConfig.style)
-    renderer.setPixelRatio(1 / this.config.flatConfig.pixelScale)
-    scene.background = this.style.background
+    scene.background = this.style.getBackgroundColor()
     terrain.resetColors()
+    // this.onResize()
+
+    // // reset camera
+    // const { x, z } = terrain.centerXZ
+    // camera.position.set(x + CAMERA.x, CAMERA.y, z + CAMERA.z)
 
     this.reset()
   }
@@ -479,9 +524,6 @@ export class SeaBlock {
 
   public rebuildControls() {
     this.didBuildControls = true
-    showControls(
-      this.config.tree,
-      item => this.onCtrlChange(item),
-    )
+    showDebugControls(this)
   }
 }

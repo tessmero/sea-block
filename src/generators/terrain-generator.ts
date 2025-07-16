@@ -5,15 +5,16 @@
  */
 
 import type { Color } from 'three'
-import type { Css } from '../gfx/styles/css-style'
 import type { GeneratorName } from '../imp-names'
 import { michaelConfig } from '../configs/michael-config'
-import { SeedablePRNG } from '../rng-util'
+import { SeedablePRNG } from '../util/rng'
+import type { CssStyle } from '../util/style-parser'
 
 export interface GeneratedTile {
   height: number
   color: Color
   isWater: boolean
+  isFlora: boolean
 }
 
 export abstract class TerrainGenerator {
@@ -21,7 +22,7 @@ export abstract class TerrainGenerator {
 
   public abstract readonly label: string
   public abstract readonly url: string
-  public abstract readonly style: Css
+  public abstract readonly style: CssStyle
 
   public abstract getTile(x: number, z: number): GeneratedTile
 

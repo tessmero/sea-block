@@ -1,5 +1,5 @@
 /**
- * @file rng-util.ts
+ * @file rng.ts
  *
  * Utilities involving random numbers.
  *

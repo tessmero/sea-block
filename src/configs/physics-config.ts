@@ -1,7 +1,7 @@
 /**
  * @file physics-config.ts
  *
- * Default values and controls heirarchy for physics settings.
+ * Water and sphere physics settings.
  */
 
 import { Configurable } from './configurable'

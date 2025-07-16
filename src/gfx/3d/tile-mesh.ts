@@ -6,9 +6,9 @@
 
 import type { TypedArray } from 'three'
 import { CircleGeometry, CylinderGeometry, Vector3 } from 'three'
-import type { TileGroup } from '../../groups/tile-group'
-import type { Subgroup } from '../../groups/subgroup'
-import type { TileShape } from '../../grid-logic/tilings/tiling'
+import type { TileGroup } from '../../core/groups/tile-group'
+import type { Subgroup } from '../../core/groups/subgroup'
+import type { TileShape } from '../../core/grid-logic/tilings/tiling'
 
 import { CompositeInstancedMesh, type CompositeGeometry } from './composite-mesh'
 

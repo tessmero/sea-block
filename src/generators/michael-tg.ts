@@ -6,7 +6,7 @@
  */
 import { Color } from 'three'
 import { michaelConfig } from '../configs/michael-config'
-import { SeedablePRNG } from '../rng-util'
+import { SeedablePRNG } from '../util/rng'
 import type { GeneratedTile } from './terrain-generator'
 import { TerrainGenerator } from './terrain-generator'
 
@@ -33,6 +33,7 @@ export class MichaelTG extends TerrainGenerator {
       height: Math.max(scaledHeight, waterLevel),
       color: this.getTileColor(x, z),
       isWater: rawHeight <= waterLevel,
+      isFlora: false,
     }
   }
 

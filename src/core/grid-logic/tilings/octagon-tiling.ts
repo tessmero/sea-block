@@ -7,11 +7,13 @@ import { Tiling } from './tiling'
 
 interface XZ { x: number, z: number }
 
-// Geometric constants for octagon-square tiling
-const SQ_SIDE = 1 // Side length of the squares and octagons
-const OCT_SIDE = SQ_SIDE / (1 + Math.SQRT2) // Side length of octagon (so that octagon+square fits in 1x1 grid)
-const OCT_RADIUS = OCT_SIDE / (2 * Math.sin(Math.PI / 8)) // Circumradius of octagon
-const SQ_RADIUS = SQ_SIDE / Math.sqrt(2) / 2 // Circumradius of square
+// compute circumradius so neighboring octagons' centers are sqrt2 apart
+const octagonRadius = (Math.SQRT2) / (2 * (1 + Math.SQRT2) * Math.sin(Math.PI / 8))
+
+// compute smaller circumradius for square tiles
+const squareRadius = (
+  2 - 2 * octagonRadius // space between octagons
+) * Math.cos(Math.PI / 8)
 
 export class OctagonTiling extends Tiling {
   static { Tiling.register('octagon', () => new OctagonTiling()) }
@@ -19,12 +21,12 @@ export class OctagonTiling extends Tiling {
   shapes = [
     {
       n: 8,
-      radius: OCT_RADIUS * Math.SQRT2,
+      radius: octagonRadius,
       angle: Math.PI / 8, // Octagon
     },
     {
       n: 4,
-      radius: SQ_RADIUS * Math.SQRT2,
+      radius: squareRadius,
       angle: Math.PI / 4, // Square
     },
   ]

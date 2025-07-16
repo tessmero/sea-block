@@ -7,10 +7,10 @@ import { Vector3 } from 'three'
 import type { Sphere } from '../sphere'
 import type { Tile } from '../tile'
 import type { TileGroup } from '../groups/tile-group'
-import { SPHERE_RADIUS, COLLISION_KERNEL_RADIUS } from '../settings'
-import { STEP_DURATION } from '../settings'
-import type { physicsConfig } from '../configs/physics-config'
-import type { FlatConfigMap } from '../configs/configurable'
+import { SPHERE_RADIUS, COLLISION_KERNEL_RADIUS } from '../../settings'
+import { STEP_DURATION } from '../../settings'
+import { physicsConfig } from '../../configs/physics-config'
+import type { FlatConfigMap } from '../../configs/configurable'
 import { Simulation } from './simulation'
 
 type PhysParams = FlatConfigMap<typeof physicsConfig.tree>
@@ -29,7 +29,7 @@ export class SphereSim extends Simulation<Sphere> {
           sphereStep(
             sphere,
             this.terrain,
-            this.config.flatConfig,
+            physicsConfig.flatConfig,
           ) // sphere-physics.js
         }
       }
@@ -49,7 +49,7 @@ export class SphereSim extends Simulation<Sphere> {
         collideSphereWithSphere(
           sphereA,
           sphereB,
-          this.config.flatConfig,
+          physicsConfig.flatConfig,
         )
       }
     }
