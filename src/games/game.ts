@@ -12,14 +12,15 @@
  * visual elements, used to preload assets on startup.
  */
 
-import type { Vector2, Vector3 } from 'three'
-import type { TileIndex } from '../grid-logic/indexed-grid'
-import type { CssLayout } from '../gui-layout-parser'
+import type { Object3D, Vector2, Vector3 } from 'three'
+import type { TileIndex } from '../core/grid-logic/indexed-grid'
 import type { CompositeMesh } from '../gfx/3d/composite-mesh'
 import type { GameName } from '../imp-names'
 import type { SeaBlock } from '../sea-block'
 import type { FlatButton } from '../gfx/2d/flat-button'
-import { FlatGameUi } from '../ui/flat-game-ui'
+import { FlatGameUi } from '../flat-game-ui'
+import type { CssLayout } from '../util/layout-parser'
+import { CAMERA, CAMERA_LOOK_AT } from '../settings'
 
 // parameters for update each frame
 export interface GameUpdateContext {
@@ -51,11 +52,12 @@ export type FlatElement = {
   imageLoader: () => Promise<FlatButton>// () => Promise<OffscreenCanvas>
   layoutKey: string // must have layout rectangle
   clickAction?: (seaBlock: SeaBlock) => void
+  hotkey?: string // keycode
 }
 
 // 3d object to show in three.js scene
 export type DepthElement = {
-  meshLoader: () => Promise<CompositeMesh>
+  meshLoader: () => Promise<CompositeMesh | Object3D>
   layoutKey?: string // only for elements locked to camera
 }
 
@@ -64,6 +66,10 @@ export abstract class Game {
 
   public abstract reset(context: SeaBlock): void
   public resetCamera(_context: SeaBlock): void {}
+
+  protected getCamOffset(): Vector3 { return CAMERA }
+  protected getCamTargetOffset(): Vector3 { return CAMERA_LOOK_AT }
+  public enableOrbitControls(): boolean { return true }
 
   public update(context: GameUpdateContext): void {
     this.flatUi.update(context)
@@ -91,9 +97,6 @@ export abstract class Game {
     instance.flatUi = new FlatGameUi(layout)
     instance.reset(context)
     instance.flatUi.refreshLayout(context.layeredViewport)
-
-    // re-enable orbit controls
-    context.orbitControls.enabled = true
 
     return instance
   }

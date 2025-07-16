@@ -5,6 +5,7 @@
  */
 import { createNoise2D } from 'simplex-noise'
 import { Color } from 'three'
+import type { CssStyle } from '../util/style-parser'
 import type { GeneratedTile } from './terrain-generator'
 import { TerrainGenerator } from './terrain-generator'
 
@@ -22,7 +23,7 @@ export class SpaceQuestTG extends TerrainGenerator {
 
   label = 'space-quest'
   url = 'https://tessmero.github.io/space-quest'
-  style = {
+  style: CssStyle = {
     'background': { value: '#000' },
     'sides@land': { lightness: -0.1 },
     'sides@sea': { lightness: '+0.1' },
@@ -60,7 +61,7 @@ export class SpaceQuestTG extends TerrainGenerator {
     const sColor = pickColorForPixel(colorData, x, z)
     const color = sColor ? new Color(sColor) : new Color()
     return {
-      height, color, isWater,
+      height, color, isWater, isFlora: false,
     }
   }
 }

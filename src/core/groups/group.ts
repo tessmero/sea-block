@@ -10,12 +10,13 @@
  */
 import * as THREE from 'three'
 import type { Simulation } from '../physics/simulation'
-import type { SeaBlock } from '../sea-block'
+import type { SeaBlock } from '../../sea-block'
+import { physicsConfig } from '../../configs/physics-config'
 import type { SubgroupParams } from './subgroup'
 import { Subgroup } from './subgroup'
 
 // parameters to construct group for type TMember (Sphere or Tile)
-interface GroupParams<TMember, TSim extends Simulation<TMember>> {
+export interface GroupParams<TMember, TSim extends Simulation<TMember>> {
   sim: TSim // physics simulation for type TMember
   subgroups: Array<SubgroupParams>
   subgroupsByFlatIndex: Array<{
@@ -54,7 +55,7 @@ export abstract class Group<TMember, TSim extends Simulation<TMember>> {
   protected abstract buildMembers(): Array<TMember>
 
   // update gfx meshes, called just before render
-  protected abstract updateMesh(seaBlock: SeaBlock): void
+  protected abstract updateMeshes(seaBlock: SeaBlock): void
 
   setInstanceColor(index: number, color: THREE.Color) {
     // pick subgroup based on index
@@ -68,7 +69,7 @@ export abstract class Group<TMember, TSim extends Simulation<TMember>> {
   }
 
   build() {
-    this.sim.config.refreshConfig()
+    physicsConfig.refreshConfig()
     this.members = this.buildMembers()
     this._needsUpdate()
     return this
@@ -78,7 +79,7 @@ export abstract class Group<TMember, TSim extends Simulation<TMember>> {
     for (let i = 0; i < nSteps; i++) {
       this.sim.step(this.members)
     }
-    this.updateMesh(seaBlock)
+    this.updateMeshes(seaBlock)
     this._needsUpdate()
   }
 

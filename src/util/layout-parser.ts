@@ -1,12 +1,12 @@
 /**
- * @file gui-layout-parser.ts
+ * @file layout-parser.ts
  *
  * Compute rectangles relative to viewport, based on css rules.
  *
- * Used to align games' gui elements with the camera.
+ * Used to position flat elements and camera-locked meshes.
  */
 
-import { typedEntries } from './typed-entries'
+import { typedEntries } from '../util/typed-entries'
 
 // input named rulesets
 export type CssLayout = Readonly<Record<string, CssRuleset>>
@@ -96,7 +96,7 @@ class GuiLayoutParser {
       if (value === 'auto') {
         if (key === 'width') return px + pw - x
         if (key === 'height') return py + ph - y
-        return ['left', 'right'].includes(key) ? pw / 2 : ph / 2
+        return ['left', 'right'].includes(key) ? (pw - w) / 2 : (ph - h) / 2
       }
       return Number(value)
     }

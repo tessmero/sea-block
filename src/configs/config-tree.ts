@@ -7,6 +7,8 @@
  * The bottom-level child keys are assumed to be unique globally.
  */
 
+import type { SeaBlock } from '../sea-block'
+
 // nestable list of named parameters
 export interface ConfigTree extends Annotatable {
   children: ConfigChildren
@@ -28,8 +30,9 @@ export interface BaseItem extends Annotatable {
 }
 
 export interface ConfigButton extends Annotatable {
-  readonly action: () => void | Promise<void>
-  readonly hasNoEffect?: boolean // true for buttons that don't change anything
+  readonly action: (seaBlock: SeaBlock) => void | Promise<void>
+  readonly resetOnChange?: 'physics' | 'full'
+  readonly hasNoEffect?: boolean // true if button changes nothing in sea-block
 }
 
 // numeric slider

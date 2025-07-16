@@ -1,6 +1,6 @@
 # sea-block
 
-[Live Demo](https://tessmero.github.io/iframe/sea-block/index.html)
+[Live Demo](https://tessmero.github.io/sea-block)
 
 Explore infinite blocky oceans and terrain. 
 

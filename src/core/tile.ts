@@ -12,4 +12,5 @@ export interface Tile {
 
   isVisible: boolean
   isWater: boolean
+  isFlora: boolean
 }

@@ -10,8 +10,8 @@
 import type { Matrix4 } from 'three'
 import { Group, Mesh } from 'three'
 import { MeshBasicMaterial, type BufferGeometry } from 'three'
-import type { CompositeElement, CompositeStyle } from '../composite-element'
-import { ColoredMesh } from './colored-instanced-mesh'
+import type { CompositeColors, CompositeElement } from '../composite-element'
+import { ColoredInstancedMesh } from './colored-instanced-mesh'
 
 // shapes for each part of a composite
 export type CompositeGeometry<TPart extends string = string> = {
@@ -40,7 +40,7 @@ export abstract class CompositeMesh<TPart extends string = string>
     }
   }
 
-  public setStyle(style: CompositeStyle<TPart>) {
+  public setColors(style: CompositeColors<TPart>) {
     this.partNames.forEach((name, meshIndex) => {
       (this.meshes[meshIndex].material as MeshBasicMaterial).color = style[name]
     })
@@ -50,7 +50,7 @@ export abstract class CompositeMesh<TPart extends string = string>
 export abstract class CompositeInstancedMesh<TPart extends string>
 implements CompositeElement<TPart> {
   abstract partNames: ReadonlyArray<TPart> // subclasses define partNames matching TPart
-  public readonly meshes: Array<ColoredMesh> = []
+  public readonly meshes: Array<ColoredInstancedMesh> = []
 
   constructor(
     partGeoms: CompositeGeometry<TPart>,
@@ -58,7 +58,7 @@ implements CompositeElement<TPart> {
   ) {
     let name: TPart
     for (name in partGeoms) {
-      const mesh = new ColoredMesh(
+      const mesh = new ColoredInstancedMesh(
         partGeoms[name],
         new MeshBasicMaterial({ color: 0xffffff }),
         n,
@@ -67,17 +67,11 @@ implements CompositeElement<TPart> {
     }
   }
 
-  setInstanceStyle(index: number, style: CompositeStyle<TPart>) {
+  setColorsForInstance(index: number, style: CompositeColors<TPart>) {
     this.partNames.forEach((name, meshIndex) => {
       this.meshes[meshIndex].setInstanceColor(index, style[name])
     })
   }
-
-  // setInstanceColor(index: number, color: Color) {
-  //   for (const im of this._meshes) {
-  //     im.setInstanceColor(index, color)
-  //   }
-  // }
 
   setMatrixAt(index: number, matrix: Matrix4) {
     for (const mesh of this.meshes) {

@@ -1,11 +1,11 @@
 /**
- * @file ui-gfx-helper.ts
+ * @file camera-locked-gfx-helper.ts
  *
  * Used in sea-block.ts to help with gui meshes that are locked to the camera.
  */
 
-import type { Group, PerspectiveCamera } from 'three'
-import type { Rectangle } from '../../gui-layout-parser'
+import type { Group, Object3D, PerspectiveCamera } from 'three'
+import type { Rectangle } from '../../util/layout-parser'
 import type { CompositeMesh } from './composite-mesh'
 
 export function alignGuiGroup(guiGroup: Group, camera: PerspectiveCamera, depth = -10) {
@@ -23,7 +23,7 @@ export function alignGuiGroup(guiGroup: Group, camera: PerspectiveCamera, depth 
   guiGroup.scale.set(scaleX, scaleY, 1)
 }
 
-export function alignMeshInGuiGroup(childMesh: CompositeMesh, guiGroup: Group, childRect: Rectangle) {
+export function alignMeshInGuiGroup(childMesh: CompositeMesh | Object3D, guiGroup: Group, childRect: Rectangle) {
   // Position: center of the rectangle, relative to top-left
   const x = childRect.x + childRect.w / 2 - window.innerWidth / 2
   const y = window.innerHeight / 2 - (childRect.y + childRect.h / 2)

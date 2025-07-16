@@ -4,9 +4,8 @@
  * Original sea-block moving sphere controls impemented as a game.
  */
 import { Color, Vector2, Vector3 } from 'three'
-import type { Sphere } from '../sphere'
-import { CAMERA, CAMERA_LOOK_AT } from '../settings'
 import type { SeaBlock } from '../sea-block'
+import type { Sphere } from '../core/sphere'
 import { Game } from './game'
 import type { GameUpdateContext } from './game'
 
@@ -50,7 +49,8 @@ export class SphereTestGame extends Game {
     }
 
     // position camera and grid on player
-    camera.position.set(x + CAMERA.x, CAMERA.y, z + CAMERA.z)
+    const cam = this.getCamOffset()
+    camera.position.set(x + cam.x, cam.y, z + cam.z)
     this.centerOnPlayer(context)
   }
 
@@ -90,7 +90,7 @@ export class SphereTestGame extends Game {
 
   private centerOnPlayer(context: SeaBlock) {
     const { player, lastPlayerPosition } = this
-    const { terrain, camera, orbitControls: controls } = context
+    const { terrain, camera, orbitControls } = context
 
     if (!player) return
 
@@ -101,9 +101,9 @@ export class SphereTestGame extends Game {
       z + (camera.position.z - lastPlayerPosition.z),
     )
     this.lastPlayerPosition = player.position.clone()
-    controls.target.set(x, CAMERA_LOOK_AT.y, z,
-    )
-    controls.update()
+    const cto = this.getCamTargetOffset()
+    orbitControls.target.set(x + cto.x, cto.y, z + cto.z)
+    orbitControls.update()
 
     terrain.panToCenter(x, z)
   }

@@ -5,7 +5,7 @@
  * Determines the position, shape, and adjacency of tiles.
  */
 
-import type { TilingName } from '../../imp-names'
+import type { TilingName } from '../../../imp-names'
 
 /*
  * tile index (integers)

@@ -1,18 +1,15 @@
 /**
  * @file hue-style.ts
  *
- * Color rotating style.
+ * Randomized color rotating style.
  */
-import { CssStyle } from './css-style'
 
-export class HueStyle extends CssStyle {
-  constructor() {
-    const offset = randOffset()
-    super({
-      background: { hue: offset },
-      top: { hue: offset },
-      sides: { hue: offset, lightness: '50%' },
-    })
+export function getRandomHueStyle() {
+  const offset = randOffset()
+  return {
+    background: { hue: offset },
+    top: { hue: offset },
+    sides: { hue: offset, lightness: '50%' },
   }
 }
 
