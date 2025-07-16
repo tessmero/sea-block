@@ -18,6 +18,7 @@ gfxConfig.refreshConfig()
 layeredViewport.init()
 
 const seaBlock = new SeaBlock(layeredViewport)
+window.seaBlock = seaBlock
 
 // load default config
 seaBlock.config.refreshConfig()

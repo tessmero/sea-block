@@ -70,7 +70,7 @@
   <script>
     const TestSupport = {
       
-      getGameState: () => 'sea-block-loaded',
+      getGameState: () => window.seaBlock.currentGameName,
 
       getCameraPos: () => {
         return window.camPosForTestSupport();

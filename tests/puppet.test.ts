@@ -23,14 +23,18 @@ TestBatch.describeTests({
     },
   ],
   sequence: [
-
     {
       test: 'reaches-state',
-      targetState: 'sea-block-loaded',
+      targetState: 'splash-screen',
+    },
+    {
+      test: 'click-changes-state',
+      state: 'splash-screen',
+      targetState: 'start-sequence',
     },
     {
       test: 'camera-is-draggable',
-      state: 'sea-block-loaded',
+      state: 'start-sequence',
       startDrag: [200, 200],
       endDrag: [600, 400],
       eps: 10, // distance threshold
