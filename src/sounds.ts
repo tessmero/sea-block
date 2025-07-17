@@ -1,17 +1,16 @@
 /**
  * @file sounds.ts
  *
- * List all sound effects to load.
+ * List all sound effects to load, and helper functions to play them.
  */
 import { Howl, Howler } from 'howler'
 import { typedEntries } from './util/typed-entries'
 
-// Define your sound settings in a single object
 const SOUND_SPECS = {
   hover: { src: 'sounds/kenney/select_002.ogg', volume: 0.6 },
   unHover: { src: 'sounds/kenney/select_001.ogg', volume: 0.8 },
   click: { src: 'sounds/kenney/select_004.ogg', volume: 1 },
-  // Add more sounds as needed
+  song: { src: 'music/mozart.ogg', volume: 7 },
 } as const
 
 const multiplyAllVolumes = 0.2
@@ -31,7 +30,21 @@ for (const [name, { src, volume }] of typedEntries(SOUND_SPECS)) {
 // play sound only if audio actually working
 export function playSound(key: SoundKey) {
   if (Howler.ctx.state === 'running') {
-    sounds[key].play()
+    const sound = sounds[key]
+    sound.stop() // stop if already playing
+    sound.play()
+  }
+}
+
+export function toggleSound(key: SoundKey) {
+  if (Howler.ctx.state === 'running') {
+    const sound = sounds[key]
+    if (sound.playing()) {
+      sound.stop()
+    }
+    else {
+      sound.play()
+    }
   }
 }
 
