@@ -39,6 +39,7 @@
     "howler": "^2.2.4",
     "lil-gui": "^0.20.0",
     "simplex-noise": "^4.0.3",
+    "spessasynth_core": "^3.27.6",
     "three": "=0.177.0"
   }
 }
