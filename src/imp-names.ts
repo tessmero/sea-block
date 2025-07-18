@@ -31,7 +31,13 @@ export const TILING_NAMES = [
 ] as const
 export type TilingName = (typeof TILING_NAMES)[number]
 
-// transition effects
+// precomputed per-tile animations
+export const GRID_ANIM_NAMES = [
+  'radial-height-warp', 'flat-sweep', 'random-sweep', 'radial-sweep',
+] as const
+export type GridAnimName = (typeof GRID_ANIM_NAMES)[number]
+
+// transition sequences
 export const TRANSITION_NAMES = [
   'flat', 'drop',
 ] as const

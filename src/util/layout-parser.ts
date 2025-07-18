@@ -60,8 +60,7 @@ class GuiLayoutParser {
   }
 
   private computeRect(css: CssRuleset): Rectangle {
-    const { parent } = this
-    let rect: Rectangle = { ...parent }
+    let rect: Rectangle = { ...this.parent }
 
     for (const [cssKey, cssVal] of typedEntries(css)) {
       if (cssKey === 'parent') {
@@ -69,10 +68,11 @@ class GuiLayoutParser {
           throw new Error(`layout parent '${cssVal}' not defined by any previous rulesets`)
         }
         this.parent = this._computedRects[cssVal] // rectangle of array of rectangles
+        rect = { ...this.parent }
       }
       else {
       // Standard CSS rule application
-        rect = this.applyRule(parent, rect, cssKey as keyof CssRuleset, cssVal)
+        rect = this.applyRule(rect, cssKey as keyof CssRuleset, cssVal)
       }
     }
 
@@ -80,13 +80,12 @@ class GuiLayoutParser {
   }
 
   private applyRule(
-    parent: Rectangle,
     rect: Rectangle,
     cssKey: keyof CssRuleset,
     cssVal: CssValue,
   ): Rectangle {
     const { x, y, w, h } = rect
-    const { x: px, y: py, w: pw, h: ph } = parent
+    const { x: px, y: py, w: pw, h: ph } = this.parent
 
     const parseVal = (key: string, value: CssValue): number => {
       if (typeof value === 'string' && value.endsWith('%')) {

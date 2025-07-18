@@ -7,9 +7,9 @@ import { Howl, Howler } from 'howler'
 import { typedEntries } from './util/typed-entries'
 
 const SOUND_SPECS = {
-  hover: { src: 'sounds/kenney/select_002.ogg', volume: 0.6 },
-  unHover: { src: 'sounds/kenney/select_001.ogg', volume: 0.8 },
-  click: { src: 'sounds/kenney/select_004.ogg', volume: 1 },
+  hover: { src: 'sounds/kenney/select_001.ogg', volume: 0.6 },
+  click: { src: 'sounds/kenney/select_002.ogg', volume: 1 },
+  unclick: { src: 'sounds/kenney/select_001.ogg', volume: 0.8 },
   song: { src: 'music/mozart.ogg', volume: 7 },
 } as const
 
@@ -33,6 +33,10 @@ export function playSound(key: SoundKey) {
     const sound = sounds[key]
     sound.stop() // stop if already playing
     sound.play()
+  }
+  else {
+    // attempt to enable sound
+    Howler.ctx.resume()
   }
 }
 

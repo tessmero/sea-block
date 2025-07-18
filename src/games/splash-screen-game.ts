@@ -27,10 +27,10 @@ export class SplashScreenGame extends FreeCamGame {
       elements: [
         {
           layoutKey: 'launch',
-          hotkey: 'Space',
-          imageLoader: simpleButtonLoader(btnWidth, btnHeight, 'LAUNCH'),
+          hotkeys: ['Space'],
+          imageLoader: simpleButtonLoader('LAUNCH'),
           clickAction: (seaBlock: SeaBlock) => {
-            seaBlock.transition = randomTransition(seaBlock.layeredViewport)
+            seaBlock.transition = randomTransition(seaBlock)
             seaBlock.isCovering = true
           },
         },

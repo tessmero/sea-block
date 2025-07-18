@@ -23,14 +23,13 @@ export type ButtonParams = {
   styles: Record<ButtonState, ButtonColors>
   label: string
   font: string
-  hotkey?: string
+  hotkeys?: string
 }
 
 // helper to build imageLoader for GameElement
 export function simpleButtonLoader(
-  width: number, height: number,
   label: string, font: string = '35px "Micro5"') {
-  return async () => {
+  return async (width: number, height: number) => {
     // wait for fonts from urls defined in index.html
     await document.fonts.load(font)
     await document.fonts.ready

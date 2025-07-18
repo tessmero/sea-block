@@ -23,3 +23,13 @@ export function randChoice<
 TOptionList[number] {
   return options[Math.floor(Math.random() * options.length)]
 }
+
+// randomly shuffle elements in array
+export function shuffle<TElement>(array: Array<TElement>): Array<TElement> {
+  const shuffled = [...array]
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+  }
+  return shuffled
+}

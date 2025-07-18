@@ -11,8 +11,8 @@ import type { LayeredViewport } from './gfx/layered-viewport'
 import type { TileGroup } from './core/groups/tile-group'
 
 type MouseCallbacks = {
-  click: (mousePos: THREE.Vector2) => void
-  unclick: () => void
+  click: (event: Event, mousePos: THREE.Vector2) => void
+  unclick: (event: Event) => void
 }
 
 type EventHandler = {
@@ -44,18 +44,27 @@ const handlers: ReadonlyArray<EventHandler> = [
       'touchstart',
     ],
     action: (event, callbacks) => {
+      // // un-focus debug gui controls so keyboard controls work
+      // try {
+      //   (document.activeElement as HTMLElement).blur()
+      // }
+      // catch (_e) {
+      //   // do nothing
+      // }
+
       _processMousePos(event)
-      callbacks.click(screenPos)
+      callbacks.click(event, screenPos)
       event.preventDefault()
     },
   },
   {
     on: [
       'mouseup',
-      'touchEnd',
+      'touchend',
+      'touchcancel',
     ],
     action: (event, callbacks) => {
-      callbacks.unclick()
+      callbacks.unclick(event)
       event.preventDefault()
     },
   },

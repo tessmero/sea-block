@@ -1,18 +1,30 @@
 /**
  * @file flat-transition.ts
  *
- * Simple transition using only the front canvas.
+ * Transition using only the front canvas.
+ *
+ * Refers to flat-transition-ga (GridAnimation) and only
+ * redraws tiles that are actively changing.
  */
 
+import type { TileIndex } from '../../core/grid-logic/indexed-grid'
+import { TiledGrid } from '../../core/grid-logic/tiled-grid'
+import type { TileShape } from '../../core/grid-logic/tilings/tiling'
+import { Tiling } from '../../core/grid-logic/tilings/tiling'
+import { TILING_NAMES } from '../../imp-names'
+import { randChoice } from '../../util/rng'
+import { GridAnimation } from '../grid-anims/grid-animation'
 import { Transition } from '../transition'
+
+const viewPad = 100
+const padOffset = -viewPad / 2
 
 const maxChunks = 128
 const chunkBuffer = new Float32Array(maxChunks)
 type Chunk = {
 
   // integer coordinates in grid
-  x: number
-  y: number
+  tileIndex: TileIndex
 
   // fraction filled
   value: number
@@ -26,21 +38,31 @@ export class FlatTransition extends Transition {
 
   // chunk grid in units of big pixels
   private chunkSize = 10
-  private maxRadius = 10
-  private centerX = 5
-  private centerY = 5
+
+  // assigned in Transition.create -> reset -> pickChunkSize
+  private chunkGrid!: TiledGrid
+  private hideAnim!: GridAnimation
+  private showAnim!: GridAnimation
 
   reset() {
     // console.log('flat transition reset')
+    this.pickChunkSize()
     chunkBuffer.fill(0)
     lastWidth = 0
     lastHeight = 0
   }
 
+  private _getPaddedDims() {
+    let { w, h } = this.layeredViewport
+    w += viewPad
+    h += viewPad
+    return { w, h }
+  }
+
   // get chunk size for current screen shape
   private pickChunkSize(): number {
-    const { w, h } = this.layeredViewport
-    if (w === lastWidth && h == lastHeight) {
+    const { w, h } = this._getPaddedDims()
+    if (w === lastWidth && h === lastHeight) {
       return this.chunkSize // screen shape unchanged since last check
     }
     lastWidth = w
@@ -50,110 +72,126 @@ export class FlatTransition extends Transition {
     this.chunkSize = Math.ceil(Math.sqrt(w * h / maxChunks))
     const widthInChunks = Math.ceil(w / this.chunkSize)
     const heightInChunks = Math.ceil(h / this.chunkSize)
-    this.centerX = widthInChunks / 2
-    this.centerY = heightInChunks / 2
-    this.maxRadius = this.chunkSize + Math.hypot(widthInChunks, heightInChunks) / 2
+
+    // compute new grid animation
+    this.chunkGrid = new TiledGrid(
+      widthInChunks, heightInChunks,
+      Tiling.create(randChoice(TILING_NAMES)),
+    )
+
+    this.hideAnim = GridAnimation.create(
+      randChoice(['flat-sweep', 'radial-sweep', 'random-sweep'] as const),
+      // randChoice(['radial-sweep'] as const),
+      this.chunkGrid,
+    )
+    this.showAnim = GridAnimation.create(
+      randChoice(['flat-sweep', 'radial-sweep', 'random-sweep'] as const),
+      this.chunkGrid,
+    )
+
     return this.chunkSize
   }
 
   private* getChangedChunks(anim: number, targetValue: number): Generator<Chunk> {
-    const distSquared = Math.pow(anim * this.maxRadius, 2)
-    const innerD2 = distSquared - this.chunkSize
+    for (const tileIndex of this.chunkGrid.tileIndices) {
+      const { i } = tileIndex
+      const oldValue = chunkBuffer[i]
 
-    const s = this.chunkSize
-    const cx = this.centerX
-    const cy = this.centerY
-    const sw = this.layeredViewport.w
-    const sh = this.layeredViewport.h
-    const w = Math.ceil(sw / s)
-    const h = Math.ceil(sh / s)
-    let i = 0
-    for (let x = 0; x < w; x++) {
-      for (let y = 0; y < h; y++) {
-        const dx = cx - x
-        const dy = cy - y
-        const oldValue = chunkBuffer[i]
-
-        // const newValue = (dx * dx + dy * dy) < distSquared ? targetValue : 1 - targetValue
-        let newValue
-        const d2 = (dx * dx + dy * dy)
-        if (d2 > distSquared) {
-          // chunk hasn't started
-          newValue = 1 - targetValue
-        }
-        else if (d2 < innerD2) {
-          // chunk is finished
-          newValue = targetValue
-        }
-        else {
-          // chunk partially finished (sqrt in range 0-1 is fast)
-          // const r = Math.sqrt((d2-innerD2)/(distSquared-innerD2))
-          const r = ((d2 - innerD2) / (distSquared - innerD2))
-          newValue = targetValue === 1 ? 1 - r : r
-        }
-
-        if (oldValue !== newValue) {
-          yield { x, y, value: newValue }
-        }
-
-        chunkBuffer[i++] = newValue
+      const gridAnim = targetValue === 1 ? this.hideAnim : this.showAnim
+      let newValue = gridAnim.getTileValue(tileIndex, anim)
+      if (targetValue === 0) {
+        newValue = 1 - newValue
       }
+
+      if (oldValue !== newValue) {
+        yield { tileIndex, value: newValue }
+      }
+
+      chunkBuffer[i] = newValue
     }
   }
 
-  public cleanupCover(): void {
+  public cleanupHide(): void {
     const { ctx, w, h } = this.layeredViewport
     ctx.fillStyle = 'black'
     ctx.fillRect(0, 0, w, h)
   }
 
-  public cleanupUncover(): void {
+  public cleanupShow(): void {
     const { ctx, w, h } = this.layeredViewport
     ctx.clearRect(0, 0, w, h)
   }
 
-  protected _cover(t0: number, t1: number) {
-    // console.log(`cover ${t1}`)
+  protected _hide(t0: number, t1: number) {
     const chunkSize = this.pickChunkSize()
     const { ctx } = this.layeredViewport
     ctx.fillStyle = 'black'
     let _count = 0
-    for (const { x, y, value } of this.getChangedChunks(t1, 1)) {
+    for (const { tileIndex, value } of this.getChangedChunks(t1, 1)) {
+      const { x, z } = tileIndex
+      const tileShape = this.chunkGrid.tiling.shapes[this.chunkGrid.tiling.getShapeIndex(x, z)]
+
       _count++
       const filledSize = chunkSize * value
-      const offset = (chunkSize - filledSize) / 2
-      ctx.fillRect(
-        x * chunkSize + offset,
-        y * chunkSize + offset,
-        filledSize, filledSize)
-    }
-    // console.log(`  ${_count} changed chunks`)
 
-    // const x0 = Math.floor(t0 * w)
-    // const dx = Math.ceil((t1 - t0) * w)
-    // ctx.fillRect(x0, 0, dx, h)
+      const tilePos = this.chunkGrid.tiling.indexToPosition(x, z)
+      this.fillPolygon(ctx,
+        tilePos.x * chunkSize + padOffset,
+        tilePos.z * chunkSize + padOffset,
+        filledSize,
+        tileShape)
+    }
   }
 
-  protected _uncover(t0: number, t1: number) {
-    // console.log(`uncover ${t1}`)
-
+  protected _show(t0: number, t1: number) {
     const chunkSize = this.pickChunkSize()
     const { ctx } = this.layeredViewport
-    // ctx.fillStyle = 'white'
+
+    // start erasing with fill operations
+    ctx.globalCompositeOperation = 'destination-out'
+
     let _count = 0
-    for (const { x, y, value } of this.getChangedChunks(t1, 0)) {
+    for (const { tileIndex, value } of this.getChangedChunks(t1, 0)) {
+      const { x, z } = tileIndex
+      const tileShape = this.chunkGrid.tiling.shapes[this.chunkGrid.tiling.getShapeIndex(x, z)]
+
       _count++
       const filledSize = chunkSize * (1 - value)
-      const offset = (chunkSize - filledSize) / 2
-      ctx.clearRect(
-        x * chunkSize + offset,
-        y * chunkSize + offset,
-        filledSize, filledSize)
-    }
-    // console.log(`  ${_count} changed chunks`)
 
-    // const x0 = Math.floor(t0 * w)
-    // const dx = Math.ceil((t1 - t0) * w)
-    // ctx.clearRect(x0, 0, dx, h)
+      const tilePos = this.chunkGrid.tiling.indexToPosition(x, z)
+      this.fillPolygon(ctx,
+        tilePos.x * chunkSize,
+        tilePos.z * chunkSize,
+        filledSize,
+        tileShape)
+    }
+
+    // restore normal drawing mode
+    ctx.globalCompositeOperation = 'source-over'
+  }
+
+  private fillPolygon(
+    ctx: CanvasRenderingContext2D,
+    cx: number,
+    cy: number,
+    scale: number,
+    tileShape: TileShape,
+  ) {
+    const { n } = tileShape
+    const radius = 1.1 * scale * tileShape.radius
+    const angle = tileShape.angle + Math.PI / 2
+    ctx.beginPath()
+    for (let i = 0; i < n; i++) {
+      const vertAngle = angle + 2 * Math.PI * i / n
+      const x = cx + radius * Math.cos(vertAngle)
+      const y = cy + radius * Math.sin(vertAngle)
+      ctx.lineTo(x, y)
+    }
+    ctx.closePath()
+    ctx.fill()
   }
 }
+
+// function _dampedAnim(t: number): number {
+//   return 1 - Math.pow(1 - t, 4)
+// }

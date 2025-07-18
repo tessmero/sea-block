@@ -9,38 +9,55 @@ import type { SeaBlock } from '../sea-block'
 import { freeCamGameConfig } from '../configs/free-cam-game-config'
 import type { Sphere } from '../core/sphere'
 import type { TileIndex } from '../core/grid-logic/indexed-grid'
+import { FREECAM_DESKTOP_LAYOUT } from '../layouts/freecam-desktop-layout'
+import { simpleButtonLoader } from '../gfx/2d/flat-button'
 import { Game } from './game'
-import type { GameUpdateContext, MouseState } from './game'
+import type { GameElement, GameUpdateContext, MouseState } from './game'
 
 export const MOUSE_DEADZONE = 50 // (px) center of screen with zero force
 export const MOUSE_MAX_RAD = 200 // (px) radius with max force
-const mouseVec = new Vector2()
+// const mouseVec = new Vector2()
 const force = new Vector3()
 const lastScreenPosDummy = new Vector2()
+const targetDummy = new Vector3()
 
-let _lastPickedTileIndex: TileIndex | undefined = undefined
+const _lastPickedTileIndex: TileIndex | undefined = undefined
 
-// const btnWidth = 60
-// const btnHeight = 20
+const inputState = {
+  upBtn: false,
+  downBtn: false,
+  leftBtn: false,
+  rightBtn: false,
+}
+
+function wasdButton(
+  layoutKey: keyof typeof FREECAM_DESKTOP_LAYOUT,
+  label: string,
+  hotkeys: ReadonlyArray<string>): GameElement {
+  return {
+    layoutKey: layoutKey,
+    hotkeys: hotkeys,
+    imageLoader: simpleButtonLoader(label, '20px "Micro5"'),
+    clickAction: (_seaBlock) => {
+      inputState[layoutKey] = true
+    },
+    unclickAction: (_seaBlock) => {
+      inputState[layoutKey] = false
+    },
+  }
+}
 
 export class FreeCamGame extends Game {
   static {
     Game.register('free-cam', {
       factory: () => new FreeCamGame(),
       elements: [
-        // {
-        //   layoutKey: 'randomize',
-        //   imageLoader: simpleButtonLoader(btnWidth, btnHeight, 'RANDOMIZE'),
-        //   clickAction: (seaBlock: SeaBlock) => {
-        //     const tilingItem = seaBlock.config.tree.children.tiling
-        //     tilingItem.value = randChoice(TILING_NAMES)
-        //     seaBlock.onCtrlChange(tilingItem)
-        //   },
-        // },
+        wasdButton('upBtn', '', ['KeyW', 'ArrowUp']),
+        wasdButton('downBtn', '', ['KeyS', 'ArrowDown']),
+        wasdButton('leftBtn', '', ['KeyA', 'ArrowLeft']),
+        wasdButton('rightBtn', '', ['KeyD', 'ArrowRight']),
       ],
-      layout: {
-        // randomize: { width: btnWidth, height: btnHeight, right: 2, bottom: 2 },
-      },
+      layout: FREECAM_DESKTOP_LAYOUT,
     })
   }
 
@@ -147,42 +164,81 @@ export class FreeCamGame extends Game {
     // accel wave maker towards center
     this.updateWaveMaker(dt, mouseState, true)
 
-    if (!mouseState) {
-      // mouse is not in viewport
-      return // do not move camera
-    }
+    // if (!mouseState) {
+    //   // mouse is not in viewport
+    //   return // do not move camera
+    // }
 
-    const { screenPos, intersection, pickedTileIndex } = mouseState
+    // const { intersection, pickedTileIndex } = mouseState
 
-    // check if picked visible tile
-    if (pickedTileIndex) {
-      const tile = seaBlock.terrain.members[pickedTileIndex.i]
-      if (tile.isVisible) {
-        if (_lastPickedTileIndex !== pickedTileIndex) {
-          _lastPickedTileIndex = pickedTileIndex
+    // // check if picked visible tile
+    // if (pickedTileIndex) {
+    //   const tile = seaBlock.terrain.members[pickedTileIndex.i]
+    //   if (tile.isVisible) {
+    //     if (_lastPickedTileIndex !== pickedTileIndex) {
+    //       _lastPickedTileIndex = pickedTileIndex
 
-          // mouse just moved to visible tile, apply force to water
-          // context.terrain.sim.accelTile(pickedTileIndex, 5e-5 * dt)
-        }
+    //       // mouse just moved to visible tile, apply force to water
+    //       // context.terrain.sim.accelTile(pickedTileIndex, 5e-5 * dt)
+    //     }
 
-        // picked visible tile. move wave makere
-        // this.accelSphere(this.waveMaker, intersection, 1e-4)
-        return // do not move camera
-      }
-    }
+    //     // picked visible tile. move wave makere
+    //     // this.accelSphere(this.waveMaker, intersection, 1e-4)
+    //     // return // do not move camera
+    //   }
+    // }
 
-    if (!this.hasMouseMoved) {
-      return // user is idle since reset, do not move camera
-    }
+    // if (!this.hasMouseMoved) {
+    //   return // user is idle since reset, do not move camera
+    // }
 
     // accel cam anchor towards picked intersection point
     const { CAM_ACCEL } = this.config.flatConfig
-    mouseVec.x = screenPos.x - window.innerWidth / 2
-    mouseVec.y = screenPos.y - window.innerHeight / 2
-    const screenDistance = mouseVec.length()
-    let mouseRatio = (screenDistance - MOUSE_DEADZONE) / (MOUSE_MAX_RAD - MOUSE_DEADZONE)
-    mouseRatio = Math.min(1, Math.max(0, mouseRatio))
-    this.accelSphere(this.cameraAnchor, intersection, dt * CAM_ACCEL * mouseRatio)
+    const { camera } = seaBlock
+
+    // 1. Calculate camera-to-anchor direction in xz-plane (projected forward)
+    const forward = new Vector3(
+      camera.position.x - this.cameraAnchor.position.x,
+      0,
+      camera.position.z - this.cameraAnchor.position.z,
+    )
+    if (forward.lengthSq() > 0) forward.normalize()
+    else forward.set(0, 0, 1) // fallback
+
+    // 2. Compute right vector in xz-plane (perpendicular to forward)
+    // Cross product with up (0,1,0) for rightward direction
+    const right = new Vector3().crossVectors(forward, new Vector3(0, 1, 0))
+
+    // 3. Build movement vector from input
+    const moveVec = new Vector3()
+    let isUpHeld = inputState['upBtn']
+    let isDownHeld = inputState['downBtn']
+    let isLeftHeld = inputState['leftBtn']
+    let isRightHeld = inputState['rightBtn']
+    if (mouseState) {
+      // allow scrolling with mouse at edge of screen
+      const margin = 10 // thickness of edge region in big pixels
+      const { x, y } = mouseState.lvPos
+      const { w, h } = seaBlock.layeredViewport
+      if (y < margin) isUpHeld = true
+      if (y > h - margin) isDownHeld = true
+      if (x < margin) isLeftHeld = true
+      if (x > w - margin) isRightHeld = true
+    }
+
+    if (isUpHeld) moveVec.sub(forward)
+    if (isDownHeld) moveVec.add(forward)
+    if (isLeftHeld) moveVec.add(right)
+    if (isRightHeld) moveVec.sub(right)
+
+    if (moveVec.lengthSq() > 0) moveVec.normalize()
+
+    // 4. Apply movement to intersection (copy anchor position first)
+    const step = 10 // Or whatever step size you prefer
+    targetDummy.copy(this.cameraAnchor.position)
+      .addScaledVector(moveVec, step)
+
+    this.accelSphere(this.cameraAnchor, targetDummy, dt * CAM_ACCEL)
   }
 
   protected accelSphere(sphere: Sphere, intersection: Vector3, magnitude: number) {

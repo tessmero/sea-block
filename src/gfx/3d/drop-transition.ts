@@ -2,34 +2,39 @@
  * @file drop-transition.ts
  *
  * Transition effect where tiles are dropped off-screen.
+ *
+ * Static properties are checked in tile-group-gfx-helper.
  */
 
+import { GridAnimation } from '../grid-anims/grid-animation'
 import { Transition } from '../transition'
-
-const amplitude = 100
 
 export class DropTransition extends Transition {
   static { Transition.register('drop', () => new DropTransition()) }
 
-  public static tileOffset = 0 // checked in tile-group-gfx-helper.ts
+  public static t = 0 // time 0-1 for GridAnimation
+
+  // assigned in Transition.create -> reset
+  public static gridAnim: GridAnimation
 
   protected reset(): void {
-    DropTransition.tileOffset = 0
+    DropTransition.gridAnim = GridAnimation.create('random-sweep', this.terrain.grid)
+    DropTransition.t = 0
   }
 
-  protected _cover(t0: number, t1: number): void {
-    DropTransition.tileOffset = -t1 * amplitude
+  protected _hide(t0: number, t1: number): void {
+    DropTransition.t = t1
   }
 
-  protected _uncover(t0: number, t1: number): void {
-    DropTransition.tileOffset = -(1 - t1) * amplitude
+  protected _show(t0: number, t1: number): void {
+    DropTransition.t = 1 - t1
   }
 
-  public cleanupCover(): void {
-    DropTransition.tileOffset = -amplitude
+  public cleanupHide(): void {
+    DropTransition.t = 1
   }
 
-  public cleanupUncover(): void {
-    DropTransition.tileOffset = 0
+  public cleanupShow(): void {
+    DropTransition.t = 0
   }
 }
