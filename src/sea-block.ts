@@ -34,6 +34,7 @@ import { TiledGrid } from './core/grid-logic/tiled-grid'
 import { gfxConfig } from './configs/gfx-config'
 import { physicsConfig } from './configs/physics-config'
 import { playSound } from './sounds'
+import { parseLayoutRectangles } from './util/layout-parser'
 
 // can only be constructed once
 let didConstruct = false
@@ -53,7 +54,8 @@ type LoadedMesh = {
   mesh: CompositeMesh | THREE.Object3D
   layoutKey?: string // optional, indicates camera-locked
   clickAction?: (SeaBlock) => void
-  hotkey?: string
+  unclickAction?: (SeaBlock) => void
+  hotkeys?: ReadonlyArray<string>
 }
 
 // result of loading a FlatElement (game.ts)
@@ -61,7 +63,8 @@ type LoadedImage = {
   image: FlatButton// OffscreenCanvas
   layoutKey: string // required
   clickAction?: (SeaBlock) => void
-  hotkey?: string
+  unclickAction?: (SeaBlock) => void
+  hotkeys?: ReadonlyArray<string>
 }
 
 export class SeaBlock {
@@ -130,20 +133,20 @@ export class SeaBlock {
     // Responsive resize
     window.addEventListener('resize', () => this.onResize())
 
-    // listen for directional mouse/touch input
+    // listen for mouse/touch input
     initMouseListeners(this.layeredViewport, {
-      click: (_mousePos) => { // mousedown click
+      click: (event, _mousePos) => { // mousedown
         const mouseState = processMouse(this)
         if (mouseState && didLoadAssets) {
-          this.game.flatUi.click(this, mouseState)
+          this.game.flatUi.click(event, this, mouseState)
         }
         else {
           // console.log('no mouse state after click')
         }
       },
-      unclick: () => { // mouseup unclick
+      unclick: (event) => { // mouseup
         const mouseState = processMouse(this)
-        this.game.flatUi.unclick(this, mouseState)
+        this.game.flatUi.unclick(event, this, mouseState)
       },
     })
 
@@ -152,13 +155,36 @@ export class SeaBlock {
         return
       }
       const elems = elementsPerGame[this.currentGameName]
-      for (const { hotkey, clickAction, layoutKey } of elems) {
-        if (hotkey === event.key && clickAction) {
-          clickAction(this)
+      for (const { hotkeys, layoutKey } of elems) {
+        if (hotkeys?.includes(event.code)) {
           if (layoutKey) {
-            // display button as pressed
-            this.repaintButton(layoutKey, 'clicked')
-            playSound('click')
+            this.clickButton(layoutKey)
+            // // display button as pressed
+            // if (this.game.flatUi.lastDrawnState[layoutKey] !== 'clicked') {
+            //   this.repaintButton(layoutKey, 'clicked')
+            //   playSound('hover')
+            // }
+          }
+        }
+      }
+    })
+
+    window.addEventListener('keyup', (event) => {
+      if (!didLoadAssets) {
+        return
+      }
+      const elems = elementsPerGame[this.currentGameName]
+      for (const { hotkeys, layoutKey } of elems) {
+        if (hotkeys?.includes(event.code)) {
+          if (layoutKey) {
+            playSound('unclick')
+            this.repaintButton(layoutKey, 'default')
+            this.unclickButton(layoutKey)
+            // // display button as released
+            // if (this.game.flatUi.lastDrawnState[layoutKey] !== 'default') {
+            //   this.repaintButton(layoutKey, 'default')
+            //   playSound('unclick')
+            // }
           }
         }
       }
@@ -167,11 +193,17 @@ export class SeaBlock {
     // start loading assets to populate elementsPerGame
     const loadPromises: Record<string, Array<Promise<LoadedElement>>> = {}
     for (const gameName of GAME_NAMES) {
-      loadPromises[gameName] = Game._registry[gameName].elements.map(async (obj) => {
+      const gameEntry = Game._registry[gameName]
+      const layoutRectangles = parseLayoutRectangles(
+        this.layeredViewport.screenRectangle,
+        gameEntry.layout,
+      )
+      loadPromises[gameName] = gameEntry.elements.map(async (obj) => {
         const ge = obj as GameElement
         if ('imageLoader' in ge) {
           const flatElem = obj as FlatElement
-          const image = await flatElem.imageLoader()
+          const { w, h } = layoutRectangles[flatElem.layoutKey]
+          const image = await flatElem.imageLoader(w, h)
           return { image, ...flatElem } satisfies LoadedElement
         }
         else {
@@ -204,7 +236,7 @@ export class SeaBlock {
 
         // old scene just hidden from view
         await this.onMidTransition()
-        transition.cleanupCover()
+        transition.cleanupHide()
         // this.rebuildControls()
       }
       if (transition.didFinishUncover) {
@@ -247,7 +279,7 @@ export class SeaBlock {
     this.camera.updateProjectionMatrix()
     this.game.flatUi.refreshLayout(this.layeredViewport)
     this.updateFrontCanvas()
-    this.transition?.cleanupCover()
+    this.transition?.cleanupHide()
 
     // // align camera-locked meshes
     // for (const [_gameName, elems] of Object.entries(elementsPerGame)) {
@@ -355,17 +387,35 @@ export class SeaBlock {
     this.updateFrontCanvas(frontImages)
   }
 
+  // called through mousedown and keydown
   public clickButton(layoutKey: string) {
     if (this.transition) {
       return // disable clicking during transition
     }
+
+    if (this.game.flatUi.lastDrawnState[layoutKey] !== 'clicked') {
+      playSound('click')
+      this.repaintButton(layoutKey, 'clicked')
+    }
+
     const match = elementsPerGame[this.currentGameName].find(e => e.layoutKey === layoutKey)
     if (match && ('clickAction' in match) && match.clickAction) {
       match.clickAction(this)
     }
   }
 
+  public unclickButton(layoutKey: string) {
+    const match = elementsPerGame[this.currentGameName].find(e => e.layoutKey === layoutKey)
+    if (match && ('unclickAction' in match) && match.unclickAction) {
+      match.unclickAction(this)
+    }
+  }
+
   public repaintButton(layoutKey: string, state: ButtonState) {
+    // here we are assuming layoutKey is used for a flat button
+    // it could also be for a camera-locked mesh
+    // (visual change for meshes not implemented)
+
     const match = this._frontImages.find(img => img.layoutKey === layoutKey)
     if (!match) {
       // maybe race condition fluke
@@ -380,6 +430,7 @@ export class SeaBlock {
 
     const { ctx } = this.layeredViewport
     const buffer = match.image.images[state]
+    this.game.flatUi.lastDrawnState[layoutKey] = state
     ctx.imageSmoothingEnabled = false
     ctx.drawImage(buffer, rect.x, rect.y)
   }
@@ -402,6 +453,7 @@ export class SeaBlock {
 
       // user may have already hovered on button position
       const stateToDraw: ButtonState = this.game.flatUi.hoveredButton === layoutKey ? 'hovered' : 'default'
+      this.game.flatUi.lastDrawnState[layoutKey] = stateToDraw
       ctx?.drawImage(image.images[stateToDraw], rect.x, rect.y)
     }
   }
@@ -430,7 +482,7 @@ export class SeaBlock {
     // check for regular setting change
     if (item.resetOnChange === 'full') {
       // start transition
-      this.transition = Transition.create('flat', this.layeredViewport)
+      this.transition = Transition.create('flat', this)
       this.isCovering = true
       return // wait for mid transition to actually update
     }

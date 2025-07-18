@@ -35,17 +35,29 @@ seaBlock.reset()
 // show controls gui on startup
 // seaBlock.rebuildControls()
 
-// // allow skipping start sequence with escape key
-// function handleEscapePress(event) {
-//   if (event.key === 'Escape') {
-//     // seaBlock.game.traveled = seaBlock.game.distForFreeCam
-//     seaBlock.transition = randomTransition(seaBlock.layeredViewport)
-//     seaBlock.isCovering = true
-
-//     // document.removeEventListener('keydown', handleEscapePress)
+// // in free-cam mode, debug controls loose focus after click
+// document.addEventListener('change', (_event) => {
+//   if (seaBlock.currentGameName === 'free-cam') {
+//     try {
+//       (document.activeElement as HTMLElement).blur()
+//     }
+//     catch (_e) {
+//       // do nothing
+//     }
 //   }
-// }
-// document.addEventListener('keydown', handleEscapePress)
+// })
+// document.addEventListener('click', (event) => {
+//   if (seaBlock.currentGameName === 'free-cam') {
+//     try {
+//       if ((event.target as HTMLElement).tagName === 'BUTTON') {
+//         (document.activeElement as HTMLElement).blur()
+//       }
+//     }
+//     catch (_e) {
+//       // do nothing
+//     }
+//   }
+// })
 
 // Animation loop
 let lastTime = performance.now()

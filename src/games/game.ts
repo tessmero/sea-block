@@ -49,16 +49,20 @@ export type GameElement = FlatElement | DepthElement // 3d object or image buffe
 
 // image to render on front canvas
 export type FlatElement = {
-  imageLoader: () => Promise<FlatButton>// () => Promise<OffscreenCanvas>
+  imageLoader: (w: number, h: number) => Promise<FlatButton>// () => Promise<OffscreenCanvas>
   layoutKey: string // must have layout rectangle
   clickAction?: (seaBlock: SeaBlock) => void
-  hotkey?: string // keycode
+  unclickAction?: (seaBlock: SeaBlock) => void
+  hotkeys?: ReadonlyArray<string> // event.code values
 }
 
 // 3d object to show in three.js scene
 export type DepthElement = {
   meshLoader: () => Promise<CompositeMesh | Object3D>
   layoutKey?: string // only for elements locked to camera
+  clickAction?: (seaBlock: SeaBlock) => void
+  unclickAction?: (seaBlock: SeaBlock) => void
+  hotkeys?: ReadonlyArray<string> // event.code values
 }
 
 export abstract class Game {
@@ -89,12 +93,12 @@ export abstract class Game {
   }
 
   static create(name: GameName, context: SeaBlock): Game {
-    const { factory, layout } = this._registry[name]
+    const { factory, layout, elements } = this._registry[name]
     const instance = factory()
 
     // Game
     // post-construction setup
-    instance.flatUi = new FlatGameUi(layout)
+    instance.flatUi = new FlatGameUi(layout, elements)
     instance.reset(context)
     instance.flatUi.refreshLayout(context.layeredViewport)
 

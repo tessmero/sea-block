@@ -14,6 +14,7 @@ import type { StyleParser } from '../../util/style-parser'
 import type { TileGroup } from '../../core/groups/tile-group'
 import type { TileColors } from '../styles/style'
 import type { TileIndex } from '../../core/grid-logic/indexed-grid'
+import { GridAnimation } from '../grid-anims/grid-animation'
 import { DropTransition } from './drop-transition'
 import type { TileMesh } from './tile-mesh'
 
@@ -34,8 +35,12 @@ export class TileGroupGfxHelper {
   public readonly amplitude: number = 20
   public readonly liveRenderHeights: Array<number> // used for flora gfx
 
+  private readonly warpAnim: GridAnimation
+
   constructor(private readonly group: TileGroup) {
     this.liveRenderHeights = new Array(group.n).fill(NaN)
+
+    this.warpAnim = GridAnimation.create('radial-height-warp', group.grid)
   }
 
   updateTileMeshes(style: StyleParser) {
@@ -172,16 +177,20 @@ export class TileGroupGfxHelper {
     const { entranceStartTime, exitStartTime } = rTile
     if (exitStartTime) {
       const elapsed = EXIT_DURATION - (Date.now() - exitStartTime)
-      anim = this._boundaryAnim(elapsed, EXIT_DURATION)
+      anim = this._dampedAnim(elapsed, EXIT_DURATION)
     }
     else if (entranceStartTime) {
       const elapsed = Date.now() - entranceStartTime
-      anim = this._boundaryAnim(elapsed, ENTR_DURATION)
+      anim = this._dampedAnim(elapsed, ENTR_DURATION)
     }
     const entranceOffset = -Math.min(renderHeight - cutoff, anim)
 
     // compute tile animation (global drop-transition)
-    const transitionOffset = DropTransition.tileOffset
+    let transitionOffset = 0
+    if (DropTransition.gridAnim) {
+      const tileAnim = DropTransition.gridAnim.getTileValue(tileIndex, DropTransition.t)
+      transitionOffset = -50 * this._dampedAnim(1 - tileAnim, 1)
+    }
 
     dummy.position.set(
       box.x,
@@ -218,7 +227,7 @@ export class TileGroupGfxHelper {
     }
   }
 
-  _boundaryAnim(time: number, duration: number): number {
+  _dampedAnim(time: number, duration: number): number {
     if (time > duration) {
       return 0
     }

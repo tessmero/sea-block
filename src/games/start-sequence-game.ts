@@ -27,11 +27,11 @@ export class StartSequenceGame extends FreeCamGame {
       elements: [
         {
           layoutKey: 'skip',
-          hotkey: 'Escape',
-          imageLoader: simpleButtonLoader(btnWidth, btnHeight, 'SKIP', '25px "Micro5"'),
+          hotkeys: ['Escape', 'Space'],
+          imageLoader: simpleButtonLoader('SKIP', '25px "Micro5"'),
           clickAction: (seaBlock: SeaBlock) => {
             seaBlock.config.tree.children.game.value = 'free-cam'
-            seaBlock.transition = randomTransition(seaBlock.layeredViewport)
+            seaBlock.transition = randomTransition(seaBlock)
             seaBlock.isCovering = true
             StartSequenceGame.wasSkipped = true
           },

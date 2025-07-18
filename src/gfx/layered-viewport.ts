@@ -11,6 +11,7 @@
 
 import { WebGLRenderer } from 'three'
 import { gfxConfig } from '../configs/gfx-config'
+import type { Rectangle } from '../util/layout-parser'
 
 // can only be constructed once
 let didConstruct = false
@@ -22,8 +23,10 @@ export class LayeredViewport {
   public frontCanvas!: HTMLCanvasElement
   public backRenderer!: WebGLRenderer
   public ctx!: CanvasRenderingContext2D
+  public pixelRatio!: number // convert pixels to big pixels
   public w!: number // width in big pixels
   public h!: number // height in big pixels
+  public screenRectangle!: Rectangle // 0,0,w,h
 
   constructor() {
     if (didConstruct) {
@@ -32,20 +35,18 @@ export class LayeredViewport {
     didConstruct = true
   }
 
-  // convert pixels to big pixels
-  get pixelRatio() { return window.devicePixelRatio / gfxConfig.flatConfig.pixelScale }
-
   // called when viewport changes shape (sea-block.ts)
   handleResize() {
-    const pixelRatio = this.pixelRatio
-    this.w = window.innerWidth * pixelRatio
-    this.h = window.innerHeight * pixelRatio
+    this.pixelRatio = window.devicePixelRatio / gfxConfig.flatConfig.pixelScale
+    this.w = window.innerWidth * this.pixelRatio
+    this.h = window.innerHeight * this.pixelRatio
+    this.screenRectangle = { x: 0, y: 0, w: this.w, h: this.h }
 
     this.backRenderer.setSize(
       window.innerWidth,
       window.innerHeight,
     )
-    this.backRenderer.setPixelRatio(pixelRatio)
+    this.backRenderer.setPixelRatio(this.pixelRatio)
 
     this.frontCanvas.width = this.w
     this.frontCanvas.height = this.h
