@@ -1,7 +1,7 @@
 /**
  * @file sea-block.ts
  *
- * Main configurable object used in main.ts.
+ * Main object constructed once in main.ts.
  */
 
 import * as THREE from 'three'
@@ -10,8 +10,9 @@ import type { ConfigButton, ConfigItem } from './configs/config-tree'
 import { TerrainGenerator } from './generators/terrain-generator'
 import type { TileGroupGfxHelper } from './gfx/3d/tile-group-gfx-helper'
 import { getStyle, STYLES } from './gfx/styles/styles-list'
-import { initMouseListeners, processMouse } from './mouse-input'
-import { GRID_DETAIL, STEP_DURATION } from './settings'
+import type { MouseState } from './mouse-input'
+import { initMouseListeners } from './mouse-input'
+import { CAMERA, GRID_DETAIL, PORTRAIT_CAMERA, STEP_DURATION } from './settings'
 import type { CompositeMesh } from './gfx/3d/composite-mesh'
 import { Transition } from './gfx/transition'
 import { GAME_NAMES, type GameName, type GeneratorName } from './imp-names'
@@ -26,15 +27,14 @@ import { buildScene } from './gfx/3d/scene'
 import { SphereGroup } from './core/groups/sphere-group'
 import { TileGroup } from './core/groups/tile-group'
 import { alignMeshInGuiGroup } from './gfx/3d/camera-locked-gfx-helper'
-import { showControls as showDebugControls } from './util/debug-controls-gui'
+import { showDebugControls } from './util/debug-controls-gui'
 import type { StyleParser } from './util/style-parser'
 import { FloraGroup } from './core/groups/flora-group'
 import { Tiling } from './core/grid-logic/tilings/tiling'
 import { TiledGrid } from './core/grid-logic/tiled-grid'
 import { gfxConfig } from './configs/gfx-config'
 import { physicsConfig } from './configs/physics-config'
-import { playSound } from './sounds'
-import { parseLayoutRectangles } from './util/layout-parser'
+import { playSound } from './sound/sound-effects'
 
 // can only be constructed once
 let didConstruct = false
@@ -83,6 +83,7 @@ export class SeaBlock {
   game!: Game // current game
   camera!: THREE.PerspectiveCamera
   orbitControls!: OrbitControls
+  mouseState?: MouseState
 
   // defined only during transition sequence
   transition?: Transition
@@ -92,6 +93,8 @@ export class SeaBlock {
       throw new Error('SeaBlock constructed multiple times')
     }
     didConstruct = true
+
+    layeredViewport.init(this)
   }
 
   // used at natural start sequence end, to switch to free cam without transition
@@ -124,6 +127,7 @@ export class SeaBlock {
       0.1, // near
       1000, // far
     )
+
     this.orbitControls = new OrbitControls(
       this.camera,
       this.layeredViewport.frontCanvas,
@@ -134,19 +138,17 @@ export class SeaBlock {
     window.addEventListener('resize', () => this.onResize())
 
     // listen for mouse/touch input
-    initMouseListeners(this.layeredViewport, {
+    initMouseListeners(this, {
       click: (event, _mousePos) => { // mousedown
-        const mouseState = processMouse(this)
-        if (mouseState && didLoadAssets) {
-          this.game.flatUi.click(event, this, mouseState)
+        if (this.mouseState && didLoadAssets) {
+          this.game.flatUi.click(event, this, this.mouseState)
         }
         else {
           // console.log('no mouse state after click')
         }
       },
       unclick: (event) => { // mouseup
-        const mouseState = processMouse(this)
-        this.game.flatUi.unclick(event, this, mouseState)
+        this.game.flatUi.unclick(event, this)
       },
     })
 
@@ -194,15 +196,16 @@ export class SeaBlock {
     const loadPromises: Record<string, Array<Promise<LoadedElement>>> = {}
     for (const gameName of GAME_NAMES) {
       const gameEntry = Game._registry[gameName]
-      const layoutRectangles = parseLayoutRectangles(
-        this.layeredViewport.screenRectangle,
-        gameEntry.layout,
-      )
+      // const layoutRectangles = parseLayoutRectangles(
+      //   this.layeredViewport.screenRectangle,
+      //   gameEntry.layout(this),
+      // )
       loadPromises[gameName] = gameEntry.elements.map(async (obj) => {
         const ge = obj as GameElement
         if ('imageLoader' in ge) {
           const flatElem = obj as FlatElement
-          const { w, h } = layoutRectangles[flatElem.layoutKey]
+          // const { w, h } = layoutRectangles[flatElem.layoutKey]
+          const { w, h } = flatElem
           const image = await flatElem.imageLoader(w, h)
           return { image, ...flatElem } satisfies LoadedElement
         }
@@ -252,8 +255,7 @@ export class SeaBlock {
     // }
 
     // update game
-    const mouseState = processMouse(this)
-    game.update({ seaBlock: this, dt, mouseState })
+    game.update({ seaBlock: this, dt })
 
     // update game's camera-locked meshes
     // alignGuiGroup(cameraLockedGroup, this.camera)
@@ -273,11 +275,23 @@ export class SeaBlock {
   }
 
   private onResize() {
-    this.layeredViewport.handleResize()
+    const { layeredViewport, camera, orbitControls: controls } = this
+    layeredViewport.handleResize(this)
 
-    this.camera.aspect = window.innerWidth / window.innerHeight
-    this.camera.updateProjectionMatrix()
-    this.game.flatUi.refreshLayout(this.layeredViewport)
+    camera.aspect = window.innerWidth / window.innerHeight
+    camera.updateProjectionMatrix()
+
+    if (this.currentGameName === 'free-cam') {
+      // reset camera distance (keep scene in view for portrait phone)
+      const { w, h } = this.layeredViewport
+      const preset = h > w ? PORTRAIT_CAMERA : CAMERA
+      const desiredDistance = preset.length()
+      const direction = camera.position.clone().sub(controls.target).normalize()
+      camera.position.copy(controls.target).add(direction.multiplyScalar(desiredDistance))
+      controls.update()
+    }
+
+    this.game.flatUi.refreshLayout(this)
     this.updateFrontCanvas()
     this.transition?.cleanupHide()
 
@@ -355,7 +369,7 @@ export class SeaBlock {
     freeCamGameConfig.refreshConfig()
     this.game.reset(this)
     this.game.resetCamera(this)
-    if (this.game.enableOrbitControls()) {
+    if (this.game.doesAllowOrbitControls(this)) {
       this.orbitControls.enabled = true
     }
     // this.game.flatUi.refreshLayout(this.layeredViewport)
@@ -428,6 +442,8 @@ export class SeaBlock {
       throw new Error(`cannot repaint button. layout key missing from layoutRectangles: ${layoutKey}`)
     }
 
+    // console.log(layoutKey, JSON.stringify(rect))
+
     const { ctx } = this.layeredViewport
     const buffer = match.image.images[state]
     this.game.flatUi.lastDrawnState[layoutKey] = state
@@ -443,17 +459,21 @@ export class SeaBlock {
     }
 
     const { ctx, w, h } = this.layeredViewport
+    const layout = this.game.flatUi.layoutRectangles
 
     ctx.clearRect(0, 0, w, h)
+
     for (const { image, layoutKey } of this._frontImages) {
-      const rect = this.game.flatUi.layoutRectangles[layoutKey]
+      const rect = layout[layoutKey]
       if (!rect) {
-        throw new Error(`missing layout key '${layoutKey}'`)
+        continue
+        // throw new Error(`missing layout key '${layoutKey}'`)
       }
 
       // user may have already hovered on button position
       const stateToDraw: ButtonState = this.game.flatUi.hoveredButton === layoutKey ? 'hovered' : 'default'
       this.game.flatUi.lastDrawnState[layoutKey] = stateToDraw
+      // console.log(layoutKey, JSON.stringify(rect))
       ctx?.drawImage(image.images[stateToDraw], rect.x, rect.y)
     }
   }
@@ -477,6 +497,7 @@ export class SeaBlock {
     else {
       // this.game.refreshConfig() // refresh existing game
       freeCamGameConfig.refreshConfig()
+      this.orbitControls.enabled = this.game.doesAllowOrbitControls(this)
     }
 
     // check for regular setting change
@@ -505,8 +526,7 @@ export class SeaBlock {
 
   private async onMidTransition() {
     if (this.currentGameName === 'splash-screen') {
-      // just clicked "launch"
-      document.documentElement.requestFullscreen()
+      this.currentGameName = 'free-cam'
 
       // replace back canvas and renderer
       const renderer = this.layeredViewport.backRenderer
@@ -520,7 +540,9 @@ export class SeaBlock {
         canvas: this.layeredViewport.backCanvas,
         antialias: false,
       })
-      this.layeredViewport.handleResize()
+
+      // just clicked "launch"
+      document.documentElement.requestFullscreen()
 
       // wait two animation frames
       await new Promise<void>((resolve) => {
@@ -534,9 +556,9 @@ export class SeaBlock {
 
     const { generator, terrain, scene } = this
 
-    if (!this.didBuildControls) {
-      this.rebuildControls() // build for first time after user skipped start
-    }
+    // if (!this.didBuildControls) {
+    //   this.rebuildControls() // build for first time after user skipped start
+    // }
 
     StartSequenceGame.isColorTransformEnabled = false
     this.config.refreshConfig()

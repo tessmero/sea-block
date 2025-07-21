@@ -7,18 +7,16 @@
 
 import { Vector3 } from 'three'
 import { gfxConfig } from '../configs/gfx-config'
-import { simpleButtonLoader } from '../gfx/2d/flat-button'
 import { randomTransition } from '../gfx/transition'
 import type { SeaBlock } from '../sea-block'
 import { freeCamGameConfig } from '../configs/free-cam-game-config'
 import { michaelConfig } from '../configs/michael-config'
 import { typedEntries } from '../util/typed-entries'
+import { iconButtonLoader } from '../gfx/2d/flat-button'
+import { START_SEQUENCE_LAYOUT } from '../layouts/start-sequence-layout'
 import { FreeCamGame } from './free-cam-game'
 import type { GameUpdateContext } from './game'
 import { Game } from './game'
-
-const btnWidth = 40
-const btnHeight = 20
 
 export class StartSequenceGame extends FreeCamGame {
   static {
@@ -26,9 +24,14 @@ export class StartSequenceGame extends FreeCamGame {
       factory: () => new StartSequenceGame(),
       elements: [
         {
+          w: 48, h: 16,
           layoutKey: 'skip',
           hotkeys: ['Escape', 'Space'],
-          imageLoader: simpleButtonLoader('SKIP', '25px "Micro5"'),
+          // imageLoader: simpleButtonLoader('SKIP', '25px "Micro5"'),
+          imageLoader: iconButtonLoader(
+            'icons/btn-skip-background.png',
+            `icons/btn-skip.png`,
+          ),
           clickAction: (seaBlock: SeaBlock) => {
             seaBlock.config.tree.children.game.value = 'free-cam'
             seaBlock.transition = randomTransition(seaBlock)
@@ -37,9 +40,7 @@ export class StartSequenceGame extends FreeCamGame {
           },
         },
       ],
-      layout: {
-        skip: { width: btnWidth, height: btnHeight, right: 2, bottom: 2 },
-      },
+      layout: () => START_SEQUENCE_LAYOUT,
     })
   }
 
@@ -81,7 +82,7 @@ export class StartSequenceGame extends FreeCamGame {
 
     // reset camera
     const { x, z } = context.terrain.centerXZ
-    const cam = this.getCamOffset()
+    const cam = this.getCamOffset(context)
     camera.position.set(x + cam.x, cam.y, z + cam.z)
     orbitControls.update()
   }
@@ -93,7 +94,7 @@ export class StartSequenceGame extends FreeCamGame {
       return
     }
 
-    const { seaBlock } = context
+    const { seaBlock, dt } = context
     const changed = getChangedParams(this.traveled)
 
     for (const param in changed) {
@@ -123,13 +124,11 @@ export class StartSequenceGame extends FreeCamGame {
     // prepare to measure distance traveled this update
     const { x: oldX, z: oldZ } = this._lastAnchorPosition
 
-    const { dt, mouseState } = context
-
     // pan grid if necessary
     this.centerOnAnchor(seaBlock)
 
     // accel wave maker towards center
-    this.updateWaveMaker(dt, mouseState, false)
+    this.updateWaveMaker(dt, seaBlock.mouseState, false)
 
     // accel camera anchor towards fixed direction
     const { CAM_ACCEL } = freeCamGameConfig.flatConfig

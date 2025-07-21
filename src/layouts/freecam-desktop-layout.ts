@@ -5,16 +5,21 @@
  */
 
 import type { CssLayout } from '../util/layout-parser'
+import { commonLayout, standards } from './layout-helper'
 
-const btnSize = 15
-const pad = 1
+const { btn, btnSize, pad } = standards
+
 const wasdBtn = {
+
   parent: '_wasdBtnRegion',
-  width: btnSize,
-  height: btnSize,
+  ...btn,
 }
 
 export const FREECAM_DESKTOP_LAYOUT = {
+
+  ...commonLayout,
+
+  // WASD / arrows on bottom left
   _wasdBtnRegion: {
     width: 3 * btnSize + 2 * pad,
     height: 2 * btnSize + pad,

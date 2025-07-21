@@ -42,6 +42,17 @@ ruleTester.run('valid-layout', rule, {
 
   invalid: [
     {
+      // incorrect variable name
+      code: `
+        import type { CssLayout } from '../util/layout-parser'
+        export const MYY_LAYOUT = {
+          foo: 'bar'
+        } as const satisfies CssLayout
+      `,
+      filename: 'my-layout.ts',
+      errors: [{ messageId: 'exportNameMatchesFile' }],
+    },
+    {
       // wrong import
       code: `
         import type { WrongType } from '../util/layout-parser'

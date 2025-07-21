@@ -44,7 +44,7 @@ export abstract class Transition {
     const start = this.elapsed / totalDuration
 
     if (this.didFinishCover && isFirstUncover) {
-      this.elapsed += 0.7 * dt // slow down first uncover
+      this.elapsed += dt // 0.7 * dt // slow down first uncover
     }
     else {
       this.elapsed += dt

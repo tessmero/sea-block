@@ -61,7 +61,13 @@ function sphereStep(sphere: Sphere, tileGroup: TileGroup, params: PhysParams) {
 
   // Apply gravity and air resistance
   if (!sphere.isGhost) sphere.velocity.y -= GRAVITY
-  sphere.velocity.multiplyScalar(1 - AIR_RESISTANCE)
+  if (sphere.isGhost) {
+    // hack to make camera anchor sphere have higher friction
+    sphere.velocity.multiplyScalar(1 - (AIR_RESISTANCE * 5))
+  }
+  else {
+    sphere.velocity.multiplyScalar(1 - AIR_RESISTANCE)
+  }
 
   // Predict next position
   const futurePosition = sphere.position.clone().add(sphere.velocity.clone().multiplyScalar(STEP_DURATION))

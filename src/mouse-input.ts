@@ -6,9 +6,19 @@
 
 import * as THREE from 'three'
 import { CAMERA_LOOK_AT } from './settings'
-import type { MouseState } from './games/game'
 import type { LayeredViewport } from './gfx/layered-viewport'
 import type { TileGroup } from './core/groups/tile-group'
+import type { TileIndex } from './core/grid-logic/indexed-grid'
+import type { SeaBlock } from './sea-block'
+
+// mouse input in terms of viewport and tile grid
+export interface MouseState {
+  screenPos: THREE.Vector2 // point in viewport in browser px
+  lvPos: THREE.Vector2 // poitn in viewport in layeredViewport big pixels
+  intersection: THREE.Vector3 // picked point in world
+  pickedTileIndex?: TileIndex // picked tile in world
+  isTouch?: boolean
+}
 
 type MouseCallbacks = {
   click: (event: Event, mousePos: THREE.Vector2) => void
@@ -33,9 +43,8 @@ const handlers: ReadonlyArray<EventHandler> = [
       'mousemove',
       'touchmove',
     ],
-    action: (event, _callbacks) => {
-      _processMousePos(event)
-      event.preventDefault()
+    action: (_event, _callbacks) => {
+      // event.preventDefault()
     },
   },
   {
@@ -44,15 +53,14 @@ const handlers: ReadonlyArray<EventHandler> = [
       'touchstart',
     ],
     action: (event, callbacks) => {
-      // // un-focus debug gui controls so keyboard controls work
-      // try {
-      //   (document.activeElement as HTMLElement).blur()
-      // }
-      // catch (_e) {
-      //   // do nothing
-      // }
+      // un-focus debug gui controls so keyboard controls work
+      try {
+        (document.activeElement as HTMLElement).blur()
+      }
+      catch (_e) {
+        // do nothing
+      }
 
-      _processMousePos(event)
       callbacks.click(event, screenPos)
       event.preventDefault()
     },
@@ -65,21 +73,25 @@ const handlers: ReadonlyArray<EventHandler> = [
     ],
     action: (event, callbacks) => {
       callbacks.unclick(event)
-      event.preventDefault()
+      // event.preventDefault()
     },
   },
 ]
 
 export function initMouseListeners(
-  layeredViewport: LayeredViewport,
+  seaBlock: SeaBlock,
   callbacks: MouseCallbacks,
 ) {
+  const { layeredViewport } = seaBlock
   const { frontCanvas } = layeredViewport
 
   for (const { on, action } of handlers) {
     for (const eventType of on) {
       frontCanvas.addEventListener(eventType,
-        (event: Event) => action(event, callbacks),
+        (event: Event) => {
+          processMouseEvent(seaBlock, event)
+          action(event, callbacks)
+        },
       )
     }
   }
@@ -103,12 +115,15 @@ export interface ProcessMouseParams {
   camera: THREE.Camera
 }
 
-export function processMouse(params: ProcessMouseParams): MouseState | undefined {
+export function processMouseEvent(seaBlock: SeaBlock, event: Event) {
+  _processMousePos(event)
+
   if (!isOnScreen) {
-    return undefined
+    seaBlock.mouseState = undefined
+    return
   }
 
-  const { terrain, camera } = params
+  const { terrain, camera, layeredViewport } = seaBlock
 
   // for (const subgoup of terrain.subgroups) {
   //   subgoup.mesh.computeBoundingSphere()
@@ -148,17 +163,25 @@ export function processMouse(params: ProcessMouseParams): MouseState | undefined
   // }
   // }
 
-  lvPos.x = screenPos.x * params.layeredViewport.pixelRatio
-  lvPos.y = screenPos.y * params.layeredViewport.pixelRatio
+  lvPos.x = screenPos.x * layeredViewport.pixelRatio
+  lvPos.y = screenPos.y * layeredViewport.pixelRatio
 
-  return {
+  if (!isTouch && event.type.startsWith('touch')) {
+    isTouch = true // assume all future events are touch
+  }
+
+  seaBlock.mouseState = {
     screenPos,
     lvPos,
     intersection,
     pickedTileIndex: pickedTile,
+    isTouch: isTouch,
   }
 }
 
+let isTouch = false
+
+// update screenPos based on mouse/touch event
 function _processMousePos(event: Event) {
   if ('touches' in event && (event as TouchEvent).touches.length > 0) {
     const touch = (event as TouchEvent).touches[0]

@@ -8,18 +8,19 @@
 import type { Vector2 } from 'three'
 import type { ComputedRects, CssLayout } from './util/layout-parser'
 import { parseLayoutRectangles } from './util/layout-parser'
-import type { LayeredViewport } from './gfx/layered-viewport'
-import type { GameElement, GameUpdateContext, MouseState } from './games/game'
-import { playSound } from './sounds'
+import type { GameElement, GameUpdateContext } from './games/game'
 import type { SeaBlock } from './sea-block'
+import { playSound } from './sound/sound-effects'
+import type { MouseState } from './mouse-input'
 
 export class FlatGameUi {
   public layoutRectangles: ComputedRects = {}
   public lastDrawnState: Record<string, string> = {}
   private readonly pickableKeys: ReadonlyArray<string>
+  public guiLayout?: CssLayout
 
   constructor(
-    public readonly guiLayout: CssLayout,
+    private readonly layoutFactory: (context: SeaBlock) => CssLayout,
     elements: ReadonlyArray<GameElement>,
   ) {
     // only pick rectangles that were actually used for elements
@@ -28,8 +29,10 @@ export class FlatGameUi {
     )
   }
 
-  public refreshLayout(layeredViewport: LayeredViewport): void {
-    this.layoutRectangles = parseLayoutRectangles(layeredViewport.screenRectangle, this.guiLayout)
+  public refreshLayout(context: SeaBlock): void {
+    const { screenRectangle } = context.layeredViewport
+    this.guiLayout = this.layoutFactory(context)
+    this.layoutRectangles = parseLayoutRectangles(screenRectangle, this.guiLayout)
 
     // console.log(`parsed gui layout for game
     //       screen: ${JSON.stringify(screen)}
@@ -39,7 +42,11 @@ export class FlatGameUi {
   protected pickButtonAtPoint(p: Vector2): string | undefined {
     // console.log(`picking button at point ${p.x}, ${p.y}`)
     for (const name of this.pickableKeys) {
-      const { x, y, w, h } = this.layoutRectangles[name]
+      const rectangle = this.layoutRectangles[name]
+      if (!rectangle) {
+        continue
+      }
+      const { x, y, w, h } = rectangle
       if ((p.x > x) && (p.x < (x + w)) && (p.y > y) && (p.y < (y + h))) {
         // console.log(`picked button: ${name}`)
         document.documentElement.style.cursor = 'pointer'
@@ -54,7 +61,8 @@ export class FlatGameUi {
   public hoveredButton?: string
 
   public update(context: GameUpdateContext): void {
-    const { mouseState, seaBlock } = context
+    const { seaBlock } = context
+    const { mouseState } = seaBlock
 
     if (seaBlock.isCovering) {
       return // don't update ui during first half of transition
@@ -74,7 +82,7 @@ export class FlatGameUi {
     if (previouslyHovered && didChange
       && previouslyHovered !== this.clickedBtn) {
       seaBlock.repaintButton(previouslyHovered, 'default')
-      // playSound('unHover')
+      playSound('unhover')
     }
 
     if (this.hoveredButton && didChange
@@ -105,10 +113,11 @@ export class FlatGameUi {
 
   public clickedBtn?: string
 
-  public unclick(event: Event, seaBlock: SeaBlock, mouseState?: MouseState) {
+  public unclick(event: Event, seaBlock: SeaBlock) {
     if (seaBlock.isCovering) {
       return // disable unclick during first half of transition
     }
+    const { mouseState } = seaBlock
 
     if (this.clickedBtn) {
       let hoveredBtn: string | undefined
@@ -125,7 +134,7 @@ export class FlatGameUi {
       seaBlock.unclickButton(this.clickedBtn)
       this.clickedBtn = undefined
     }
-    if (seaBlock.game.enableOrbitControls()) {
+    if (seaBlock.game.doesAllowOrbitControls(seaBlock)) {
       seaBlock.orbitControls.enabled = true
     }
   }

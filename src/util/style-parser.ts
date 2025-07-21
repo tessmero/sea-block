@@ -67,10 +67,10 @@ export class StyleParser {
   }
 }
 
- // top level keys in css object
- type RulesetSelectorKey = 'background' | TilePart
- type AtCondition = 'land' | 'sea'
- type Selector = RulesetSelectorKey | `${TilePart}@${AtCondition}`
+// top level keys in css object
+type RulesetSelectorKey = 'background' | TilePart
+type AtCondition = 'land' | 'sea'
+type Selector = RulesetSelectorKey | `${TilePart}@${AtCondition}`
 interface SimpleParsedSelector {
   key: RulesetSelectorKey
 }
@@ -78,15 +78,15 @@ interface ConditionalParsedSelector {
   key: TilePart // only tile tile parts can have at conditions
   atCondition: AtCondition
 }
- type ParsedSelector = SimpleParsedSelector | ConditionalParsedSelector
+type ParsedSelector = SimpleParsedSelector | ConditionalParsedSelector
 
 // types for css rules keys
 const CSS_KEYS = ['value', 'red', 'green', 'blue', 'hue', 'saturation', 'lightness'] as const
- type CssKey = (typeof CSS_KEYS)[number]
+type CssKey = (typeof CSS_KEYS)[number]
 function isCssKey(key: string): key is CssKey {
   return (CSS_KEYS as ReadonlyArray<string>).includes(key)
 }
- type RuleKey = CssKey | `${CssKey}@${AtCondition}`
+type RuleKey = CssKey | `${CssKey}@${AtCondition}`
 export type CssValue = string | number
 export type CssRuleset = Partial<Record<RuleKey, CssValue>>
 interface ParsedRuleKey {

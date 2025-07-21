@@ -14,9 +14,9 @@ const gfxConfigTree = {
   label: 'Graphics',
   children: {
     pixelScale: {
-      value: 6,
+      value: (4 * ((typeof window !== 'undefined') ? window.devicePixelRatio : 1)),
       min: 1,
-      max: 8,
+      max: 20,
       step: 1,
     },
     visibleRadius: {

@@ -22,7 +22,7 @@ export class SphereTestGame extends Game {
     Game.register('sphere-test', {
       factory: () => new SphereTestGame(),
       elements: [],
-      layout: {},
+      layout: () => ({}),
     })
   }
 
@@ -49,18 +49,20 @@ export class SphereTestGame extends Game {
     }
 
     // position camera and grid on player
-    const cam = this.getCamOffset()
+    const cam = this.getCamOffset(context)
     camera.position.set(x + cam.x, cam.y, z + cam.z)
     this.centerOnPlayer(context)
   }
 
   public update(context: GameUpdateContext): void {
+    const { seaBlock, dt } = context
+    const { mouseState } = seaBlock
+
     this.flatUi.update(context)
 
     // pan grid if necessary
     this.centerOnPlayer(context.seaBlock)
 
-    const { mouseState, dt } = context
     if (!mouseState) {
       return
     }

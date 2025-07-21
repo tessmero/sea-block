@@ -10,7 +10,7 @@ import { randChoice } from '../util/rng'
 import { Configurable } from './configurable'
 import type { ConfigTree, OptionItem } from './config-tree'
 
-const gridConfigTree = {
+const topConfigTree = {
   children: {
 
     generator: {
@@ -30,6 +30,12 @@ const gridConfigTree = {
       options: GAME_NAMES,
     } as OptionItem<GameName>,
 
+    freeCamLayout: {
+      value: 'desktop',
+      options: ['desktop', 'landscape', 'portrait'],
+      isHidden: true,
+    } as OptionItem<'desktop' | 'landscape' | 'portrait'>,
+
     // debug: {
     //   value: 'none',
     //   // value: 'pick-tile',
@@ -44,9 +50,9 @@ const gridConfigTree = {
   },
 } satisfies ConfigTree
 
-class TopConfig extends Configurable<typeof gridConfigTree> {
+class TopConfig extends Configurable<typeof topConfigTree> {
   static { Configurable.register('grid', () => new TopConfig()) }
-  tree = gridConfigTree
+  tree = topConfigTree
 }
 
 export const topConfig = Configurable.create('grid') as TopConfig

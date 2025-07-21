@@ -13,6 +13,7 @@
   "devDependencies": {
     "@eslint/js": "^9.29.0",
     "@stylistic/eslint-plugin": "^5.1.0",
+    "@tonejs/midi": "^2.0.28",
     "@types/dat.gui": "^0.7.13",
     "@types/expect": "^1.20.4",
     "@types/mocha": "^10.0.10",
@@ -28,6 +29,7 @@
     "jiti": "^2.4.2",
     "mocha": "^11.7.0",
     "serve": "^14.2.4",
+    "tonal": "^6.4.2",
     "ts-mocha": "^11.1.0",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",

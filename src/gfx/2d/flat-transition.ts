@@ -16,10 +16,10 @@ import { randChoice } from '../../util/rng'
 import { GridAnimation } from '../grid-anims/grid-animation'
 import { Transition } from '../transition'
 
-const viewPad = 100
+const viewPad = 50
 const padOffset = -viewPad / 2
 
-const maxChunks = 128
+const maxChunks = 500
 const chunkBuffer = new Float32Array(maxChunks)
 type Chunk = {
 

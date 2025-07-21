@@ -28,9 +28,10 @@ export type Rectangle = Readonly<{
   h: number // height
 }>
 
+type BasicKey = 'left' | 'top' | 'right' | 'bottom' | 'width' | 'height'
+type ConditionalKey = `min-${BasicKey}` | `max-${BasicKey}`
+export type CssKey = BasicKey | ConditionalKey | 'margin'
 export type CssValue = number | `${number}%` | 'auto'
-const _CSS_KEYS = ['left', 'top', 'right', 'bottom', 'width', 'height', 'margin'] as const
-export type CssKey = (typeof _CSS_KEYS)[number]
 
 export function parseLayoutRectangles(screenRect: Rectangle, css: CssLayout): ComputedRects {
   const glp = new GuiLayoutParser(screenRect, css)
@@ -72,7 +73,7 @@ class GuiLayoutParser {
       }
       else {
       // Standard CSS rule application
-        rect = this.applyRule(rect, cssKey as keyof CssRuleset, cssVal)
+        rect = this.applyRule(rect, cssKey as CssKey, cssVal)
       }
     }
 
@@ -81,7 +82,7 @@ class GuiLayoutParser {
 
   private applyRule(
     rect: Rectangle,
-    cssKey: keyof CssRuleset,
+    cssKey: CssKey,
     cssVal: CssValue,
   ): Rectangle {
     const { x, y, w, h } = rect
@@ -100,6 +101,43 @@ class GuiLayoutParser {
       return Number(value)
     }
 
+    // // Check for min- or max- prefixes
+    const isConditionalKey = (key: CssKey): key is ConditionalKey => key.startsWith('min-') || key.startsWith('max-')
+    // const applyConditional = (
+    //   condition: 'min' | 'max',
+    //   prop: BasicKey,
+    //   value: number,
+    // ): Rectangle => {
+    //   switch (prop) {
+    //     case 'width':
+    //       return { x, y, w: condition === 'min' ? Math.max(w, value) : Math.min(w, value), h }
+    //     case 'height':
+    //       return { x, y, w, h: condition === 'min' ? Math.max(h, value) : Math.min(h, value) }
+    //     case 'left':
+    //       const newLeft = px + value
+    //       return { x: condition === 'min' ? Math.max(x, newLeft) : Math.min(x, newLeft), y, w, h }
+    //     case 'right':
+    //       const newRight = px + pw - w - value
+    //       return { x: condition === 'min' ? Math.min(x, newRight) : Math.max(x, newRight), y, w, h }
+    //     case 'top':
+    //       const newTop = py + value
+    //       return { x, y: condition === 'min' ? Math.max(y, newTop) : Math.min(y, newTop), w, h }
+    //     case 'bottom':
+    //       const newBottom = py + ph - h - value
+    //       return { x, y: condition === 'min' ? Math.min(y, newBottom) : Math.max(y, newBottom), w, h }
+    //     default:
+    //       return rect
+    //   }
+    // }
+
+    if (isConditionalKey(cssKey)) {
+      throw new Error('min- and max- prefixes not supported')
+      // const [prefix, rawKey] = cssKey.split('-') as ['min' | 'max', BasicKey]
+      // const value = parseVal(cssKey, cssVal)
+      // return applyConditional(prefix, rawKey, value)
+    }
+
+    // Handle basic keys and margin
     switch (cssKey) {
       case 'left': return { x: px + parseVal('left', cssVal), y, w, h }
       case 'right': return { x: px + pw - w - parseVal('right', cssVal), y, w, h }

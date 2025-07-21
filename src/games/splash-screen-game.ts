@@ -6,16 +6,14 @@
 
 import { Vector3 } from 'three'
 import { freeCamGameConfig } from '../configs/free-cam-game-config'
-import { simpleButtonLoader } from '../gfx/2d/flat-button'
+import { iconButtonLoader } from '../gfx/2d/flat-button'
 import type { SeaBlock } from '../sea-block'
 import { randomTransition } from '../gfx/transition'
+import { SPLASH_SCREEN_LAYOUT } from '../layouts/splash-screen-layout'
 import { Game, type GameUpdateContext } from './game'
 import { FreeCamGame } from './free-cam-game'
 
 const target = new Vector3(-1e9, 30, -1e9)
-
-const btnWidth = 80
-const btnHeight = 40 / 1.618
 
 const nearCam = new Vector3(6, 20, 6)
 const nearTarget = new Vector3(0, -5, 0)
@@ -26,18 +24,21 @@ export class SplashScreenGame extends FreeCamGame {
       factory: () => new SplashScreenGame(),
       elements: [
         {
+          w: 64, h: 32,
           layoutKey: 'launch',
           hotkeys: ['Space'],
-          imageLoader: simpleButtonLoader('LAUNCH'),
+          imageLoader: iconButtonLoader(
+            'icons/btn-launch-background.png',
+            'icons/btn-launch.png',
+          ),
+          // imageLoader: simpleButtonLoader('LAUNCH'),
           clickAction: (seaBlock: SeaBlock) => {
             seaBlock.transition = randomTransition(seaBlock)
             seaBlock.isCovering = true
           },
         },
       ],
-      layout: {
-        launch: { width: btnWidth, height: btnHeight, left: 'auto', top: 'auto' },
-      },
+      layout: () => (SPLASH_SCREEN_LAYOUT),
     })
   }
 
@@ -46,7 +47,7 @@ export class SplashScreenGame extends FreeCamGame {
     return nearTarget
   }
 
-  public enableOrbitControls(): boolean {
+  public doesAllowOrbitControls(): boolean {
     return false
   }
 

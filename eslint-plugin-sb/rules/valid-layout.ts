@@ -23,6 +23,7 @@ export default ESLintUtils.RuleCreator.withoutDocs({
       importType: 'Must import type { CssLayout } from \'../util/layout-parser\'.',
       exportConst: 'Must export a single const in ALL_CAPS named export.',
       satisfiesCssLayout: 'Exported const must end with \'as const satisfies CssLayout\'.',
+      exportNameMatchesFile: 'Exported const name must match the ALL_CAPS version of the filename.',
     },
   },
   defaultOptions: [],
@@ -102,6 +103,26 @@ export default ESLintUtils.RuleCreator.withoutDocs({
           })
           return
         }
+
+        // --- Enforce exported name matches filename ---
+        const filename = context.filename
+        // console.log('filename', filename)
+        const baseName = filename
+          .replace(/^.*[\\/]/, '')
+          .replace(/\.ts$/, '')
+          .replace(/-/g, '_')
+        // console.log('basename', baseName)
+        const expectedName = baseName.toUpperCase()
+        // console.log('expectedName',expectedName)
+        // console.log('declarator.id.name', declarator.id.name)
+        if (declarator.id.name !== expectedName) {
+          context.report({
+            node: declarator,
+            messageId: 'exportNameMatchesFile',
+          })
+          return
+        }
+        // ---------------------------------------------
 
         // 3. Check "as const satisfies CssLayout"
         if (

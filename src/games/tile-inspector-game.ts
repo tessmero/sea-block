@@ -58,7 +58,7 @@ export class TileInspectorGame extends Game {
         { meshLoader: async () => debugElems.normalArrow },
         // { meshLoader: async () => debugElems.directionPoint },
       ],
-      layout: {},
+      layout: () => ({}),
     })
   }
 
@@ -66,7 +66,7 @@ export class TileInspectorGame extends Game {
     const { camera, terrain, sphereGroup, orbitControls } = context
     const { x, z } = terrain.centerXZ
     // position camera and grid on player
-    const cam = this.getCamOffset()
+    const cam = this.getCamOffset(context)
     camera.position.set(x + cam.x, cam.y, z + cam.z)
     orbitControls.target.x = x
     orbitControls.target.z = z
@@ -81,7 +81,8 @@ export class TileInspectorGame extends Game {
 
   public update(context: GameUpdateContext): void {
     super.update(context)
-    const { seaBlock, mouseState } = context
+    const { seaBlock } = context
+    const { mouseState } = seaBlock
     const { terrain } = seaBlock
 
     // let intersection

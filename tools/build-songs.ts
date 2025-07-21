@@ -12,134 +12,79 @@ import * as fs from 'fs'
 import path from 'path'
 import { execSync } from 'child_process'
 import {
+  BasicSoundBank,
   MIDI,
   SpessaSynthProcessor,
   SpessaSynthSequencer,
   audioToWav,
-  loadSoundFont,
 } from 'spessasynth_core'
-
-// https://musical-artifacts.com/artifacts/6003
-const soundFontSrc = './source-content/Reality_GMGS_falcomod.sf2'
+import { convertToMidi } from './ts-to-midi'
+import { SONGS_TO_BUILD } from './songs-list'
+import { loadAllSoundFonts, SOUND_FONTS } from './sound-fonts'
 
 const outDir = '../public/music/'
+const defaultSoundFont: keyof typeof SOUND_FONTS = 'falcomod-reality'
 
-type SongParams = {
-  midi: string // path to midi file
-  adjust: (synth: SpessaSynthProcessor, seq: SpessaSynthSequencer) => void
-  cutoff?: number // (seconds) limit song length
-}
-
-const songsToBuild: Record<string, SongParams> = {
-
-  // Mozart / Andante cantabile con espressione
-  mozart: {
-    midi: './source-content/mozart.mid',
-    adjust: (synth: SpessaSynthProcessor) => {
-      // synth.programChange(0, 33) // 33 fingered bass
-      synth.programChange(0, 26) // 26 jazz guitar
-      synth.controllerChange(0, 1, 50) // add 50% vibrato
-      synth.transposeAllChannels(4) // pitch up
-    },
-  },
-
-  // // Couperin / Les Baricades Mistérieuses
-  // couperin: {
-  //   midi: './source-content/couperin.mid',
-  //   adjust: (synth: SpessaSynthProcessor) => {
-  //     // synth.programChange(0, 33) // 33 fingered bass
-  //     synth.programChange(0, 53) // 53 ooh vocal
-  //     synth.transposeAllChannels(4) // pitch up
-  //   },
-  //   // cutoff: 40, // end early
-  // },
-
-  // // Satie / Gymnopédie 1
-  // 'satie': {
-  //   midi: './source-content/satie.mid',
-  //   adjust: (synth, seq) => {
-  //     seq.playbackRate = 2 // speed up
-  //     synth.programChange(0, 10) // 10 music box
-  //     synth.transposeAllChannels(12) // pitch up
-  //   },
-  // },
-
-  // // Debussy / Arabesque in C sharp major
-  // 'debussy': {
-  //   midi: './source-content/debussy.mid',
-  //   adjust: (synth, seq) => {
-  //     // seq.playbackRate = .6 // slow down
-  //     synth.programChange(0, 10) // 10 music box
-  //     synth.transposeAllChannels(9) // pitch up
-  //   },
-  //   cutoff: 79, // end early
-  // },
-
-}
+const sampleRate = 44100
 
 async function main() {
-// process arguments
-  const sf = fs.readFileSync(path.join(__dirname, soundFontSrc))
+  // load/download all necssary sf2 files
+  const loadedSoundFonts = loadAllSoundFonts()
 
-  for (const [songName, { midi, adjust, cutoff }] of Object.entries(songsToBuild)) {
-    const mid = fs.readFileSync(path.join(__dirname, midi))
-    const midiObj = new MIDI(mid)
-    const sampleRate = 44100
-    const sampleCount = sampleRate * (midiObj.duration + 2)
-    const synth = new SpessaSynthProcessor(sampleRate, {
-      enableEventSystem: false,
-      effectsEnabled: false,
-    })
-    synth.soundfontManager.reloadManager(loadSoundFont(sf))
-    await synth.processorInitialized
-    const seq = new SpessaSynthSequencer(synth)
-    seq.loadNewSongList([midiObj])
-    seq.loop = false
+  // build all songs
+  for (const [songName, songParams] of Object.entries(SONGS_TO_BUILD)) {
+    const { src, adjust, cutoff, soundFount } = songParams
+    const midi = loadMidi(src)
+    const soundFont = loadedSoundFonts[soundFount || defaultSoundFont]
+    const sampleCount = sampleRate * (midi.duration + 2) // two extra seconds at end
 
-    adjust(synth, seq)
+    // build synthesiser for one song
+    const seq: SpessaSynthSequencer = await buildSongSynth(midi, soundFont)
 
-    // const test = seq.synth as SpessaSynthProcessor
-    // test.getVoices()
+    // apply adjustments in song list
+    if (adjust) adjust({ seq, synth: seq.synth })
 
     // halt and start repl
     // repl.start({prompt: 'debug-synth> '})
 
+    // prepare output data
     let outLeft = new Float32Array(sampleCount)
     let outRight = new Float32Array(sampleCount)
     const start = performance.now()
     let filledSamples = 0
 
-    // note: buffer size is recommended to be very small
+    // buffer size is recommended to be small
     const bufSize = 128
     let i = 0
 
     // seq.onMetaEvent = msg => console.log(msg)
 
+    // iterate over
     while (filledSamples + bufSize < sampleCount) {
       const bufLeft = new Float32Array(bufSize)
       const bufRight = new Float32Array(bufSize)
       // advance sequencer
       seq.processTick()
 
+      // check if reached cutoff time in song list
       if (cutoff && seq.currentTime > cutoff) {
-        const padSeconds = 1
+        const padSeconds = 1 // add silence after cutoff
         outLeft = outLeft.slice(0, filledSamples + sampleRate * (padSeconds))
         outRight = outRight.slice(0, filledSamples + sampleRate * (padSeconds))
         break
       }
 
+      // render audio
       const arr = [bufLeft, bufRight]
-      // console.log(bufLeft,bufRight)
-      // render
-      synth.renderAudio(arr, arr, arr)
+      seq.synth.renderAudio(arr, arr, arr)
       outLeft.set(bufLeft, filledSamples)
       outRight.set(bufRight, filledSamples)
       filledSamples += bufSize
-      i++
 
       // log progress
+      i++
       if (i % 100 === 0) {
-        console.log('Rendered', seq.currentTime, '/', midiObj.duration)
+        console.log('Rendered', seq.currentTime, '/', midi.duration)
       }
     }
 
@@ -163,9 +108,51 @@ async function main() {
       console.error('Error encoding OGG', e)
     }
 
-    // delete wav
+    // delete wav that was converted to ogg
     fs.rmSync(wavPath)
   }
+}
+
+// construct SpessaSynth processor and sequencer for one song
+async function buildSongSynth(midi: MIDI, soundFont: BasicSoundBank): Promise<SpessaSynthSequencer> {
+  const synth = new SpessaSynthProcessor(sampleRate, {
+    enableEventSystem: false,
+    effectsEnabled: false,
+  })
+  synth.soundfontManager.reloadManager(soundFont)
+  await synth.processorInitialized
+  const seq = new SpessaSynthSequencer(synth)
+  seq.loadNewSongList([midi])
+  seq.loop = false
+
+  return seq
+}
+
+// get midi data from (.mid) or (.ts)
+function loadMidi(src: string): MIDI {
+  const srcFullPath = path.join(__dirname, src)
+  let midiBuffer: Buffer<ArrayBuffer>
+  if (src.endsWith('.mid')) {
+    // load midi file
+    midiBuffer = fs.readFileSync(srcFullPath)
+  }
+  else if (src.endsWith('.ts')) {
+    // convert tessmero song data to midi
+    const { default: songData } = require(srcFullPath) // eslint-disable-line @typescript-eslint/no-require-imports
+    midiBuffer = convertToMidi(songData)
+
+    // save copy for experimenting in SpessaSynth gui
+    fs.writeFileSync(
+      `${srcFullPath}.mid`,
+      convertToMidi(songData, 10), // midi with 10x volume
+    )
+  }
+  else {
+    throw new Error(`unrecognized song source "${src}", should be .mid or .ts file.`)
+  }
+
+  // return midi as SpessaSynth object type
+  return new MIDI(midiBuffer)
 }
 
 main().catch((err) => {

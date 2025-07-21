@@ -15,7 +15,6 @@ import { randChoice } from './util/rng'
 
 const layeredViewport = new LayeredViewport()
 gfxConfig.refreshConfig()
-layeredViewport.init()
 
 const seaBlock = new SeaBlock(layeredViewport)
 
