@@ -62,7 +62,7 @@ const handlers: ReadonlyArray<EventHandler> = [
       }
 
       callbacks.click(event, screenPos)
-      event.preventDefault()
+      if (isTouch) event.preventDefault()
     },
   },
   {
