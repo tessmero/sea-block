@@ -7,6 +7,7 @@
 import * as THREE from 'three'
 import type { SeaBlock } from '../sea-block'
 import type { Tile } from '../core/tile'
+import type { ProcessedSubEvent } from '../mouse-touch-input'
 import type { GameUpdateContext } from './game'
 import { Game } from './game'
 
@@ -82,18 +83,16 @@ export class TileInspectorGame extends Game {
   public update(context: GameUpdateContext): void {
     super.update(context)
     const { seaBlock } = context
-    const { mouseState } = seaBlock
+    // const { mouseState } = seaBlock
+    const mouseState: ProcessedSubEvent | undefined = undefined
     const { terrain } = seaBlock
 
     // let intersection
     let pickedTile
 
     if (mouseState) {
-      // debugElems.directionPoint.position.copy(
-      //   mouseState.intersection,
-      // )
 
-      pickedTile = mouseState.pickedTileIndex
+      // pickedTile = mouseState.pickedTileIndex
     }
 
     if (pickedTile) {

@@ -8,6 +8,7 @@
       height: 100%; 
       margin: 0; 
       -webkit-tap-highlight-color: transparent;
+      touch-action: none;
     }
     body { overflow: hidden; }
     canvas { 
@@ -64,5 +65,22 @@
 
   <div id="controls-container" style="z-index:3"></div>
   <script type="module" src="/src/main.js"></script>
+
+<script>
+
+  // prevent mobile browser long-press vibration
+  document.querySelector("#frontCanvas").addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.style.userSelect = "none";
+  });
+
+  document.querySelector("#frontCanvas").addEventListener("touchend", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.style.userSelect = "default";
+  });
+</script>
+
 </body>
 </html>

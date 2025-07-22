@@ -1,7 +1,8 @@
 /**
  * @file flat-button.ts
  *
- * Button.
+ * Object containing images for one interactive button.
+ * Drawn on the front layer in flat-ui-gfx-helper.
  */
 
 import type { ColorRepresentation } from 'three'
@@ -33,6 +34,39 @@ export interface IconButtonParams extends CommonParams {
   borderIcon: HTMLImageElement
 }
 export type ButtonParams = SimpleButtonParams | IconButtonParams
+
+export class FlatButton implements CompositeElement<ButtonPart> {
+  partNames = BUTTON_PARTS
+
+  public readonly width: number
+  public readonly height: number
+
+  public readonly images: Record<ButtonState, CanvasImageSource>
+
+  constructor(params: ButtonParams) {
+    const { width, height, styles } = params
+    this.width = width
+    this.height = height
+
+    if ('label' in params && 'font' in params) {
+      this.images = {
+        default: buildSimpleButtonImage(styles.default, params),
+        hovered: buildSimpleButtonImage(styles.hovered, params),
+        clicked: buildSimpleButtonImage(styles.clicked, params),
+      }
+    }
+    else if ('backgroundIcon' in params && 'borderIcon' in params) {
+      this.images = {
+        default: buildIconButtonImage(styles.default, params),
+        hovered: buildIconButtonImage(styles.hovered, params),
+        clicked: buildIconButtonImage(styles.clicked, params),
+      }
+    }
+    else {
+      throw new Error('Flat button requires icon or label+font')
+    }
+  }
+}
 
 // Helper function to asynchronously load an Image
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -97,39 +131,6 @@ export function simpleButtonLoader(
       font,
     })
     return btn
-  }
-}
-
-export class FlatButton implements CompositeElement<ButtonPart> {
-  partNames = BUTTON_PARTS
-
-  public readonly width: number
-  public readonly height: number
-
-  public readonly images: Record<ButtonState, CanvasImageSource>
-
-  constructor(params: ButtonParams) {
-    const { width, height, styles } = params
-    this.width = width
-    this.height = height
-
-    if ('label' in params && 'font' in params) {
-      this.images = {
-        default: buildSimpleButtonImage(styles.default, params),
-        hovered: buildSimpleButtonImage(styles.hovered, params),
-        clicked: buildSimpleButtonImage(styles.clicked, params),
-      }
-    }
-    else if ('backgroundIcon' in params && 'borderIcon' in params) {
-      this.images = {
-        default: buildIconButtonImage(styles.default, params),
-        hovered: buildIconButtonImage(styles.hovered, params),
-        clicked: buildIconButtonImage(styles.clicked, params),
-      }
-    }
-    else {
-      throw new Error('Flat button requires icon or label+font')
-    }
   }
 }
 

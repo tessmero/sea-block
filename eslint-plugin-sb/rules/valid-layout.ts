@@ -3,7 +3,7 @@
  *
  * Require exact file structure e.g. my-layout.ts:
  *
- *   import type { CssLayout } from '../util/layout-parser'
+ *   import type { CssLayout } from 'util/layout-parser'
  *   export const MY_LAYOUT = { ... } as const satisfies CssLayout
  *
  * Used to enforce exact structure layout source files.
@@ -20,7 +20,7 @@ export default ESLintUtils.RuleCreator.withoutDocs({
     fixable: undefined,
     schema: [],
     messages: {
-      importType: 'Must import type { CssLayout } from \'../util/layout-parser\'.',
+      importType: 'Must import type { CssLayout } from \'util/layout-parser\'.',
       exportConst: 'Must export a single const in ALL_CAPS named export.',
       satisfiesCssLayout: 'Exported const must end with \'as const satisfies CssLayout\'.',
       exportNameMatchesFile: 'Exported const name must match the ALL_CAPS version of the filename.',
@@ -40,7 +40,7 @@ export default ESLintUtils.RuleCreator.withoutDocs({
           if (
             stmt.type === 'ImportDeclaration'
             && stmt.importKind === 'type'
-            && stmt.source.value === '../util/layout-parser'
+            && stmt.source.value === 'util/layout-parser'
           ) {
             if (
               stmt.specifiers.some(

@@ -4,7 +4,7 @@
  * Skip button for start sequence.
  */
 
-import type { CssLayout } from '../util/layout-parser'
+import type { CssLayout } from 'util/layout-parser'
 import { standards } from './layout-helper'
 const { pad } = standards
 

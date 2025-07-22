@@ -3,7 +3,7 @@
  *
  * Combined config tree displayed in user interface.
  */
-import { toggleRadio } from '../sound/song-playlist'
+import { toggleRadio } from '../audio/song-playlist'
 import { Configurable } from './configurable'
 import { gfxConfig } from './gfx-config'
 import { physicsConfig } from './physics-config'

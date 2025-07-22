@@ -4,7 +4,7 @@
  * WASD controls on bottom-left for free-cam game.
  */
 
-import type { CssLayout } from '../util/layout-parser'
+import type { CssLayout } from 'util/layout-parser'
 import { commonLayout, standards } from './layout-helper'
 
 const { btn, btnSize, pad } = standards

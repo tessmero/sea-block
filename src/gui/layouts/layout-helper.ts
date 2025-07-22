@@ -4,7 +4,7 @@
  * Guidelines and common components for gui layouts.
  */
 
-import type { CssLayout, CssRuleset } from '../util/layout-parser'
+import type { CssLayout, CssRuleset } from 'util/layout-parser'
 
 // padding between buttons
 const pad = 0

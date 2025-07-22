@@ -3,7 +3,7 @@
  *
  * Transition using only the front canvas.
  *
- * Refers to flat-transition-ga (GridAnimation) and only
+ * Refers to a grid animation and only
  * redraws tiles that are actively changing.
  */
 

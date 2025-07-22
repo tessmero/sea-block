@@ -5,15 +5,15 @@
  * Changes are lost on refreshing configurables.
  */
 
+import { typedEntries } from 'util/typed-entries'
 import { Vector3 } from 'three'
-import { gfxConfig } from '../configs/gfx-config'
-import { randomTransition } from '../gfx/transition'
-import type { SeaBlock } from '../sea-block'
-import { freeCamGameConfig } from '../configs/free-cam-game-config'
-import { michaelConfig } from '../configs/michael-config'
-import { typedEntries } from '../util/typed-entries'
-import { iconButtonLoader } from '../gfx/2d/flat-button'
-import { START_SEQUENCE_LAYOUT } from '../layouts/start-sequence-layout'
+import { gfxConfig } from 'configs/gfx-config'
+import { randomTransition } from 'gfx/transition'
+import type { SeaBlock } from 'sea-block'
+import { freeCamGameConfig } from 'configs/free-cam-game-config'
+import { michaelConfig } from 'configs/michael-config'
+import { iconButtonLoader } from 'gfx/2d/flat-button'
+import { START_SEQUENCE_LAYOUT } from 'gui/layouts/start-sequence-layout'
 import { FreeCamGame } from './free-cam-game'
 import type { GameUpdateContext } from './game'
 import { Game } from './game'
@@ -88,8 +88,6 @@ export class StartSequenceGame extends FreeCamGame {
   }
 
   public update(context: GameUpdateContext): void {
-    this.flatUi.update(context)
-
     if (StartSequenceGame.wasSkipped) {
       return
     }
@@ -128,7 +126,8 @@ export class StartSequenceGame extends FreeCamGame {
     this.centerOnAnchor(seaBlock)
 
     // accel wave maker towards center
-    this.updateWaveMaker(dt, seaBlock.mouseState, false)
+    // this.updateWaveMaker(dt, seaBlock.mouseState, false)
+    this.updateWaveMaker(dt, undefined, false)
 
     // accel camera anchor towards fixed direction
     const { CAM_ACCEL } = freeCamGameConfig.flatConfig

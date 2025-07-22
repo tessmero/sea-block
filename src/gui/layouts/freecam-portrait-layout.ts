@@ -5,7 +5,7 @@
  * at bottom-left instead of WASD buttons.
  */
 
-import type { CssLayout } from '../util/layout-parser'
+import type { CssLayout } from 'util/layout-parser'
 import { commonLayout, standards } from './layout-helper'
 const { joy, pad } = standards
 

@@ -10,8 +10,7 @@ import type { ConfigButton, ConfigItem } from './configs/config-tree'
 import { TerrainGenerator } from './generators/terrain-generator'
 import type { TileGroupGfxHelper } from './gfx/3d/tile-group-gfx-helper'
 import { getStyle, STYLES } from './gfx/styles/styles-list'
-import type { MouseState } from './mouse-input'
-import { initMouseListeners } from './mouse-input'
+import { initMouseListeners } from './mouse-touch-input'
 import { CAMERA, GRID_DETAIL, PORTRAIT_CAMERA, STEP_DURATION } from './settings'
 import type { CompositeMesh } from './gfx/3d/composite-mesh'
 import { Transition } from './gfx/transition'
@@ -19,7 +18,6 @@ import { GAME_NAMES, type GameName, type GeneratorName } from './imp-names'
 import type { DepthElement, FlatElement, GameElement } from './games/game'
 import { Game } from './games/game'
 import type { LayeredViewport } from './gfx/layered-viewport'
-import type { ButtonState, FlatButton } from './gfx/2d/flat-button'
 import { StartSequenceGame } from './games/start-sequence-game'
 import { freeCamGameConfig } from './configs/free-cam-game-config'
 import { seaBlockConfig } from './configs/sea-block-config'
@@ -34,7 +32,8 @@ import { Tiling } from './core/grid-logic/tilings/tiling'
 import { TiledGrid } from './core/grid-logic/tiled-grid'
 import { gfxConfig } from './configs/gfx-config'
 import { physicsConfig } from './configs/physics-config'
-import { playSound } from './sound/sound-effects'
+import type { LoadedImage } from './gfx/2d/flat-gfx-helper'
+import { loadedImages, resetFrontLayer, updateFrontLayer } from './gfx/2d/flat-gfx-helper'
 
 // can only be constructed once
 let didConstruct = false
@@ -58,15 +57,6 @@ type LoadedMesh = {
   hotkeys?: ReadonlyArray<string>
 }
 
-// result of loading a FlatElement (game.ts)
-type LoadedImage = {
-  image: FlatButton// OffscreenCanvas
-  layoutKey: string // required
-  clickAction?: (SeaBlock) => void
-  unclickAction?: (SeaBlock) => void
-  hotkeys?: ReadonlyArray<string>
-}
-
 export class SeaBlock {
   public readonly config = seaBlockConfig
 
@@ -80,10 +70,9 @@ export class SeaBlock {
   floraGroup!: FloraGroup
   sphereGroup!: SphereGroup
   currentGameName!: GameName
-  game!: Game // current game
   camera!: THREE.PerspectiveCamera
   orbitControls!: OrbitControls
-  mouseState?: MouseState
+  game!: Game // current game
 
   // defined only during transition sequence
   transition?: Transition
@@ -130,66 +119,22 @@ export class SeaBlock {
 
     this.orbitControls = new OrbitControls(
       this.camera,
-      this.layeredViewport.frontCanvas,
+      this.layeredViewport.backCanvas,
     )
     this.orbitControls.enabled = false
 
     // Responsive resize
     window.addEventListener('resize', () => this.onResize())
 
-    // listen for mouse/touch input
-    initMouseListeners(this, {
-      click: (event, _mousePos) => { // mousedown
-        if (this.mouseState && didLoadAssets) {
-          this.game.flatUi.click(event, this, this.mouseState)
-        }
-        else {
-          // console.log('no mouse state after click')
-        }
-      },
-      unclick: (event) => { // mouseup
-        this.game.flatUi.unclick(event, this)
-      },
-    })
+    // listen for mouse/touch, process in 3d, pass to gui
+    initMouseListeners(this)
 
+    // listen for keyboard, pass directly to gui
     window.addEventListener('keydown', (event) => {
-      if (!didLoadAssets) {
-        return
-      }
-      const elems = elementsPerGame[this.currentGameName]
-      for (const { hotkeys, layoutKey } of elems) {
-        if (hotkeys?.includes(event.code)) {
-          if (layoutKey) {
-            this.clickButton(layoutKey)
-            // // display button as pressed
-            // if (this.game.flatUi.lastDrawnState[layoutKey] !== 'clicked') {
-            //   this.repaintButton(layoutKey, 'clicked')
-            //   playSound('hover')
-            // }
-          }
-        }
-      }
+      this.game.gui.keydown(this, event)
     })
-
     window.addEventListener('keyup', (event) => {
-      if (!didLoadAssets) {
-        return
-      }
-      const elems = elementsPerGame[this.currentGameName]
-      for (const { hotkeys, layoutKey } of elems) {
-        if (hotkeys?.includes(event.code)) {
-          if (layoutKey) {
-            playSound('unclick')
-            this.repaintButton(layoutKey, 'default')
-            this.unclickButton(layoutKey)
-            // // display button as released
-            // if (this.game.flatUi.lastDrawnState[layoutKey] !== 'default') {
-            //   this.repaintButton(layoutKey, 'default')
-            //   playSound('unclick')
-            // }
-          }
-        }
-      }
+      this.game.gui.keyup(this, event)
     })
 
     // start loading assets to populate elementsPerGame
@@ -207,7 +152,9 @@ export class SeaBlock {
           // const { w, h } = layoutRectangles[flatElem.layoutKey]
           const { w, h } = flatElem
           const image = await flatElem.imageLoader(w, h)
-          return { image, ...flatElem } satisfies LoadedElement
+          const loadedImage: LoadedImage = { image, ...flatElem }
+          loadedImages[flatElem.layoutKey] = image
+          return loadedImage
         }
         else {
           const depthElem = obj as DepthElement
@@ -245,12 +192,15 @@ export class SeaBlock {
       if (transition.didFinishUncover) {
         // console.log('finish transition')
         this.transition = undefined // transition just finished
-        this.updateFrontCanvas()
+        resetFrontLayer()
       }
+    }
+    else {
+      updateFrontLayer(this) // not in transition
     }
 
     // orbit camera controls
-    // if (!this.game.flatUi.clickedBtn) {
+    // if (!this.game.gui.clickedBtn) {
     //   this.orbitControls.update()
     // }
 
@@ -285,14 +235,11 @@ export class SeaBlock {
       // reset camera distance (keep scene in view for portrait phone)
       const { w, h } = this.layeredViewport
       const preset = h > w ? PORTRAIT_CAMERA : CAMERA
-      const desiredDistance = preset.length()
-      const direction = camera.position.clone().sub(controls.target).normalize()
-      camera.position.copy(controls.target).add(direction.multiplyScalar(desiredDistance))
-      controls.update()
+      this.setCameraDistance(preset.length())
     }
 
-    this.game.flatUi.refreshLayout(this)
-    this.updateFrontCanvas()
+    this.game.gui.refreshLayout(this)
+    // updateFrontLayer(this)
     this.transition?.cleanupHide()
 
     // // align camera-locked meshes
@@ -312,6 +259,21 @@ export class SeaBlock {
     // }
   }
 
+  // // used
+  // public zoomCamera(delta: number) {
+  //   const { camera, orbitControls: controls } = this
+  //   const currentDistance = camera.position.clone().sub(controls.target).length()
+  //   const newDistance = currentDistance + delta
+  //   this.setCameraDistance(newDistance)
+  // }
+
+  public setCameraDistance(distance: number) {
+    const { camera, orbitControls: controls } = this
+    const direction = camera.position.clone().sub(controls.target).normalize()
+    camera.position.copy(controls.target).add(direction.multiplyScalar(distance))
+    controls.update()
+  }
+
   private onFinishLoading() {
     // finished loading meshes and images
     didLoadAssets = true
@@ -323,7 +285,7 @@ export class SeaBlock {
           if (layoutKey) {
             // locked to camera
             cameraLockedGroup.add(mesh)
-            const rect = this.game.flatUi.layoutRectangles[layoutKey]
+            const rect = this.game.gui.layoutRectangles[layoutKey]
             alignMeshInGuiGroup(mesh, cameraLockedGroup, rect)
           }
           else {
@@ -372,7 +334,7 @@ export class SeaBlock {
     if (this.game.doesAllowOrbitControls(this)) {
       this.orbitControls.enabled = true
     }
-    // this.game.flatUi.refreshLayout(this.layeredViewport)
+    // this.game.gui.refreshLayout(this.layeredViewport)
   }
 
   // called when user switches games
@@ -382,7 +344,6 @@ export class SeaBlock {
   }
 
   private showHideGameSpecificElems() {
-    const frontImages: Array<LoadedImage> = []
     for (const [gameName, elements] of Object.entries(elementsPerGame)) {
       const shouldBeVisible = gameName === this.currentGameName
       for (const loaded of elements) {
@@ -392,89 +353,8 @@ export class SeaBlock {
         }
         else {
           // flat image
-          if (shouldBeVisible) {
-            frontImages.push(loaded)
-          }
         }
       }
-    }
-    this.updateFrontCanvas(frontImages)
-  }
-
-  // called through mousedown and keydown
-  public clickButton(layoutKey: string) {
-    if (this.transition) {
-      return // disable clicking during transition
-    }
-
-    if (this.game.flatUi.lastDrawnState[layoutKey] !== 'clicked') {
-      playSound('click')
-      this.repaintButton(layoutKey, 'clicked')
-    }
-
-    const match = elementsPerGame[this.currentGameName].find(e => e.layoutKey === layoutKey)
-    if (match && ('clickAction' in match) && match.clickAction) {
-      match.clickAction(this)
-    }
-  }
-
-  public unclickButton(layoutKey: string) {
-    const match = elementsPerGame[this.currentGameName].find(e => e.layoutKey === layoutKey)
-    if (match && ('unclickAction' in match) && match.unclickAction) {
-      match.unclickAction(this)
-    }
-  }
-
-  public repaintButton(layoutKey: string, state: ButtonState) {
-    // here we are assuming layoutKey is used for a flat button
-    // it could also be for a camera-locked mesh
-    // (visual change for meshes not implemented)
-
-    const match = this._frontImages.find(img => img.layoutKey === layoutKey)
-    if (!match) {
-      // maybe race condition fluke
-      // console.log(`cannot repaint button. layout key missing from _frontImages: ${layoutKey}`)
-      return
-    }
-
-    const rect = this.game.flatUi.layoutRectangles[layoutKey]
-    if (!rect) {
-      throw new Error(`cannot repaint button. layout key missing from layoutRectangles: ${layoutKey}`)
-    }
-
-    // console.log(layoutKey, JSON.stringify(rect))
-
-    const { ctx } = this.layeredViewport
-    const buffer = match.image.images[state]
-    this.game.flatUi.lastDrawnState[layoutKey] = state
-    ctx.imageSmoothingEnabled = false
-    ctx.drawImage(buffer, rect.x, rect.y)
-  }
-
-  private _frontImages: Array<LoadedImage> = []
-  private updateFrontCanvas(frontImages?: Array<LoadedImage>) {
-    if (frontImages) {
-      // console.log('change frontImages')
-      this._frontImages = frontImages
-    }
-
-    const { ctx, w, h } = this.layeredViewport
-    const layout = this.game.flatUi.layoutRectangles
-
-    ctx.clearRect(0, 0, w, h)
-
-    for (const { image, layoutKey } of this._frontImages) {
-      const rect = layout[layoutKey]
-      if (!rect) {
-        continue
-        // throw new Error(`missing layout key '${layoutKey}'`)
-      }
-
-      // user may have already hovered on button position
-      const stateToDraw: ButtonState = this.game.flatUi.hoveredButton === layoutKey ? 'hovered' : 'default'
-      this.game.flatUi.lastDrawnState[layoutKey] = stateToDraw
-      // console.log(layoutKey, JSON.stringify(rect))
-      ctx?.drawImage(image.images[stateToDraw], rect.x, rect.y)
     }
   }
 
@@ -540,6 +420,7 @@ export class SeaBlock {
         canvas: this.layeredViewport.backCanvas,
         antialias: false,
       })
+      this.orbitControls.domElement = newCanvas
 
       // just clicked "launch"
       document.documentElement.requestFullscreen()

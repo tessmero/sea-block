@@ -5,11 +5,11 @@
  */
 
 import { Vector3 } from 'three'
-import { freeCamGameConfig } from '../configs/free-cam-game-config'
-import { iconButtonLoader } from '../gfx/2d/flat-button'
-import type { SeaBlock } from '../sea-block'
-import { randomTransition } from '../gfx/transition'
-import { SPLASH_SCREEN_LAYOUT } from '../layouts/splash-screen-layout'
+import { freeCamGameConfig } from 'configs/free-cam-game-config'
+import { iconButtonLoader } from 'gfx/2d/flat-button'
+import type { SeaBlock } from 'sea-block'
+import { randomTransition } from 'gfx/transition'
+import { SPLASH_SCREEN_LAYOUT } from 'gui/layouts/splash-screen-layout'
 import { Game, type GameUpdateContext } from './game'
 import { FreeCamGame } from './free-cam-game'
 
@@ -52,8 +52,6 @@ export class SplashScreenGame extends FreeCamGame {
   }
 
   public update(context: GameUpdateContext): void {
-    this.flatUi.update(context)
-
     const { seaBlock } = context
     const { dt } = context
     const { terrain, orbitControls } = seaBlock

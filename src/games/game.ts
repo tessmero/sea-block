@@ -12,18 +12,20 @@
  * visual elements, used to preload assets on startup.
  */
 
+import type { CssLayout } from 'util/layout-parser'
 import type { Object3D, Vector3 } from 'three'
+import type { KeyCode } from 'input-id'
 import type { CompositeMesh } from '../gfx/3d/composite-mesh'
 import type { GameName } from '../imp-names'
 import type { SeaBlock } from '../sea-block'
 import type { FlatButton } from '../gfx/2d/flat-button'
-import { FlatGameUi } from '../flat-game-ui'
-import type { CssLayout } from '../util/layout-parser'
+
 import { CAMERA, CAMERA_LOOK_AT, PORTRAIT_CAMERA } from '../settings'
+import { Gui } from '../gui'
 
 // parameters for update each frame
 export interface GameUpdateContext {
-  seaBlock: SeaBlock // persistent state
+  seaBlock: SeaBlock
   dt: number // (ms) delta-time since last frame
 }
 
@@ -45,7 +47,7 @@ export type FlatElement = {
   layoutKey: string // must have layout rectangle
   clickAction?: (seaBlock: SeaBlock) => void
   unclickAction?: (seaBlock: SeaBlock) => void
-  hotkeys?: ReadonlyArray<string> // event.code values
+  hotkeys?: ReadonlyArray<KeyCode> // bound keyboard keys
 }
 
 // 3d object to show in three.js scene
@@ -58,7 +60,7 @@ export type DepthElement = {
 }
 
 export abstract class Game {
-  public flatUi!: FlatGameUi // assigned in create
+  public gui!: Gui // assigned in create
 
   public abstract reset(context: SeaBlock): void
   public resetCamera(_context: SeaBlock): void {}
@@ -73,8 +75,8 @@ export abstract class Game {
     return true
   }
 
-  public update(context: GameUpdateContext): void {
-    this.flatUi.update(context)
+  public update(_context: GameUpdateContext): void {
+    // od nothing
   }
 
   // static registry pattern
@@ -96,9 +98,9 @@ export abstract class Game {
 
     // Game
     // post-construction setup
-    instance.flatUi = new FlatGameUi(layout, elements)
+    instance.gui = new Gui(layout, elements)
     instance.reset(context)
-    instance.flatUi.refreshLayout(context)
+    instance.gui.refreshLayout(context)
 
     return instance
   }

@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "outDir": "dist",
+    "baseUrl": "src",
     "rootDir": "src",
     "target": "es2015",
     "moduleResolution": "nodenext",
