@@ -9,8 +9,8 @@
  * for example the octagon tiling has two subgroups (square and octagon).
  */
 import * as THREE from 'three'
+import type { SeaBlock } from 'sea-block'
 import type { Simulation } from '../physics/simulation'
-import type { SeaBlock } from '../../sea-block'
 import { physicsConfig } from '../../configs/physics-config'
 import type { SubgroupParams } from './subgroup'
 import { Subgroup } from './subgroup'

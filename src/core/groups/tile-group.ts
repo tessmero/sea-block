@@ -8,6 +8,7 @@
  */
 import * as THREE from 'three'
 import type { Vector3 } from 'three'
+import type { SeaBlock } from 'sea-block'
 import type { TiledGrid, TilePosition } from '../grid-logic/tiled-grid'
 import type { Tile } from '../tile'
 import { WaterSim } from '../physics/water-sim'
@@ -15,7 +16,6 @@ import type { TileIndex } from '../grid-logic/indexed-grid'
 import type { RenderableTile } from '../../gfx/3d/tile-group-gfx-helper'
 import { TileGroupGfxHelper } from '../../gfx/3d/tile-group-gfx-helper'
 import { extrude, TileMeshIm } from '../../gfx/3d/tile-mesh'
-import type { SeaBlock } from '../../sea-block'
 import { gfxConfig } from '../../configs/gfx-config'
 import { Group } from './group'
 

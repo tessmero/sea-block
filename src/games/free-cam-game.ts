@@ -3,111 +3,40 @@
  *
  * Like sphere-test, but without the sphere.
  */
-import { Color, Vector2, Vector3 } from 'three'
+import type { Vector2 } from 'three'
+import { Color, Vector3 } from 'three'
 import { CAMERA_LOOK_AT } from '../settings'
 import type { SeaBlock } from '../sea-block'
 import { freeCamGameConfig } from '../configs/free-cam-game-config'
 import type { Sphere } from '../core/sphere'
 import type { TileIndex } from '../core/grid-logic/indexed-grid'
-import { FREECAM_DESKTOP_LAYOUT } from '../layouts/freecam-desktop-layout'
-import { iconButtonLoader, simpleButtonLoader } from '../gfx/2d/flat-button'
-import { toggleRadio } from '../sound/song-playlist'
-import type { MouseState } from '../mouse-input'
-import { FREECAM_PORTRAIT_LAYOUT } from '../layouts/freecam-portrait-layout'
-import { FREECAM_LANDSCAPE_LAYOUT } from '../layouts/freecam-landscape-layout'
-import type { GameElement, GameUpdateContext } from './game'
+import { FREECAM_DESKTOP_LAYOUT } from '../gui/layouts/freecam-desktop-layout'
+import { FREECAM_PORTRAIT_LAYOUT } from '../gui/layouts/freecam-portrait-layout'
+import { FREECAM_LANDSCAPE_LAYOUT } from '../gui/layouts/freecam-landscape-layout'
+import { wasdButtons, wasdInputState } from '../gui/elements/wasd-buttons'
+import { configBtn, leftJoy, musicBtn, rightJoy } from '../gui/elements/misc-buttons'
 import { Game } from './game'
+import type { GameUpdateContext } from './game'
 
 export const MOUSE_DEADZONE = 50 // (px) center of screen with zero force
 export const MOUSE_MAX_RAD = 200 // (px) radius with max force
 // const mouseVec = new Vector2()
 const force = new Vector3()
-const lastScreenPosDummy = new Vector2()
+// const lastScreenPosDummy = new Vector2()
 const targetDummy = new Vector3()
 
 const _lastPickedTileIndex: TileIndex | undefined = undefined
-
-const inputState = {
-  upBtn: false,
-  downBtn: false,
-  leftBtn: false,
-  rightBtn: false,
-}
-
-function wasdButton(
-  layoutKey: keyof typeof FREECAM_DESKTOP_LAYOUT,
-  direction: string,
-  hotkeys: ReadonlyArray<string>): GameElement {
-  return {
-    w: 16, h: 16,
-    layoutKey: layoutKey,
-    hotkeys: hotkeys,
-    imageLoader: iconButtonLoader(
-      'icons/16x16-btn-background.png',
-      `icons/16x16-btn-arrow-${direction}.png`,
-    ),
-    // imageLoader: simpleButtonLoader(direction, '20px "Micro5"'),
-    clickAction: (_seaBlock) => {
-      inputState[layoutKey] = true
-    },
-    unclickAction: (_seaBlock) => {
-      inputState[layoutKey] = false
-    },
-  }
-}
 
 export class FreeCamGame extends Game {
   static {
     Game.register('free-cam', {
       factory: () => new FreeCamGame(),
       elements: [
-        {
-          w: 16, h: 16,
-          layoutKey: 'musicBtn',
-          hotkeys: ['KeyM'],
-          imageLoader: iconButtonLoader(
-            'icons/16x16-btn-background.png',
-            `icons/16x16-btn-music.png`,
-          ),
-          clickAction: (_seaBlock) => {
-            toggleRadio()
-          },
-        },
-        {
-          w: 16, h: 16,
-          layoutKey: 'configBtn',
-          hotkeys: [],
-          imageLoader: iconButtonLoader(
-            'icons/16x16-btn-background.png',
-            `icons/16x16-btn-config.png`,
-          ),
-          clickAction: (seaBlock) => {
-            seaBlock.rebuildControls()
-          },
-        },
-        {
-          w: 64, h: 64,
-          layoutKey: 'leftJoy',
-          hotkeys: [],
-          imageLoader: simpleButtonLoader('L', '50px "Micro5"'),
-          clickAction: (seaBlock) => {
-            seaBlock.rebuildControls()
-          },
-        },
-        {
-          w: 64, h: 64,
-          layoutKey: 'rightJoy',
-          hotkeys: [],
-          imageLoader: simpleButtonLoader('R', '50px "Micro5"'),
-          clickAction: (seaBlock) => {
-            seaBlock.rebuildControls()
-          },
-        },
-
-        wasdButton('upBtn', 'up', ['KeyW', 'ArrowUp']),
-        wasdButton('downBtn', 'down', ['KeyS', 'ArrowDown']),
-        wasdButton('leftBtn', 'left', ['KeyA', 'ArrowLeft']),
-        wasdButton('rightBtn', 'right', ['KeyD', 'ArrowRight']),
+        musicBtn,
+        configBtn,
+        leftJoy,
+        rightJoy,
+        ...wasdButtons,
       ],
       layout: (context: SeaBlock) => {
         // context.config.refreshConfig()
@@ -139,7 +68,6 @@ export class FreeCamGame extends Game {
   protected cameraAnchor!: Sphere
   protected waveMaker!: Sphere
 
-  private hasMouseMoved: boolean = false // has user actually interacted since reset
   private lastScreenPos?: Vector2
 
   protected _lastAnchorPosition = new Vector3()
@@ -147,7 +75,6 @@ export class FreeCamGame extends Game {
   public reset(context: SeaBlock): void {
     const { sphereGroup } = context
 
-    this.hasMouseMoved = false
     this.lastScreenPos = undefined
 
     // init ghost sphere to act as camera anchor
@@ -177,22 +104,13 @@ export class FreeCamGame extends Game {
     context.camera.position.set(x + cam.x, cam.y, z + cam.z)
   }
 
-  protected updateWaveMaker(dt: number, mouseState: MouseState | undefined, canIdle: boolean): void {
+  protected updateWaveMaker(dt: number): void {
     const { x, z } = this.cameraAnchor.position
-    if (this.hasMouseMoved && mouseState) {
-      // move towards picked point
-      this.accelSphere(this.waveMaker, mouseState.intersection, 1e-4 * dt)
-    }
-    else {
-      if (canIdle) {
-      // move to nowhere
-        this.waveMaker.position = new Vector3(x, 20, z)
-      }
-      else {
-      // move towards center
-        this.accelSphere(this.waveMaker, new Vector3(x, 0, z), 1e-4 * dt)
-      }
-    }
+    // move towards picked point
+    // this.accelSphere(this.waveMaker, mouseState.intersection, 1e-4 * dt)
+
+    // move towards center
+    this.accelSphere(this.waveMaker, new Vector3(x, 0, z), 1e-4 * dt)
 
     // respawn if fell under terrain
     if (this.waveMaker.position.y < 10) {
@@ -201,41 +119,40 @@ export class FreeCamGame extends Game {
   }
 
   public update(context: GameUpdateContext): void {
-    this.flatUi.update(context)
-
     const { seaBlock, dt } = context
-    const { mouseState } = seaBlock
+    // const mouseState = undefined
+    // const { mouseState } = seaBlock
 
-    if (!this.hasMouseMoved && mouseState?.screenPos) {
-      if (!this.lastScreenPos) {
-        // get initial screen pos
-        lastScreenPosDummy.copy(mouseState.screenPos)
-        this.lastScreenPos = lastScreenPosDummy
-      }
-      else {
-        // get new screen pos and compare
-        const { x: lastX, y: lastY } = this.lastScreenPos
-        const { x, y } = mouseState.screenPos
-        if (lastX !== x || lastY !== y) {
-          this.hasMouseMoved = true
-        }
-        else {
-          // console.log(`mouse did not move`)
-        }
-      }
+    // if (!this.hasMouseMoved && mouseState?.screenPos) {
+    //   if (!this.lastScreenPos) {
+    //     // get initial screen pos
+    //     lastScreenPosDummy.copy(mouseState.screenPos)
+    //     this.lastScreenPos = lastScreenPosDummy
+    //   }
+    //   else {
+    //     // get new screen pos and compare
+    //     const { x: lastX, y: lastY } = this.lastScreenPos
+    //     const { x, y } = mouseState.screenPos
+    //     if (lastX !== x || lastY !== y) {
+    //       this.hasMouseMoved = true
+    //     }
+    //     else {
+    //       // console.log(`mouse did not move`)
+    //     }
+    //   }
 
-      const { orbitControls, terrain } = seaBlock
-      const { x, z } = terrain.centerXZ
-      const cto = this.getCamTargetOffset()
-      orbitControls.target.set(x + cto.x, cto.y, z + cto.z)
-      orbitControls.update()
-    }
+    //   const { orbitControls, terrain } = seaBlock
+    //   const { x, z } = terrain.centerXZ
+    //   const cto = this.getCamTargetOffset()
+    //   orbitControls.target.set(x + cto.x, cto.y, z + cto.z)
+    //   orbitControls.update()
+    // }
 
     // pan grid if necessary
     this.centerOnAnchor(seaBlock)
 
     // accel wave maker towards center
-    this.updateWaveMaker(dt, mouseState, true)
+    this.updateWaveMaker(dt)
 
     // accel cam anchor towards picked intersection point
     const { CAM_ACCEL } = this.config.flatConfig
@@ -256,10 +173,10 @@ export class FreeCamGame extends Game {
 
     // 3. Build movement vector from input
     const moveVec = new Vector3()
-    const isUpHeld = inputState['upBtn']
-    const isDownHeld = inputState['downBtn']
-    const isLeftHeld = inputState['leftBtn']
-    const isRightHeld = inputState['rightBtn']
+    const isUpHeld = wasdInputState['upBtn']
+    const isDownHeld = wasdInputState['downBtn']
+    const isLeftHeld = wasdInputState['leftBtn']
+    const isRightHeld = wasdInputState['rightBtn']
     // if (
     //   mouseState && !mouseState.isTouch // desktop mouse on screen
     //   && !this.flatUi.hoveredButton // no buttons hovered

@@ -13,7 +13,7 @@ type SongParams = {
 }
 
 function sng(name) {
-  return { src: `music/${name}.ogg`, volume: 1 }
+  return { src: `music/${name}.ogg`, volume: 0.05 }
 }
 
 // for f in public/music/*.ogg; do b=${f##*/}; echo "'${b%.ogg}':sng('${b%.ogg}'),"; done

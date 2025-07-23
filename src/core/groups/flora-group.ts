@@ -5,7 +5,7 @@
  * representing trees/grass/flowers.
  */
 import * as THREE from 'three'
-import type { SeaBlock } from '../../sea-block'
+import type { SeaBlock } from 'sea-block'
 import { FloraSim } from '../physics/flora-sim'
 import type { Tile } from '../tile'
 import { FloraGroupGfxHelper } from '../../gfx/3d/flora-group-gfx-helper'

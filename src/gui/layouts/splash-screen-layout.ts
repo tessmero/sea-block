@@ -4,7 +4,7 @@
  * Launch/start button in middle in screen.
  */
 
-import type { CssLayout } from '../util/layout-parser'
+import type { CssLayout } from 'util/layout-parser'
 
 export const SPLASH_SCREEN_LAYOUT = {
   launch: {

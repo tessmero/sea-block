@@ -4,7 +4,7 @@
  * Dual-joystick controls for mobile.
  */
 
-import type { CssLayout } from '../util/layout-parser'
+import type { CssLayout } from 'util/layout-parser'
 import { commonLayout, standards } from './layout-helper'
 const { joy, pad } = standards
 

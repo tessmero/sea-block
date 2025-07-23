@@ -5,9 +5,9 @@
  */
 
 import { Object3D, Vector3 } from 'three'
+import type { SeaBlock } from 'sea-block'
 import type { FloraGroup } from '../../core/groups/flora-group'
 import type { TileIndex } from '../../core/grid-logic/indexed-grid'
-import type { SeaBlock } from '../../sea-block'
 import { floraConfig } from '../../configs/flora-config'
 
 export class FloraGroupGfxHelper {

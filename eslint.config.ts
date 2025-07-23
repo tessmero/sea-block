@@ -103,9 +103,14 @@ export default tseslint.config(
       // 'sb/no-upper-snake-case-declare': 'error',
       // 'sb/no-upper-snake-case-assign': 'error',
 
-      // disallow importing main.ts entry point (circular import)
+      // restrict "import" statements
       'no-restricted-imports': [
-        'error', { patterns: ['**/main'] },
+        'error', {
+          patterns: [
+            '**/main', // must not import main.ts entry point (circular import)
+            '../../../*', // must not go up three levels with relative path
+          ],
+        },
       ],
     },
   },
@@ -191,8 +196,8 @@ export default tseslint.config(
 
   // require valid gui layout css
   {
-    files: ['src/layouts/**/*.ts'],
-    ignores: ['src/layouts/layout-helper.ts'],
+    files: ['src/gui/layouts/**/*.ts'],
+    ignores: ['src/gui/layouts/layout-helper.ts'],
     plugins: { '@typescript-eslint': tseslint.plugin },
     languageOptions: {
       parserOptions: {

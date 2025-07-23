@@ -28,6 +28,7 @@ const topConfigTree = {
     game: {
       value: 'start-sequence',
       options: GAME_NAMES,
+      isHidden: true,
     } as OptionItem<GameName>,
 
     freeCamLayout: {
