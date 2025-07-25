@@ -4,7 +4,7 @@
  * The sea-block three.js scene which may be re-built after startup.
  */
 import { AmbientLight, Scene } from 'three'
-import type { SeaBlock } from '../../sea-block'
+import type { SeaBlock } from 'sea-block'
 
 export function buildScene(seaBlock: SeaBlock): Scene {
   // Scene setup

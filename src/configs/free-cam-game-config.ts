@@ -9,9 +9,9 @@ import { Configurable } from './configurable'
 
 const freeCamGameConfigTree = {
   children: {
-    CAM_ACCEL: { value: 5e-5, // strength of user direction force
+    CAM_ACCEL: { value: 2e-4, // strength of user direction force
       min: 0,
-      max: 10e-5,
+      max: 5e-4,
       step: 1e-6,
       tooltip: 'camera movement acceleration',
     },

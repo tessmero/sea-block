@@ -5,12 +5,9 @@
  * Determines the position, shape, and adjacency of tiles.
  */
 
-import type { TilingName } from '../../../imp-names'
+import type { TilingName } from 'imp-names'
 
-/*
- * tile index (integers)
- * or, tile position (floats near index)
- */
+// tile index (integers) or tile position (floats near index)
 interface XZ { x: number, z: number }
 
 // regular polygon shape

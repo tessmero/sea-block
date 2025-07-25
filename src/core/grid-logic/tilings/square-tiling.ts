@@ -21,14 +21,16 @@ const diagonal = [
   { x: -1, z: -1 },
 ]
 
+export const SQUARE_TILING_SHAPES = [{
+  n: 4,
+  radius: Math.sqrt(2) / 2,
+  angle: Math.PI / 4,
+}]
+
 export class SquareTiling extends Tiling {
   static { Tiling.register('square', () => new SquareTiling()) }
 
-  shapes = [{
-    n: 4,
-    radius: Math.sqrt(2) / 2,
-    angle: Math.PI / 4,
-  }]
+  shapes = SQUARE_TILING_SHAPES
 
   getShapeIndex(_x: number, _z: number) { return 0 }
 

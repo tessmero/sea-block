@@ -5,11 +5,15 @@
  */
 import assert from 'assert'
 import { glob } from 'glob'
-import { CONFIGURABLE_NAMES, GAME_NAMES, GENERATOR_NAMES, TILING_NAMES, TRANSITION_NAMES } from '../../src/imp-names'
+import {
+  CONFIGURABLE_NAMES, GAME_NAMES, GENERATOR_NAMES,
+  GRID_ANIM_NAMES, TILING_NAMES, TRANSITION_NAMES,
+} from '../../src/imp-names'
 import { Game } from '../../src/games/game'
 import { Tiling } from '../../src/core/grid-logic/tilings/tiling'
 import { TerrainGenerator } from '../../src/generators/terrain-generator'
 import { Transition } from '../../src/gfx/transition'
+import { GridAnimation } from '../../src/gfx/grid-anims/grid-animation'
 import { Configurable } from '../../src/configs/configurable'
 
 // populate registries by loading all implementations' source files
@@ -18,9 +22,11 @@ const patterns = [
   '../../src/grid-logic/tilings/**/*.ts',
   '../../src/generators/**/*.ts',
   '../../src/configs/**/*.ts',
-  '../../src/gfx/transition.ts',
+  '../../src/gfx/grid-anims/**/*.ts',
+
   '../../src/gfx/2d/flat-transition.ts',
   '../../src/gfx/3d/drop-transition.ts',
+  '../../src/gfx/ssd-transition.ts',
 ]
 for (const pattern of patterns) {
   const files = glob.sync(pattern, { cwd: __dirname, absolute: true })
@@ -34,6 +40,7 @@ const specs = [
   ['TerrainGenerator', TerrainGenerator, GENERATOR_NAMES],
   ['Transition', Transition, TRANSITION_NAMES],
   ['Configurable', Configurable, CONFIGURABLE_NAMES],
+  ['GridAnimation', GridAnimation, GRID_ANIM_NAMES],
 ] as const satisfies ReadonlyArray<
   [string, { _registry }, ReadonlyArray<string>]
 >
@@ -47,8 +54,12 @@ describe('Implementation Registration', function () {
       for (const name of impNames) {
         it(`has registered "${name}" ${baseClassName} implementation`, function () {
           let factory
-          if (BaseClass === Game) {
+          if (baseClassName === 'Game') {
             // registered games have multiple properties
+            factory = BaseClass._registry[name].factory
+          }
+          else if (baseClassName === 'GridAnimation') {
+            // registered grid animations have multiple properties
             factory = BaseClass._registry[name].factory
           }
           else {

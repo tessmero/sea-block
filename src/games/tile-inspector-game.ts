@@ -7,53 +7,35 @@
 import * as THREE from 'three'
 import type { SeaBlock } from '../sea-block'
 import type { Tile } from '../core/tile'
+import type { ProcessedSubEvent } from '../mouse-touch-input'
 import type { GameUpdateContext } from './game'
 import { Game } from './game'
 
 // extra meshes to show when debugging is enabled
-class DebugElems {
-  // public directionPoint: THREE.Object3D
-  public center: THREE.Object3D
-  public adjacent: Array<THREE.Mesh>
-  public diagonal: Array<THREE.Mesh>
-  public normalArrow: THREE.ArrowHelper
+function createDebugElems() {
+  const n = 10, rad = 0.5
 
-  constructor() {
-  // small debug spheres
-    const n = 10, rad = 0.5
-    this.center = debugSphere(rad, 'red')
-    this.adjacent = []
-    this.diagonal = []
-    for (let i = 0; i < n; i++) {
-      this.adjacent.push(debugSphere(rad, 'yellow'))
-      this.diagonal.push(debugSphere(rad, 'blue'))
-    }
+  const center = debugSphere(rad, 'red')
+  const adjacent: Array<THREE.Mesh> = []
+  const diagonal: Array<THREE.Mesh> = []
 
-    // big debug sphere
-    // this.directionPoint = debugSphere(3, 'red')
-
-    // debug arrow
-    this.normalArrow = new THREE.ArrowHelper(
-      new THREE.Vector3(0, 1, 0), // direction
-      new THREE.Vector3(0, 0, 0), // origin
-      4, // length
-      'red', // color
-    )
+  for (let i = 0; i < n; i++) {
+    adjacent.push(debugSphere(rad, 'yellow'))
+    diagonal.push(debugSphere(rad, 'blue'))
   }
 
-  public refresh(debug: 'none' | 'pick-direction' | 'pick-tile'): void {
-    // this.directionPoint.visible = debug === 'pick-direction'
+  const normalArrow = new THREE.ArrowHelper(
+    new THREE.Vector3(0, 1, 0), // direction
+    new THREE.Vector3(0, 0, 0), // origin
+    4, // length
+    'red', // color
+  )
 
-    const shouldShowNeighbors = debug === 'pick-tile'
-    this.center.visible = shouldShowNeighbors
-    this.adjacent.forEach((e) => {
-      e.visible = e.visible && shouldShowNeighbors
-    })
-    this.diagonal.forEach((e) => {
-      e.visible = e.visible && shouldShowNeighbors
-    })
-
-    this.normalArrow.visible = debug === 'pick-tile'
+  return {
+    center,
+    adjacent,
+    diagonal,
+    normalArrow,
   }
 }
 
@@ -64,7 +46,7 @@ function debugSphere(radius: number, color: THREE.ColorRepresentation): THREE.Me
   return mesh
 }
 
-const debugElems = new DebugElems()
+const debugElems = createDebugElems()
 
 export class TileInspectorGame extends Game {
   static {
@@ -77,7 +59,7 @@ export class TileInspectorGame extends Game {
         { meshLoader: async () => debugElems.normalArrow },
         // { meshLoader: async () => debugElems.directionPoint },
       ],
-      layout: {},
+      layout: () => ({}),
     })
   }
 
@@ -85,7 +67,7 @@ export class TileInspectorGame extends Game {
     const { camera, terrain, sphereGroup, orbitControls } = context
     const { x, z } = terrain.centerXZ
     // position camera and grid on player
-    const cam = this.getCamOffset()
+    const cam = this.getCamOffset(context)
     camera.position.set(x + cam.x, cam.y, z + cam.z)
     orbitControls.target.x = x
     orbitControls.target.z = z
@@ -100,18 +82,17 @@ export class TileInspectorGame extends Game {
 
   public update(context: GameUpdateContext): void {
     super.update(context)
-    const { seaBlock, mouseState } = context
+    const { seaBlock } = context
+    // const { mouseState } = seaBlock
+    const mouseState: ProcessedSubEvent | undefined = undefined
     const { terrain } = seaBlock
 
     // let intersection
     let pickedTile
 
     if (mouseState) {
-      // debugElems.directionPoint.position.copy(
-      //   mouseState.intersection,
-      // )
 
-      pickedTile = mouseState.pickedTileIndex
+      // pickedTile = mouseState.pickedTileIndex
     }
 
     if (pickedTile) {
@@ -136,9 +117,9 @@ export class TileInspectorGame extends Game {
           debugTile(debugElems.adjacent[i], adjTile)
         }
       }
-      // for (let i = adjOffsets.length; i < debugElems.adjacent.length; i++) {
-      //   debugElems.adjacent[i].visible = false
-      // }
+      for (let i = adjOffsets.length; i < debugElems.adjacent.length; i++) {
+        debugElems.adjacent[i].visible = false
+      }
 
       const diagOffsets = terrain.grid.tiling.getDiagonal(x, z)
       for (const [i, offset] of diagOffsets.entries()) {
@@ -148,9 +129,9 @@ export class TileInspectorGame extends Game {
           debugTile(debugElems.diagonal[i], diagTile)
         }
       }
-    // for (let i = diagOffsets.length; i < debugElems.diagonal.length; i++) {
-    //   debugElems.diagonal[i].visible = false
-    // }
+      for (let i = diagOffsets.length; i < debugElems.diagonal.length; i++) {
+        debugElems.diagonal[i].visible = false
+      }
     }
   }
 }
