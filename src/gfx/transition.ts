@@ -14,37 +14,52 @@ import type { LayeredViewport } from './layered-viewport'
 
 const totalDuration = 1500 // ms
 
-let isFirstUncover = true
-
 export function randomTransition(context: SeaBlock): Transition {
   // const name = randChoice(TRANSITION_NAMES)
-  const name = 'flat'
+
+  // do sweep-sweep-drop combo transition just for launch
+  const name = Transition.isFirstUncover ? 'ssd' : 'flat'
+
+  // const name = 'flat'
   return Transition.create(name, context)
 }
 
 export abstract class Transition {
+  static isFirstUncover = true
+
   private elapsed = 0 // ms
   public didFinishCover = false
   public didFinishUncover = false
 
   protected layeredViewport!: LayeredViewport // assigned in create
   protected terrain!: TileGroup // assigned in create
-  protected abstract reset(): void // called in create
+  protected abstract reset(context: SeaBlock): void // called in create
 
   // t0 and t1 are fractions of segment in range (0-1)
-  protected abstract _hide(t0: number, t1: number): void
-  protected abstract _show(t0: number, t1: number): void
+  public abstract _hide(t0: number, t1: number): void
+  public abstract _show(t0: number, t1: number): void
 
-  // completely hide/show scene
-  public abstract cleanupHide(): void
-  public abstract cleanupShow(): void
+  // completely clear/fill front layer
+  public cleanupHide(): void {
+    // console.log('base cleanup hide black')
+    const { ctx, w, h } = this.layeredViewport
+    ctx.fillStyle = 'black'
+    ctx.fillRect(0, 0, w, h)
+  }
+
+  public cleanupShow(): void {
+    // console.log('base cleanup show')
+    const { ctx, w, h } = this.layeredViewport
+    ctx.clearRect(0, 0, w, h)
+  }
 
   update(dt: number) {
     // describe elapsed time range as fraction of animation
     const start = this.elapsed / totalDuration
 
-    if (this.didFinishCover && isFirstUncover) {
-      this.elapsed += dt // 0.7 * dt // slow down first uncover
+    // if (this.didFinishCover && isFirstUncover) {
+    if (Transition.isFirstUncover) {
+      this.elapsed += 0.5 * dt // slow down first uncover
     }
     else {
       this.elapsed += dt
@@ -64,7 +79,7 @@ export abstract class Transition {
       // signal to end transition
       this.cleanupShow()
       this.didFinishUncover = true
-      isFirstUncover = false
+      Transition.isFirstUncover = false
       return
     }
 
@@ -104,7 +119,7 @@ export abstract class Transition {
     const { layeredViewport, terrain } = context
     instance.layeredViewport = layeredViewport
     instance.terrain = terrain
-    instance.reset()
+    instance.reset(context)
 
     return instance
   }

@@ -12,20 +12,22 @@ const TRI_RAD = TRI_SIDE / Math.sqrt(3) // Distance from center to vertex
 
 const TRI_HEIGHT = TRI_SIDE * Math.sqrt(3) / 2 // Height of equilateral triangle with side 1
 
+export const TRIANGLE_TILING_SHAPES = [
+  {
+    n: 3,
+    radius: TRI_RAD,
+    angle: 0, // Upward triangle
+  },
+  {
+    n: 3,
+    radius: TRI_RAD,
+    angle: Math.PI, // Downward triangle
+  },
+]
+
 export class TriangleTiling extends Tiling {
   static { Tiling.register('triangle', () => new TriangleTiling()) }
-  shapes = [
-    {
-      n: 3,
-      radius: TRI_RAD,
-      angle: 0, // Upward triangle
-    },
-    {
-      n: 3,
-      radius: TRI_RAD,
-      angle: Math.PI, // Downward triangle
-    },
-  ]
+  shapes = TRIANGLE_TILING_SHAPES
 
   // Determines if triangle is "up" or "down" based on x+z parity
   getShapeIndex(x: number, z: number) {

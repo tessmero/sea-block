@@ -7,67 +7,50 @@
 // @ts-expect-error make vite build include all sources
 import.meta.glob('./**/*.ts', { eager: true })
 
+import { loadAllImages } from 'gfx/2d/image-loader'
 import { gfxConfig } from './configs/gfx-config'
 import { LayeredViewport } from './gfx/layered-viewport'
 import { TILING_NAMES } from './imp-names'
 import { SeaBlock } from './sea-block'
 import { randChoice } from './util/rng'
 
-const layeredViewport = new LayeredViewport()
-gfxConfig.refreshConfig()
+async function main() {
+  await loadAllImages()
 
-const seaBlock = new SeaBlock(layeredViewport)
+  const layeredViewport = new LayeredViewport()
+  gfxConfig.refreshConfig()
 
-// load default config
-seaBlock.config.refreshConfig()
+  const seaBlock = new SeaBlock(layeredViewport)
 
-// set temprary config values until user clicks launch
-seaBlock.config.flatConfig.generator = 'all-ocean'
-seaBlock.config.flatConfig.style = 'black-and-white'
-seaBlock.config.flatConfig.game = 'splash-screen'
-seaBlock.config.flatConfig.tiling = randChoice(TILING_NAMES)
+  // load default config
+  seaBlock.config.refreshConfig()
 
-// init game and 3D scene
-seaBlock.init()
-seaBlock.reset()
+  // set temporary config values until user clicks launch
+  seaBlock.config.flatConfig.generator = 'all-ocean'
+  seaBlock.config.flatConfig.style = 'black-and-white'
+  seaBlock.config.flatConfig.game = 'splash-screen'
+  seaBlock.config.flatConfig.tiling = randChoice(TILING_NAMES)
 
-// show controls gui on startup
-// seaBlock.rebuildControls()
+  // init game and 3D scene
+  seaBlock.init()
+  seaBlock.reset()
 
-// // in free-cam mode, debug controls loose focus after click
-// document.addEventListener('change', (_event) => {
-//   if (seaBlock.currentGameName === 'free-cam') {
-//     try {
-//       (document.activeElement as HTMLElement).blur()
-//     }
-//     catch (_e) {
-//       // do nothing
-//     }
-//   }
-// })
-// document.addEventListener('click', (event) => {
-//   if (seaBlock.currentGameName === 'free-cam') {
-//     try {
-//       if ((event.target as HTMLElement).tagName === 'BUTTON') {
-//         (document.activeElement as HTMLElement).blur()
-//       }
-//     }
-//     catch (_e) {
-//       // do nothing
-//     }
-//   }
-// })
+  // show controls gui on startup
+  // seaBlock.rebuildControls()
 
-// Animation loop
-let lastTime = performance.now()
-async function animate() {
-  requestAnimationFrame(animate) // queue next loop
+  // Animation loop
+  let lastTime = performance.now()
+  async function animate() {
+    requestAnimationFrame(animate) // queue next loop
 
-  // Calculate delta time since last loop
-  const currentTime = performance.now()
-  const dt = Math.min(50, currentTime - lastTime)
-  lastTime = currentTime
+    // Calculate delta time since last loop
+    const currentTime = performance.now()
+    const dt = Math.min(50, currentTime - lastTime)
+    lastTime = currentTime
 
-  await seaBlock.animate(dt) // update everything
+    await seaBlock.animate(dt) // update everything
+  }
+  animate() // start first loop
 }
-animate() // start first loop
+
+main()

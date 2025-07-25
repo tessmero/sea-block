@@ -22,11 +22,11 @@ export class DropTransition extends Transition {
     DropTransition.t = 0
   }
 
-  protected _hide(t0: number, t1: number): void {
+  public _hide(t0: number, t1: number): void {
     DropTransition.t = t1
   }
 
-  protected _show(t0: number, t1: number): void {
+  public _show(t0: number, t1: number): void {
     DropTransition.t = 1 - t1
   }
 

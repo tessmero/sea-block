@@ -13,7 +13,7 @@ import { WebGLRenderer } from 'three'
 import { gfxConfig } from '../configs/gfx-config'
 import type { Rectangle } from '../util/layout-parser'
 import type { SeaBlock } from '../sea-block'
-import { resetFrontLayer } from './2d/flat-gfx-helper'
+import { resetFrontLayer } from './2d/flat-gui-gfx-helper'
 
 // can only be constructed once
 let didConstruct = false
@@ -60,6 +60,10 @@ export class LayeredViewport {
     this.frontCanvas.width = this.w
     this.frontCanvas.height = this.h
     resetFrontLayer()
+
+    // if( context.transition ){
+
+    // }
   }
 
   init(context: SeaBlock) {

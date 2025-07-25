@@ -6,7 +6,6 @@
  * 2. Uses oggenc to convert wav to ogg (apt install vorbis-tools).
  *
  * High-quality sound font: https://musical-artifacts.com/artifacts/6003.
- * Classical music midis: https://www.kunstderfuge.com.
  */
 import * as fs from 'fs'
 import path from 'path'

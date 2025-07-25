@@ -5,7 +5,7 @@
  */
 
 import type { GameElement } from 'games/game'
-import { iconButtonLoader } from 'gfx/2d/flat-button'
+import { iconButton } from 'gfx/2d/flat-button'
 import type { KeyCode } from 'input-id'
 
 export const wasdInputState = {
@@ -17,15 +17,14 @@ export const wasdInputState = {
 
 function wasdButton(
   layoutKey: string,
-  direction: string,
+  direction: 'up' | 'down' | 'left' | 'right',
   hotkeys: ReadonlyArray<KeyCode>,
 ): GameElement {
   return {
     w: 16, h: 16,
     layoutKey: layoutKey,
     hotkeys: hotkeys,
-    imageLoader: iconButtonLoader(
-      'icons/16x16-btn-background.png',
+    imageFactory: (w, h) => iconButton(w, h,
       `icons/16x16-btn-arrow-${direction}.png`,
     ),
     // imageLoader: simpleButtonLoader(direction, '20px "Micro5"'),

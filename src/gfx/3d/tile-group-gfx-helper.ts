@@ -189,7 +189,7 @@ export class TileGroupGfxHelper {
     let transitionOffset = 0
     if (DropTransition.gridAnim) {
       const tileAnim = DropTransition.gridAnim.getTileValue(tileIndex, DropTransition.t)
-      transitionOffset = -50 * this._dampedAnim(1 - tileAnim, 1)
+      transitionOffset = 500 * this._dampedAnim(1 - tileAnim, 1)
     }
 
     dummy.position.set(

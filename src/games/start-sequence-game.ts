@@ -8,12 +8,11 @@
 import { typedEntries } from 'util/typed-entries'
 import { Vector3 } from 'three'
 import { gfxConfig } from 'configs/gfx-config'
-import { randomTransition } from 'gfx/transition'
 import type { SeaBlock } from 'sea-block'
 import { freeCamGameConfig } from 'configs/free-cam-game-config'
 import { michaelConfig } from 'configs/michael-config'
-import { iconButtonLoader } from 'gfx/2d/flat-button'
 import { START_SEQUENCE_LAYOUT } from 'gui/layouts/start-sequence-layout'
+import { skipBtn } from 'gui/elements/misc-buttons'
 import { FreeCamGame } from './free-cam-game'
 import type { GameUpdateContext } from './game'
 import { Game } from './game'
@@ -23,22 +22,7 @@ export class StartSequenceGame extends FreeCamGame {
     Game.register('start-sequence', {
       factory: () => new StartSequenceGame(),
       elements: [
-        {
-          w: 48, h: 16,
-          layoutKey: 'skip',
-          hotkeys: ['Escape', 'Space'],
-          // imageLoader: simpleButtonLoader('SKIP', '25px "Micro5"'),
-          imageLoader: iconButtonLoader(
-            'icons/btn-skip-background.png',
-            `icons/btn-skip.png`,
-          ),
-          clickAction: (seaBlock: SeaBlock) => {
-            seaBlock.config.tree.children.game.value = 'free-cam'
-            seaBlock.transition = randomTransition(seaBlock)
-            seaBlock.isCovering = true
-            StartSequenceGame.wasSkipped = true
-          },
-        },
+        skipBtn,
       ],
       layout: () => START_SEQUENCE_LAYOUT,
     })
@@ -88,11 +72,12 @@ export class StartSequenceGame extends FreeCamGame {
   }
 
   public update(context: GameUpdateContext): void {
-    if (StartSequenceGame.wasSkipped) {
+    const { seaBlock, dt } = context
+
+    if (StartSequenceGame.wasSkipped && seaBlock.transition?.didFinishCover) {
       return
     }
 
-    const { seaBlock, dt } = context
     const changed = getChangedParams(this.traveled)
 
     for (const param in changed) {
@@ -103,11 +88,9 @@ export class StartSequenceGame extends FreeCamGame {
     }
 
     if (this.traveled >= this.distForFreeCam) {
-      if (!seaBlock.didBuildControls) {
-        seaBlock.rebuildControls()
-      }
-      // super.update(context) // behave like free cam game
-      // gridConfig.children.game.value = 'free-cam'
+      // if (!seaBlock.didBuildControls) {
+      //   seaBlock.rebuildControls()
+      // }
       StartSequenceGame.isColorTransformEnabled = false
       seaBlock.setGame('free-cam')
       seaBlock.onGameChange()

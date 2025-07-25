@@ -23,8 +23,10 @@ const patterns = [
   '../../src/generators/**/*.ts',
   '../../src/configs/**/*.ts',
   '../../src/gfx/grid-anims/**/*.ts',
+
   '../../src/gfx/2d/flat-transition.ts',
   '../../src/gfx/3d/drop-transition.ts',
+  '../../src/gfx/ssd-transition.ts',
 ]
 for (const pattern of patterns) {
   const files = glob.sync(pattern, { cwd: __dirname, absolute: true })

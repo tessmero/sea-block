@@ -43,10 +43,11 @@ export type GameElement = FlatElement | DepthElement // 3d object or image buffe
 export type FlatElement = {
   w: number
   h: number
-  imageLoader: (w: number, h: number) => Promise<FlatButton>// () => Promise<OffscreenCanvas>
+  imageFactory: (w: number, h: number) => FlatButton// () => Promise<OffscreenCanvas>
   layoutKey: string // must have layout rectangle
   clickAction?: (seaBlock: SeaBlock) => void
   unclickAction?: (seaBlock: SeaBlock) => void
+  isSticky?: boolean
   hotkeys?: ReadonlyArray<KeyCode> // bound keyboard keys
 }
 
@@ -56,6 +57,7 @@ export type DepthElement = {
   layoutKey?: string // only for elements locked to camera
   clickAction?: (seaBlock: SeaBlock) => void
   unclickAction?: (seaBlock: SeaBlock) => void
+  isSticky?: boolean
   hotkeys?: ReadonlyArray<string> // event.code values
 }
 
@@ -81,7 +83,7 @@ export abstract class Game {
 
   // static registry pattern
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  static _registry: Record<GameName, RegisteredGame> = {} as any
+  static _registry: Record <GameName, RegisteredGame> = {} as any
 
   protected constructor() {}
 

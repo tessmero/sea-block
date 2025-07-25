@@ -6,10 +6,8 @@
 
 import { Vector3 } from 'three'
 import { freeCamGameConfig } from 'configs/free-cam-game-config'
-import { iconButtonLoader } from 'gfx/2d/flat-button'
-import type { SeaBlock } from 'sea-block'
-import { randomTransition } from 'gfx/transition'
 import { SPLASH_SCREEN_LAYOUT } from 'gui/layouts/splash-screen-layout'
+import { launchBtn } from 'gui/elements/misc-buttons'
 import { Game, type GameUpdateContext } from './game'
 import { FreeCamGame } from './free-cam-game'
 
@@ -23,20 +21,7 @@ export class SplashScreenGame extends FreeCamGame {
     Game.register('splash-screen', {
       factory: () => new SplashScreenGame(),
       elements: [
-        {
-          w: 64, h: 32,
-          layoutKey: 'launch',
-          hotkeys: ['Space'],
-          imageLoader: iconButtonLoader(
-            'icons/btn-launch-background.png',
-            'icons/btn-launch.png',
-          ),
-          // imageLoader: simpleButtonLoader('LAUNCH'),
-          clickAction: (seaBlock: SeaBlock) => {
-            seaBlock.transition = randomTransition(seaBlock)
-            seaBlock.isCovering = true
-          },
-        },
+        launchBtn,
       ],
       layout: () => (SPLASH_SCREEN_LAYOUT),
     })

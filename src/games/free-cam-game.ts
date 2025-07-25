@@ -120,33 +120,6 @@ export class FreeCamGame extends Game {
 
   public update(context: GameUpdateContext): void {
     const { seaBlock, dt } = context
-    // const mouseState = undefined
-    // const { mouseState } = seaBlock
-
-    // if (!this.hasMouseMoved && mouseState?.screenPos) {
-    //   if (!this.lastScreenPos) {
-    //     // get initial screen pos
-    //     lastScreenPosDummy.copy(mouseState.screenPos)
-    //     this.lastScreenPos = lastScreenPosDummy
-    //   }
-    //   else {
-    //     // get new screen pos and compare
-    //     const { x: lastX, y: lastY } = this.lastScreenPos
-    //     const { x, y } = mouseState.screenPos
-    //     if (lastX !== x || lastY !== y) {
-    //       this.hasMouseMoved = true
-    //     }
-    //     else {
-    //       // console.log(`mouse did not move`)
-    //     }
-    //   }
-
-    //   const { orbitControls, terrain } = seaBlock
-    //   const { x, z } = terrain.centerXZ
-    //   const cto = this.getCamTargetOffset()
-    //   orbitControls.target.set(x + cto.x, cto.y, z + cto.z)
-    //   orbitControls.update()
-    // }
 
     // pan grid if necessary
     this.centerOnAnchor(seaBlock)

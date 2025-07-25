@@ -2,7 +2,6 @@
  * @file layout-parser.ts
  *
  * Compute rectangles relative to viewport, based on css rules.
- *
  * Used to position flat elements and camera-locked meshes.
  */
 

@@ -7,19 +7,20 @@
  * redraws tiles that are actively changing.
  */
 
+import { TILING_NAMES } from 'imp-names'
 import type { TileIndex } from '../../core/grid-logic/indexed-grid'
 import { TiledGrid } from '../../core/grid-logic/tiled-grid'
-import type { TileShape } from '../../core/grid-logic/tilings/tiling'
 import { Tiling } from '../../core/grid-logic/tilings/tiling'
-import { TILING_NAMES } from '../../imp-names'
 import { randChoice } from '../../util/rng'
 import { GridAnimation } from '../grid-anims/grid-animation'
 import { Transition } from '../transition'
+import { fillPolygon } from './pixel-tiles-gfx-helper'
 
 const viewPad = 50
 const padOffset = -viewPad / 2
 
-const maxChunks = 500
+const targetChunkSize = 10
+const maxChunks = 1000
 const chunkBuffer = new Float32Array(maxChunks)
 type Chunk = {
 
@@ -36,8 +37,11 @@ let lastHeight = 0
 export class FlatTransition extends Transition {
   static { Transition.register('flat', () => new FlatTransition()) }
 
+  public hideColor: [number, number, number] = [0, 0, 0]
+
   // chunk grid in units of big pixels
-  private chunkSize = 10
+  private chunkSize = targetChunkSize
+  private chunkScale = 1
 
   // assigned in Transition.create -> reset -> pickChunkSize
   private chunkGrid!: TiledGrid
@@ -51,6 +55,15 @@ export class FlatTransition extends Transition {
     lastWidth = 0
     lastHeight = 0
   }
+
+  // // completely clear/fill front layer
+  // public cleanupHide(): void {
+  //   const { ctx, w, h } = this.layeredViewport
+  //   const [r, g, b] = this.hideColor
+  //   console.log( `flat cleanup hide rgb(${r},${g},${b})`)
+  //   ctx.fillStyle = `rgb(${r},${g},${b})`// 'black'
+  //   ctx.fillRect(0, 0, w, h)
+  // }
 
   private _getPaddedDims() {
     let { w, h } = this.layeredViewport
@@ -69,7 +82,12 @@ export class FlatTransition extends Transition {
     lastHeight = h
 
     // update chunk size
-    this.chunkSize = Math.ceil(Math.sqrt(w * h / maxChunks))
+    this.chunkSize = Math.max(targetChunkSize, Math.ceil(Math.sqrt(w * h / maxChunks)))
+
+    // integer drawing scale
+    this.chunkScale = Math.max(1, Math.round(this.chunkSize / targetChunkSize))
+
+    // console.log(`chunk scale ${this.chunkScale}`)
     const widthInChunks = Math.ceil(w / this.chunkSize)
     const heightInChunks = Math.ceil(h / this.chunkSize)
 
@@ -80,12 +98,16 @@ export class FlatTransition extends Transition {
     )
 
     this.hideAnim = GridAnimation.create(
-      randChoice(['flat-sweep', 'radial-sweep', 'random-sweep'] as const),
+      Transition.isFirstUncover
+        ? 'flat-sweep'
+        : randChoice(['flat-sweep', 'radial-sweep', 'random-sweep'] as const),
       // randChoice(['radial-sweep'] as const),
       this.chunkGrid,
     )
     this.showAnim = GridAnimation.create(
-      randChoice(['flat-sweep', 'radial-sweep', 'random-sweep'] as const),
+      Transition.isFirstUncover
+        ? 'flat-sweep'
+        : randChoice(['flat-sweep', 'radial-sweep', 'random-sweep'] as const),
       this.chunkGrid,
     )
 
@@ -111,45 +133,27 @@ export class FlatTransition extends Transition {
     }
   }
 
-  public cleanupHide(): void {
-    const { ctx, w, h } = this.layeredViewport
-    ctx.fillStyle = 'black'
-    ctx.fillRect(0, 0, w, h)
+  public _hide(t0: number, t1: number) {
+    // const { ctx } = this.layeredViewport
+
+    this.fillChangedTiles(t0, t1, this.hideColor)
   }
 
-  public cleanupShow(): void {
-    const { ctx, w, h } = this.layeredViewport
-    ctx.clearRect(0, 0, w, h)
-  }
-
-  protected _hide(t0: number, t1: number) {
-    const chunkSize = this.pickChunkSize()
-    const { ctx } = this.layeredViewport
-    ctx.fillStyle = 'black'
-    let _count = 0
-    for (const { tileIndex, value } of this.getChangedChunks(t1, 1)) {
-      const { x, z } = tileIndex
-      const tileShape = this.chunkGrid.tiling.shapes[this.chunkGrid.tiling.getShapeIndex(x, z)]
-
-      _count++
-      const filledSize = chunkSize * value
-
-      const tilePos = this.chunkGrid.tiling.indexToPosition(x, z)
-      this.fillPolygon(ctx,
-        tilePos.x * chunkSize + padOffset,
-        tilePos.z * chunkSize + padOffset,
-        filledSize,
-        tileShape)
-    }
-  }
-
-  protected _show(t0: number, t1: number) {
-    const chunkSize = this.pickChunkSize()
+  public _show(t0: number, t1: number) {
     const { ctx } = this.layeredViewport
 
     // start erasing with fill operations
     ctx.globalCompositeOperation = 'destination-out'
 
+    this.fillChangedTiles(t0, t1)
+
+    // restore normal drawing mode
+    ctx.globalCompositeOperation = 'source-over'
+  }
+
+  private fillChangedTiles(t0: number, t1: number, color?: [number, number, number]) {
+    const chunkSize = this.pickChunkSize()
+    const { ctx } = this.layeredViewport
     let _count = 0
     for (const { tileIndex, value } of this.getChangedChunks(t1, 0)) {
       const { x, z } = tileIndex
@@ -159,39 +163,41 @@ export class FlatTransition extends Transition {
       const filledSize = chunkSize * (1 - value)
 
       const tilePos = this.chunkGrid.tiling.indexToPosition(x, z)
-      this.fillPolygon(ctx,
-        tilePos.x * chunkSize,
-        tilePos.z * chunkSize,
-        filledSize,
-        tileShape)
+      fillPolygon({ ctx,
+        x: Math.floor(tilePos.x * chunkSize + padOffset),
+        y: Math.floor(tilePos.z * chunkSize + padOffset),
+        scale: filledSize,
+        chunkScale: this.chunkScale,
+        shape: tileShape,
+      }, color)
     }
-
-    // restore normal drawing mode
-    ctx.globalCompositeOperation = 'source-over'
-  }
-
-  private fillPolygon(
-    ctx: CanvasRenderingContext2D,
-    cx: number,
-    cy: number,
-    scale: number,
-    tileShape: TileShape,
-  ) {
-    const { n } = tileShape
-    const radius = 1.1 * scale * tileShape.radius
-    const angle = tileShape.angle + Math.PI / 2
-    ctx.beginPath()
-    for (let i = 0; i < n; i++) {
-      const vertAngle = angle + 2 * Math.PI * i / n
-      const x = cx + radius * Math.cos(vertAngle)
-      const y = cy + radius * Math.sin(vertAngle)
-      ctx.lineTo(x, y)
-    }
-    ctx.closePath()
-    ctx.fill()
   }
 }
 
-// function _dampedAnim(t: number): number {
-//   return 1 - Math.pow(1 - t, 4)
+// // DEBUG
+// function setDebugText(msg) {
+//   debugOverlay.textContent = msg
 // }
+// const debugOverlay = document.createElement('div')
+// debugOverlay.id = 'debug-overlay'
+// Object.assign(debugOverlay.style, {
+//   position: 'fixed',
+//   top: '50%',
+//   left: '50%',
+//   transform: 'translate(-50%, -50%)',
+//   zIndex: '99999',
+//   background: 'rgba(0,0,0,0.85)',
+//   color: '#fff',
+//   padding: '16px 30px',
+//   borderRadius: '8px',
+//   boxShadow: '0 2px 18px rgba(0,0,0,0.3)',
+//   fontFamily: 'monospace',
+//   fontSize: '1.1rem',
+//   pointerEvents: 'none',
+//   textAlign: 'center',
+//   maxWidth: '90vw',
+//   maxHeight: '80vh',
+//   overflow: 'auto',
+// })
+// debugOverlay.textContent = 'Debug: Everything loaded correctly!'
+// document.body.appendChild(debugOverlay)

@@ -27,14 +27,16 @@ const oddAdj = [
 
 const radius = Math.sqrt(3) / 2
 
+export const HEX_TILING_SHAPES = [{
+  n: 6,
+  radius,
+  angle: Math.PI / 6,
+}]
+
 export class HexTiling extends Tiling {
   static { Tiling.register('hex', () => new HexTiling()) }
 
-  shapes = [{
-    n: 6,
-    radius,
-    angle: Math.PI / 6,
-  }]
+  shapes = HEX_TILING_SHAPES
 
   getShapeIndex(_x: number, _z: number) { return 0 }
 

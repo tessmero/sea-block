@@ -15,21 +15,23 @@ const squareRadius = (
   2 - 2 * octagonRadius // space between octagons
 ) * Math.cos(Math.PI / 8)
 
+export const OCTAGON_TILING_SHAPES = [
+  {
+    n: 8,
+    radius: octagonRadius,
+    angle: Math.PI / 8, // Octagon
+  },
+  {
+    n: 4,
+    radius: squareRadius,
+    angle: Math.PI / 4, // Square
+  },
+]
+
 export class OctagonTiling extends Tiling {
   static { Tiling.register('octagon', () => new OctagonTiling()) }
 
-  shapes = [
-    {
-      n: 8,
-      radius: octagonRadius,
-      angle: Math.PI / 8, // Octagon
-    },
-    {
-      n: 4,
-      radius: squareRadius,
-      angle: Math.PI / 4, // Square
-    },
-  ]
+  shapes = OCTAGON_TILING_SHAPES
 
   getShapeIndex(x: number, z: number) {
     return Math.abs((x + z) % 2)

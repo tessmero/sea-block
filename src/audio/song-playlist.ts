@@ -36,7 +36,7 @@ function playNextTrack(): void {
 
   // const i = Math.floor(Math.random() * SONG_NAMES.length)
   const i = (lastPlayedIndex + 1) % SONG_NAMES.length
-  const { src } = SONGS[SONG_NAMES[i]]
+  const { src, volume } = SONGS[SONG_NAMES[i]]
   lastPlayedIndex = i
 
   // Stop previous audio if needed
@@ -47,6 +47,7 @@ function playNextTrack(): void {
   currentHowl = new Howl({
     src: [src],
     format: ['ogg'],
+    volume,
     html5: true, // Recommended for streaming-like behavior
     onend: () => {
       // console.log('Track ended, playing next…')

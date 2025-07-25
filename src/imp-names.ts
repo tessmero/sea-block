@@ -39,9 +39,15 @@ export type GridAnimName = (typeof GRID_ANIM_NAMES)[number]
 
 // transition sequences
 export const TRANSITION_NAMES = [
-  'flat', 'drop',
+  'flat', 'drop', 'ssd',
 ] as const
 export type TransitionName = (typeof TRANSITION_NAMES)[number]
+
+// 2D element borders
+export const BORDER_NAMES = [
+  'simple',
+] as const
+export type BorderName = (typeof BORDER_NAMES)[number]
 
 // core does not use registries
 

@@ -18,7 +18,7 @@ export class SeedablePRNG {
 
 // randomly choose element from list and maintain types
 export function randChoice<
-  TOptionList extends ReadonlyArray<string>,
+  TOptionList extends ReadonlyArray<string | number>,
 >(options: TOptionList):
 TOptionList[number] {
   return options[Math.floor(Math.random() * options.length)]

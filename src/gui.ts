@@ -23,12 +23,17 @@ export class Gui {
   // elements that are currently held down
   private readonly held: Record<string, InputId> = {}
 
+  private readonly stuckDown: Set<string> = new Set()
+
   // element that is currently hovered by mouse
   private hovered?: string
 
   public getElementState(name: string): ButtonState {
+    if (this.stuckDown.has(name)) {
+      return 'pressed'
+    }
     if (name in this.held) {
-      return 'clicked'
+      return 'pressed'
     }
     if (name === this.hovered) {
       return 'hovered'
@@ -38,7 +43,7 @@ export class Gui {
 
   constructor(
     private readonly layoutFactory: (context: SeaBlock) => CssLayout,
-    private readonly elements: ReadonlyArray<GameElement>,
+    public readonly elements: ReadonlyArray<GameElement>,
   ) {
     for (const elem of elements) {
       if (elem.layoutKey) {
@@ -81,30 +86,16 @@ export class Gui {
   public move(event: ProcessedSubEvent): boolean {
     // const previouslyHovered = this.hovered
 
+    if (event.event.type.startsWith('mouse')) {
+      this.hovered = this.pickElementAtPoint(event.lvPos)
+    }
+
     // check if this event id is ongoing drag on pixel gui element
     if (Object.values(this.held).includes(event.inputId)) {
       return true // consume event
     }
 
-    if (event.event.type.startsWith('mouse')) {
-      this.hovered = this.pickElementAtPoint(event.lvPos)
-    }
-
-    return false // don't consume event, pass through to orbit controls
-
-    // const didChange = previouslyHovered !== this.hovered
-
-    // if (previouslyHovered && didChange
-    //   && previouslyHovered !== this.clickedBtn) {
-    //   // seaBlock.repaintButton(previouslyHovered, 'default')
-    //   playSound('unhover')
-    // }
-
-    // if (this.hovered && didChange
-    //   && this.hovered !== this.clickedBtn) {
-    //   // seaBlock.repaintButton(this.hoveredButton, 'hovered')
-    //   playSound('hover')
-    // }
+    return false // pass through to next gui layer or orbit controls
   }
 
   public click(pse: ProcessedSubEvent): boolean {
@@ -129,41 +120,22 @@ export class Gui {
       return true // consume event
     }
 
-    return false // pass through to orbit controls
+    return false // pass through to next gui layer or orbit controls
   }
 
   public unclick(pse: ProcessedSubEvent) {
     const { seaBlock, inputId: touchId } = pse
     // setDebugText(`unclick ${event.type} ${touchId}`)
     this._unclick(seaBlock, touchId)
-    // if (seaBlock.isCovering) {
-    //   return // disable unclick during first half of transition
-    // }
-
-    // if (this.clickedBtn) {
-    //   let hoveredBtn: string | undefined
-    //   if (mouseState) {
-    //     hoveredBtn = this.pickButtonAtPoint(mouseState.lvPos)
-    //   }
-    //   if (event.type === 'touchend') {
-    //     hoveredBtn = undefined
-    //   }
-    //   seaBlock.repaintButton(this.clickedBtn,
-    //     this.clickedBtn === hoveredBtn ? 'hovered' : 'default',
-    //   )
-    //   playSound('unclick')
-    //   seaBlock.unclickButton(this.clickedBtn)
-    //   this.clickedBtn = undefined
-    // }
-    // if (seaBlock.game.doesAllowOrbitControls(seaBlock)) {
-    //   seaBlock.orbitControls.enabled = true
-    // }
   }
 
   private _click(seaBlock: SeaBlock, layoutKey: string, touchId: InputId) {
     this.held[layoutKey] = touchId
 
-    const { clickAction } = this.pickable[layoutKey]
+    const { isSticky, clickAction } = this.pickable[layoutKey]
+    if (isSticky) {
+      this.stuckDown.add(layoutKey)
+    }
     if (clickAction) {
       clickAction(seaBlock)
     }

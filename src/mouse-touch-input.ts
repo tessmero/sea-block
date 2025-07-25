@@ -13,6 +13,7 @@ type HackedOrbitControls = {
   _dollyIn: (number) => void
   _dollyOut: (number) => void
   state: number
+  enabled: boolean // eslint-disable-line @typescript-eslint/naming-convention
 }
 
 // id of touch dragging orbit camera
@@ -76,7 +77,8 @@ const handlers: ReadonlyArray<EventHandler> = [
 
       let hasConsumed = false
       if (!isDraggingOrbitControls && !isZoomingOrbitControls) {
-        hasConsumed = context.game.gui.move(event)
+        // hasConsumed = context.game.gui.move(event)
+        hasConsumed = context.mouseMoveGuiLayers(event)
       }
 
       if (!isDraggingOrbitControls && !hasConsumed && dragOrbitId
@@ -114,7 +116,7 @@ const handlers: ReadonlyArray<EventHandler> = [
           button: 0, // Left button
           buttons: 1, // Left button pressed
         })
-        orbitControls._onMouseMove(simulatedEvent)
+        if (orbitControls.enabled) orbitControls._onMouseMove(simulatedEvent)
       }
     },
   },
@@ -132,7 +134,8 @@ const handlers: ReadonlyArray<EventHandler> = [
       //   // do nothing
       // }
 
-      const hasConsumed = context.game.gui.click(event)
+      const hasConsumed = context.clickGuiLayers(event)
+      // const hasConsumed = context.game.gui.click(event)
 
       if (!hasConsumed && (typeof dragOrbitId === 'undefined')) {
         dragOrbitId = event
@@ -202,11 +205,6 @@ export function initMouseListeners(
   frontCanvas.addEventListener('wheel', (event) => {
     orbitControls._onMouseWheel(event)
   })
-  // frontCanvas.addEventListener('mouseup', () => {
-  //   // orbitControls._pointers.remove(event.pointerId);
-  //   // orbitControls._onPointerUp(event)
-  //   orbitControls.state = -1
-  // })
 }
 
 // let isOnScreen = false
