@@ -7,56 +7,88 @@
 // @ts-expect-error make vite build include all sources
 import.meta.glob('./**/*.ts', { eager: true })
 
+import { loadAllImages } from 'gfx/2d/image-loader'
 import { gfxConfig } from './configs/gfx-config'
 import { LayeredViewport } from './gfx/layered-viewport'
 import { TILING_NAMES } from './imp-names'
 import { SeaBlock } from './sea-block'
 import { randChoice } from './util/rng'
 
-const layeredViewport = new LayeredViewport()
-gfxConfig.refreshConfig()
-layeredViewport.init()
+async function main() {
+  await loadAllImages()
 
-const seaBlock = new SeaBlock(layeredViewport)
+  const layeredViewport = new LayeredViewport()
+  gfxConfig.refreshConfig()
 
-// load default config
-seaBlock.config.refreshConfig()
+  const seaBlock = new SeaBlock(layeredViewport)
 
-// set temprary config values until user clicks launch
-seaBlock.config.flatConfig.generator = 'all-ocean'
-seaBlock.config.flatConfig.style = 'black-and-white'
-seaBlock.config.flatConfig.game = 'splash-screen'
-seaBlock.config.flatConfig.tiling = randChoice(TILING_NAMES)
+  window.TestSupport = {
+    
+    getGameState: () => {
+      if( !seaBlock.didLoadAssets ){
+        return 'loading'
+      }
+      if( seaBlock.transition ){
+        return 'transition'
+      } 
+      return seaBlock.currentGameName 
+    },
 
-// init game and 3D scene
-seaBlock.init()
-seaBlock.reset()
+    getCameraPos: () => {
+      return window.camPosForTestSupport();
+    },
 
-// show controls gui on startup
-// seaBlock.rebuildControls()
+    getCursorState: () => {
+      if( !seaBlock.mousePosForTestSupport ){
+        return null
+      }
+      return {
+        x: seaBlock.mousePosForTestSupport.x,
+        y: seaBlock.mousePosForTestSupport.y,
+        style: document.documentElement.style.cursor,
+      };
+    },
 
-// // allow skipping start sequence with escape key
-// function handleEscapePress(event) {
-//   if (event.key === 'Escape') {
-//     // seaBlock.game.traveled = seaBlock.game.distForFreeCam
-//     seaBlock.transition = randomTransition(seaBlock.layeredViewport)
-//     seaBlock.isCovering = true
+    locateElement(titleKey) {
+      const {x,y,w,h} = seaBlock.game.gui.layoutRectangles[titleKey]
+      const ps = seaBlock.config.flatConfig.pixelScale
+      return [x*ps,y*ps,w*ps,h*ps]
 
-//     // document.removeEventListener('keydown', handleEscapePress)
-//   }
-// }
-// document.addEventListener('keydown', handleEscapePress)
+      // const elem = global.gui.findElements({ titleKey }).next().value;
+      // const screenRect = elem._rect;
+      // return this._computeCanvasRect(screenRect);
+    }
+  };
 
-// Animation loop
-let lastTime = performance.now()
-async function animate() {
-  requestAnimationFrame(animate) // queue next loop
+  // load default config
+  seaBlock.config.refreshConfig()
 
-  // Calculate delta time since last loop
-  const currentTime = performance.now()
-  const dt = Math.min(50, currentTime - lastTime)
-  lastTime = currentTime
+  // set temporary config values until user clicks launch
+  seaBlock.config.flatConfig.generator = 'all-ocean'
+  seaBlock.config.flatConfig.style = 'black-and-white'
+  seaBlock.config.flatConfig.game = 'splash-screen'
+  seaBlock.config.flatConfig.tiling = randChoice(TILING_NAMES)
 
-  await seaBlock.animate(dt) // update everything
+  // init game and 3D scene
+  seaBlock.init()
+  seaBlock.reset()
+
+  // show controls gui on startup
+  // seaBlock.rebuildControls()
+
+  // Animation loop
+  let lastTime = performance.now()
+  async function animate() {
+    requestAnimationFrame(animate) // queue next loop
+
+    // Calculate delta time since last loop
+    const currentTime = performance.now()
+    const dt = Math.min(50, currentTime - lastTime)
+    lastTime = currentTime
+
+    await seaBlock.animate(dt) // update everything
+  }
+  animate() // start first loop
 }
-animate() // start first loop
+
+main()

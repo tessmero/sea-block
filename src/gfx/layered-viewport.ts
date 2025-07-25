@@ -11,6 +11,9 @@
 
 import { WebGLRenderer } from 'three'
 import { gfxConfig } from '../configs/gfx-config'
+import type { Rectangle } from '../util/layout-parser'
+import type { SeaBlock } from '../sea-block'
+import { resetFrontLayer } from './2d/flat-gui-gfx-helper'
 
 // can only be constructed once
 let didConstruct = false
@@ -22,8 +25,10 @@ export class LayeredViewport {
   public frontCanvas!: HTMLCanvasElement
   public backRenderer!: WebGLRenderer
   public ctx!: CanvasRenderingContext2D
+  public pixelRatio!: number // convert pixels to big pixels
   public w!: number // width in big pixels
   public h!: number // height in big pixels
+  public screenRectangle!: Rectangle // 0,0,w,h
 
   constructor() {
     if (didConstruct) {
@@ -32,26 +37,36 @@ export class LayeredViewport {
     didConstruct = true
   }
 
-  // convert pixels to big pixels
-  get pixelRatio() { return window.devicePixelRatio / gfxConfig.flatConfig.pixelScale }
-
-  // called when viewport changes shape (sea-block.ts)
-  handleResize() {
-    const pixelRatio = this.pixelRatio
-    this.w = window.innerWidth * pixelRatio
-    this.h = window.innerHeight * pixelRatio
+  // called when viewport changes shape (sea-block.ts)`
+  handleResize(context: SeaBlock) {
+    this.pixelRatio = window.devicePixelRatio / gfxConfig.flatConfig.pixelScale
+    this.w = window.innerWidth * this.pixelRatio
+    this.h = window.innerHeight * this.pixelRatio
+    this.screenRectangle = { x: 0, y: 0, w: this.w, h: this.h }
 
     this.backRenderer.setSize(
       window.innerWidth,
       window.innerHeight,
     )
-    this.backRenderer.setPixelRatio(pixelRatio)
+
+    if ((typeof context.currentGameName === 'undefined') || context.currentGameName === 'splash-screen') {
+      // special size for pixels in background of start/launch button
+      this.backRenderer.setPixelRatio(window.devicePixelRatio / 6)
+    }
+    else {
+      this.backRenderer.setPixelRatio(this.pixelRatio) // normal pixel size
+    }
 
     this.frontCanvas.width = this.w
     this.frontCanvas.height = this.h
+    resetFrontLayer()
+
+    // if( context.transition ){
+
+    // }
   }
 
-  init() {
+  init(context: SeaBlock) {
     if (didInit) {
       throw new Error('LayeredViewport initialized multiple times')
     }
@@ -69,7 +84,7 @@ export class LayeredViewport {
     // 2D graphics context for front canvas
     this.ctx = this.frontCanvas.getContext('2d') as CanvasRenderingContext2D
 
-    this.handleResize()
+    this.handleResize(context)
   }
 
   // // called after launch to switch to renering sharp pixels

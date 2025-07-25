@@ -3,26 +3,25 @@
  *
  * Original sea-block moving sphere controls impemented as a game.
  */
-import { Color, Vector2, Vector3 } from 'three'
+import { Color, Vector3 } from 'three'
 import type { SeaBlock } from '../sea-block'
 import type { Sphere } from '../core/sphere'
+import type { ProcessedSubEvent } from '../mouse-touch-input'
 import { Game } from './game'
 import type { GameUpdateContext } from './game'
 
-const PLAYER_ACCEL = 5e-5 // strength of user direction force
-
-const MOUSE_DEADZONE = 50 // (px) center of screen with zero force
-const MOUSE_MAX_RAD = 200 // (px) radius with max force
-
-const mouseVec = new Vector2()
-const force = new Vector3()
+// const PLAYER_ACCEL = 5e-5 // strength of user direction force
+// const MOUSE_DEADZONE = 50 // (px) center of screen with zero force
+// const MOUSE_MAX_RAD = 200 // (px) radius with max force
+// const mouseVec = new Vector2()
+// const force = new Vector3()
 
 export class SphereTestGame extends Game {
   static {
     Game.register('sphere-test', {
       factory: () => new SphereTestGame(),
       elements: [],
-      layout: {},
+      layout: () => ({}),
     })
   }
 
@@ -49,43 +48,46 @@ export class SphereTestGame extends Game {
     }
 
     // position camera and grid on player
-    const cam = this.getCamOffset()
+    const cam = this.getCamOffset(context)
     camera.position.set(x + cam.x, cam.y, z + cam.z)
     this.centerOnPlayer(context)
   }
 
   public update(context: GameUpdateContext): void {
-    this.flatUi.update(context)
+    // const { seaBlock, dt } = context
+    // const { mouseState } = seaBlock
+    const mouseState: ProcessedSubEvent | undefined = undefined
+
+    // this.flatUi.update(context)
 
     // pan grid if necessary
     this.centerOnPlayer(context.seaBlock)
 
-    const { mouseState, dt } = context
     if (!mouseState) {
       return
     }
 
-    const { screenPos, intersection } = mouseState
-    const { player } = this
+    // const { screenPos, intersection } = mouseState
+    // const { player } = this
 
-    // Direction from player to intersection, zero y
-    force.set(
-      intersection.x - player.position.x,
-      0,
-      intersection.z - player.position.z,
-    ).normalize()
+    // // Direction from player to intersection, zero y
+    // force.set(
+    //   intersection.x - player.position.x,
+    //   0,
+    //   intersection.z - player.position.z,
+    // ).normalize()
 
-    // get distance from center of screen
-    mouseVec.x = screenPos.x - window.innerWidth / 2
-    mouseVec.y = screenPos.y - window.innerHeight / 2
-    const screenDistance = mouseVec.length()
+    // // get distance from center of screen
+    // mouseVec.x = screenPos.x - window.innerWidth / 2
+    // mouseVec.y = screenPos.y - window.innerHeight / 2
+    // const screenDistance = mouseVec.length()
 
-    // Accelerate player in this direction
-    let mouseRatio = (screenDistance - MOUSE_DEADZONE) / (MOUSE_MAX_RAD - MOUSE_DEADZONE)
-    mouseRatio = Math.min(1, Math.max(0, mouseRatio))
-    force.multiplyScalar(dt * PLAYER_ACCEL * mouseRatio)
-    player.velocity.x += force.x
-    player.velocity.z += force.z
+    // // Accelerate player in this direction
+    // let mouseRatio = (screenDistance - MOUSE_DEADZONE) / (MOUSE_MAX_RAD - MOUSE_DEADZONE)
+    // mouseRatio = Math.min(1, Math.max(0, mouseRatio))
+    // force.multiplyScalar(dt * PLAYER_ACCEL * mouseRatio)
+    // player.velocity.x += force.x
+    // player.velocity.z += force.z
   }
 
   private centerOnPlayer(context: SeaBlock) {

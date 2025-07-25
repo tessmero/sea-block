@@ -11,7 +11,7 @@ let _allControls: Record<string, dat.GUIController> = {}
 
 let gui: dat.GUI
 
-export function showControls(seaBlock: SeaBlock) {
+export function showDebugControls(seaBlock: SeaBlock) {
   const config = seaBlock.config.tree
   _allControls = {} // flat list of controls
 
@@ -23,7 +23,7 @@ export function showControls(seaBlock: SeaBlock) {
     closeFolders: true, // start with folders collapsed
     container: document.getElementById('controls-container'),
   })
-  gui.close() // start collapsed
+  // gui.close() // start collapsed
 
   // build folders and items for terrain generator config
   addControls(
@@ -31,6 +31,18 @@ export function showControls(seaBlock: SeaBlock) {
     config,
     seaBlock,
   )
+
+  gui.onOpenClose(() => {
+    if (gui._closed) {
+      // console.log('main gui closed')
+      // playSound('collapse')
+
+      // hide after collapsing animation
+      setTimeout(() => {
+        gui.destroy()
+      }, 200)
+    }
+  })
 
   // // add test button
   // const label = 'test'

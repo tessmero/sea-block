@@ -4,20 +4,23 @@
   <meta charset="UTF-8">
   <title>tessmero/sea-block</title>
   <style>
-    html, body { height: 100%; margin: 0; }
+    html, body { 
+      height: 100%; 
+      margin: 0; 
+      -webkit-tap-highlight-color: transparent;
+      touch-action: none;
+    }
     body { overflow: hidden; }
     canvas { 
-      
-        position:absolute;
-        left: 0px;
-        top: 0px;
-          background:transparent; 
+      position:absolute;
+      left: 0px;
+      top: 0px;
+      background:transparent; 
       display: block; width: 100vw; height: 100vh; 
-
     }
 
+    /* always display sharp pixels, except background during initial splash screen */
     canvas:not(.splash) {
-
       image-rendering: optimizeSpeed;             /* Older versions of FF          */
       image-rendering: -moz-crisp-edges;          /* FF 6.0+                       */
       image-rendering: -webkit-optimize-contrast; /* Safari                        */
@@ -25,29 +28,16 @@
       image-rendering: pixelated;                 /* Awesome future-browsers       */
       -ms-interpolation-mode: nearest-neighbor;   /* IE     */
     }
-    .function:nth-child(-n+2) .property-name::before {
-  content: '';
-  display: inline-block;
-  vertical-align: middle;
-  width: 16px;
-  height: 16px;
-  margin-right: 6px;
-  background: url('https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/github.svg') no-repeat center center;
-  background-size: contain;
-  filter: invert(1); /* Makes the icon white */
-}
+
+    
     #controls-container {
       width: 0px;
       height: 0px;
-      border: 1px solid black;
-      position: absolute; /* Needed for absolute positioning of lil-gui if needed */
-    }
 
-    @font-face {
-      font-family: 'Micro5';
-      src: url('./fonts/ttf/Micro5-Regular.ttf') format('truetype');
-      font-weight: normal;
-      font-style: normal;
+      /* workaround display issue  */
+      border: 1px solid black;
+
+      position: absolute; 
     }
   </style>
 
@@ -65,6 +55,25 @@
 <canvas id="frontCanvas" style="z-index:2;"></canvas>
 
   <div id="controls-container" style="z-index:3"></div>
+
+
   <script type="module" src="/src/main.js"></script>
+
+<script>
+
+  // prevent mobile browser long-press vibration
+  document.querySelector("#frontCanvas").addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.style.userSelect = "none";
+  });
+
+  document.querySelector("#frontCanvas").addEventListener("touchend", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.style.userSelect = "default";
+  });
+</script>
+
 </body>
 </html>

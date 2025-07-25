@@ -5,7 +5,10 @@
     "eslint-plugin-sb/tests/**/*.test.ts"
   ],
   "require": [
+    "tsconfig-paths/register",
     "ts-node/register",
+    "tsconfig-paths/register",
+    "node_modules/demo-tests/dist/mochaHooks.js",
     "./tests/fixtures.ts"
   ]
 }

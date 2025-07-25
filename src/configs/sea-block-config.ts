@@ -3,7 +3,7 @@
  *
  * Combined config tree displayed in user interface.
  */
-import { toggleSound } from '../sounds'
+import { toggleRadio } from '../audio/song-playlist'
 import { Configurable } from './configurable'
 import { gfxConfig } from './gfx-config'
 import { physicsConfig } from './physics-config'
@@ -29,7 +29,7 @@ const seaBlockConfigTree = {
 
     musicTest: { // test built song
       label: 'Play/Stop Music',
-      action: () => { toggleSound('song') },
+      action: () => { toggleRadio () },
       hasNoEffect: true, // clicking button doesn't effect seablock
     },
   },
