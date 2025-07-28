@@ -114,16 +114,14 @@ export class FlatTransition extends Transition {
     return this.chunkSize
   }
 
-  private* getChangedChunks(anim: number, targetValue: number): Generator<Chunk> {
+  private* getChangedChunks(anim: number): Generator<Chunk> {
     for (const tileIndex of this.chunkGrid.tileIndices) {
       const { i } = tileIndex
       const oldValue = chunkBuffer[i]
 
-      const gridAnim = targetValue === 1 ? this.hideAnim : this.showAnim
-      let newValue = gridAnim.getTileValue(tileIndex, anim)
-      if (targetValue === 0) {
-        newValue = 1 - newValue
-      }
+      const shouldUseHideAnim = this.isHiding
+      const gridAnim = shouldUseHideAnim ? this.hideAnim : this.showAnim
+      const newValue = gridAnim.getTileValue(tileIndex, anim)
 
       if (oldValue !== newValue) {
         yield { tileIndex, value: newValue }
@@ -133,9 +131,12 @@ export class FlatTransition extends Transition {
     }
   }
 
+  private isHiding = true
+
   public _hide(t0: number, t1: number) {
     // const { ctx } = this.layeredViewport
 
+    this.isHiding = true
     this.fillChangedTiles(t0, t1, this.hideColor)
   }
 
@@ -145,6 +146,7 @@ export class FlatTransition extends Transition {
     // start erasing with fill operations
     ctx.globalCompositeOperation = 'destination-out'
 
+    this.isHiding = false
     this.fillChangedTiles(t0, t1)
 
     // restore normal drawing mode
@@ -155,12 +157,12 @@ export class FlatTransition extends Transition {
     const chunkSize = this.pickChunkSize()
     const { ctx } = this.layeredViewport
     let _count = 0
-    for (const { tileIndex, value } of this.getChangedChunks(t1, 0)) {
+    for (const { tileIndex, value } of this.getChangedChunks(t1)) {
       const { x, z } = tileIndex
       const tileShape = this.chunkGrid.tiling.shapes[this.chunkGrid.tiling.getShapeIndex(x, z)]
 
       _count++
-      const filledSize = chunkSize * (1 - value)
+      const filledSize = chunkSize * (value)
 
       const tilePos = this.chunkGrid.tiling.indexToPosition(x, z)
       fillPolygon({ ctx,

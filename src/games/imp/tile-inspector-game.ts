@@ -5,11 +5,11 @@
  */
 
 import * as THREE from 'three'
-import type { SeaBlock } from '../sea-block'
-import type { Tile } from '../core/tile'
-import type { ProcessedSubEvent } from '../mouse-touch-input'
-import type { GameUpdateContext } from './game'
-import { Game } from './game'
+import type { SeaBlock } from 'sea-block'
+import type { Tile } from 'core/tile'
+import type { ProcessedSubEvent } from 'mouse-touch-input'
+import type { GameUpdateContext } from '../game'
+import { Game } from '../game'
 
 // extra meshes to show when debugging is enabled
 function createDebugElems() {
@@ -52,14 +52,15 @@ export class TileInspectorGame extends Game {
   static {
     Game.register('tile-inspector', {
       factory: () => new TileInspectorGame(),
-      elements: [
-        { meshLoader: async () => debugElems.center },
-        ...debugElems.adjacent.map(mesh => ({ meshLoader: async () => mesh })),
-        ...debugElems.diagonal.map(mesh => ({ meshLoader: async () => mesh })),
-        { meshLoader: async () => debugElems.normalArrow },
-        // { meshLoader: async () => debugElems.directionPoint },
-      ],
-      layout: () => ({}),
+      guiName: 'empty',
+      // elements: [
+      //   { meshLoader: async () => debugElems.center },
+      //   ...debugElems.adjacent.map(mesh => ({ meshLoader: async () => mesh })),
+      //   ...debugElems.diagonal.map(mesh => ({ meshLoader: async () => mesh })),
+      //   { meshLoader: async () => debugElems.normalArrow },
+      //   // { meshLoader: async () => debugElems.directionPoint },
+      // ],
+      // layout: () => ({}),
     })
   }
 

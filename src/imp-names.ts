@@ -43,11 +43,13 @@ export const TRANSITION_NAMES = [
 ] as const
 export type TransitionName = (typeof TRANSITION_NAMES)[number]
 
-// 2D element borders
-export const BORDER_NAMES = [
-  'simple',
+// GUIs
+export const GUI_NAMES = [
+  'free-cam', 'splash-screen', 'start-sequence',
+  'empty', // placeholder used for games without gui
+  'settings-menu', 'sprite-atlas', // test guis 2025-07-28
 ] as const
-export type BorderName = (typeof BORDER_NAMES)[number]
+export type GuiName = (typeof GUI_NAMES)[number]
 
 // core does not use registries
 

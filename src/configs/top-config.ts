@@ -32,10 +32,22 @@ const topConfigTree = {
     } as OptionItem<GameName>,
 
     freeCamLayout: {
-      value: 'desktop',
-      options: ['desktop', 'landscape', 'portrait'],
+      label: 'Input Layout',
+      value: 'auto',
+      options: ['auto', 'desktop', 'landscape', 'portrait'],
+    } as OptionItem<'auto' | 'desktop' | 'landscape' | 'portrait'>,
+
+    testGui: {
+      value: 'none',
+      options: ['none', 'settings-menu', 'sprite-atlas'],
       isHidden: true,
-    } as OptionItem<'desktop' | 'landscape' | 'portrait'>,
+    } as OptionItem<'none' | 'settings-menu' | 'sprite-atlas'>,
+
+    transitionMode: {
+      label: 'Transitions',
+      value: 'enabled',
+      options: ['enabled', 'skip'],
+    } as OptionItem<'enabled' | 'skip'>,
 
     // debug: {
     //   value: 'none',

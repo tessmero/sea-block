@@ -1,21 +1,29 @@
 /**
- * @file image-loader.ts
+ * @file image-asset-loader.ts
  *
  * Helper functions to preload and then lookup image assets.
  */
 
-const IMAGE_ASSET_URLS = [
-  'icons/16x16-btn-default.png',
-  'icons/16x16-btn-hovered.png',
-  'icons/16x16-btn-pressed.png',
-  'icons/btn-launch.png',
-  `icons/btn-skip.png`,
-  `icons/16x16-btn-music.png`,
-  `icons/16x16-btn-config.png`,
-  `icons/16x16-btn-arrow-up.png`,
-  `icons/16x16-btn-arrow-down.png`,
-  `icons/16x16-btn-arrow-left.png`,
-  `icons/16x16-btn-arrow-right.png`,
+export const IMAGE_ASSET_URLS = [
+  'borders/16x16-panel.png',
+  'borders/16x16-btn-shiny-default.png',
+  'borders/16x16-btn-shiny-hovered.png',
+  'borders/16x16-btn-shiny-pressed.png',
+  'borders/16x16-btn-square-default.png',
+  'borders/16x16-btn-square-hovered.png',
+  'borders/16x16-btn-square-pressed.png',
+  'icons/launch.png',
+  `icons/skip.png`,
+  `icons/16x16-music.png`,
+  `icons/16x16-config.png`,
+  `icons/16x16-arrow-up.png`,
+  `icons/16x16-arrow-down.png`,
+  `icons/16x16-arrow-left.png`,
+  `icons/16x16-arrow-right.png`,
+  'icons/16x16-ellipsis.png',
+  'icons/16x16-x.png',
+  'icons/16x16-pan.png',
+  'icons/16x16-rotate.png',
 ] as const
 export type ImageAssetUrl = (typeof IMAGE_ASSET_URLS)[number]
 
@@ -37,7 +45,7 @@ export async function loadAllImages(): Promise<void> {
           resolve()
         }
         img.onerror = reject
-        img.src = src
+        img.src = `images/${src}`
       }),
     ),
   )

@@ -23,10 +23,12 @@
 import fileHeader from './rules/file-header'
 import noThreeNamespaceImport from './rules/no-three-namespace-import'
 import noConstructor from './rules/no-constructor'
+import onlyProtectedCtor from './rules/only-protected-ctor'
 import validLayout from './rules/valid-layout'
 
 const rules = {
   'no-constructor': noConstructor,
+  'only-protected-ctor': onlyProtectedCtor,
   'file-header': fileHeader,
   'no-three-namespace-import': noThreeNamespaceImport,
   'valid-layout': validLayout,

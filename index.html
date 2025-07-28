@@ -55,23 +55,29 @@
 <canvas id="frontCanvas" style="z-index:2;"></canvas>
 
   <div id="controls-container" style="z-index:3"></div>
-
-
   <script type="module" src="/src/main.js"></script>
 
 <script>
 
   // prevent mobile browser long-press vibration
   document.querySelector("#frontCanvas").addEventListener("touchstart", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      this.style.userSelect = "none";
+      try{ 
+        e.preventDefault();
+        e.stopPropagation();
+        this.style.userSelect = "none";
+      }catch( e ){
+        // do nothing
+      }
   });
 
   document.querySelector("#frontCanvas").addEventListener("touchend", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      this.style.userSelect = "default";
+      try{ 
+        e.preventDefault();
+        e.stopPropagation();
+        this.style.userSelect = "default";
+      }catch( e ){
+        // do nothing
+      }
   });
 </script>
 

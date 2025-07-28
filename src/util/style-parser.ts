@@ -6,9 +6,9 @@
  */
 
 import { Color } from 'three'
-import type { TilePart } from '../gfx/3d/tile-mesh'
-import type { TileColoringParams, TileColors } from '../gfx/styles/style'
-import { StartSequenceGame } from '../games/start-sequence-game'
+import type { TilePart } from 'gfx/3d/tile-mesh'
+import type { TileColoringParams, TileColors } from 'gfx/styles/style'
+import { StartSequenceGame } from 'games/imp/start-sequence-game'
 import { typedEntries } from './typed-entries'
 
 export type CssStyle = Partial<Record<Selector, CssRuleset>>

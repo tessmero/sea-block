@@ -29,7 +29,7 @@ import { CAMERA_LOOK_AT } from './settings'
 import type { TileIndex } from './core/grid-logic/indexed-grid'
 import type { SeaBlock } from './sea-block'
 
-let isTouch = false // set to true on first touch event -> ignore mouse events
+export let isTouchDevice = false // set to true on first touch event -> ignore mouse events
 
 type SubEvent = {
   screenPos: THREE.Vector2
@@ -66,8 +66,6 @@ const handlers: ReadonlyArray<EventHandler> = [
       'touchmove',
     ],
     action: (event, context) => {
-      context.mousePosForTestSupport = event.screenPos
-      
       const orbitControls = context.orbitControls as unknown as HackedOrbitControls
       // event.preventDefault()
 
@@ -80,6 +78,7 @@ const handlers: ReadonlyArray<EventHandler> = [
       let hasConsumed = false
       if (!isDraggingOrbitControls && !isZoomingOrbitControls) {
         // hasConsumed = context.game.gui.move(event)
+        // console.log('mouse-touch-input -> mouseMoveGuiLayers')
         hasConsumed = context.mouseMoveGuiLayers(event)
       }
 
@@ -158,7 +157,7 @@ const handlers: ReadonlyArray<EventHandler> = [
         })
         orbitControls._onMouseDown(simulatedEvent)
       }
-      // if (isTouch) event.preventDefault()
+      // if (isTouchDevice) event.preventDefault()
     },
   },
   {
@@ -180,7 +179,8 @@ const handlers: ReadonlyArray<EventHandler> = [
         zoomOrbitId = undefined
       }
 
-      context.game.gui.unclick(event)
+      context.unclickGuiLayers(event)
+      // context.game.gui.unclick(event)
       // event.preventDefault()
     },
   },
@@ -225,7 +225,7 @@ export function handleEvent(
   seaBlock: SeaBlock, event: Event,
   action: (event: ProcessedSubEvent, context: SeaBlock) => void,
 ) {
-  if (isTouch && event.type.startsWith('mouse')) {
+  if (isTouchDevice && event.type.startsWith('mouse')) {
     return // ignore event
   }
 
@@ -258,8 +258,8 @@ export function handleEvent(
     lvPos.x = screenPos.x * layeredViewport.pixelRatio
     lvPos.y = screenPos.y * layeredViewport.pixelRatio
 
-    if (!isTouch && event.type.startsWith('touch')) {
-      isTouch = true // assume all future events are touch
+    if (!isTouchDevice && event.type.startsWith('touch')) {
+      isTouchDevice = true // assume all future events are touch
     }
 
     // do event-type-specific action

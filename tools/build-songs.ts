@@ -32,13 +32,23 @@ async function main() {
 
   // build all songs
   for (const [songName, songParams] of Object.entries(SONGS_TO_BUILD)) {
-    const { src, adjust, cutoff, soundFount } = songParams
+    const { src, adjust, skip, cutoff, soundFount } = songParams
     const midi = loadMidi(src)
     const soundFont = loadedSoundFonts[soundFount || defaultSoundFont]
     const sampleCount = sampleRate * (midi.duration + 2) // two extra seconds at end
 
     // build synthesiser for one song
     const seq: SpessaSynthSequencer = await buildSongSynth(midi, soundFont)
+    if (skip) {
+      let ticks = 0
+      while (seq.midiData.MIDIticksToSeconds(ticks) < skip) {
+        ticks += 1000
+      }
+      seq.setTimeTicks(ticks)
+      // const seconds = seq.midiData.MIDIticksToSeconds(skip)
+      // console.log(`skipped ${skip} ticks -> ${seconds} seconds`)
+      // throw new Error(`skipped ${skip} ticks -> ${seconds} seconds`)
+    }
 
     // apply adjustments in song list
     if (adjust) adjust({ seq, synth: seq.synth })

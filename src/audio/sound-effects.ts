@@ -26,7 +26,7 @@ const SOUND_EFFECTS = {
 
 type SoundEffectName = keyof typeof SOUND_EFFECTS
 
-const multiplyAllVolumes = 0.04
+const multiplyAllVolumes = 0.06
 
 // create howl instance for each ogg
 const soundEffects: Record<SoundEffectName, Howl> = {} as Record<SoundEffectName, Howl>

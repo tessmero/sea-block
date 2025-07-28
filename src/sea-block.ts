@@ -6,9 +6,7 @@
 
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import { Gui } from 'gui'
-import { SETTINGS_MENU_LAYOUT } from 'gui/layouts/settings-menu-layout'
-import { styleBtn } from 'gui/elements/settings-menu'
+import { Gui } from 'guis/gui'
 import { preloadPixelTiles } from 'gfx/2d/pixel-tiles-gfx-helper'
 import type { ConfigButton, ConfigItem } from './configs/config-tree'
 import { TerrainGenerator } from './generators/terrain-generator'
@@ -17,25 +15,26 @@ import { getStyle, STYLES } from './gfx/styles/styles-list'
 import type { ProcessedSubEvent } from './mouse-touch-input'
 import { initMouseListeners } from './mouse-touch-input'
 import { CAMERA, GRID_DETAIL, PORTRAIT_CAMERA, STEP_DURATION } from './settings'
-import { randomTransition, Transition } from './gfx/transition'
-import { GAME_NAMES, type GameName, type GeneratorName } from './imp-names'
-import type { FlatElement, GameElement } from './games/game'
+import { Transition } from './gfx/transition'
+import { randomTransition } from './gfx/transition'
+import { GUI_NAMES, type GameName, type GeneratorName } from './imp-names'
 import { Game } from './games/game'
 import type { LayeredViewport } from './gfx/layered-viewport'
-import { StartSequenceGame } from './games/start-sequence-game'
+import { StartSequenceGame } from './games/imp/start-sequence-game'
 import { freeCamGameConfig } from './configs/free-cam-game-config'
 import { seaBlockConfig } from './configs/sea-block-config'
+import type { SeablockScene } from './gfx/3d/scene'
 import { buildScene } from './gfx/3d/scene'
 import { SphereGroup } from './core/groups/sphere-group'
 import { TileGroup } from './core/groups/tile-group'
-import { showDebugControls } from './util/debug-controls-gui'
+import { showDebugControls } from './util/debug-controls'
 import type { StyleParser } from './util/style-parser'
 import { FloraGroup } from './core/groups/flora-group'
 import { Tiling } from './core/grid-logic/tilings/tiling'
 import { TiledGrid } from './core/grid-logic/tiled-grid'
 import { gfxConfig } from './configs/gfx-config'
 import { physicsConfig } from './configs/physics-config'
-import { loadedImages, resetFrontLayer, updateFrontLayer } from './gfx/2d/flat-gui-gfx-helper'
+import { resetFrontLayer, updateFrontLayer } from './gfx/2d/flat-gui-gfx-helper'
 
 // can only be constructed once
 let didConstruct = false
@@ -62,23 +61,26 @@ export class SeaBlock {
   public didLoadAssets = false
   public readonly config = seaBlockConfig
 
-  public isSettingsMenuVisible = false
-  private settingsGui = new Gui(() => SETTINGS_MENU_LAYOUT, [styleBtn])
-  public toggleMenu() {
-    this.isSettingsMenuVisible = !this.isSettingsMenuVisible
-    this.settingsGui.refreshLayout(this)
-    resetFrontLayer()
+  // public isSettingsMenuVisible = false
+  // public toggleMenu() {
+  //   if (!settingsGui) {
+  //     settingsGui = Gui.create('settings-menu')
+  //   }
+  //   settingsGui.resetElementStates()
+  //   this.isSettingsMenuVisible = !this.isSettingsMenuVisible
+  //   settingsGui.refreshLayout(this)
+  //   resetFrontLayer()
 
-    // clear front layer
-    const { ctx, w, h } = this.layeredViewport
-    ctx.clearRect(0, 0, w, h)
-  }
+  //   // clear front layer
+  //   const { ctx, w, h } = this.layeredViewport
+  //   ctx.clearRect(0, 0, w, h)
+  // }
 
   // properties assigned in init
   currentGeneratorName!: GeneratorName
   generator!: TerrainGenerator
   style!: StyleParser
-  scene!: THREE.Scene
+  scene!: SeablockScene
   terrain!: TileGroup
   tileGfx!: TileGroupGfxHelper
   floraGroup!: FloraGroup
@@ -131,11 +133,6 @@ export class SeaBlock {
       1000, // far
     )
 
-    window.camPosForTestSupport = () => {
-      const { x, y, z } = this.camera.position
-      return [x, y, z]
-    }
-    
     this.orbitControls = new OrbitControls(
       this.camera,
       this.layeredViewport.backCanvas,
@@ -145,37 +142,24 @@ export class SeaBlock {
     // Responsive resize
     window.addEventListener('resize', () => this.onResize())
 
-    // start loading assets to populate elementsPerGame
-    const allElements: Array<GameElement> = []
-    for (const gameName of GAME_NAMES) {
-      const gameEntry = Game._registry[gameName]
-      // const layoutRectangles = parseLayoutRectangles(
-      //   this.layeredViewport.screenRectangle,
-      //   gameEntry.layout(this),
-      // )
-      allElements.push(...gameEntry.elements)
-    }
-    allElements.push(...this.settingsGui.elements)
-
-    const loadPromises: Array<Promise<void>> = []
+    const loadPromises: Array<Promise<void | Array<void>>> = []
     loadPromises.push(preloadPixelTiles())
-    loadPromises.push(...allElements.map(async (obj) => {
-      const ge = obj as GameElement
-      if ('imageFactory' in ge) {
-        const flatElem = obj as FlatElement
-        // const { w, h } = layoutRectangles[flatElem.layoutKey]
-        const { w, h } = flatElem
-        const image = flatElem.imageFactory(w, h)
-        // const loadedImage: LoadedImage = { image, ...flatElem }
-        loadedImages[flatElem.layoutKey] = image
-        return // loadedImage
-      }
-      else {
-        // const depthElem = obj as DepthElement
-        // const mesh = await depthElem.meshLoader()
-        return // { mesh, layoutKey: depthElem.layoutKey } satisfies LoadedElement
-      }
-    }))
+
+    // start generating images/meshes for all guis
+    for (const guiName of GUI_NAMES) {
+      loadPromises.push(Gui.preload(guiName, this))
+      // const registered = Gui._registry[guiName]
+      // const { allLayouts, layoutFactory, elements } = registered
+      // const layouts = allLayouts || [layoutFactory(this)]
+      // const elementDims = getElementDims(elements, layouts)
+      // loadPromises.push(...elements.map(async (elem) => {
+      //   const { w, h } = elementDims[elem.layoutKey]
+      //   getElementImageset({ ...elem.display, w, h })
+      //   // const imageset = getElementImageset({ ...elem.display, w, h })
+      //   // loadedImagesets[elem] = imageset // flat-gui-gfx-helper.ts
+      //   return
+      // }))
+    }
 
     Promise.all(
       Object.values(loadPromises),
@@ -225,6 +209,8 @@ export class SeaBlock {
     // update game
     game.update({ seaBlock: this, dt })
 
+    scene.update(this.orbitControls.target)
+
     // update game's camera-locked meshes
     // alignGuiGroup(cameraLockedGroup, this.camera)
 
@@ -235,7 +221,7 @@ export class SeaBlock {
     sphereGroup.update(this, nSteps)
 
     // render scene
-    this.layeredViewport.backRenderer.render(scene, camera)
+    this.layeredViewport.backRenderer.render(scene.threeScene, camera)
 
     // debug
     // const dist = camera.position.distanceTo(this.orbitControls.target)
@@ -296,6 +282,8 @@ export class SeaBlock {
   }
 
   private onFinishLoading() {
+    // console.log(`seablock onFinishLoading`)
+
     // listen for mouse/touch, process in 3d, pass through gui layers then orbit controls
     initMouseListeners(this)
 
@@ -343,6 +331,7 @@ export class SeaBlock {
     this.floraGroup = new FloraGroup(this.terrain).build()
     this.sphereGroup = new SphereGroup(10, this.terrain).build()
     this.scene = buildScene(this)
+    this.scene.setBackground(this.style.getBackgroundColor())
     this.scene.add(cameraLockedGroup)
     if (this.didLoadAssets) {
       // for (const [_gameName, loadedElems] of Object.entries(elementsPerGame)) {
@@ -373,6 +362,7 @@ export class SeaBlock {
   public onGameChange() {
     this.game = Game.create(this.config.flatConfig.game, this)
     this.showHideGameSpecificElems()
+    this.layeredViewport.handleResize(this)
   }
 
   private showHideGameSpecificElems() {
@@ -399,6 +389,10 @@ export class SeaBlock {
     gfxConfig.refreshConfig()
     generator.refreshConfig()
 
+    for (const gui of this.getLayeredGuis()) {
+      gui.resetElementStates()
+    }
+
     // check for special case: game changed
     const newGameName = this.config.flatConfig.game
     if (newGameName !== this.currentGameName) {
@@ -414,10 +408,17 @@ export class SeaBlock {
 
     // check for regular setting change
     if (item.resetOnChange === 'full') {
-      // start transition
-      this.transition = Transition.create('flat', this)
-      this.isCovering = true
-      return // wait for mid transition to actually update
+      if (this.config.flatConfig.transitionMode === 'skip') {
+        // skip transition
+        this.onMidTransition()
+        return // update done with midtransition
+      }
+      else {
+        // start transition
+        this.transition = Transition.create('flat', this)
+        this.isCovering = true
+        return // wait for mid transition to actually update
+      }
     }
     else if (item.resetOnChange === 'physics') {
       // soft reset (physics)
@@ -427,7 +428,7 @@ export class SeaBlock {
       // soft reset (graphics)
       StartSequenceGame.isColorTransformEnabled = false
       this.style = getStyle(this.config.flatConfig.style)
-      scene.background = this.style.getBackgroundColor()
+      scene.setBackground(this.style.getBackgroundColor())
       terrain.resetColors()
       this.onResize()
     }
@@ -456,7 +457,7 @@ export class SeaBlock {
       this.orbitControls.domElement = newCanvas
 
       // fullscreen
-      // document.documentElement.requestFullscreen()
+      document.documentElement.requestFullscreen()
 
       // wait two animation frames
       await new Promise<void>((resolve) => {
@@ -486,7 +487,6 @@ export class SeaBlock {
     this.generator = TerrainGenerator.create(this.currentGeneratorName)
     STYLES.default = this.generator.style
     this.style = getStyle(this.config.flatConfig.style)
-    scene.background = this.style.getBackgroundColor()
 
     // act as though game changed
     this.currentGameName = this.config.flatConfig.game
@@ -497,7 +497,7 @@ export class SeaBlock {
 
     // soft reset (graphics)
     this.style = getStyle(this.config.flatConfig.style)
-    scene.background = this.style.getBackgroundColor()
+    scene.setBackground(this.style.getBackgroundColor())
     terrain.resetColors()
     // this.onResize()
 
@@ -517,16 +517,27 @@ export class SeaBlock {
 
   // get visible guis starting with the front-most
   public getLayeredGuis(): ReadonlyArray<Gui> {
-    if (this.isSettingsMenuVisible) {
-      return [
-        this.settingsGui,
-        this.game.gui,
-      ]
+    const result = [this.game.gui]
+
+    const { testGui } = this.config.flatConfig
+    if (testGui === 'settings-menu') {
+      result.unshift(Gui.create('settings-menu'))
+    }
+    else if (testGui === 'sprite-atlas') {
+      result.unshift(Gui.create('sprite-atlas'))
     }
 
-    return [
-      this.game.gui,
-    ]
+    return result
+    // if (this.isSettingsMenuVisible && settingsGui) {
+    //   return [
+    //     settingsGui,
+    //     this.game.gui,
+    //   ]
+    // }
+
+    // return [
+    //   this.game.gui,
+    // ]
   }
 
   // allow gui layers to consume click/touch before orbit controls (mouse-touch-input.ts)
@@ -539,10 +550,17 @@ export class SeaBlock {
     return false // pass to orbit controls
   }
 
+  public unclickGuiLayers(event: ProcessedSubEvent) {
+    for (const gui of this.getLayeredGuis()) {
+      gui.unclick(event)
+    }
+  }
+
   // allow gui layers to consume drag before orbit controls (mouse-touch-input.ts)
   public mouseMoveGuiLayers(event: ProcessedSubEvent): boolean {
+    document.documentElement.style.cursor = 'default'
     for (const gui of this.getLayeredGuis()) {
-      if (gui.move(event)) {
+      if (gui.move(event)) { // may set cursor to pointer
         return true // consume event
       }
     }

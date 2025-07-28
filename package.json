@@ -3,17 +3,14 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "concurrently \"npx vite build\" \"npx serve dist\"",
-    "puppet": "vite build --config vite.config.prod.ts && NODE_OPTIONS='--loader ts-node/esm' mocha",
-    "zip": "cp -r reports dist && cd dist && zip -r sea-block.zip .",
-    "build:prod": "npm run puppet && npm run zip",
-    "build:quickprod": "vite build --config vite.config.prod.ts && npm run zip"
+    "build:prod": "vite build --config vite.config.prod.ts",
+    "test": "NODE_OPTIONS='--loader ts-node/esm' mocha"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "devDependencies": {
-    "demo-tests": "file:../demo-tests",
     "@eslint/js": "^9.29.0",
     "@stylistic/eslint-plugin": "^5.1.0",
     "@tonejs/midi": "^2.0.28",

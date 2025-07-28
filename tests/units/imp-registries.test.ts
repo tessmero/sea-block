@@ -7,7 +7,7 @@ import assert from 'assert'
 import { glob } from 'glob'
 import {
   CONFIGURABLE_NAMES, GAME_NAMES, GENERATOR_NAMES,
-  GRID_ANIM_NAMES, TILING_NAMES, TRANSITION_NAMES,
+  GRID_ANIM_NAMES, GUI_NAMES, TILING_NAMES, TRANSITION_NAMES,
 } from '../../src/imp-names'
 import { Game } from '../../src/games/game'
 import { Tiling } from '../../src/core/grid-logic/tilings/tiling'
@@ -15,10 +15,12 @@ import { TerrainGenerator } from '../../src/generators/terrain-generator'
 import { Transition } from '../../src/gfx/transition'
 import { GridAnimation } from '../../src/gfx/grid-anims/grid-animation'
 import { Configurable } from '../../src/configs/configurable'
+import { Gui } from '../../src/guis/gui'
 
 // populate registries by loading all implementations' source files
 const patterns = [
-  '../../src/games/**/*.ts',
+  '../../src/games/imp/**/*.ts',
+  '../../src/guis/imp/**/*.ts',
   '../../src/grid-logic/tilings/**/*.ts',
   '../../src/generators/**/*.ts',
   '../../src/configs/**/*.ts',
@@ -36,6 +38,7 @@ for (const pattern of patterns) {
 }
 const specs = [
   ['Game', Game, GAME_NAMES],
+  ['Gui', Gui, GUI_NAMES],
   ['Tiling', Tiling, TILING_NAMES],
   ['TerrainGenerator', TerrainGenerator, GENERATOR_NAMES],
   ['Transition', Transition, TRANSITION_NAMES],
@@ -54,16 +57,12 @@ describe('Implementation Registration', function () {
       for (const name of impNames) {
         it(`has registered "${name}" ${baseClassName} implementation`, function () {
           let factory
-          if (baseClassName === 'Game') {
-            // registered games have multiple properties
-            factory = BaseClass._registry[name].factory
-          }
-          else if (baseClassName === 'GridAnimation') {
-            // registered grid animations have multiple properties
+          if ((['Game', 'Gui', 'GridAnimation']).includes(baseClassName)) {
+            // registered with multiple properties
             factory = BaseClass._registry[name].factory
           }
           else {
-            // other registries just have factories
+            // registered with just factory
             factory = BaseClass._registry[name]
           }
 
