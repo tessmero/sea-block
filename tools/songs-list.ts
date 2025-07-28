@@ -17,37 +17,31 @@ export type SongParams = {
   src: string // path to (.mid) or (.ts) song data
   adjust?: Adjuster // transpose, change instruments, add effects
   soundFount?: keyof typeof SOUND_FONTS // override default sound font
-  cutoff?: number // (seconds) limit song length
+  skip?: number // (seconds) cut from start
+  cutoff?: number // (seconds) cut from end
 }
 type Adjuster = (params: { synth: SpessaSynthProcessor, seq: SpessaSynthSequencer }) => void
 
 // const tsSrc = (name: string) => `./music-data/ts/${name}.ts`
-// const classicalMidi = (name: string) => `./music-data/midi/www-kunstderfuge-com/${name}.mid`
-const trapMidi = (name: string) => `./music-data/midi/mullen-solace/${name}.mid`
+const classicalMidi = (name: string) => `./music-data/midi/www-kunstderfuge-com/${name}.mid`
+// const trapMidi = (name: string) => `./music-data/midi/mullen-solace/${name}.mid`
 
 export const SONGS_TO_BUILD: Record<string, SongParams> = {
 
-  'm-figment': {
-    src: trapMidi('M. Figment - 162 BPM'),
-    adjust: ({ synth }) => {
-      synth.programChange(0, 29) // 29 overdrive guitar
-      // synth.controllerChange(0, 1, 50) // add 50% vibrato
-      // synth.transposeAllChannels(4) // pitch up
+  // Albeniz / Granada
+  albeniz: {
+    src: classicalMidi('granada_(c)yogore'),
+    adjust: ({ synth, seq }) => {
+      seq.playbackRate = 0.5 // slow down
+      synth.programChange(0, 34) // 34 picked bass
+      synth.programChange(1, 34) // 34 picked bass
+      synth.programChange(2, 34) // 34 picked bass
+      synth.midiAudioChannels[0].transposeChannel(-12) // pitch down
+      synth.midiAudioChannels[1].transposeChannel(-12) // pitch down
     },
+    skip: 69.5,
+    cutoff: 88.8,
   },
-
-  // // songs from demos on tessmero.github.io
-  // 'wheely': { src: tsSrc('wheely') },
-  // 'chess': { src: tsSrc('chess') },
-  // 'orbital-launch': { src: tsSrc('orbital-launch') },
-  // 'avalanche': { src: tsSrc('avalanche') },
-  // 'fight-cub': { src: tsSrc('fight-cub') },
-  // 'sketch-ball': { src: tsSrc('sketch-ball') },
-  // 'space-quest': { src: tsSrc('space-quest') },
-  // 'cube-dance': { src: tsSrc('cube-dance') },
-  // 'rail-layer': { src: tsSrc('rail-layer') },
-  // 'boating-school': { src: tsSrc('boating-school') },
-  // 'grove-tender': { src: tsSrc('grove-tender') },
 
   // // Mozart / Andante cantabile con espressione
   // 'mozart': {
@@ -91,5 +85,27 @@ export const SONGS_TO_BUILD: Record<string, SongParams> = {
   //   },
   //   // cutoff: 79, // end early
   // },
+
+  // 'm-figment': {
+  //   src: trapMidi('M. Figment - 162 BPM'),
+  //   adjust: ({ synth }) => {
+  //     synth.programChange(0, 29) // 29 overdrive guitar
+  //     // synth.controllerChange(0, 1, 50) // add 50% vibrato
+  //     // synth.transposeAllChannels(4) // pitch up
+  //   },
+  // },
+
+  // // songs from demos on tessmero.github.io
+  // 'wheely': { src: tsSrc('wheely') },
+  // 'chess': { src: tsSrc('chess') },
+  // 'orbital-launch': { src: tsSrc('orbital-launch') },
+  // 'avalanche': { src: tsSrc('avalanche') },
+  // 'fight-cub': { src: tsSrc('fight-cub') },
+  // 'sketch-ball': { src: tsSrc('sketch-ball') },
+  // 'space-quest': { src: tsSrc('space-quest') },
+  // 'cube-dance': { src: tsSrc('cube-dance') },
+  // 'rail-layer': { src: tsSrc('rail-layer') },
+  // 'boating-school': { src: tsSrc('boating-school') },
+  // 'grove-tender': { src: tsSrc('grove-tender') },
 
 }

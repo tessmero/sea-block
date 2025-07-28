@@ -4,11 +4,11 @@
  * Original sea-block moving sphere controls impemented as a game.
  */
 import { Color, Vector3 } from 'three'
-import type { SeaBlock } from '../sea-block'
-import type { Sphere } from '../core/sphere'
-import type { ProcessedSubEvent } from '../mouse-touch-input'
-import { Game } from './game'
-import type { GameUpdateContext } from './game'
+import type { SeaBlock } from 'sea-block'
+import type { Sphere } from 'core/sphere'
+import type { ProcessedSubEvent } from 'mouse-touch-input'
+import { Game } from '../game'
+import type { GameUpdateContext } from '../game'
 
 // const PLAYER_ACCEL = 5e-5 // strength of user direction force
 // const MOUSE_DEADZONE = 50 // (px) center of screen with zero force
@@ -20,8 +20,7 @@ export class SphereTestGame extends Game {
   static {
     Game.register('sphere-test', {
       factory: () => new SphereTestGame(),
-      elements: [],
-      layout: () => ({}),
+      guiName: 'empty',
     })
   }
 

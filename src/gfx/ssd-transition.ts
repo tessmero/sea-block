@@ -52,6 +52,11 @@ export class SsdTransition extends Transition {
     this.ssdShow[1].cleanupHide()
   }
 
+  public cleanupShow(): void {
+    this.ssdShow[0].cleanupShow() // clear front layer
+    this.ssdShow[1].cleanupShow() // unwarp terrain
+  }
+
   public _show(t0: number, t1: number): void {
     const [first, second] = this.ssdShow
     if (t0 < 0.5) {

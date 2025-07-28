@@ -1,7 +1,7 @@
 /**
- * @file debug-controls-gui.ts
+ * @file debug-controls.ts
  *
- * Used in sea-block.ts to display config tree as html elements.
+ * Used to display seaBlockConfig tree as html elements.
  */
 import * as dat from 'lil-gui'
 import type { ConfigTree, NumericItem, OptionItem } from '../configs/config-tree'
@@ -10,6 +10,17 @@ import type { SeaBlock } from '../sea-block'
 let _allControls: Record<string, dat.GUIController> = {}
 
 let gui: dat.GUI
+
+export function toggleDebugControls(seaBlock: SeaBlock) {
+  if (gui && !gui._closed) {
+    // gui.close() // doesn't show animation like clicking collapse button
+    gui.destroy()
+    gui = undefined
+  }
+  else {
+    showDebugControls(seaBlock)
+  }
+}
 
 export function showDebugControls(seaBlock: SeaBlock) {
   const config = seaBlock.config.tree
@@ -40,6 +51,7 @@ export function showDebugControls(seaBlock: SeaBlock) {
       // hide after collapsing animation
       setTimeout(() => {
         gui.destroy()
+        seaBlock.game.gui.resetElementStates() // unclick button in in-game gui
       }, 200)
     }
   })

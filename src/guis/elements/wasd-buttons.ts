@@ -1,11 +1,10 @@
 /**
  * @file wasd-buttons.ts
  *
- * Up/down/left/right buttons that are loaded on startup.
+ * Up/down/left/right buttons.
  */
 
-import type { GameElement } from 'games/game'
-import { iconButton } from 'gfx/2d/flat-button'
+import type { GuiElement } from 'guis/gui'
 import type { KeyCode } from 'input-id'
 
 export const wasdInputState = {
@@ -19,14 +18,11 @@ function wasdButton(
   layoutKey: string,
   direction: 'up' | 'down' | 'left' | 'right',
   hotkeys: ReadonlyArray<KeyCode>,
-): GameElement {
+): GuiElement {
   return {
-    w: 16, h: 16,
+    display: { type: 'button', icon: `icons/16x16-arrow-${direction}.png` },
     layoutKey: layoutKey,
     hotkeys: hotkeys,
-    imageFactory: (w, h) => iconButton(w, h,
-      `icons/16x16-btn-arrow-${direction}.png`,
-    ),
     // imageLoader: simpleButtonLoader(direction, '20px "Micro5"'),
     clickAction: (_seaBlock) => {
       wasdInputState[layoutKey] = true
@@ -37,7 +33,7 @@ function wasdButton(
   }
 }
 
-export const wasdButtons: ReadonlyArray<GameElement> = [
+export const wasdButtons: ReadonlyArray<GuiElement> = [
   wasdButton('upBtn', 'up', ['KeyW', 'ArrowUp']),
   wasdButton('downBtn', 'down', ['KeyS', 'ArrowDown']),
   wasdButton('leftBtn', 'left', ['KeyA', 'ArrowLeft']),

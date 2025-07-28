@@ -5,18 +5,15 @@
  */
 import type { Vector2 } from 'three'
 import { Color, Vector3 } from 'three'
-import { CAMERA_LOOK_AT } from '../settings'
-import type { SeaBlock } from '../sea-block'
-import { freeCamGameConfig } from '../configs/free-cam-game-config'
-import type { Sphere } from '../core/sphere'
-import type { TileIndex } from '../core/grid-logic/indexed-grid'
-import { FREECAM_DESKTOP_LAYOUT } from '../gui/layouts/freecam-desktop-layout'
-import { FREECAM_PORTRAIT_LAYOUT } from '../gui/layouts/freecam-portrait-layout'
-import { FREECAM_LANDSCAPE_LAYOUT } from '../gui/layouts/freecam-landscape-layout'
-import { wasdButtons, wasdInputState } from '../gui/elements/wasd-buttons'
-import { configBtn, leftJoy, musicBtn, rightJoy } from '../gui/elements/misc-buttons'
-import { Game } from './game'
-import type { GameUpdateContext } from './game'
+import { CAMERA_LOOK_AT } from 'settings'
+import type { SeaBlock } from 'sea-block'
+import { freeCamGameConfig } from 'configs/free-cam-game-config'
+import type { Sphere } from 'core/sphere'
+import type { TileIndex } from 'core/grid-logic/indexed-grid'
+import { wasdInputState } from 'guis/elements/wasd-buttons'
+import { getLeftJoystickInput, leftDead, orbitWithRightJoystick } from 'guis/elements/joysticks'
+import { Game } from '../game'
+import type { GameUpdateContext } from '../game'
 
 export const MOUSE_DEADZONE = 50 // (px) center of screen with zero force
 export const MOUSE_MAX_RAD = 200 // (px) radius with max force
@@ -31,34 +28,15 @@ export class FreeCamGame extends Game {
   static {
     Game.register('free-cam', {
       factory: () => new FreeCamGame(),
-      elements: [
-        musicBtn,
-        configBtn,
-        leftJoy,
-        rightJoy,
-        ...wasdButtons,
-      ],
-      layout: (context: SeaBlock) => {
-        // context.config.refreshConfig()
-        const lyt = context.config.flatConfig.freeCamLayout
-        if (lyt === 'portrait') {
-          return FREECAM_PORTRAIT_LAYOUT
-        }
-        else if (lyt === 'landscape') {
-          return FREECAM_LANDSCAPE_LAYOUT
-        }
-        else {
-          return FREECAM_DESKTOP_LAYOUT
-        }
-      },
+      guiName: 'free-cam',
     })
   }
 
-  public doesAllowOrbitControls(context: SeaBlock): boolean {
-    const lyt = context.config.flatConfig.freeCamLayout
-    if (lyt === 'landscape') {
-      return false // use right joystick instead
-    }
+  public doesAllowOrbitControls(_context: SeaBlock): boolean {
+    // const lyt = context.config.flatConfig.freeCamLayout
+    // if (lyt === 'landscape') {
+    //   return false // use right joystick instead of orbit controls
+    // }
     return true
   }
 
@@ -165,19 +143,35 @@ export class FreeCamGame extends Game {
     //   if (x > w - margin) isRightHeld = true
     // }
 
+    // WASD input
     if (isUpHeld) moveVec.sub(forward)
     if (isDownHeld) moveVec.add(forward)
     if (isLeftHeld) moveVec.add(right)
     if (isRightHeld) moveVec.sub(right)
 
-    if (moveVec.lengthSq() > 0) moveVec.normalize()
+    let moveMagnitude = 0
+    if (moveVec.lengthSq() > 0) {
+      // moveVec.normalize()
+      moveMagnitude = 1
+    }
+
+    // left joystick input
+    const joyInput = getLeftJoystickInput()
+    if (joyInput) {
+      const { x, y } = joyInput
+      moveMagnitude = Math.min(1, (Math.hypot(x, y) - leftDead) * 2)
+      moveVec.addScaledVector(right, -x)
+      moveVec.addScaledVector(forward, y)
+    }
 
     // 4. Apply movement to intersection (copy anchor position first)
     const step = 10 // Or whatever step size you prefer
     targetDummy.copy(this.cameraAnchor.position)
       .addScaledVector(moveVec, step)
 
-    this.accelSphere(this.cameraAnchor, targetDummy, dt * CAM_ACCEL)
+    this.accelSphere(this.cameraAnchor, targetDummy, dt * CAM_ACCEL * moveMagnitude)
+
+    orbitWithRightJoystick(seaBlock, dt) // gui/elements/joysticks.ts
   }
 
   protected accelSphere(sphere: Sphere, intersection: Vector3, magnitude: number) {

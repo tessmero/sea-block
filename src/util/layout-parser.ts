@@ -17,6 +17,7 @@ export type ComputedRects = Readonly<Record<string, Rectangle>>
 export type CssRuleset = Readonly<Partial<
   { [K in CssKey]: CssValue }
   & { parent: string }
+  & { children: CssLayout }
 >>
 
 // parsed output for one rectangle
@@ -42,10 +43,28 @@ class GuiLayoutParser {
 
   private parent: Rectangle
 
+  private _currentLayoutKey: string = ''
+  private _childrenToParse: Record<string, CssLayout> = {}
+
   constructor(screenRect: Rectangle, css: CssLayout) {
     this.parent = screenRect
     for (const [key, rules] of Object.entries(css)) {
+      this.parent = screenRect
+      this._currentLayoutKey = key
       this._computedRects[key] = this.floorRect(this.computeRect(rules))
+    }
+
+    // parse any sub-layouts defined in 'children' properties
+    const toParse = this._childrenToParse
+    while (Object.keys(toParse).length > 0) {
+      const parentKey = Object.keys(toParse)[0]
+      const subLayout = toParse[parentKey]
+      delete toParse[parentKey]
+      const parentRect = this._computedRects[parentKey]
+      const { _computedRects: subRects } = new GuiLayoutParser(parentRect, subLayout)
+      for (const subKey in subRects) {
+        this._computedRects[`${parentKey}.${subKey}`] = subRects[subKey]
+      }
     }
   }
 
@@ -69,6 +88,9 @@ class GuiLayoutParser {
         }
         this.parent = this._computedRects[cssVal] // rectangle of array of rectangles
         rect = { ...this.parent }
+      }
+      else if (cssKey === 'children') {
+        this._childrenToParse[this._currentLayoutKey] = cssVal as CssLayout
       }
       else {
       // Standard CSS rule application

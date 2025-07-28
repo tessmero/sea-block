@@ -6,9 +6,7 @@
 
 import { Vector3 } from 'three'
 import { freeCamGameConfig } from 'configs/free-cam-game-config'
-import { SPLASH_SCREEN_LAYOUT } from 'gui/layouts/splash-screen-layout'
-import { launchBtn } from 'gui/elements/misc-buttons'
-import { Game, type GameUpdateContext } from './game'
+import { Game, type GameUpdateContext } from '../game'
 import { FreeCamGame } from './free-cam-game'
 
 const target = new Vector3(-1e9, 30, -1e9)
@@ -20,10 +18,7 @@ export class SplashScreenGame extends FreeCamGame {
   static {
     Game.register('splash-screen', {
       factory: () => new SplashScreenGame(),
-      elements: [
-        launchBtn,
-      ],
-      layout: () => (SPLASH_SCREEN_LAYOUT),
+      guiName: 'splash-screen',
     })
   }
 

@@ -11,20 +11,15 @@ import { gfxConfig } from 'configs/gfx-config'
 import type { SeaBlock } from 'sea-block'
 import { freeCamGameConfig } from 'configs/free-cam-game-config'
 import { michaelConfig } from 'configs/michael-config'
-import { START_SEQUENCE_LAYOUT } from 'gui/layouts/start-sequence-layout'
-import { skipBtn } from 'gui/elements/misc-buttons'
+import type { GameUpdateContext } from '../game'
+import { Game } from '../game'
 import { FreeCamGame } from './free-cam-game'
-import type { GameUpdateContext } from './game'
-import { Game } from './game'
 
 export class StartSequenceGame extends FreeCamGame {
   static {
     Game.register('start-sequence', {
       factory: () => new StartSequenceGame(),
-      elements: [
-        skipBtn,
-      ],
-      layout: () => START_SEQUENCE_LAYOUT,
+      guiName: 'start-sequence',
     })
   }
 
@@ -88,11 +83,9 @@ export class StartSequenceGame extends FreeCamGame {
     }
 
     if (this.traveled >= this.distForFreeCam) {
-      if (!seaBlock.didBuildControls) {
-        seaBlock.rebuildControls()
-      }
-      // super.update(context) // behave like free cam game
-      // gridConfig.children.game.value = 'free-cam'
+      // if (!seaBlock.didBuildControls) {
+      //   seaBlock.rebuildControls()
+      // }
       StartSequenceGame.isColorTransformEnabled = false
       seaBlock.setGame('free-cam')
       seaBlock.onGameChange()
