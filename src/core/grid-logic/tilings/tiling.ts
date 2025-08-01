@@ -60,4 +60,15 @@ export abstract class Tiling {
     const instance = factory()
     return instance
   }
+
+  static getAllShapes(): Array<TileShape> {
+    const result: Array<TileShape> = []
+
+    for (const name in this._registry) {
+      const instance = this.create(name as TilingName)
+      result.push(...instance.shapes)
+    }
+
+    return result
+  }
 }

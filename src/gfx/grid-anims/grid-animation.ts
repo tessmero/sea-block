@@ -42,12 +42,18 @@ export abstract class GridAnimation {
 
   // get interpolated value for tile at time (0-1)
   public getTileValue(tile: TileIndex, time: number) {
-    const { t0, t1, val0, val1 } = this.tileAnims[tile.i]
+    // if (tile.i > this.tileAnims.length) {
+    //   throw new Error(`grid animation init with n-${this.initGrid.n}, now tile has i=${tile.i}`)
+    // }
+    const { t0, t1, val0, val1 } = this.tileAnims[tile.i % this.tileAnims.length]
     const r = Math.max(0, Math.min(1, (time - t0) / (t1 - t0)))
     return val0 + r * (val1 - val0)
   }
 
+  private initGrid!: IndexedGrid
+
   public init(grid: IndexedGrid) {
+    this.initGrid = grid
     const anims: Array<TileAnimation> = []
     for (const tile of grid.tileIndices) {
       anims.push(this.buildTileAnim(grid, tile))
@@ -68,13 +74,18 @@ export abstract class GridAnimation {
   protected constructor() {}
 
   static register(name: GridAnimName, rga: RegisteredGA): void {
+    // console.log(`register grid anim ${name}`)
     if (name in this._registry) {
-      throw new Error(`Transition already registered: '${name}'`)
+      throw new Error(`grid anim already registered: '${name}'`)
     }
     this._registry[name] = rga
   }
 
   static create(name: GridAnimName, grid: IndexedGrid): GridAnimation {
+    if (!(name in this._registry)) {
+      throw new Error(`grid anim not registered: ${name}: ${JSON.stringify(Object.keys(this._registry))}`)
+    }
+
     const { factory } = this._registry[name]
     const instance = factory()
 
