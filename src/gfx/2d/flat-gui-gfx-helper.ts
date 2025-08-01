@@ -10,6 +10,7 @@
 import type { SeaBlock } from 'sea-block'
 import { playSound } from 'audio/sound-effects'
 import type { ButtonState, ElementId, Gui, GuiElement } from 'guis/gui'
+import type { SpriteAtlasGui } from 'guis/imp/sprite-atlas-gui'
 import { getElementImageset } from './element-imageset-builder'
 
 // export const loadedImagesets: Record<string, ElementImageset> = {} // populated at startup
@@ -39,13 +40,26 @@ export function updateFrontLayer(seaBlock: SeaBlock) {
   for (const gui of ([...seaBlock.getLayeredGuis()]).reverse()) {
     const overrideLayout = gui.overrideLayoutRectangles
     const layout = gui.layoutRectangles
-    // const occlusions = gui.elementOcclusions // occlusions within layer
+    const occlusions = gui.elementOcclusions // occlusions within layer
 
     for (const id in gui.elements) {
       const elem: GuiElement = gui.elements[id]
       const { display, layoutKey } = elem
       if ('isVisible' in display && !display.isVisible) {
         continue // isVisible set to false
+      }
+
+      if (display.forcedSliderState && 'slideIn' in elem) {
+        const { slideIn } = elem
+        const { x, y } = display.forcedSliderState
+        const { w, h } = layout[layoutKey]
+        const container = overrideLayout[slideIn] || layout[slideIn]
+        overrideLayout[layoutKey] = {
+          x: container.x + x * (container.w - w),
+          y: container.y + y * (container.h - h),
+          w, h,
+        }
+        display.forcedSliderState = undefined
       }
       const rect = overrideLayout[layoutKey] || layout[layoutKey]
       if (!rect) {
@@ -97,20 +111,27 @@ export function updateFrontLayer(seaBlock: SeaBlock) {
           ctx.clearRect(rect.x, rect.y, rect.w, rect.h)
         }
 
-        // console.log(`drawing element with layout key ${layoutKey} state ${stateToDraw}`)
-        ctx.drawImage(
-          imageset[stateToDraw] as CanvasImageSource,
-          rect.x,
-          rect.y,
-        )
+        if (display.type === 'sprite-atlas') {
+          (gui as SpriteAtlasGui).drawAtlasView(ctx, rect)
+        }
+        else {
+          // not sprite-atlas
+          // console.log(`drawing element with layout key ${layoutKey} state ${stateToDraw}`)
+          ctx.drawImage(
+            imageset[stateToDraw] as CanvasImageSource,
+            rect.x,
+            rect.y,
+          )
+        }
+
         lastDrawnState[id] = stateToDraw
 
-        // // queue update for overlapping elements in front (should be later in this loop)
-        // for (const occludingId of occlusions[id]) {
-        //   delete lastDrawnState[occludingId]
+        // queue update for overlapping elements in front (should be later in this loop)
+        for (const occludingId of occlusions[id]) {
+          delete lastDrawnState[occludingId]
 
-        //   console.log(`redraw (${id}) occluded by (${occludingId})`)
-        // }
+          // console.log(`redraw (${id}) occluded by (${occludingId})`)
+        }
       }
     }
   }

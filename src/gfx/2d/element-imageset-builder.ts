@@ -10,9 +10,16 @@ import type { ImageAssetUrl } from './image-asset-loader'
 import { getImage } from './image-asset-loader'
 import type { FontVariant, TextAlign } from './pixel-text-gfx-helper'
 import { drawText } from './pixel-text-gfx-helper'
+import { addToSpriteAtlas } from './sprite-atlas'
 
-export type ElementType = 'button' | 'panel' | 'label' | 'joyRegion'
-export type BorderVariant = 'shiny' | 'square'
+export type ElementType
+  = 'button' | 'panel' | 'label'
+    | 'joyRegion' // special case, clear region behind element
+    | 'sprite-atlas' // special case, atlas buffer excluded from atlas
+
+export type BorderVariant
+  = '16x16-btn-shiny' | '16x16-btn-square'
+//   | '48x48-joy-region' | '24x24-joy-slider'
 
 // parameters that define unique generated imageset
 export type BlankParams = {
@@ -24,14 +31,13 @@ export type BlankParams = {
   textAlign?: TextAlign
 }
 
+// an imageset may have a label or an icon, but not both
 interface IconParams extends BlankParams {
   icon: ImageAssetUrl
 }
-
 interface LabelParams extends BlankParams {
   label: string
 }
-
 export type ElementImagesetParams = BlankParams | IconParams | LabelParams
 
 function getHash(params: ElementImagesetParams): string {
@@ -43,11 +49,11 @@ function getHash(params: ElementImagesetParams): string {
 
 const cache: Record<string, ElementImageset> = {}
 
-export type ElementImageset = Partial<Record<ButtonState, CanvasImageSource>>
+export type ElementImageset = Partial<Record<ButtonState, OffscreenCanvas>>
 
 export function getElementImageset(rawParams: ElementImagesetParams): ElementImageset {
   const params: ElementImagesetParams = {
-    border: 'shiny', font: 'default', textAlign: 'center',
+    border: '16x16-btn-shiny', font: 'default', textAlign: 'center',
     ...rawParams,
   }
   const key = getHash(params)
@@ -62,16 +68,36 @@ const imagesetBuilders: Record<
     ElementType,
     (params: ElementImagesetParams) => ElementImageset
   > = {
-    button: _buildButtonImageset,
-    label: _buildLabelImageset,
-    panel: _buildPanelImageset,
-    joyRegion: _buildJoyRegionImageset,
+    'button': _buildButtonImageset,
+    'label': _buildLabelImageset,
+    'panel': _buildPanelImageset,
+    'joyRegion': _buildJoyRegionImageset,
+    'sprite-atlas': _buildAtlasImageset,
   }
 
 function buildImageset(params: ElementImagesetParams): ElementImageset {
   const { type } = params
   const builder = imagesetBuilders[type]
-  return builder(params)
+  const result = builder(params)
+
+  if (type !== 'sprite-atlas') { // don't include atlas buffer in atlas
+    // add new images to atlas
+    const uniqueImages = new Set(Object.values(result))
+    for (const img of uniqueImages) {
+      addToSpriteAtlas(img)
+    }
+  }
+
+  return result
+}
+
+function _buildAtlasImageset(_params: ElementImagesetParams): ElementImageset {
+  // console.log(`build atlas imageset ${JSON.stringify(params)}`)
+
+  const image = new OffscreenCanvas(500, 500)
+  return {
+    default: image,
+  }
 }
 
 function _buildJoyRegionImageset(params: ElementImagesetParams): ElementImageset {
@@ -157,7 +183,7 @@ function _buildButtonImageset(params: ElementImagesetParams): ElementImageset {
 
     // border must have been explicit or filled in with default
     const border = params.border as BorderVariant
-    const borderSrc: ImageAssetUrl = `borders/16x16-btn-${border}-${state}.png`
+    const borderSrc: ImageAssetUrl = `borders/${border}-${state}.png`
 
     if ('label' in params) {
       image = buildSimpleButtonImage(borderSrc, params)
@@ -177,6 +203,8 @@ function _buildButtonImageset(params: ElementImagesetParams): ElementImageset {
 
 function buildIconButtonImage(borderSrc: ImageAssetUrl, params: IconParams): OffscreenCanvas {
   const { w: width, h: height, icon } = params
+
+  // console.log('borderSrc', borderSrc)
 
   const buffer = new OffscreenCanvas(width, height)
 
@@ -214,6 +242,14 @@ function buildIconButtonImage(borderSrc: ImageAssetUrl, params: IconParams): Off
 }
 
 async function drawBorder(rawBorder, ctx, width, height) {
+  if (rawBorder.width === width && rawBorder.height === height) {
+    ctx.drawImage(rawBorder, 0, 0)
+    // console.log('unstretched border')
+    return
+  }
+
+  // console.log('stretched border')
+
   // Corner sizes
   const corner = 8
   // Draw corners

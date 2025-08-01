@@ -6,30 +6,60 @@
 
 import type { CssLayout } from 'util/layout-parser'
 
+const titleBarThickness = 16
+const scrollBarThickness = 16
+
 export const SPRITE_ATLAS_GUI_LAYOUT = {
 
   backPanel: {
-    width: 128,
-    height: 128,
-    left: 0,
-    top: 16,
+    // width: fullWidth,
+    // height: fullHeight,
+
+    // left: 'auto',
+    // top: 'auto',
+    // left: 0,
+    // top: 16,
   },
 
-  draggablePanel: {
+  titleBar: {
     parent: 'backPanel',
-    width: 100,
+    height: titleBarThickness,
+  },
+
+  titleBarLabel: {
+    parent: 'titleBar',
+    width: -titleBarThickness,
+  },
+
+  closeBtn: {
+    parent: 'titleBar',
+    width: titleBarThickness,
+    right: 0,
+  },
+
+  // region under title bar
+  _main: {
+    parent: 'backPanel',
+    height: -titleBarThickness,
+    bottom: 0,
+  },
+
+  viewPanel: {
+    parent: '_main',
+    width: -scrollBarThickness,
   },
 
   scrollBar: {
-    parent: 'backPanel',
-    width: 10,
+    parent: '_main',
+    width: scrollBarThickness,
     right: 0,
+    bottom: 0,
   },
 
   scrollBarSlider: {
     parent: 'scrollBar',
-    width: 10,
-    height: 20,
+    width: scrollBarThickness,
+    height: 2 * scrollBarThickness,
   },
 
 } as const satisfies CssLayout

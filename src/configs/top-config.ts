@@ -5,29 +5,38 @@
  */
 
 import type { GameName, GeneratorName, TilingName } from '../imp-names'
-import { GAME_NAMES, GENERATOR_NAMES, TILING_NAMES } from '../imp-names'
+import { GAME, GENERATOR, TILING } from '../imp-names'
 import { randChoice } from '../util/rng'
 import { Configurable } from './configurable'
 import type { ConfigTree, OptionItem } from './config-tree'
+
+export const isDevMode = false
+function applyDevMode(cfg: typeof topConfigTree.children) {
+  cfg.game.value = 'free-cam'
+  // cfg.game.isHidden = false
+
+  cfg.testGui.value = 'sprite-atlas'
+  cfg.testGui.isHidden = false
+}
 
 const topConfigTree = {
   children: {
 
     generator: {
       value: 'Michael2-3B', // randChoice(Object.keys(allGenerators)),
-      options: GENERATOR_NAMES,
+      options: GENERATOR.NAMES,
       resetOnChange: 'full',
     } as OptionItem<GeneratorName>,
 
     tiling: {
       value: randChoice(['square', 'octagon'] as const),
-      options: TILING_NAMES,
+      options: TILING.NAMES,
       resetOnChange: 'full',
     } as OptionItem<TilingName>,
 
     game: {
       value: 'start-sequence',
-      options: GAME_NAMES,
+      options: GAME.NAMES,
       isHidden: true,
     } as OptionItem<GameName>,
 
@@ -39,8 +48,8 @@ const topConfigTree = {
 
     testGui: {
       value: 'none',
-      options: ['none', 'settings-menu', 'sprite-atlas'],
-      isHidden: true,
+      options: ['none', 'sprite-atlas'],
+      // isHidden: true,
     } as OptionItem<'none' | 'settings-menu' | 'sprite-atlas'>,
 
     transitionMode: {
@@ -48,24 +57,16 @@ const topConfigTree = {
       value: 'enabled',
       options: ['enabled', 'skip'],
     } as OptionItem<'enabled' | 'skip'>,
-
-    // debug: {
-    //   value: 'none',
-    //   // value: 'pick-tile',
-    //   options: ['none', 'pick-direction', 'pick-tile'],
-
-    //   // { value: 'none', tooltip: 'No debugging. Mouse input controls player movement' },
-    //   // { value: 'pick-direction', tooltip: 'Show picked point at sea level used for movement direction' },
-    //   // { value: 'pick-tile', tooltip: 'Show picked tile, neighboring tiles, and normal vector' },
-    //   isHidden: true,
-    // } as OptionItem<'none' | 'pick-direction' | 'pick-tile'>,
-
   },
 } satisfies ConfigTree
 
+if (isDevMode) {
+  applyDevMode(topConfigTree.children)
+}
+
 class TopConfig extends Configurable<typeof topConfigTree> {
-  static { Configurable.register('grid', () => new TopConfig()) }
+  static { Configurable.register('top', () => new TopConfig()) }
   tree = topConfigTree
 }
 
-export const topConfig = Configurable.create('grid') as TopConfig
+export const topConfig = Configurable.create('top') as TopConfig

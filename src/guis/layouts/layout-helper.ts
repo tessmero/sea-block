@@ -39,6 +39,13 @@ export const standards = {
 // common buttons at top of screen
 export const commonLayout = {
 
+  // 2027-08-01 show sprite atlas test gui
+  spritAtlasBtn: {
+    ...btn,
+    width: 5 * btn.width,
+    left: 'auto',
+  },
+
   // config on top left
   configBtn: { ...btn,
     top: pad,

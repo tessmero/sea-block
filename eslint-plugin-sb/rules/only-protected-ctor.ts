@@ -2,6 +2,7 @@
  * @file only-protected-ctor.ts
  *
  * Require classes to have explicit "protected constructor".
+ * Used to enforce static registry pattern in certain base classes.
  */
 import { ESLintUtils, TSESTree } from '@typescript-eslint/utils'
 

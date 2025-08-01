@@ -4,12 +4,18 @@
  * Sliders used as virtual joysticks in free-cam-gui.
  */
 
-import type { ElementEvent, GuiElement, Slider } from 'guis/gui'
+import type { ElementEvent, GuiElement, Slider, SliderState } from 'guis/gui'
 import type { SeaBlock } from 'sea-block'
 
-export const joyInputState = {
-  left: { x: 0.5, y: 0.5 }, // neutral
-  right: { x: 0.5, y: 0.5 },
+// centered stick position
+const neutral = {
+  x: 0.5, y: 0.5,
+} as const satisfies SliderState
+
+// current state of the two joysticks
+export const joyInputState: Record<string, SliderState> = {
+  left: neutral,
+  right: neutral,
 }
 
 // deadzones (distances from neutral) where input is ignored
@@ -18,74 +24,82 @@ const leftDeadSq = Math.pow(leftDead, 2)
 const rightYDead = 0.2 // usually don't want to pitch up or down
 const rightXDead = 0.05 // usually do want to rotate left or right
 
+// left touch region
 export const leftJoy: GuiElement = {
-  display: { type: 'joyRegion' },
+  display: {
+    type: 'joyRegion',
+    border: '16x16-btn-square',
+  },
   layoutKey: 'leftJoy',
   hotkeys: [],
 }
 
+// left draggable element
 export const leftJoySlider: Slider = {
-
-  display: { type: 'button', icon: 'icons/16x16-pan.png' },
+  display: {
+    type: 'button',
+    icon: 'icons/16x16-pan.png',
+    border: '16x16-btn-shiny',
+  },
   layoutKey: 'leftJoySlider',
   slideIn: 'leftJoy',
+  slideRadius: 12,
   hotkeys: [],
   clickAction: slideLeft,
   dragAction: slideLeft,
   unclickAction: () => {
     leftJoy.display.needsUpdate = true
     leftJoy.display.forcedState = undefined
-    joyInputState.left.x = 0.5
-    joyInputState.left.y = 0.5
+    joyInputState.left = neutral
   },
 }
 
+// right touch region
 export const rightJoy: GuiElement = {
-  display: { type: 'joyRegion' },
+  display: {
+    type: 'joyRegion',
+    border: '16x16-btn-square',
+  },
   layoutKey: 'rightJoy',
   hotkeys: [],
 }
 
+// right draggable element
 export const rightJoySlider: Slider = {
-
-  display: { type: 'button', icon: 'icons/16x16-rotate.png' },
+  display: {
+    type: 'button',
+    icon: 'icons/16x16-rotate.png',
+    border: '16x16-btn-shiny',
+  },
   layoutKey: 'rightJoySlider',
   slideIn: 'rightJoy',
+  slideRadius: 12,
   hotkeys: [],
   clickAction: event => slideRight(event),
   dragAction: event => slideRight(event),
   unclickAction: () => {
     rightJoy.display.needsUpdate = true
     rightJoy.display.forcedState = undefined
-    joyInputState.right.x = 0.5
-    joyInputState.right.y = 0.5
+    joyInputState.right = neutral
   },
 }
 
 function slideLeft(event: ElementEvent) {
   const { sliderState } = event
   if (sliderState) {
-    // update input state
-    const { slider, container } = sliderState
-    joyInputState.left.x = (slider.x - container.x) / (container.w - slider.w)
-    joyInputState.left.y = (slider.y - container.y) / (container.h - slider.h)
+    joyInputState.left = sliderState
+    leftJoy.display.needsUpdate = true
+    leftJoy.display.forcedState = 'pressed'
   }
-
-  leftJoy.display.needsUpdate = true
-  leftJoy.display.forcedState = 'pressed'
 }
 
 function slideRight(event: ElementEvent) {
   const { sliderState } = event
   if (sliderState) {
-    // update input state
-    const { slider, container } = sliderState
-    joyInputState.right.x = (slider.x - container.x) / (container.w - slider.w)
-    joyInputState.right.y = (slider.y - container.y) / (container.h - slider.h)
+    joyInputState.right = sliderState
+    rightJoy.display.needsUpdate = true
+    rightJoy.display.forcedState = 'pressed'
   }
-
-  rightJoy.display.needsUpdate = true
-  rightJoy.display.forcedState = 'pressed'
 }
 
 // get signed left joystick state after accounting for deadzone

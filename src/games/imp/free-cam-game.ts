@@ -68,7 +68,7 @@ export class FreeCamGame extends Game {
     this.waveMaker = sphereGroup.members[1]
     this.waveMaker.isGhost = false
     // this.waveMaker.isFish = true
-    this.waveMaker.isVisible = false
+    // this.waveMaker.isVisible = false
     this.waveMaker.position = new Vector3(x, 20, z)
     sphereGroup.setInstanceColor(1, new Color(0xff0000))
 

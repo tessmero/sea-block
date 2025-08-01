@@ -4,17 +4,13 @@
  * Unit tests for grid tilings: round-trip consistency.
  */
 
-import { equal, ok } from 'assert'
-import * as fs from 'fs'
-import * as path from 'path'
-import { Tiling } from '../../src/core/grid-logic/tilings/tiling'
-import { TILING_NAMES } from '../../src/imp-names'
+import { flushSourceModules, populateRegistry } from '../../tools/util'
+flushSourceModules()
+import { TILING } from '../../src/imp-names'
+populateRegistry(TILING)
 
-// include source files (populate registry for Tiling.create)
-const tilingsDir = path.join(__dirname, '../../src/core/grid-logic/tilings')
-fs.readdirSync(tilingsDir).forEach((f) => {
-  require(path.join(tilingsDir, f)) // eslint-disable-line @typescript-eslint/no-require-imports
-})
+import { equal, ok } from 'assert'
+import { Tiling } from '../../src/core/grid-logic/tilings/tiling'
 
 interface XZ { x: number, z: number }
 
@@ -41,17 +37,19 @@ for (let i = 0; i < 100; i++) {
   })
 }
 
-TILING_NAMES.forEach((name) => {
-  const tiling = Tiling.create(name)
-  describe(`${name} indexing for ${testPoints.length} test points`, function () {
-    it('has consistent round-trip: position -> index -> position -> index', function () {
-      for (const point of testPoints) {
-        const idx = tiling.positionToIndex(point.x, point.z)
-        const newPoint = tiling.indexToPosition(idx.x, idx.z)
-        const newIdx = tiling.positionToIndex(newPoint.x, newPoint.z)
-        expectClose(point, newPoint)
-        expectMatch(idx, newIdx)
-      }
+describe('grid tilings', function () {
+  TILING.NAMES.forEach((name) => {
+    const tiling = Tiling.create(name)
+    describe(`${name} indexing for ${testPoints.length} test points`, function () {
+      it('has consistent round-trip: position -> index -> position -> index', function () {
+        for (const point of testPoints) {
+          const idx = tiling.positionToIndex(point.x, point.z)
+          const newPoint = tiling.indexToPosition(idx.x, idx.z)
+          const newIdx = tiling.positionToIndex(newPoint.x, newPoint.z)
+          expectClose(point, newPoint)
+          expectMatch(idx, newIdx)
+        }
+      })
     })
   })
 })

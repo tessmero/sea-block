@@ -65,7 +65,7 @@ export function optionSelectorElements(params: OptionParams): Array<GuiElement> 
       layoutKey: `${parentKey}.mainBtn`,
       display: {
         type: 'button',
-        border: 'square',
+        border: '16x16-btn-square',
       },
       clickAction: ({ seaBlock }) => {
         change(seaBlock, 1)
@@ -86,7 +86,7 @@ export function optionSelectorElements(params: OptionParams): Array<GuiElement> 
       display: {
         type: 'button',
         icon: 'icons/16x16-arrow-left.png',
-        border: 'square',
+        border: '16x16-btn-square',
       },
       clickAction: ({ seaBlock }) => {
         change(seaBlock, -1)
@@ -97,7 +97,7 @@ export function optionSelectorElements(params: OptionParams): Array<GuiElement> 
       display: {
         type: 'button',
         icon: 'icons/16x16-arrow-right.png',
-        border: 'square',
+        border: '16x16-btn-square',
       },
       clickAction: ({ seaBlock }) => {
         change(seaBlock, 1)
