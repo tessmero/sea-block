@@ -32,7 +32,7 @@ export default tseslint.config(
   {
     rules: {
 
-      // must use === / !== instead of == / !=
+      // must use === and !== instead of == and !=
       'eqeqeq': ['warn'],
 
       // limit line length
@@ -59,9 +59,9 @@ export default tseslint.config(
       }],
 
       // imports must be ordered
-      'import/order': ['error'],
+      // 'import/order': ['error'],
 
-      // require Array or ReadonlyArray generic type instead of []
+      // require Array<> or ReadonlyArray<> instead of []
       '@typescript-eslint/array-type': ['error', { default: 'generic' }],
 
       // replace @typescript-eslint/no-unused-vars
@@ -82,7 +82,7 @@ export default tseslint.config(
       // do NOT require jsdoc comments
       'jsdoc/require-jsdoc': 'off',
 
-      // require jsdoc descriptions start with uppercase, end with period
+      // do NOT require jsdoc descriptions start with uppercase, end with period
       'jsdoc/require-description-complete-sentence': ['off'], // 'warn', { tags: ['param'] }],
 
       // exclude sentence check for just @file (replaced by file-header)
@@ -126,7 +126,7 @@ export default tseslint.config(
   {
     // restrict "constructor" in named implementations using registry pattern
     files: [
-      // implementations must not define constructors (they register with base class)
+      // implementations must not define constructors (just register with base class)
       'src/grid-logic/tilings/**/*.ts',
       'src/generators/**/*.ts',
       'src/games/imp/**/*.ts',
@@ -135,6 +135,7 @@ export default tseslint.config(
       'src/gfx/grid-anims/**/*.ts',
       'src/gfx/2d/flat-transition.ts',
       'src/gfx/3d/drop-transition.ts',
+      'src/gfx/ssd-transition.ts',
     ],
     ignores: [
       // base classes are exempt (they define protected constructor)
@@ -186,7 +187,7 @@ export default tseslint.config(
       '@typescript-eslint/naming-convention': [
         'error',
         {
-          // booleans must be like isWater
+          // booleans must be like isWater or needsUpdate
           selector: ['variable', 'typeProperty'],
           types: ['boolean'],
           format: ['PascalCase'],

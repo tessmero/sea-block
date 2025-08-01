@@ -26,7 +26,7 @@ export interface Annotatable {
 export interface BaseItem extends Annotatable {
   value: number | string
   readonly resetOnChange?: 'physics' | 'full'
-  readonly isHidden?: boolean
+  isHidden?: boolean
 }
 
 export interface ConfigButton extends Annotatable {

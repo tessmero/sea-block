@@ -59,6 +59,6 @@ npm run build:prod
 Generate music assets in `public/music`.
 
 ```
-npx ts-node tools/build-songs.ts
+npx ts-node tools/midi-music/build-songs.ts
 ```
 

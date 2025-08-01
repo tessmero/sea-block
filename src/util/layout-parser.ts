@@ -114,48 +114,43 @@ class GuiLayoutParser {
         const pct = parseFloat(value) / 100
         return ['left', 'right', 'width', 'margin'].includes(key) ? pw * pct : ph * pct
       }
-      if (value === 'auto') {
+      else if (value === 'auto') {
         if (key === 'width') return px + pw - x
         if (key === 'height') return py + ph - y
         return ['left', 'right'].includes(key) ? (pw - w) / 2 : (ph - h) / 2
+      }
+      else if (typeof value === 'number' && value < 0) {
+        if (key === 'width') return pw + value
+        if (key === 'height') return ph + value
       }
       return Number(value)
     }
 
     // // Check for min- or max- prefixes
-    const isConditionalKey = (key: CssKey): key is ConditionalKey => key.startsWith('min-') || key.startsWith('max-')
-    // const applyConditional = (
-    //   condition: 'min' | 'max',
-    //   prop: BasicKey,
-    //   value: number,
-    // ): Rectangle => {
-    //   switch (prop) {
-    //     case 'width':
-    //       return { x, y, w: condition === 'min' ? Math.max(w, value) : Math.min(w, value), h }
-    //     case 'height':
-    //       return { x, y, w, h: condition === 'min' ? Math.max(h, value) : Math.min(h, value) }
-    //     case 'left':
-    //       const newLeft = px + value
-    //       return { x: condition === 'min' ? Math.max(x, newLeft) : Math.min(x, newLeft), y, w, h }
-    //     case 'right':
-    //       const newRight = px + pw - w - value
-    //       return { x: condition === 'min' ? Math.min(x, newRight) : Math.max(x, newRight), y, w, h }
-    //     case 'top':
-    //       const newTop = py + value
-    //       return { x, y: condition === 'min' ? Math.max(y, newTop) : Math.min(y, newTop), w, h }
-    //     case 'bottom':
-    //       const newBottom = py + ph - h - value
-    //       return { x, y: condition === 'min' ? Math.min(y, newBottom) : Math.max(y, newBottom), w, h }
-    //     default:
-    //       return rect
-    //   }
-    // }
+    const conditionDashKey = cssKey.split('-')
+    if (conditionDashKey.length === 2) {
+      const [cnd, key] = conditionDashKey
+      let limiter: (a: number, b: number) => number
 
-    if (isConditionalKey(cssKey)) {
-      throw new Error('min- and max- prefixes not supported')
-      // const [prefix, rawKey] = cssKey.split('-') as ['min' | 'max', BasicKey]
-      // const value = parseVal(cssKey, cssVal)
-      // return applyConditional(prefix, rawKey, value)
+      if (cnd === 'min') {
+        limiter = Math.max
+      }
+      else if (cnd === 'max') {
+        limiter = Math.min
+      }
+      else {
+        throw new Error('only min- or max- prefixed allowed')
+      }
+
+      if (key === 'width') {
+        return { ...rect, w: limiter(w, parseVal('width', cssVal)) }
+      }
+      else if (key === 'height') {
+        return { ...rect, h: limiter(h, parseVal('height', cssVal)) }
+      }
+      else {
+        throw new Error('only min/max-width or -height allowed')
+      }
     }
 
     // Handle basic keys and margin
@@ -168,7 +163,7 @@ class GuiLayoutParser {
       case 'height': return { x, y, w, h: parseVal('height', cssVal) }
       case 'margin': {
         const d = parseVal('margin', cssVal)
-        return { x: x - d, y: y - d, w: w + 2 * d, h: h + 2 * d }
+        return { x: x + d, y: y + d, w: w - 2 * d, h: h - 2 * d }
       }
       default: return rect
     }

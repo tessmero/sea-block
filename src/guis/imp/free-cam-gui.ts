@@ -19,6 +19,7 @@ export class FreeCamGui extends Gui {
     Gui.register('free-cam', {
       factory: () => new FreeCamGui(),
       elements: [
+        // spritAtlasBtn,
         musicBtn,
         configBtn,
         leftJoy, leftJoySlider,

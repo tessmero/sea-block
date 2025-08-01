@@ -7,21 +7,30 @@
  * redraws tiles that are actively changing.
  */
 
-import { TILING_NAMES } from 'imp-names'
+import { TILING } from 'imp-names'
 import type { TileIndex } from '../../core/grid-logic/indexed-grid'
 import { TiledGrid } from '../../core/grid-logic/tiled-grid'
 import { Tiling } from '../../core/grid-logic/tilings/tiling'
 import { randChoice } from '../../util/rng'
 import { GridAnimation } from '../grid-anims/grid-animation'
 import { Transition } from '../transition'
-import { fillPolygon } from './pixel-tiles-gfx-helper'
+import { fillPolygon, getTempImagset as getTempImageset } from './pixel-tiles-gfx-helper'
 
 const viewPad = 50
 const padOffset = -viewPad / 2
 
 const targetChunkSize = 10
-const maxChunks = 1000
-const chunkBuffer = new Float32Array(maxChunks)
+const maxChunks = 1500
+
+const nBuffers = 10 // max number of active transitions
+const allChunkBuffers = Array.from({ length: nBuffers }).map(() => new Float32Array(maxChunks))
+let indexOfBuffer = 0
+function getNewChunkBuffer() {
+  const result = allChunkBuffers[indexOfBuffer]
+  indexOfBuffer = (indexOfBuffer + 1) % allChunkBuffers.length
+  return result
+}
+
 type Chunk = {
 
   // integer coordinates in grid
@@ -31,29 +40,37 @@ type Chunk = {
   value: number
 }
 
-let lastWidth = 0
-let lastHeight = 0
-
 export class FlatTransition extends Transition {
   static { Transition.register('flat', () => new FlatTransition()) }
+
+  private lastWidth = 0
+  private lastHeight = 0
 
   public hideColor: [number, number, number] = [0, 0, 0]
 
   // chunk grid in units of big pixels
+  private chunkBuffer = getNewChunkBuffer()
   private chunkSize = targetChunkSize
   private chunkScale = 1
 
   // assigned in Transition.create -> reset -> pickChunkSize
-  private chunkGrid!: TiledGrid
+  private widthInChunks!: number
+  private heightInChunks!: number
+  private hideGrid!: TiledGrid
+  private showGrid!: TiledGrid
+  private chunkGrid!: TiledGrid // either hideGrid or showGrid
   private hideAnim!: GridAnimation
   private showAnim!: GridAnimation
+  private hideImageset!: Array<CanvasImageSource> // temp buffer per shape index
+  private showImageset!: Array<CanvasImageSource>
+  private imageset!: Array<CanvasImageSource> // either hideImageset or showImageset
 
   reset() {
     // console.log('flat transition reset')
     this.pickChunkSize()
-    chunkBuffer.fill(0)
-    lastWidth = 0
-    lastHeight = 0
+    this.chunkBuffer.fill(0)
+    this.lastWidth = 0
+    this.lastHeight = 0
   }
 
   // // completely clear/fill front layer
@@ -66,7 +83,9 @@ export class FlatTransition extends Transition {
   // }
 
   private _getPaddedDims() {
-    let { w, h } = this.layeredViewport
+    // let { w, h } = this.layeredViewport
+    let w = Math.ceil(window.screen.width * this.layeredViewport.pixelRatio)
+    let h = Math.ceil(window.screen.height * this.layeredViewport.pixelRatio)
     w += viewPad
     h += viewPad
     return { w, h }
@@ -75,41 +94,35 @@ export class FlatTransition extends Transition {
   // get chunk size for current screen shape
   private pickChunkSize(): number {
     const { w, h } = this._getPaddedDims()
-    if (w === lastWidth && h === lastHeight) {
+    if (w === this.lastWidth && h === this.lastHeight) {
       return this.chunkSize // screen shape unchanged since last check
     }
-    lastWidth = w
-    lastHeight = h
+    this.lastWidth = w
+    this.lastHeight = h
 
     // update chunk size
-    this.chunkSize = Math.max(targetChunkSize, Math.ceil(Math.sqrt(w * h / maxChunks)))
+    this.chunkSize = targetChunkSize// Math.max(targetChunkSize, Math.ceil(Math.sqrt(w * h / maxChunks)))
 
     // integer drawing scale
-    this.chunkScale = Math.max(1, Math.round(this.chunkSize / targetChunkSize))
+    this.chunkScale = 1// Math.max(1, Math.round(this.chunkSize / targetChunkSize))
 
     // console.log(`chunk scale ${this.chunkScale}`)
-    const widthInChunks = Math.ceil(w / this.chunkSize)
-    const heightInChunks = Math.ceil(h / this.chunkSize)
+    this.widthInChunks = Math.ceil(w / this.chunkSize)
+    this.heightInChunks = Math.ceil(h / this.chunkSize)
 
-    // compute new grid animation
-    this.chunkGrid = new TiledGrid(
-      widthInChunks, heightInChunks,
-      Tiling.create(randChoice(TILING_NAMES)),
+    // pick random animation to hide current scene
+    this.hideGrid = new TiledGrid(
+      this.widthInChunks, this.heightInChunks,
+      Tiling.create(randChoice(TILING.NAMES)),
     )
+    const hideAnimName = Transition.isFirstUncover
+      ? 'flat-sweep'
+      : randChoice(['flat-sweep', 'radial-sweep', 'random-sweep'] as const)
+    this.hideAnim = GridAnimation.create(hideAnimName, this.hideGrid)
+    this.hideImageset = getTempImageset(this.hideGrid.tiling, this.hideColor)
 
-    this.hideAnim = GridAnimation.create(
-      Transition.isFirstUncover
-        ? 'flat-sweep'
-        : randChoice(['flat-sweep', 'radial-sweep', 'random-sweep'] as const),
-      // randChoice(['radial-sweep'] as const),
-      this.chunkGrid,
-    )
-    this.showAnim = GridAnimation.create(
-      Transition.isFirstUncover
-        ? 'flat-sweep'
-        : randChoice(['flat-sweep', 'radial-sweep', 'random-sweep'] as const),
-      this.chunkGrid,
-    )
+    this.chunkGrid = this.hideGrid
+    this.imageset = this.hideImageset
 
     return this.chunkSize
   }
@@ -117,7 +130,7 @@ export class FlatTransition extends Transition {
   private* getChangedChunks(anim: number): Generator<Chunk> {
     for (const tileIndex of this.chunkGrid.tileIndices) {
       const { i } = tileIndex
-      const oldValue = chunkBuffer[i]
+      const oldValue = this.chunkBuffer[i]
 
       const shouldUseHideAnim = this.isHiding
       const gridAnim = shouldUseHideAnim ? this.hideAnim : this.showAnim
@@ -127,17 +140,17 @@ export class FlatTransition extends Transition {
         yield { tileIndex, value: newValue }
       }
 
-      chunkBuffer[i] = newValue
+      this.chunkBuffer[i] = newValue
     }
   }
 
-  private isHiding = true
+  public isHiding = true
 
   public _hide(t0: number, t1: number) {
     // const { ctx } = this.layeredViewport
 
     this.isHiding = true
-    this.fillChangedTiles(t0, t1, this.hideColor)
+    this.fillChangedTiles(t0, t1)
   }
 
   public _show(t0: number, t1: number) {
@@ -146,6 +159,27 @@ export class FlatTransition extends Transition {
     // start erasing with fill operations
     ctx.globalCompositeOperation = 'destination-out'
 
+    if (this.isHiding) {
+    // pick random animation to reveal next scene
+      // console.log('flat transition computing show grid')
+      this.showGrid = new TiledGrid(
+        this.widthInChunks, this.heightInChunks,
+        Tiling.create(randChoice(TILING.NAMES)),
+      )
+      const showAnimName = Transition.isFirstUncover
+        ? 'flat-sweep'
+        : randChoice(['flat-sweep', 'radial-sweep', 'random-sweep'] as const)
+      this.showAnim = GridAnimation.create(showAnimName, this.showGrid)
+      this.showImageset = getTempImageset(
+        this.showGrid.tiling,
+        [0, 0, 0], // (black) color doesn't matter
+      )
+
+      this.chunkBuffer.fill(0)
+      this.chunkGrid = this.showGrid
+      this.imageset = this.showImageset
+    }
+
     this.isHiding = false
     this.fillChangedTiles(t0, t1)
 
@@ -153,25 +187,26 @@ export class FlatTransition extends Transition {
     ctx.globalCompositeOperation = 'source-over'
   }
 
-  private fillChangedTiles(t0: number, t1: number, color?: [number, number, number]) {
+  private fillChangedTiles(_t0: number, t1: number) {
     const chunkSize = this.pickChunkSize()
     const { ctx } = this.layeredViewport
     let _count = 0
     for (const { tileIndex, value } of this.getChangedChunks(t1)) {
       const { x, z } = tileIndex
-      const tileShape = this.chunkGrid.tiling.shapes[this.chunkGrid.tiling.getShapeIndex(x, z)]
+      const shapeIndex = this.chunkGrid.tiling.getShapeIndex(x, z)
+      const tileShape = this.chunkGrid.tiling.shapes[shapeIndex]
+      const tempBuffer = this.imageset[shapeIndex]
 
       _count++
-      const filledSize = chunkSize * (value)
 
       const tilePos = this.chunkGrid.tiling.indexToPosition(x, z)
       fillPolygon({ ctx,
         x: Math.floor(tilePos.x * chunkSize + padOffset),
         y: Math.floor(tilePos.z * chunkSize + padOffset),
-        scale: filledSize,
+        scale: value,
         chunkScale: this.chunkScale,
         shape: tileShape,
-      }, color)
+      }, tempBuffer)
     }
   }
 }

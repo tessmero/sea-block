@@ -36,7 +36,7 @@ export function drawText(ctx, params: DrawTextParams) {
     y0 = Math.floor(height / 2 - textPixels.length / 2 + basement / 2)
   }
 
-  ctx.fillStyle = font === 'mini' ? 'gray' : 'black'
+  ctx.fillStyle = 'black'// font === 'mini' ? 'gray' : 'black'
   for (const [y, row] of textPixels.entries()) {
     for (const [x, value] of row.entries()) {
       if (value === 1) {

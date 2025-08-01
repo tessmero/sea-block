@@ -4,14 +4,27 @@
  * Helper functions to preload and then lookup image assets.
  */
 
+import { addToSpriteAtlas } from './sprite-atlas'
+
 export const IMAGE_ASSET_URLS = [
   'borders/16x16-panel.png',
+
   'borders/16x16-btn-shiny-default.png',
   'borders/16x16-btn-shiny-hovered.png',
   'borders/16x16-btn-shiny-pressed.png',
+
   'borders/16x16-btn-square-default.png',
   'borders/16x16-btn-square-hovered.png',
   'borders/16x16-btn-square-pressed.png',
+
+  // 'borders/48x48-joy-region-default.png',
+  // 'borders/48x48-joy-region-hovered.png',
+  // 'borders/48x48-joy-region-pressed.png',
+
+  // 'borders/24x24-joy-slider-default.png',
+  // 'borders/24x24-joy-slider-hovered.png',
+  // 'borders/24x24-joy-slider-pressed.png',
+
   'icons/launch.png',
   `icons/skip.png`,
   `icons/16x16-music.png`,
@@ -27,25 +40,26 @@ export const IMAGE_ASSET_URLS = [
 ] as const
 export type ImageAssetUrl = (typeof IMAGE_ASSET_URLS)[number]
 
+const cache = new Map<ImageAssetUrl, HTMLImageElement>()
+
 // get preloaded image
 export function getImage(url: ImageAssetUrl): HTMLImageElement {
-  return imageCache.get(url) as HTMLImageElement
+  return cache.get(url) as HTMLImageElement
 }
-
-const imageCache = new Map<ImageAssetUrl, HTMLImageElement>()
 
 // called on startup in sea-block
 export async function loadAllImages(): Promise<void> {
   await Promise.all(
     IMAGE_ASSET_URLS.map(src =>
       new Promise<void>((resolve, reject) => {
-        const img = new Image()
-        img.onload = () => {
-          imageCache.set(src, img)
+        const image = new Image()
+        image.onload = () => { // start listening for loaded image
+          cache.set(src, image)
+          addToSpriteAtlas(image)
           resolve()
         }
-        img.onerror = reject
-        img.src = `images/${src}`
+        image.onerror = reject
+        image.src = `images/${src}` // queue load
       }),
     ),
   )

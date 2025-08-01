@@ -3,7 +3,6 @@
  *
  * Combined config tree displayed in user interface.
  */
-import { toggleRadio } from '../audio/song-playlist'
 import { Configurable } from './configurable'
 import { gfxConfig } from './gfx-config'
 import { physicsConfig } from './physics-config'
@@ -23,15 +22,15 @@ const seaBlockConfigTree = {
 
     ...topConfig.tree.children, // unpack children at top level
     gfx: gfxConfig.tree,
-    phsyics: physicsConfig.tree,
+    physics: physicsConfig.tree,
     freeCamGame: freeCamGameConfig.tree,
     michael: michaelConfig.tree,
 
-    musicTest: { // test built song
-      label: 'Play/Stop Music',
-      action: () => { toggleRadio () },
-      hasNoEffect: true, // clicking button doesn't effect seablock
-    },
+    // musicTest: { // test built song
+    //   label: 'Play/Stop Music',
+    //   action: () => { toggleRadio () },
+    //   hasNoEffect: true, // clicking button doesn't effect seablock
+    // },
   },
 } satisfies ConfigTree
 

@@ -10,12 +10,13 @@
 import type { TileGroup } from '../core/groups/tile-group'
 import { type TransitionName } from '../imp-names'
 import type { SeaBlock } from '../sea-block'
+import type { FlatTransition } from './2d/flat-transition'
 import type { LayeredViewport } from './layered-viewport'
 
 const totalDuration = 1500 // ms
 
 export function randomTransition(context: SeaBlock): Transition {
-  // const name = randChoice(TRANSITION_NAMES)
+  // const name = randChoice(TRANSITION.NAMES)
 
   // do sweep-sweep-drop combo transition just for launch
   const name = Transition.isFirstUncover ? 'ssd' : 'flat'
@@ -110,7 +111,7 @@ export abstract class Transition {
     this._registry[name] = factory
   }
 
-  static create(name: TransitionName, context: SeaBlock): Transition {
+  static create(name: TransitionName, context: SeaBlock, hideColor?: [number, number, number]): Transition {
     const factory = this._registry[name]
     const instance = factory()
 
@@ -119,6 +120,9 @@ export abstract class Transition {
     const { layeredViewport, terrain } = context
     instance.layeredViewport = layeredViewport
     instance.terrain = terrain
+    if (hideColor) {
+      (instance as FlatTransition).hideColor = hideColor
+    }
     instance.reset(context)
 
     return instance

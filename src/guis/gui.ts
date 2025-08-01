@@ -7,22 +7,22 @@
 
 import type { Rectangle } from 'util/layout-parser'
 import { parseLayoutRectangles, type ComputedRects, type CssLayout } from 'util/layout-parser'
+import { computeElementOcclusions } from 'util/layout-occlusion-checker'
 import type { Vector2 } from 'three'
 import { type InputId, type KeyCode } from 'input-id'
 import type { ProcessedSubEvent } from 'mouse-touch-input'
 import type { SeaBlock } from 'sea-block'
 import type { GuiName } from 'imp-names'
-import type { BorderVariant, ElementType } from 'gfx/2d/element-imageset-builder'
+import type { BorderVariant, ElementImageset, ElementType } from 'gfx/2d/element-imageset-builder'
 import { getElementImageset } from 'gfx/2d/element-imageset-builder'
 import { resetLastDrawnStates } from 'gfx/2d/flat-gui-gfx-helper'
 import type { ImageAssetUrl } from 'gfx/2d/image-asset-loader'
 import type { FontVariant, TextAlign } from 'gfx/2d/pixel-text-gfx-helper'
 import { getElementDims } from './layouts/layout-helper'
 
-export type GuiElement = {
+export type StaticElement = {
   display: ElementDisplayParams
   layoutKey: string // must have layout rectangle
-  slideIn?: string // slide within outer rectangle
   clickAction?: (event: ElementEvent) => void
   dragAction?: (event: ElementEvent) => void
   unclickAction?: (event: ElementEvent) => void
@@ -31,7 +31,12 @@ export type GuiElement = {
 }
 
 // sliders define "slideIn" property pointing to a layout key
-export type Slider = GuiElement & { slideIn: string }
+export type Slider = StaticElement & {
+  slideIn: string // slide within outer rectangle
+  slideRadius?: number // extra restriction if slideIn defined
+}
+
+export type GuiElement = StaticElement | Slider
 
 // event passed to clickAction and other callbacks
 export type ElementEvent = {
@@ -42,8 +47,8 @@ export type ElementEvent = {
 
 // state of a slider inside its container
 export type SliderState = {
-  slider: Rectangle
-  container: Rectangle
+  readonly x: number // 0 left, 1 right
+  readonly y: number // 0 top, 1 bottom
 }
 
 // display settings for an element
@@ -58,6 +63,9 @@ export type ElementDisplayParams = {
   isVisible?: boolean
   needsUpdate?: boolean // request repaint
   forcedState?: ButtonState
+  forcedSliderState?: SliderState
+
+  imageset?: ElementImageset // assigned after load
 }
 
 export const BUTTON_STATES = ['default', 'pressed', 'hovered'] as const
@@ -71,7 +79,7 @@ export class Gui {
   public guiLayout?: CssLayout // rules for computing rectangles
   public layoutRectangles: ComputedRects = {}
   public overrideLayoutRectangles: Record<string, Rectangle> = {}
-  // public elementOcclusions: Record<ElementId, Set<ElementId>> = {}
+  public elementOcclusions: Record<ElementId, Set<ElementId>> = {}
 
   public elements: Record<ElementId, GuiElement> = {}
   public reversedIds!: ReadonlyArray<ElementId> // assigned in init
@@ -138,7 +146,7 @@ export class Gui {
       if (elem.layoutKey
       // && (['panel', 'button', 'joyRegion']).includes(elem.display.type)
       ) {
-        this.pickable[id] = elem.slideIn || elem.layoutKey
+        this.pickable[id] = (elem as Slider).slideIn || elem.layoutKey
       }
     }
   }
@@ -147,9 +155,10 @@ export class Gui {
   public refreshLayout(context: SeaBlock): void {
     const { screenRectangle } = context.layeredViewport
     this.guiLayout = this.layoutFactory(context)
+    this.overrideLayoutRectangles = {}
     this.layoutRectangles = parseLayoutRectangles(screenRectangle, this.guiLayout)
 
-    // this.elementOcclusions = computeElementOcclusions(this.elements, this.layoutRectangles)
+    this.elementOcclusions = computeElementOcclusions(this.elements, this.layoutRectangles)
 
     // console.log(`parsed gui layout for game
     //       screen: ${JSON.stringify(screen)}
@@ -185,7 +194,7 @@ export class Gui {
 
     if (inputEvent.event.type.startsWith('mouse')) {
       this.hovered = this.pickElementAtPoint(inputEvent.lvPos)
-      if (this.hovered && !this.panels.has(this.hovered)) {
+      if (this.hovered && (['button', 'sprite-atlas']).includes(this.elements[this.hovered].display.type)) {
         document.documentElement.style.cursor = 'pointer'
       }
     }
@@ -198,12 +207,16 @@ export class Gui {
 
       let sliderState: SliderState | undefined = undefined
 
-      if (elem.slideIn) {
-        sliderState = this._slide(elem as Slider, inputEvent.lvPos) // dragging slider
+      if ('slideIn' in elem) {
+        sliderState = this._slide(elem, inputEvent.lvPos) // dragging slider
       }
 
       if (elem.dragAction) {
-        elem.dragAction({ seaBlock: inputEvent.seaBlock, inputEvent, sliderState })
+        elem.dragAction({
+          seaBlock: inputEvent.seaBlock,
+          inputEvent, sliderState,
+          // imageset: this.imagesets[elementId],
+        })
       }
       return true // consume event
     }
@@ -227,11 +240,11 @@ export class Gui {
       }
     }
 
-    const clickedElem = this.pickElementAtPoint(lvPos)
-    if (clickedElem) {
-      if (!this.panels.has(clickedElem)) {
+    const clickedId = this.pickElementAtPoint(lvPos)
+    if (clickedId) {
+      if (!this.panels.has(clickedId)) {
         // element is not just a panel - may have further interaction with mouse
-        this._click({ seaBlock, inputEvent }, clickedElem)
+        this._click({ seaBlock, inputEvent }, clickedId)
       }
 
       return true // consume event
@@ -257,10 +270,10 @@ export class Gui {
     this.held[elementId] = inputId
 
     const elem = this.elements[elementId]
-    const { slideIn, isSticky, clickAction } = elem
+    const { isSticky, clickAction } = elem
 
-    if (lvPos && slideIn) {
-      event.sliderState = this._slide(elem as Slider, lvPos)
+    if (lvPos && 'slideIn' in elem) {
+      event.sliderState = this._slide(elem, lvPos)
     }
 
     if (isSticky) {
@@ -272,22 +285,44 @@ export class Gui {
   }
 
   private _slide(elem: Slider, lvPos: Vector2): SliderState | undefined {
-    const { layoutKey, slideIn } = elem
+    const { layoutKey, slideIn, slideRadius } = elem
     const sliderRect = this.layoutRectangles[layoutKey]
     const { w, h } = sliderRect // maintain original dimensions
-    const desiredRect = { x: lvPos.x - w / 2, y: lvPos.y - h / 2, w, h } // centered at mouse
+    let desiredRect = { x: lvPos.x - w / 2, y: lvPos.y - h / 2, w, h } // centered at mouse
+
+    if (typeof slideRadius === 'number') {
+      // apply slide radius limit
+      const maxDist = elem.slideRadius as number
+      const dist = Math.hypot(desiredRect.x - sliderRect.x, desiredRect.y - sliderRect.y)
+      if (dist > maxDist) {
+      // Calculate direction vector from original to restricted
+        const dx = desiredRect.x - sliderRect.x
+        const dy = desiredRect.y - sliderRect.y
+        const angle = Math.atan2(dy, dx)
+        // Set x and y to be at maxDist from original, in the same direction
+        desiredRect = {
+          ...desiredRect,
+          x: sliderRect.x + Math.cos(angle) * maxDist,
+          y: sliderRect.y + Math.sin(angle) * maxDist,
+        }
+      }
+    }
+
     const container = this.layoutRectangles[slideIn]
     const restrictedRect = fitRectangleInContainer(desiredRect, container)// restricted to container
     if (!restrictedRect) {
       return // doesn't fit in container
     }
+
     this.overrideLayoutRectangles[layoutKey] = restrictedRect // set new position
     // console.log(`set new position for ${layoutKey}: ${JSON.stringify(restrictedRect)}`)
     elem.display.needsUpdate = true
 
+    // compute slider state in [0,1]
+    const slider = restrictedRect
     return {
-      slider: restrictedRect,
-      container,
+      x: (slider.x - container.x) / (container.w - slider.w),
+      y: (slider.y - container.y) / (container.h - slider.h),
     }
   }
 
@@ -296,9 +331,13 @@ export class Gui {
     for (const id in held) {
       // reset dragged slider
       const elem = this.elements[id]
-      const { layoutKey } = elem
-      const { overrideLayoutRectangles } = this
-      delete overrideLayoutRectangles[layoutKey]
+
+      if ('slideRadius' in elem) {
+        // reset state of released joystick
+        const { layoutKey } = elem
+        const { overrideLayoutRectangles } = this
+        delete overrideLayoutRectangles[layoutKey]
+      }
 
       if (held[id] === touchId) {
         const { unclickAction } = this.elements[id]
@@ -324,7 +363,9 @@ export class Gui {
     for (const id in this.elements) {
       const { hotkeys } = this.elements[id]
       if (hotkeys?.includes(inputEvent.code as KeyCode)) {
-        this._click({ seaBlock, inputEvent }, id as ElementId)
+        this._click({
+          seaBlock, inputEvent,
+        }, id as ElementId)
       }
     }
   }
@@ -350,22 +391,21 @@ export class Gui {
   static preload(name: GuiName, context: SeaBlock): Promise<Array<void>> {
     const { factory, layoutFactory, elements, allLayouts } = this._registry[name]
 
-    // Gui
-    // one-time singleton construction
+    // Guis are singletons
+    // one-time construction
     const instance = factory()
+    this._preloaded[name] = instance
 
     // Gui
     // post-construction setup
     instance.init(layoutFactory, elements)
 
-    this._preloaded[name] = instance
-
     // // preload all element imagesets
     const layouts = allLayouts || [layoutFactory(context)]
     const elementDims = getElementDims(elements, layouts)
-    return Promise.all(elements.map(async (elem) => {
+    return Promise.all(Object.entries(instance.elements).map(async ([_id, elem]) => {
       const { w, h } = elementDims[elem.layoutKey]
-      getElementImageset({ ...elem.display, w, h })
+      elem.display.imageset = getElementImageset({ ...elem.display, w, h })
       // const imageset = getElementImageset({ ...elem.display, w, h })
       // loadedImagesets[elem] = imageset // flat-gui-gfx-helper.ts
       return

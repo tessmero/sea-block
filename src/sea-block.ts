@@ -8,6 +8,7 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { Gui } from 'guis/gui'
 import { preloadPixelTiles } from 'gfx/2d/pixel-tiles-gfx-helper'
+import { isDevMode } from 'configs/top-config'
 import type { ConfigButton, ConfigItem } from './configs/config-tree'
 import { TerrainGenerator } from './generators/terrain-generator'
 import type { TileGroupGfxHelper } from './gfx/3d/tile-group-gfx-helper'
@@ -17,7 +18,7 @@ import { initMouseListeners } from './mouse-touch-input'
 import { CAMERA, GRID_DETAIL, PORTRAIT_CAMERA, STEP_DURATION } from './settings'
 import { Transition } from './gfx/transition'
 import { randomTransition } from './gfx/transition'
-import { GUI_NAMES, type GameName, type GeneratorName } from './imp-names'
+import { GUI, type GameName, type GeneratorName } from './imp-names'
 import { Game } from './games/game'
 import type { LayeredViewport } from './gfx/layered-viewport'
 import { StartSequenceGame } from './games/imp/start-sequence-game'
@@ -34,7 +35,7 @@ import { Tiling } from './core/grid-logic/tilings/tiling'
 import { TiledGrid } from './core/grid-logic/tiled-grid'
 import { gfxConfig } from './configs/gfx-config'
 import { physicsConfig } from './configs/physics-config'
-import { resetFrontLayer, updateFrontLayer } from './gfx/2d/flat-gui-gfx-helper'
+import { updateFrontLayer } from './gfx/2d/flat-gui-gfx-helper'
 
 // can only be constructed once
 let didConstruct = false
@@ -143,10 +144,10 @@ export class SeaBlock {
     window.addEventListener('resize', () => this.onResize())
 
     const loadPromises: Array<Promise<void | Array<void>>> = []
-    loadPromises.push(preloadPixelTiles())
+    loadPromises.push(preloadPixelTiles(Tiling.getAllShapes()))
 
     // start generating images/meshes for all guis
-    for (const guiName of GUI_NAMES) {
+    for (const guiName of GUI.NAMES) {
       loadPromises.push(Gui.preload(guiName, this))
       // const registered = Gui._registry[guiName]
       // const { allLayouts, layoutFactory, elements } = registered
@@ -193,7 +194,8 @@ export class SeaBlock {
       if (transition.didFinishUncover) {
         // console.log('finish transition')
         this.transition = undefined // transition just finished
-        resetFrontLayer()
+        // this.onResize()
+        // resetFrontLayer()
       }
     }
     else {
@@ -457,7 +459,9 @@ export class SeaBlock {
       this.orbitControls.domElement = newCanvas
 
       // fullscreen
-      document.documentElement.requestFullscreen()
+      if (!isDevMode) {
+        document.documentElement.requestFullscreen()
+      }
 
       // wait two animation frames
       await new Promise<void>((resolve) => {
@@ -524,7 +528,8 @@ export class SeaBlock {
       result.unshift(Gui.create('settings-menu'))
     }
     else if (testGui === 'sprite-atlas') {
-      result.unshift(Gui.create('sprite-atlas'))
+      return [Gui.create('sprite-atlas')] // show sprite atlas alone
+      // result.unshift(Gui.create('sprite-atlas'))
     }
 
     return result

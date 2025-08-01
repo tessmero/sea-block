@@ -7,12 +7,13 @@
 // @ts-expect-error make vite build include all sources
 import.meta.glob('./**/*.ts', { eager: true })
 
+import { randChoice } from 'util/rng'
 import { loadAllImages } from 'gfx/2d/image-asset-loader'
+import { TILING } from 'imp-names'
+import { isDevMode } from 'configs/top-config'
 import { gfxConfig } from './configs/gfx-config'
 import { LayeredViewport } from './gfx/layered-viewport'
-import { TILING_NAMES } from './imp-names'
 import { SeaBlock } from './sea-block'
-import { randChoice } from './util/rng'
 
 async function main() {
   await loadAllImages()
@@ -25,11 +26,13 @@ async function main() {
   // load default config
   seaBlock.config.refreshConfig()
 
-  // set temporary config values until user clicks launch
-  seaBlock.config.flatConfig.generator = 'all-ocean'
-  seaBlock.config.flatConfig.style = 'black-and-white'
-  seaBlock.config.flatConfig.game = 'splash-screen'
-  seaBlock.config.flatConfig.tiling = randChoice(TILING_NAMES)
+  if (!isDevMode) {
+    // set temporary config values until user clicks launch
+    seaBlock.config.flatConfig.generator = 'all-ocean'
+    seaBlock.config.flatConfig.style = 'black-and-white'
+    seaBlock.config.flatConfig.game = 'splash-screen'
+    seaBlock.config.flatConfig.tiling = randChoice(TILING.NAMES)
+  }
 
   // init game and 3D scene
   seaBlock.init()
