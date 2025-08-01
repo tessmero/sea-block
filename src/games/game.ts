@@ -12,53 +12,17 @@
  * visual elements, used to preload assets on startup.
  */
 
-import type { CssLayout } from 'util/layout-parser'
-import type { Object3D, Vector3 } from 'three'
-import type { KeyCode } from 'input-id'
-import type { CompositeMesh } from '../gfx/3d/composite-mesh'
-import type { GameName } from '../imp-names'
+import type { Vector3 } from 'three'
+import type { GameName, GuiName } from '../imp-names'
 import type { SeaBlock } from '../sea-block'
-import type { FlatButton } from '../gfx/2d/flat-button'
 
 import { CAMERA, CAMERA_LOOK_AT, PORTRAIT_CAMERA } from '../settings'
-import { Gui } from '../gui'
+import { Gui } from '../guis/gui'
 
 // parameters for update each frame
 export interface GameUpdateContext {
   seaBlock: SeaBlock
   dt: number // (ms) delta-time since last frame
-}
-
-// object that subclassese should pass to Game.register()
-interface RegisteredGame {
-  readonly factory: () => Game
-  readonly elements: ReadonlyArray<GameElement> // assets to load on startup
-  readonly layout: (context: SeaBlock) => CssLayout
-}
-
-// game-specific visual element
-export type GameElement = FlatElement | DepthElement // 3d object or image buffer
-
-// image to render on front canvas
-export type FlatElement = {
-  w: number
-  h: number
-  imageFactory: (w: number, h: number) => FlatButton// () => Promise<OffscreenCanvas>
-  layoutKey: string // must have layout rectangle
-  clickAction?: (seaBlock: SeaBlock) => void
-  unclickAction?: (seaBlock: SeaBlock) => void
-  isSticky?: boolean
-  hotkeys?: ReadonlyArray<KeyCode> // bound keyboard keys
-}
-
-// 3d object to show in three.js scene
-export type DepthElement = {
-  meshLoader: () => Promise<CompositeMesh | Object3D>
-  layoutKey?: string // only for elements locked to camera
-  clickAction?: (seaBlock: SeaBlock) => void
-  unclickAction?: (seaBlock: SeaBlock) => void
-  isSticky?: boolean
-  hotkeys?: ReadonlyArray<string> // event.code values
 }
 
 export abstract class Game {
@@ -95,15 +59,23 @@ export abstract class Game {
   }
 
   static create(name: GameName, context: SeaBlock): Game {
-    const { factory, layout, elements } = this._registry[name]
+    const { factory, guiName } = this._registry[name]
     const instance = factory()
 
     // Game
     // post-construction setup
-    instance.gui = new Gui(layout, elements)
-    instance.reset(context)
-    instance.gui.refreshLayout(context)
+    if (context) {
+      instance.gui = Gui.create(guiName)
+      instance.reset(context)
+      instance.gui.refreshLayout(context)
+    }
 
     return instance
   }
+}
+
+// object that subclassese should pass to Game.register()
+interface RegisteredGame {
+  readonly factory: () => Game
+  readonly guiName: GuiName
 }

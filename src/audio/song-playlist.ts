@@ -13,7 +13,7 @@ type SongParams = {
 }
 
 function sng(name) {
-  return { src: `music/${name}.ogg`, volume: 0.05 }
+  return { src: `music/${name}.ogg`, volume: 0.1 }
 }
 
 // for f in public/music/*.ogg; do b=${f##*/}; echo "'${b%.ogg}':sng('${b%.ogg}'),"; done
@@ -34,7 +34,7 @@ let lastPlayedIndex = -1
 function playNextTrack(): void {
   if (!isPlaying) return
 
-  // const i = Math.floor(Math.random() * SONG_NAMES.length)
+  // const i = Math.floor(Math.random() * SONG.NAMES.length)
   const i = (lastPlayedIndex + 1) % SONG_NAMES.length
   const { src, volume } = SONGS[SONG_NAMES[i]]
   lastPlayedIndex = i
