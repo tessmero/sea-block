@@ -19,6 +19,13 @@ import { extrude, TileMeshIm } from '../../gfx/3d/tile-mesh'
 import { gfxConfig } from '../../configs/gfx-config'
 import { Group } from './group'
 
+export type TileOverrides = {
+  height?: number
+  isWater?: boolean
+  isFlora?: boolean
+  isVisible?: boolean
+}
+
 const dummy = new THREE.Object3D()
 const dummyVec = new THREE.Vector3()
 export class TileGroup extends Group<Tile, WaterSim> {
@@ -64,8 +71,8 @@ export class TileGroup extends Group<Tile, WaterSim> {
     gfxConfig.refreshConfig()
   }
 
-  protected updateMeshes(seaBlock: SeaBlock): void {
-    this.gfxHelper.updateTileMeshes(seaBlock.style)
+  protected updateMeshes(seaBlock: SeaBlock, dt: number): void {
+    this.gfxHelper.updateTileMeshes(seaBlock.style, dt)
   }
 
   private buildTileMember(idx: TileIndex): Tile {
@@ -85,6 +92,18 @@ export class TileGroup extends Group<Tile, WaterSim> {
     // tile.y = 2 * this.generatedTiles[idx].height
 
     return tile
+  }
+
+  public overrideTile(idx: TileIndex, values: TileOverrides) {
+    const { i } = idx
+    const member = this.members[i]
+    const gTile = this.generatedTiles[i]?.gTile
+    for (const prop in values) {
+      member[prop] = values[prop]
+      if (gTile) {
+        gTile[prop] = values[prop]
+      }
+    }
   }
 
   public generateTile(idx: TileIndex): RenderableTile {
@@ -204,6 +223,7 @@ export class TileGroup extends Group<Tile, WaterSim> {
     // this.generator.refreshConfig()
     this.generatedTiles.fill(null)
     this.gfxHelper.liveRenderHeights.fill(NaN)
+    this.gfxHelper.restoreTileColors()
     // for (const gTile of this.generatedTiles) {
     //   if (gTile) {
     //     gTile.style = undefined

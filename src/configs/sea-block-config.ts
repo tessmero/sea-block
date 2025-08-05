@@ -10,6 +10,7 @@ import { michaelConfig } from './michael-config'
 import type { ConfigTree } from './config-tree'
 import { topConfig } from './top-config'
 import { freeCamGameConfig } from './free-cam-game-config'
+import { chessGameConfig } from './chess-game-config'
 
 const seaBlockConfigTree = {
 
@@ -25,6 +26,7 @@ const seaBlockConfigTree = {
     physics: physicsConfig.tree,
     freeCamGame: freeCamGameConfig.tree,
     michael: michaelConfig.tree,
+    chess: chessGameConfig.tree,
 
     // musicTest: { // test built song
     //   label: 'Play/Stop Music',

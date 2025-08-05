@@ -18,7 +18,7 @@ import { initMouseListeners } from './mouse-touch-input'
 import { CAMERA, GRID_DETAIL, PORTRAIT_CAMERA, STEP_DURATION } from './settings'
 import { Transition } from './gfx/transition'
 import { randomTransition } from './gfx/transition'
-import { GUI, type GameName, type GeneratorName } from './imp-names'
+import { GAME, GUI, type GameName, type GeneratorName } from './imp-names'
 import { Game } from './games/game'
 import type { LayeredViewport } from './gfx/layered-viewport'
 import { StartSequenceGame } from './games/imp/start-sequence-game'
@@ -149,17 +149,11 @@ export class SeaBlock {
     // start generating images/meshes for all guis
     for (const guiName of GUI.NAMES) {
       loadPromises.push(Gui.preload(guiName, this))
-      // const registered = Gui._registry[guiName]
-      // const { allLayouts, layoutFactory, elements } = registered
-      // const layouts = allLayouts || [layoutFactory(this)]
-      // const elementDims = getElementDims(elements, layouts)
-      // loadPromises.push(...elements.map(async (elem) => {
-      //   const { w, h } = elementDims[elem.layoutKey]
-      //   getElementImageset({ ...elem.display, w, h })
-      //   // const imageset = getElementImageset({ ...elem.display, w, h })
-      //   // loadedImagesets[elem] = imageset // flat-gui-gfx-helper.ts
-      //   return
-      // }))
+    }
+
+    // start generating meshes for all games
+    for (const gameName of GAME.NAMES) {
+      loadPromises.push(Game.preload(gameName, this))
     }
 
     Promise.all(
@@ -218,9 +212,9 @@ export class SeaBlock {
 
     // update physics
     const nSteps = Math.round(dt / STEP_DURATION)
-    terrain.update(this, nSteps)
-    floraGroup.update(this, nSteps)
-    sphereGroup.update(this, nSteps)
+    terrain.update(this, dt, nSteps)
+    floraGroup.update(this, dt, nSteps)
+    sphereGroup.update(this, dt, nSteps)
 
     // render scene
     this.layeredViewport.backRenderer.render(scene.threeScene, camera)
@@ -332,27 +326,20 @@ export class SeaBlock {
     this.terrain = new TileGroup(grid, this).build()
     this.floraGroup = new FloraGroup(this.terrain).build()
     this.sphereGroup = new SphereGroup(10, this.terrain).build()
+
+    // this.debugElems.refresh(this.config.flatConfig.debug)
+    // if (!this.game) {
+    this.game = Game.create(this.currentGameName, this)
+    // }
+
     this.scene = buildScene(this)
     this.scene.setBackground(this.style.getBackgroundColor())
     this.scene.add(cameraLockedGroup)
-    if (this.didLoadAssets) {
-      // for (const [_gameName, loadedElems] of Object.entries(elementsPerGame)) {
-      //   for (const elem of loadedElems) {
-      //     if ('mesh' in elem) {
-      //       this.scene.add(elem.mesh)
-      //     }
-      //   }
-      // }
-    }
     this.tileGfx = this.terrain.gfxHelper
 
-    // this.debugElems.refresh(this.config.flatConfig.debug)
-    if (!this.game) {
-      this.game = Game.create(this.currentGameName, this)
-    }
     // this.game.refreshConfig()
     freeCamGameConfig.refreshConfig()
-    this.game.reset(this)
+    // this.game.reset(this)
     this.game.resetCamera(this)
     if (this.game.doesAllowOrbitControls(this)) {
       this.orbitControls.enabled = true
@@ -362,9 +349,12 @@ export class SeaBlock {
 
   // called when user switches games
   public onGameChange() {
+    this.scene.threeScene.remove(...this.game.meshes)
     this.game = Game.create(this.config.flatConfig.game, this)
+    this.scene.threeScene.add(...this.game.meshes)
     this.showHideGameSpecificElems()
     this.layeredViewport.handleResize(this)
+    this.terrain.gfxHelper.restoreTileColors() // remove chess allowed-move highlights
   }
 
   private showHideGameSpecificElems() {
@@ -459,7 +449,7 @@ export class SeaBlock {
       this.orbitControls.domElement = newCanvas
 
       // fullscreen
-      if (!isDevMode) {
+      if (!isDevMode) { // fullscreen
         document.documentElement.requestFullscreen()
       }
 
@@ -494,9 +484,9 @@ export class SeaBlock {
 
     // act as though game changed
     this.currentGameName = this.config.flatConfig.game
-    this.game = Game.create(this.currentGameName, this)
+    // this.game = Game.create(this.currentGameName, this)
     StartSequenceGame.isColorTransformEnabled = this.currentGameName === 'start-sequence'
-    this.showHideGameSpecificElems()
+    // this.showHideGameSpecificElems()
     terrain.resetColors()
 
     // soft reset (graphics)
@@ -525,7 +515,7 @@ export class SeaBlock {
 
     const { testGui } = this.config.flatConfig
     if (testGui === 'settings-menu') {
-      result.unshift(Gui.create('settings-menu'))
+      result.unshift(Gui.create('settings-menu')) // show settings menu on top
     }
     else if (testGui === 'sprite-atlas') {
       return [Gui.create('sprite-atlas')] // show sprite atlas alone

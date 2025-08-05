@@ -14,9 +14,20 @@ import { isDevMode } from 'configs/top-config'
 import { gfxConfig } from './configs/gfx-config'
 import { LayeredViewport } from './gfx/layered-viewport'
 import { SeaBlock } from './sea-block'
+import { loadAllMeshes } from 'gfx/3d/mesh-asset-loader'
+import { initAllSoundEffects } from 'audio/sound-effects'
+import { loadAllSounds } from 'audio/sound-asset-loader'
 
 async function main() {
-  await loadAllImages()
+  // preload all assets (except music)
+  // console.log('start preload assets')
+  await Promise.all([
+    loadAllImages(),
+    loadAllMeshes(),
+    loadAllSounds(),
+  ])
+  initAllSoundEffects()
+  // console.log('finish preload assets')
 
   const layeredViewport = new LayeredViewport()
   gfxConfig.refreshConfig()
@@ -26,7 +37,7 @@ async function main() {
   // load default config
   seaBlock.config.refreshConfig()
 
-  if (!isDevMode) {
+  if (!isDevMode) { // apply splash config
     // set temporary config values until user clicks launch
     seaBlock.config.flatConfig.generator = 'all-ocean'
     seaBlock.config.flatConfig.style = 'black-and-white'
@@ -38,8 +49,9 @@ async function main() {
   seaBlock.init()
   seaBlock.reset()
 
-  // show controls gui on startup
-  // seaBlock.rebuildControls()
+  if (isDevMode) { // show controls gui on startup
+    seaBlock.rebuildControls()
+  }
 
   // Animation loop
   let lastTime = performance.now()

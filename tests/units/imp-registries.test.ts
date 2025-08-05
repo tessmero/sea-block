@@ -57,6 +57,7 @@ describe('Implementation Registration', async function () {
 
           assert(factory,
             `"${name}" ${baseClassName} should have factory registered`)
+
           assert(typeof factory === 'function',
             `"${name}" ${baseClassName} registered factory should be a function, 
             but it is a ${typeof factory}: ${JSON.stringify(factory)}`)

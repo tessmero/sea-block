@@ -55,6 +55,9 @@ export class IndexedGrid {
   }
 
   xzToIndex(x: number, z: number): TileIndex | undefined {
+    if ((x % 1) !== 0 || (z % 1) !== 0) {
+      throw new Error(`invalid tile x/z index (${x},${z}). must be integers.`)
+    }
     const xMap = this.xzIndexMap.get(x)
     if (xMap) {
       return xMap.get(z)

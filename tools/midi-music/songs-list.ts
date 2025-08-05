@@ -17,6 +17,7 @@ export type SongParams = {
   src: string // path to (.mid) or (.ts) song data
   adjust?: Adjuster // transpose, change instruments, add effects
   soundFount?: keyof typeof SOUND_FONTS // override default sound font
+  playbackRate?: number
   skip?: number // (seconds) cut from start
   cutoff?: number // (seconds) cut from end
 }
@@ -31,14 +32,14 @@ export const SONGS_TO_BUILD: Record<string, SongParams> = {
   // Albeniz / Granada
   albeniz: {
     src: classicalMidi('granada_(c)yogore'),
-    adjust: ({ synth, seq }) => {
-      seq.playbackRate = 0.5 // slow down
+    adjust: ({ synth }) => {
       synth.programChange(0, 34) // 34 picked bass
       synth.programChange(1, 34) // 34 picked bass
       synth.programChange(2, 34) // 34 picked bass
       synth.midiAudioChannels[0].transposeChannel(-12) // pitch down
       synth.midiAudioChannels[1].transposeChannel(-12) // pitch down
     },
+    playbackRate: 0.5, // slow down
     skip: 69.5,
     cutoff: 88.8,
   },
@@ -69,20 +70,20 @@ export const SONGS_TO_BUILD: Record<string, SongParams> = {
   // 'satie': {
   //   src: classicalMidi('satie'),
   //   adjust: ({ synth, seq }) => {
-  //     seq.playbackRate = 2 // speed up
   //     synth.programChange(0, 10) // 10 music box
   //     synth.transposeAllChannels(12) // pitch up
   //   },
+  //   playbackRate: 2, // speed up
   // },
 
   // // Debussy / Arabesque in C sharp major
   // 'debussy': {
   //   src: classicalMidi('debussy'),
   //   adjust: ({ synth }) => {
-  //     // seq.playbackRate = .6 // slow down
   //     synth.programChange(0, 10) // 10 music box
   //     synth.transposeAllChannels(9) // pitch up
   //   },
+  //   playbackRate: 0.6, // slow down
   //   // cutoff: 79, // end early
   // },
 

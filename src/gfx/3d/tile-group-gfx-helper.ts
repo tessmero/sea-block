@@ -13,8 +13,7 @@ import type { GeneratedTile } from '../../generators/terrain-generator'
 import type { StyleParser } from '../../util/style-parser'
 import type { TileGroup } from '../../core/groups/tile-group'
 import type { TileColors } from '../styles/style'
-import type { TileIndex } from '../../core/grid-logic/indexed-grid'
-import { GridAnimation } from '../grid-anims/grid-animation'
+import type { TileIndex } from 'core/grid-logic/indexed-grid'
 import { DropTransition } from './drop-transition'
 import type { TileMesh } from './tile-mesh'
 
@@ -28,23 +27,30 @@ export interface RenderableTile {
   gTile: GeneratedTile // includes base color
   entranceStartTime?: number // time when entered visible radius
   exitStartTime?: number // time when exited visible radius
-  colors?: TileColors // computed colors, assigned on first render
+  originalColors?: TileColors // computed colors, set on first render
+  liveColors?: TileColors // potentially animated copy of original colors
+}
+
+function deepCopy(colors: TileColors): TileColors {
+  return {
+    top: colors.top.clone(),
+    sides: colors.sides.clone(),
+  }
 }
 
 export class TileGroupGfxHelper {
   public readonly amplitude: number = 20
   public readonly liveRenderHeights: Array<number> // used for flora gfx
 
-  private readonly warpAnim: GridAnimation
+  private colorOverrides: Record<number, TileColors> = {}
 
   constructor(private readonly group: TileGroup) {
     this.liveRenderHeights = new Array(group.n).fill(NaN)
-
-    this.warpAnim = GridAnimation.create('radial-height-warp', group.grid)
   }
 
-  updateTileMeshes(style: StyleParser) {
+  updateTileMeshes(style: StyleParser, dt: number) {
     const { group } = this
+    const lerpAlpha = 0.05 * dt
     const maxD2 = Math.pow(gfxConfig.flatConfig.visibleRadius, 2)
 
     // reset index of mesh instances for rendering
@@ -74,21 +80,24 @@ export class TileGroupGfxHelper {
         }
 
         // compute new colors if necessary
-        if (!rTile.colors) {
+        if (!rTile.originalColors) {
           const { gTile } = rTile
 
           // compute styled colors only on first render
-          rTile.colors = style.getTileColors({
+          rTile.originalColors = style.getTileColors({
             x, z, generatedTile: gTile,
 
             // support @land and @sea conditions in styles
             land: !gTile.isWater, sea: gTile.isWater,
           })
+
+          // deep copy that may be modified
+          rTile.liveColors = deepCopy(rTile.originalColors)
         }
 
         // have group member rendered
         // always re-apply mesh instance colors
-        if (!this._updateRenderInstance(tileIndex, rTile)) {
+        if (!this._updateRenderInstance(tileIndex, rTile, lerpAlpha)) {
           // break // reached count limit
         }
       }
@@ -96,7 +105,7 @@ export class TileGroupGfxHelper {
         // tile is outside visible radius
         group.members[memberIndex].isVisible = false
 
-        if (rTile?.colors) {
+        if (rTile?.originalColors) {
           // tile was generated and previously rendered
 
           if (!rTile.exitStartTime) {
@@ -109,7 +118,7 @@ export class TileGroupGfxHelper {
           if (elapsed < EXIT_DURATION) {
             // special case, tile recently left visible radius
             // render even though outside of visible radius
-            if (!this._updateRenderInstance(tileIndex, rTile)) {
+            if (!this._updateRenderInstance(tileIndex, rTile, lerpAlpha)) {
               // break // reached count limit (subgroup.ts)
             }
           }
@@ -130,7 +139,31 @@ export class TileGroupGfxHelper {
     }
   }
 
-  private _updateRenderInstance(tileIndex: TileIndex, rTile: RenderableTile): boolean {
+  public setTempColorsForTile(colors: TileColors, tile: TileIndex) {
+    this.colorOverrides[tile.i] = colors
+  }
+
+  public restoreColorsForTile(tile: TileIndex) {
+    delete this.colorOverrides[tile.i]
+  }
+
+  public restoreTileColors() {
+    this.colorOverrides = {}
+  }
+
+  public setColorsForTile(colors: TileColors, tile: TileIndex): void {
+    let rTile = this.group.generatedTiles[tile.i]
+    if (!rTile) {
+      rTile = this.group.generateTile(tile)
+    }
+
+    rTile.originalColors = colors
+    rTile.liveColors = deepCopy(colors)
+    const { colorOverrides } = this
+    delete (colorOverrides[tile.i])
+  }
+
+  private _updateRenderInstance(tileIndex: TileIndex, rTile: RenderableTile, lerpAlpha: number): boolean {
     const { group } = this
     const { x, z, i: memberIndex } = tileIndex
     if (typeof x === 'undefined') {
@@ -153,7 +186,7 @@ export class TileGroupGfxHelper {
       throw new Error('subgroup changed')
     }
 
-    const { gTile, colors } = rTile
+    const { gTile, originalColors, liveColors } = rTile
 
     const box = group.tilePositions[memberIndex]
 
@@ -204,9 +237,13 @@ export class TileGroupGfxHelper {
     dummy.updateMatrix()
     const newIndexInSubgroup = subgroup.setMemberMatrix(memberIndex, dummy.matrix)
     group.subgroupsByFlatIndex[memberIndex] = [subgroup, newIndexInSubgroup]
-    if (colors) {
+
+    if (originalColors && liveColors) {
       const tileMesh = subgroup.mesh as TileMesh
-      tileMesh.setColorsForInstance(newIndexInSubgroup, colors)
+      const targetColors = this.colorOverrides[tileIndex.i] || originalColors
+      liveColors.sides.lerp(targetColors.sides, lerpAlpha)
+      liveColors.top.lerp(targetColors.top, lerpAlpha)
+      tileMesh.setColorsForInstance(newIndexInSubgroup, liveColors)
     }
     return true // yes successful
   }

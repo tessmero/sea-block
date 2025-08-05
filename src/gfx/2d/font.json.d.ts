@@ -4,7 +4,7 @@
  * Types and module definition used to import json font data.
  */
 
-// allow import from .jsonc file used for pixel font
+// allow import from .json file used for pixel font
 declare module '*font.json' {
   const value: PixelFontData
   export = value

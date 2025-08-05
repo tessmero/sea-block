@@ -21,7 +21,7 @@ import { convertToMidi } from './ts-to-midi'
 import { SONGS_TO_BUILD } from './songs-list'
 import { loadAllSoundFonts, SOUND_FONTS } from './sound-fonts'
 
-const outDir = '../public/music/'
+const outDir = '../../public/music/'
 const defaultSoundFont: keyof typeof SOUND_FONTS = 'falcomod-reality'
 
 const sampleRate = 44100
@@ -32,10 +32,10 @@ async function main() {
 
   // build all songs
   for (const [songName, songParams] of Object.entries(SONGS_TO_BUILD)) {
-    const { src, adjust, skip, cutoff, soundFount } = songParams
+    const { src, adjust, skip, cutoff, soundFount, playbackRate = 1 } = songParams
     const midi = loadMidi(src)
     const soundFont = loadedSoundFonts[soundFount || defaultSoundFont]
-    const sampleCount = sampleRate * (midi.duration + 2) // two extra seconds at end
+    const sampleCount = Math.ceil(sampleRate * (midi.duration + 2) / playbackRate) // two extra seconds at end
 
     // build synthesiser for one song
     const seq: SpessaSynthSequencer = await buildSongSynth(midi, soundFont)

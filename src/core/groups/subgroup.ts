@@ -54,7 +54,7 @@ export class Subgroup {
       this.mesh.setInstanceColor(index, color)
     }
     else {
-      throw new Error('subgroups with tile mesh should use setTileStyle')
+      throw new Error('subgroups with tile mesh should use setColorsForTile')
     }
   }
 

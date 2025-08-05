@@ -27,6 +27,17 @@ export const musicBtn: GuiElement = {
   },
 }
 
+export const chessBtn: GuiElement = {
+  display: { type: 'button', icon: `icons/16x16-chess.png` },
+  layoutKey: 'chessBtn',
+  hotkeys: [],
+  clickAction: ({ seaBlock }) => {
+    const item = seaBlock.config.tree.children.game
+    item.value = 'chess'
+    seaBlock.onCtrlChange(item)
+  },
+}
+
 export const configBtn: GuiElement = {
   display: { type: 'button', icon: `icons/16x16-config.png` },
   layoutKey: 'configBtn',

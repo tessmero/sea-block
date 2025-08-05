@@ -39,13 +39,6 @@ export const standards = {
 // common buttons at top of screen
 export const commonLayout = {
 
-  // 2027-08-01 show sprite atlas test gui
-  spritAtlasBtn: {
-    ...btn,
-    width: 5 * btn.width,
-    left: 'auto',
-  },
-
   // config on top left
   configBtn: { ...btn,
     top: pad,
@@ -56,6 +49,12 @@ export const commonLayout = {
   musicBtn: { ...btn,
     top: pad,
     right: pad,
+  },
+
+  // 2027-08-03 start chess game
+  chessBtn: { ...btn,
+    top: pad,
+    right: btn.width + 2 * pad,
   },
 
 } as const satisfies CssLayout

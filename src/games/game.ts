@@ -12,12 +12,16 @@
  * visual elements, used to preload assets on startup.
  */
 
-import type { Vector3 } from 'three'
+import { type Object3D, type Vector3 } from 'three'
 import type { GameName, GuiName } from '../imp-names'
 import type { SeaBlock } from '../sea-block'
 
 import { CAMERA, CAMERA_LOOK_AT, PORTRAIT_CAMERA } from '../settings'
 import { Gui } from '../guis/gui'
+
+export type GameElement = {
+  meshLoader: () => Promise<Object3D>
+}
 
 // parameters for update each frame
 export interface GameUpdateContext {
@@ -30,6 +34,8 @@ export abstract class Game {
 
   public abstract reset(context: SeaBlock): void
   public resetCamera(_context: SeaBlock): void {}
+
+  public meshes: Array<Object3D> = []
 
   protected getCamOffset(context: SeaBlock): Vector3 {
     const { w, h } = context.layeredViewport
@@ -48,6 +54,7 @@ export abstract class Game {
   // static registry pattern
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   static _registry: Record <GameName, RegisteredGame> = {} as any
+  static _preloaded: Partial<Record <GameName, Game>> = {}
 
   protected constructor() {}
 
@@ -58,17 +65,34 @@ export abstract class Game {
     this._registry[name] = rg
   }
 
-  static create(name: GameName, context: SeaBlock): Game {
-    const { factory, guiName } = this._registry[name]
+  static preload(name: GameName, context: SeaBlock): Promise<Array<void>> {
+    const { factory, guiName, elements = [] } = this._registry[name]
+
+    // Games are singletons
+    // one-time construction
     const instance = factory()
+    this._preloaded[name] = instance
 
     // Game
     // post-construction setup
     if (context) {
       instance.gui = Gui.create(guiName)
-      instance.reset(context)
-      instance.gui.refreshLayout(context)
     }
+
+    // // preload all meshes
+    return Promise.all(elements.map(async (elem) => {
+      instance.meshes.push(await elem.meshLoader())
+    }))
+  }
+
+  static create(name: GameName, context: SeaBlock): Game {
+    const instance = this._preloaded[name]
+    if (!instance) {
+      throw new Error(`game '${name}' was not preloaded`)
+    }
+
+    instance.reset(context)
+    instance.gui.refreshLayout(context)
 
     return instance
   }
@@ -78,4 +102,5 @@ export abstract class Game {
 interface RegisteredGame {
   readonly factory: () => Game
   readonly guiName: GuiName
+  readonly elements?: Array<GameElement>
 }

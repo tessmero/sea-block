@@ -215,9 +215,14 @@ export function initMouseListeners(
 const lvPos = new THREE.Vector2()
 const dummy = new THREE.Vector2()
 
+const planeNormal = new THREE.Vector3(0, -1, 0)
 const planeY = new THREE.Plane(
-  new THREE.Vector3(0, 1, 0), -CAMERA_LOOK_AT.y,
+  planeNormal, CAMERA_LOOK_AT.y,
 )
+export function setTilePickY(y: number) {
+  planeY.constant = y
+}
+
 const raycaster = new THREE.Raycaster()
 const intersection = new THREE.Vector3()
 

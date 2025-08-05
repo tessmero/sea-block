@@ -5,7 +5,7 @@
  */
 
 import { leftJoy, leftJoySlider, rightJoy, rightJoySlider } from 'guis/elements/joysticks'
-import { configBtn, musicBtn } from 'guis/elements/misc-buttons'
+import { chessBtn, configBtn, musicBtn } from 'guis/elements/misc-buttons'
 import { wasdButtons } from 'guis/elements/wasd-buttons'
 import { Gui } from 'guis/gui'
 import { FREECAM_DESKTOP_LAYOUT } from 'guis/layouts/freecam-desktop-layout'
@@ -21,6 +21,7 @@ export class FreeCamGui extends Gui {
       elements: [
         // spritAtlasBtn,
         musicBtn,
+        chessBtn,
         configBtn,
         leftJoy, leftJoySlider,
         rightJoy, rightJoySlider,

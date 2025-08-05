@@ -210,8 +210,8 @@ export default tseslint.config(
 
   // require valid gui layout css
   {
-    files: ['src/gui/layouts/**/*.ts'],
-    ignores: ['src/gui/layouts/layout-helper.ts'],
+    files: ['src/guis/layouts/**/*.ts'],
+    ignores: ['src/guis/layouts/layout-helper.ts'],
     plugins: { '@typescript-eslint': tseslint.plugin },
     languageOptions: {
       parserOptions: {

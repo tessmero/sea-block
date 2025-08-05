@@ -107,7 +107,7 @@ export function updateFrontLayer(seaBlock: SeaBlock) {
         }
 
         // special case for joystick regions: clear rectangle
-        if (display.type === 'joyRegion') {
+        if (display.type === 'joy-region') {
           ctx.clearRect(rect.x, rect.y, rect.w, rect.h)
         }
 
