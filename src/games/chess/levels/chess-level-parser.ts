@@ -10,10 +10,11 @@ import * as chessLevels from './chess-levels.json'
 import type { TileIndex } from 'core/grid-logic/indexed-grid'
 import type { TileGroup, TileOverrides } from 'core/groups/tile-group'
 import { pickColorsForChessTile } from '../chess-colors'
-import type { PieceName as ShortName } from './chess-levels.json.d'
+import type { ChessLevel, CollectibleName, PieceName as ShortName } from './chess-levels.json.d'
 import type { PieceName } from '../chess-enums.ts'
 import type { PieceColor } from './chess-levels.json.d'
 import type { Piece } from './chess-levels.json.d'
+import { chessRun, type Chess } from '../chess-helper'
 
 // make terrain tile part of chess board
 function getChessTileOverrides(tile: TileIndex): TileOverrides {
@@ -33,7 +34,53 @@ type LevelStartState = {
   goalTile: TileIndex
 }
 
-export function loadChessLevel(levelIndex: number, terrain: TileGroup, center: TileIndex): LevelStartState {
+function pickValidLevel(): number {
+  const result = 0
+  const { levels } = chessLevels
+
+  const candidates: Array<number> = []
+  for (let i = 0; i < levels.length; i++) {
+    if (chessRun.completedLevels.includes(i)) {
+      continue // level already completed
+    }
+    if (isLevelValid(levels[i] as ChessLevel, chessRun.collected)) {
+      candidates.push(i)
+    }
+  }
+
+  if (candidates.length === 0) {
+    console.log('no valid chess levels')
+    return 0
+  }
+
+  return candidates[Math.floor(Math.random() * candidates.length)]
+}
+
+function isLevelValid(level: ChessLevel, context: Array<CollectibleName>) {
+  const { requires } = level
+  if (!requires) {
+    return true // level is valid (no requirements)
+  }
+  const collected: Array<CollectibleName> = [...context]
+  for (const req of requires) {
+    const i = collected.indexOf(req)
+    if (i === -1) {
+      return false // level is invalid (missing requirement)
+    }
+    collected.splice(i, 1) // remove element at index i
+  }
+}
+
+export function markLevelCompleted() {
+  chessRun.completedLevels.push(levelIndex)
+}
+
+let levelIndex = 0
+export function loadChessLevel(chess: Chess): LevelStartState {
+  levelIndex = pickValidLevel()
+
+  const { terrain } = chess.context
+  const center = chess.centerTile
   const instance = new ChessLevelParser(levelIndex, terrain)
   instance.loadLevel(center)
 
@@ -61,7 +108,10 @@ class ChessLevelParser {
   ) {}
 
   loadLevel(center: TileIndex) {
+    console.log('load chess level')
+
     const { terrain } = this
+    terrain.generateAllTiles()
     // Get the first level's layout (assume 8x8)
     const layout = chessLevels.levels[this.levelIndex % chessLevels.levels.length].layout
     const nRows = layout.length // 8
@@ -75,6 +125,7 @@ class ChessLevelParser {
         const x = center.x + dx - halfX
         const z = center.z + dz - halfZ
         const tileIdx = terrain.grid.xzToIndex(x, z)
+        let isWater = false
         if (tileIdx) {
           const tileValue = layout[dz][dx]
           if (tileValue === '  ') {
@@ -83,16 +134,21 @@ class ChessLevelParser {
           else if (tileValue === 'GG') {
             this.goalTile = tileIdx // goal
           }
+          else if (tileValue === 'WA') {
+            isWater = true// water
+          }
           else {
             this.playerPiece = parsePiece(tileValue as Piece)
             this.playerTile = tileIdx // player
           }
 
-          terrain.overrideTile(tileIdx, getChessTileOverrides(tileIdx))
-          terrain.members[tileIdx.i].isWater = false
-
-          const colors = pickColorsForChessTile(tileIdx)
-          terrain.gfxHelper.setColorsForTile(colors, tileIdx)
+          if (!isWater) {
+            // solid chessboard tile
+            terrain.overrideTile(tileIdx, getChessTileOverrides(tileIdx))
+            terrain.members[tileIdx.i].isWater = false
+            const colors = pickColorsForChessTile(tileIdx)
+            terrain.gfxHelper.setColorsForTile(colors, tileIdx)
+          }
         }
       }
     }

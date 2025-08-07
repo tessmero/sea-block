@@ -9,6 +9,7 @@
 import type { PieceName } from './chess-enums'
 import type { TileIndex } from 'core/grid-logic/indexed-grid'
 import type { TileGroup } from 'core/groups/tile-group'
+import type { RenderablePiece } from './chess-helper'
 
 // decsription of possible moves for a piece
 type Moveset = {
@@ -92,14 +93,14 @@ export const CHESS_MOVES = {
 
 // Get Allowed Moves Parameters
 type GamPars = {
-  piece: PieceName
-  tile: TileIndex
+  piece: RenderablePiece
   terrain: TileGroup
 }
 
 export function getAllowedMoves(params: GamPars): Array<TileIndex> {
-  const { piece, tile, terrain } = params
-  const { range, deltas } = CHESS_MOVES[piece]
+  const { piece, terrain } = params
+  const { range, deltas } = CHESS_MOVES[piece.type]
+  const { tile } = piece
 
   // console.log(`getallowedmoves ${tile.x},${tile.z}`)
 

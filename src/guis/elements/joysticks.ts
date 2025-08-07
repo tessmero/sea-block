@@ -29,6 +29,7 @@ export const leftJoy: GuiElement = {
   display: {
     type: 'joy-region',
     border: '16x16-btn-square',
+    shouldClearBehind: true,
   },
   layoutKey: 'leftJoy',
   hotkeys: [],
@@ -59,6 +60,7 @@ export const rightJoy: GuiElement = {
   display: {
     type: 'joy-region',
     border: '16x16-btn-square',
+    shouldClearBehind: true,
   },
   layoutKey: 'rightJoy',
   hotkeys: [],

@@ -107,10 +107,9 @@ export function updateFrontLayer(seaBlock: SeaBlock) {
         }
 
         // special case for joystick regions: clear rectangle
-        if (display.type === 'joy-region') {
+        if (display.shouldClearBehind) {
           ctx.clearRect(rect.x, rect.y, rect.w, rect.h)
         }
-
         if (display.type === 'sprite-atlas') {
           (gui as SpriteAtlasGui).drawAtlasView(ctx, rect)
         }

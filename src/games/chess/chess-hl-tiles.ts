@@ -7,9 +7,9 @@
 
 import type { TileIndex } from 'core/grid-logic/indexed-grid'
 import type { TileGroup } from 'core/groups/tile-group'
-import type { PieceName } from './chess-enums'
 import { getAllowedMoves } from './chess-rules'
 import { pickColorsForChessTile } from './chess-colors'
+import type { Chess } from './chess-helper'
 
 const _HIGHLIGHTS = [
   'hover', 'allowedMove',
@@ -25,7 +25,12 @@ export class ChessHlTiles {
     private readonly terrain: TileGroup,
   ) {}
 
-  updateAllowedMoves(tile: TileIndex, piece: PieceName) {
+  updateAllowedMoves(chess: Chess) {
+    const {
+      currentPhase: phase,
+      centerTile: center,
+      currentPiece: piece,
+    } = chess
     const { terrain, allowedMoves, changed } = this
 
     // clear old highlights
@@ -34,11 +39,24 @@ export class ChessHlTiles {
     }
     allowedMoves.clear()
 
-    // highlight new allowed moves
-    const targets = getAllowedMoves({ piece, tile, terrain })
-    for (const { i } of targets) {
-      allowedMoves.add(i)
-      changed.add(i)
+    if (phase === 'place-pawn') {
+      // highlight bottom row
+      const { x, z } = center
+      for (let dx = -2; dx <= 2; dx++) {
+        const tile = terrain.grid.xzToIndex(x + dx, z + 2)
+        if (tile) {
+          allowedMoves.add(tile.i)
+          changed.add(tile.i)
+        }
+      }
+    }
+    else {
+      // highlight allowed moves
+      const targets = getAllowedMoves({ piece, terrain })
+      for (const { i } of targets) {
+        allowedMoves.add(i)
+        changed.add(i)
+      }
     }
   }
 

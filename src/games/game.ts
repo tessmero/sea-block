@@ -47,6 +47,10 @@ export abstract class Game {
     return true
   }
 
+  public doesAllow3DRender(): boolean {
+    return true
+  }
+
   public update(_context: GameUpdateContext): void {
     // od nothing
   }

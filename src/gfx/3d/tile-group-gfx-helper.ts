@@ -159,8 +159,8 @@ export class TileGroupGfxHelper {
 
     rTile.originalColors = colors
     rTile.liveColors = deepCopy(colors)
-    const { colorOverrides } = this
-    delete (colorOverrides[tile.i])
+    // const { colorOverrides } = this
+    // delete (colorOverrides[tile.i])
   }
 
   private _updateRenderInstance(tileIndex: TileIndex, rTile: RenderableTile, lerpAlpha: number): boolean {

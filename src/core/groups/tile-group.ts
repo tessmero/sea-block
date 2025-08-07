@@ -97,11 +97,17 @@ export class TileGroup extends Group<Tile, WaterSim> {
   public overrideTile(idx: TileIndex, values: TileOverrides) {
     const { i } = idx
     const member = this.members[i]
-    const gTile = this.generatedTiles[i]?.gTile
+    const gTile = this.generatedTiles[i] || this.generateTile(idx)
     for (const prop in values) {
       member[prop] = values[prop]
-      if (gTile) {
-        gTile[prop] = values[prop]
+      gTile.gTile[prop] = values[prop]
+    }
+  }
+
+  public generateAllTiles() {
+    for (const idx of this.grid.tileIndices) {
+      if (!this.generatedTiles[idx.i]) {
+        this.generateTile(idx)
       }
     }
   }
@@ -221,6 +227,7 @@ export class TileGroup extends Group<Tile, WaterSim> {
 
   public resetColors() {
     // this.generator.refreshConfig()
+    console.log('reset colors')
     this.generatedTiles.fill(null)
     this.gfxHelper.liveRenderHeights.fill(NaN)
     this.gfxHelper.restoreTileColors()

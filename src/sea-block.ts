@@ -58,6 +58,8 @@ const cameraLockedGroup = new THREE.Group()
 //   hotkeys?: ReadonlyArray<string>
 // }
 
+const emptyScene = new THREE.Scene()
+
 export class SeaBlock {
   public didLoadAssets = false
   public readonly config = seaBlockConfig
@@ -93,6 +95,7 @@ export class SeaBlock {
 
   // defined only during transition sequence
   transition?: Transition
+  midTransitionCallback?: () => void
 
   constructor(public readonly layeredViewport: LayeredViewport) {
     if (didConstruct) {
@@ -217,16 +220,22 @@ export class SeaBlock {
     sphereGroup.update(this, dt, nSteps)
 
     // render scene
-    this.layeredViewport.backRenderer.render(scene.threeScene, camera)
+    if (this.game.doesAllow3DRender()) {
+      this.layeredViewport.backRenderer.render(scene.threeScene, camera)
+    }
+    else {
+      this.layeredViewport.backRenderer.render(emptyScene, camera)
+    }
 
     // debug
     // const dist = camera.position.distanceTo(this.orbitControls.target)
     // console.log(dist)
   }
 
-  public startTransition() {
+  public startTransition(callback?: () => void) {
     this.transition = randomTransition(this)
     this.isCovering = true
+    this.midTransitionCallback = callback
     updateFrontLayer(this)
   }
 
@@ -487,12 +496,9 @@ export class SeaBlock {
     // this.game = Game.create(this.currentGameName, this)
     StartSequenceGame.isColorTransformEnabled = this.currentGameName === 'start-sequence'
     // this.showHideGameSpecificElems()
-    terrain.resetColors()
-
     // soft reset (graphics)
     this.style = getStyle(this.config.flatConfig.style)
     scene.setBackground(this.style.getBackgroundColor())
-    terrain.resetColors()
     // this.onResize()
 
     // // reset camera
@@ -500,6 +506,11 @@ export class SeaBlock {
     // camera.position.set(x + CAMERA.x, CAMERA.y, z + CAMERA.z)
 
     this.reset()
+
+    if (this.midTransitionCallback) {
+      this.midTransitionCallback()
+      this.midTransitionCallback = undefined
+    }
   }
 
   public didBuildControls = false // set to true after first build

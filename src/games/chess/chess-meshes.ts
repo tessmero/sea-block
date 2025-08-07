@@ -14,7 +14,7 @@ import { getImage } from 'gfx/2d/image-asset-loader'
 import { ColoredInstancedMesh } from 'gfx/3d/colored-instanced-mesh'
 
 // loaded meshes
-export const chessPieceMeshes: Partial<Record<PieceName, InstancedMesh>> = {}
+export const chessPieceMeshes: Partial<Record<PieceName, ColoredInstancedMesh>> = {}
 export let treasureChestMesh: Group
 
 export const treasureChestElement = {
@@ -28,7 +28,7 @@ export const treasureChestElement = {
     treasureChestMesh.traverse((child) => {
       if (child instanceof Mesh) {
         child.material = chestMat
-        child.position.set(0, 16.5, 0)
+        child.position.set(0, 0, 0)
 
         // if (child.name === 'lid') {
         //   child.rotation.x = Math.PI / 2

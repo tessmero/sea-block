@@ -9,7 +9,7 @@ import.meta.glob('./**/*.ts', { eager: true })
 
 import { randChoice } from 'util/rng'
 import { loadAllImages } from 'gfx/2d/image-asset-loader'
-import { TILING } from 'imp-names'
+import { GUI, TILING } from 'imp-names'
 import { isDevMode } from 'configs/top-config'
 import { gfxConfig } from './configs/gfx-config'
 import { LayeredViewport } from './gfx/layered-viewport'
@@ -37,19 +37,19 @@ async function main() {
   // load default config
   seaBlock.config.refreshConfig()
 
-  if (!isDevMode) { // apply splash config
+  //if (!isDevMode) { // apply splash config
     // set temporary config values until user clicks launch
     seaBlock.config.flatConfig.generator = 'all-ocean'
     seaBlock.config.flatConfig.style = 'black-and-white'
     seaBlock.config.flatConfig.game = 'splash-screen'
     seaBlock.config.flatConfig.tiling = randChoice(TILING.NAMES)
-  }
+  //}
 
   // init game and 3D scene
   seaBlock.init()
   seaBlock.reset()
 
-  if (isDevMode) { // show controls gui on startup
+  if (false && isDevMode) { // show controls gui on startup
     seaBlock.rebuildControls()
   }
 

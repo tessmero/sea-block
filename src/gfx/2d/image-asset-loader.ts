@@ -43,13 +43,19 @@ export const IMAGE_ASSET_URLS = [
   'icons/16x16-pan.png',
   'icons/16x16-rotate.png',
 
-  'icons/chess/16x16-bishop.png',
-  'icons/chess/16x16-king.png',
-  'icons/chess/16x16-knight.png',
-  'icons/chess/16x16-pawn.png',
   'icons/chess/16x16-queen.png',
   'icons/chess/16x16-rook.png',
+  'icons/chess/8x8-queen.png',
+  'icons/chess/8x8-pawn.png',
+  'icons/chess/16x16-pawn.png',
+  'icons/chess/16x16-king.png',
+  'icons/chess/8x8-knight.png',
+  'icons/chess/8x8-bishop.png',
+  'icons/chess/8x8-rook.png',
+  'icons/chess/8x8-king.png',
+  'icons/chess/16x16-knight.png',
   'icons/chess/16x16-chest.png',
+  'icons/chess/16x16-bishop.png',
 ] as const
 export type ImageAssetUrl = (typeof IMAGE_ASSET_URLS)[number]
 

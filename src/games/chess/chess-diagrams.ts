@@ -1,7 +1,7 @@
 /**
  * @file chess-diagrams.ts
  *
- * Helpers to draw displays for chess help panel.
+ * Helpers to draw chess help panel and 2d view mode.
  */
 import { goalDisplay, movesDisplay, flatViewportDisplay } from 'guis/imp/chess-gui'
 import type { PieceName } from './chess-enums'
@@ -9,25 +9,47 @@ import { getImage } from 'gfx/2d/image-asset-loader'
 import { pickColorsForChessTile } from './chess-colors'
 import type { Chess } from './chess-helper'
 import type { ChessTileHighlight } from './chess-hl-tiles'
+import { CHESS_MOVES } from './chess-rules'
+import { COLLECTIBLES, type Collectible  } from './chess-rewards'
+import type { StaticElement } from 'guis/gui'
+import { CollectibleName } from './levels/chess-levels.json.d'
 
-export function buildGoalDiagram() {
+export function buildRewardChoiceDiagram(elem: StaticElement, reward: CollectibleName) {
+  const buffer = elem.display.imageset?.default
+  if (!buffer) {
+    throw new Error(`chess reward diagram element with layout key ${elem.layoutKey} has no buffer`)
+  }
+
+  // draw reward icon centered
+  const { icon } = COLLECTIBLES[reward]
+  const iconImage = getImage(icon)
+  const ctx = buffer.getContext('2d') as OffscreenCanvasRenderingContext2D
+  ctx.clearRect(0, 0, buffer.width, buffer.height)
+  const ICON_SIZE = iconImage.width
+  const x = (buffer.width - ICON_SIZE) / 2
+  const y = (buffer.height - ICON_SIZE) / 2
+  ctx.drawImage(iconImage, x, y, ICON_SIZE, ICON_SIZE)
+}
+
+export function buildGoalDiagram(piece: PieceName) {
   const buffer = goalDisplay?.imageset?.default
   if (!buffer) {
     throw new Error('chess goal diagram element has no buffer')
   }
+  goalDisplay.needsUpdate = true
 
   const { width, height } = buffer
   const ctx = buffer.getContext('2d') as OffscreenCanvasRenderingContext2D
+  ctx.clearRect(0, 0, buffer.width, buffer.height)
 
   // Images
-  const pieceName: PieceName = 'rook'
-  const pieceImage = getImage(`icons/chess/16x16-${pieceName}.png`)
+  const pieceImage = getImage(`icons/chess/16x16-${piece}.png`)
   const arrowImage = getImage('icons/16x16-arrow-right.png')
   const chestImage = getImage('icons/chess/16x16-chest.png')
 
   // Layout constants
   const ICON_SIZE = 16
-  const ICON_DIST = 12 // adjustable distance between icons
+  const ICON_DIST = -6 // adjustable distance between icons
 
   // Calculate positions
   const totalWidth = ICON_SIZE * 3 + ICON_DIST * 2
@@ -42,18 +64,29 @@ export function buildGoalDiagram() {
   ctx.drawImage(chestImage, startX + 2 * (ICON_SIZE + ICON_DIST), centerY, ICON_SIZE, ICON_SIZE)
 }
 
-export function buildMovesDiagram() {
+export function buildMovesDiagram(piece: PieceName) {
   const buffer = movesDisplay?.imageset?.default
   if (!buffer) {
     throw new Error('chess moves diagram element has no buffer')
   }
   const ctx = buffer.getContext('2d') as OffscreenCanvasRenderingContext2D
+  ctx.clearRect(0, 0, buffer.width, buffer.height)
 
   // Board and piece constants
   const BOARD_SIZE = 5
   const TILE_SIZE = 10
-  const PIECE_NAME: PieceName = 'rook'
-  const pieceImage = getImage(`icons/chess/16x16-${PIECE_NAME}.png`)
+  const pieceImage = getImage(`icons/chess/8x8-${piece}.png`)
+
+  // check allowed moves for piece
+  const hash = (x, y) => 100 * x + y
+  const allowedHashes: Array<number> = []
+  const { range, deltas } = CHESS_MOVES[piece]
+  for (const [x, y] of deltas) {
+    allowedHashes.push(hash(x, y))
+    if (range === 'long') {
+      allowedHashes.push(hash(2 * x, 2 * y))
+    }
+  }
 
   // Calculate board position (centered)
   const boardPx = BOARD_SIZE * TILE_SIZE
@@ -65,7 +98,11 @@ export function buildMovesDiagram() {
     for (let col = 0; col < BOARD_SIZE; col++) {
       const x = startX + col * TILE_SIZE
       const y = startY + row * TILE_SIZE
-      const tileColors = pickColorsForChessTile({ x: col, z: row, i: 0 })
+      let hl: ChessTileHighlight | undefined = undefined
+      if (allowedHashes.includes(hash(col - 2, row - 2))) {
+        hl = 'allowedMove'
+      }
+      const tileColors = pickColorsForChessTile({ x: col, z: row, i: 0 }, hl)
       ctx.fillStyle = tileColors.top.getStyle()
       ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE)
       ctx.strokeStyle = tileColors.sides.getStyle()
@@ -96,12 +133,12 @@ export function renderFlatView(
   flatViewportDisplay.needsUpdate = true
   const ctx = buffer.getContext('2d') as OffscreenCanvasRenderingContext2D
 
-  const { currentPieceType, centerTile, goalTile, hlTiles, currentPieceMesh } = chess
+  const { centerTile, goalTile, hlTiles, currentPiece } = chess
 
   // Board constants
   const BOARD_SIZE = 5
   const TILE_SIZE = 16
-  const pieceImage = getImage(`icons/chess/16x16-${currentPieceType}.png`)
+  const pieceImage = getImage(`icons/chess/16x16-${currentPiece.type}.png`)
   const goalImage = getImage('icons/chess/16x16-chest.png')
 
   // Center tile grid position
@@ -142,7 +179,7 @@ export function renderFlatView(
   }
 
   // draw player
-  const player = chess.getPiecePosition(currentPieceMesh).clone()
+  const player = chess.getPiecePosition(currentPiece).clone()
   const centerPos = chess.getPosOnTile(centerTile)
   const rookCol = centerCol + (player.x - centerPos.x)
   const rookRow = centerRow + (player.z - centerPos.z)

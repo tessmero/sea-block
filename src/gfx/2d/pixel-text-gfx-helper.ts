@@ -9,7 +9,7 @@ import * as miniFont from './mini-font.json'
 import type { PixelFontData, Glyph } from './font.json.d.ts'
 
 export type FontVariant = 'default' | 'mini'
-export type TextAlign = 'top-left' | 'center'
+export type TextAlign = 'top-left' | 'center' | 'left'
 
 const basement = 2 // distance below baseline for lowercase q and g
 
@@ -33,6 +33,9 @@ export function drawText(ctx, params: DrawTextParams) {
   let y0 = 0
   if (textAlign === 'center') {
     x0 = Math.floor(width / 2 - textPixels[0].length / 2)
+    y0 = Math.floor(height / 2 - textPixels.length / 2 + basement / 2)
+  }
+  else if (textAlign === 'left') {
     y0 = Math.floor(height / 2 - textPixels.length / 2 + basement / 2)
   }
 

@@ -4,7 +4,7 @@
  * Game implementation that points to modules in src/games/chess.
  */
 import { Game } from 'games/game'
-import { resetChess, updateChess } from 'games/chess/chess-helper'
+import { chessAllow3DRender, resetChess, updateChess } from 'games/chess/chess-helper'
 import { treasureChestElement, chessPieceElements } from 'games/chess/chess-meshes'
 
 export class ChessGame extends Game {
@@ -21,4 +21,5 @@ export class ChessGame extends Game {
 
   reset = resetChess
   update = updateChess
+  doesAllow3DRender = chessAllow3DRender
 }

@@ -3,8 +3,8 @@
  *
  * Like sphere-test, but without the sphere.
  */
-import type { Vector2 } from 'three'
-import { Color, Vector3 } from 'three'
+import type { Group, Vector2 } from 'three'
+import { Color, Mesh, MeshLambertMaterial, Vector3 } from 'three'
 import { CAMERA_LOOK_AT } from 'settings'
 import type { SeaBlock } from 'sea-block'
 import { freeCamGameConfig } from 'configs/free-cam-game-config'
@@ -13,7 +13,10 @@ import type { TileIndex } from 'core/grid-logic/indexed-grid'
 import { wasdInputState } from 'guis/elements/wasd-buttons'
 import { getLeftJoystickInput, leftDead, orbitWithRightJoystick } from 'guis/elements/joysticks'
 import { Game } from '../game'
-import type { GameUpdateContext } from '../game'
+import type { GameElement, GameUpdateContext } from '../game'
+import type { PieceName } from 'games/chess/chess-enums'
+import { randChoice } from 'util/rng'
+import { getMesh } from 'gfx/3d/mesh-asset-loader'
 
 export const MOUSE_DEADZONE = 50 // (px) center of screen with zero force
 export const MOUSE_MAX_RAD = 200 // (px) radius with max force
@@ -24,11 +27,23 @@ const targetDummy = new Vector3()
 
 const _lastPickedTileIndex: TileIndex | undefined = undefined
 
+const startPiece = randChoice(['rook', 'bishop']) as PieceName
+let pickablePieceMesh: Group
+const pickablePieceElement: GameElement = {
+  meshLoader: async () => {
+    pickablePieceMesh = getMesh(`chess/${startPiece}.obj`)
+    return pickablePieceMesh
+  },
+}
+
 export class FreeCamGame extends Game {
   static {
     Game.register('free-cam', {
       factory: () => new FreeCamGame(),
       guiName: 'free-cam',
+      elements: [
+        pickablePieceElement, // chess piece appearing randomly on terrain
+      ],
     })
   }
 
@@ -73,6 +88,22 @@ export class FreeCamGame extends Game {
     sphereGroup.setInstanceColor(1, new Color(0xff0000))
 
     this.centerOnAnchor(context)
+
+    this.initPickableChessPiece(context)
+  }
+
+  private initPickableChessPiece(context: SeaBlock) {
+    //
+    const mat = new MeshLambertMaterial({ color: 0x333333 })
+    pickablePieceMesh.traverse((child) => {
+      if (child instanceof Mesh) {
+        child.material = mat
+      }
+    })
+    const scale = 10
+    pickablePieceMesh.scale.set(scale, scale, scale)
+    const { x, y, z } = context.orbitControls.target
+    pickablePieceMesh.position.set(x, y + 3, z)
   }
 
   public resetCamera(context: SeaBlock): void {

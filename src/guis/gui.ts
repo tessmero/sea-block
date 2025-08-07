@@ -27,6 +27,7 @@ export type StaticElement = {
   dragAction?: (event: ElementEvent) => void
   unclickAction?: (event: ElementEvent) => void
   isSticky?: boolean
+  isPickable?: boolean
   hotkeys?: ReadonlyArray<KeyCode> // bound keyboard keys
 }
 
@@ -60,6 +61,7 @@ export type ElementDisplayParams = {
   readonly font?: FontVariant
   readonly textAlign?: TextAlign
 
+  shouldClearBehind?: boolean
   isVisible?: boolean
   needsUpdate?: boolean // request repaint
   forcedState?: ButtonState
@@ -170,8 +172,13 @@ export class Gui {
     for (const id in this.pickable) {
       // console.log(`gui ${this.constructor.name} try picking ${id} at ${this.pickable[id]}}`)
       const layoutKey = this.pickable[id]
-      if (this.elements[id as ElementId].display.isVisible === false) {
+      const elem = this.elements[id as ElementId]
+      if (elem.display.isVisible === false) {
+        // console.log(`skip picking invisible element with layout key ${this.elements[id as ElementId].layoutKey}`)
         continue // element is not visible (display property)
+      }
+      if (elem.isPickable === false) {
+        continue // explicitely set isPickable = false
       }
       const rectangle = this.overrideLayoutRectangles[layoutKey] || this.layoutRectangles[layoutKey]
       if (!rectangle) {
@@ -301,6 +308,11 @@ export class Gui {
     if (isSticky) {
       this.stuckDown.add(elementId)
     }
+    this.clickElem(elem, event)
+  }
+
+  protected clickElem(elem: GuiElement, event: ElementEvent) {
+    const { clickAction } = elem
     if (clickAction) {
       clickAction(event)
     }

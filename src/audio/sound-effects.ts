@@ -8,6 +8,7 @@ import { Howler } from 'howler'
 import { typedEntries } from '../util/typed-entries'
 import type { SoundAssetUrl } from './sound-asset-loader'
 import { getSound } from './sound-asset-loader'
+import { isDevMode } from 'configs/top-config'
 
 type SoundParams = {
   src: Array<SoundAssetUrl>
@@ -44,6 +45,9 @@ const soundEffects: Record<SoundEffectName, Array<Howl>> = {} as Record<SoundEff
 
 // play sound only if audio actually working
 export function playSound(key: SoundEffectName) {
+  if( isDevMode ){
+    return
+  }
   if (Howler.ctx.state === 'running') {
     const sounds = soundEffects[key]
     if (!sounds || sounds.length === 0) return
