@@ -202,16 +202,10 @@ export class Gui {
 
     // console.log(`gui move ${this.constructor.name}`)
 
-    if (inputEvent.event.type.startsWith('mouse')) {
-      this.hovered = this.pickElementAtPoint(inputEvent.lvPos)
-      if (this.hovered && (['button', 'sprite-atlas']).includes(this.elements[this.hovered].display.type)) {
-        document.documentElement.style.cursor = 'pointer'
-      }
-    }
-
     // check if this event id is ongoing drag of gui element
     const held = Object.entries(this.held).find(([_key, val]) => val === inputEvent.inputId)
     if (held) {
+      // this is ongoign drag
       const [elementId, _inputId] = held
       const elem = this.elements[elementId] as GuiElement
 
@@ -239,6 +233,18 @@ export class Gui {
         })
       }
       return true // consume event
+    }
+    else {
+      // not ongoing drag
+      if (inputEvent.event.type.startsWith('mouse')) {
+        this.hovered = this.pickElementAtPoint(inputEvent.lvPos)
+        if (this.hovered) {
+          if ((['button', 'sprite-atlas']).includes(this.elements[this.hovered].display.type)) {
+            document.documentElement.style.cursor = 'pointer'
+          }
+          return true // consume event
+        }
+      }
     }
 
     return false // pass through to next gui layer or orbit controls

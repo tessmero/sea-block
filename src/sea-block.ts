@@ -36,48 +36,20 @@ import { TiledGrid } from './core/grid-logic/tiled-grid'
 import { gfxConfig } from './configs/gfx-config'
 import { physicsConfig } from './configs/physics-config'
 import { updateFrontLayer } from './gfx/2d/flat-gui-gfx-helper'
+import { alignGuiGroup, alignMeshInGuiGroup } from 'gfx/3d/camera-locked-gfx-helper'
 
 // can only be constructed once
 let didConstruct = false
 let didInit = false
 
-// all game-specific meshes and images, loaded once on startup
-// const elementsPerGame: Record<string, Array<LoadedElement>> = {}
-
 // container for some meshes, locked to screen instead of world
 const cameraLockedGroup = new THREE.Group()
-
-// type LoadedElement = LoadedMesh | LoadedImage
-
-// // result of loading a DepthElement (game.ts)
-// type LoadedMesh = {
-//   mesh: CompositeMesh | THREE.Object3D
-//   layoutKey?: string // optional, indicates camera-locked
-//   clickAction?: (SeaBlock) => void
-//   unclickAction?: (SeaBlock) => void
-//   hotkeys?: ReadonlyArray<string>
-// }
 
 const emptyScene = new THREE.Scene()
 
 export class SeaBlock {
   public didLoadAssets = false
   public readonly config = seaBlockConfig
-
-  // public isSettingsMenuVisible = false
-  // public toggleMenu() {
-  //   if (!settingsGui) {
-  //     settingsGui = Gui.create('settings-menu')
-  //   }
-  //   settingsGui.resetElementStates()
-  //   this.isSettingsMenuVisible = !this.isSettingsMenuVisible
-  //   settingsGui.refreshLayout(this)
-  //   resetFrontLayer()
-
-  //   // clear front layer
-  //   const { ctx, w, h } = this.layeredViewport
-  //   ctx.clearRect(0, 0, w, h)
-  // }
 
   // properties assigned in init
   currentGeneratorName!: GeneratorName
@@ -161,11 +133,6 @@ export class SeaBlock {
 
     Promise.all(
       Object.values(loadPromises),
-
-      // Object.entries(loadPromises).map(async ([gameName, promises]) => {
-      //   elementsPerGame[gameName] = await Promise.all(promises)
-      // }),
-
     ).then(() => this.onFinishLoading())
   }
 
@@ -176,6 +143,8 @@ export class SeaBlock {
       scene, camera, terrain, sphereGroup, floraGroup,
       game,
     } = this
+
+    this.alignGuiMeshes()
 
     if (transition) {
       transition.update(dt)
@@ -211,7 +180,7 @@ export class SeaBlock {
     scene.update(this.orbitControls.target)
 
     // update game's camera-locked meshes
-    // alignGuiGroup(cameraLockedGroup, this.camera)
+    alignGuiGroup(cameraLockedGroup, this.camera, this.layeredViewport.screenRectangle)
 
     // update physics
     const nSteps = Math.round(dt / STEP_DURATION)
@@ -263,20 +232,7 @@ export class SeaBlock {
     this.transition?.cleanupHide()
 
     // // align camera-locked meshes
-    // for (const [_gameName, elems] of Object.entries(elementsPerGame)) {
-    //   for (const loaded of elems) {
-    //     if ('mesh' in loaded) {
-    //       // 3d object
-    //       if (loaded.layoutKey) {
-    //         const rect = this.game.layoutRectangles[loaded.layoutKey]
-    //         alignMeshInGuiGroup(loaded.mesh, cameraLockedGroup, rect)
-    //       }
-    //     }
-    //     else {
-    //       // flat image
-    //     }
-    //   }
-    // }
+    this.alignGuiMeshes()
   }
 
   public setCameraDistance(distance: number) {
@@ -302,28 +258,28 @@ export class SeaBlock {
 
     // finished loading meshes and images
     this.didLoadAssets = true
-    // for (const [_gameName, elems] of Object.entries(elementsPerGame)) {
-    //   for (const loadedElement of elems) {
-    //     if ('mesh' in loadedElement) {
-    //       // 3d object
-    //       const { mesh, layoutKey } = loadedElement
-    //       if (layoutKey) {
-    //         // locked to camera
-    //         cameraLockedGroup.add(mesh)
-    //         const rect = this.game.gui.layoutRectangles[layoutKey]
-    //         alignMeshInGuiGroup(mesh, cameraLockedGroup, rect)
-    //       }
-    //       else {
-    //         // not locked to camera
-    //         this.scene.add(mesh)
-    //       }
-    //     }
-    //     else {
-    //       // 2d flat button
-    //     }
-    //   }
-    // }
+
+    // // align camera-locked meshes
+    // this.alignGuiMeshes()
+
     this.showHideGameSpecificElems()
+  }
+
+  private alignGuiMeshes() {
+    for (const { layoutKey, mesh } of this.game.elements) {
+      if (mesh) {
+        if (layoutKey) {
+          this.scene.threeScene.remove(mesh)
+          cameraLockedGroup.add(mesh)
+          const rect = this.game.gui.layoutRectangles[layoutKey]
+          alignMeshInGuiGroup(mesh, cameraLockedGroup, this.layeredViewport.screenRectangle, rect)
+        }
+        else {
+          this.scene.threeScene.add(mesh)
+          cameraLockedGroup.remove(mesh)
+        }
+      }
+    }
   }
 
   /**

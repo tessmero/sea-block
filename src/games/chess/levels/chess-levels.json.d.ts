@@ -23,5 +23,5 @@ export type Cell = 'GG' | '  ' | Piece // goal or empty cell or piece
 export type Piece = `${PieceColor}${PieceName}` // piece shorthand e.g. 'BP' for black pawn
 export type PieceColor = 'W' | 'B' // white/black
 export type PieceName = 'P' | 'K' | 'Q' | 'H' | 'B' | 'R'
-export type CollectibleName = 
-'pawn' | 'bishop' | 'rook' | 'knight' | 'queen' | 'king' // pieces
+export type CollectibleName
+= 'pawn' | 'bishop' | 'rook' | 'knight' | 'queen' | 'king' // pieces

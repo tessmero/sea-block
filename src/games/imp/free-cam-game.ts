@@ -4,7 +4,7 @@
  * Like sphere-test, but without the sphere.
  */
 import type { Group, Vector2 } from 'three'
-import { Color, Mesh, MeshLambertMaterial, Vector3 } from 'three'
+import { BoxGeometry, Color, Mesh, MeshBasicMaterial, MeshLambertMaterial, Quaternion, Vector3 } from 'three'
 import { CAMERA_LOOK_AT } from 'settings'
 import type { SeaBlock } from 'sea-block'
 import { freeCamGameConfig } from 'configs/free-cam-game-config'
@@ -17,13 +17,15 @@ import type { GameElement, GameUpdateContext } from '../game'
 import type { PieceName } from 'games/chess/chess-enums'
 import { randChoice } from 'util/rng'
 import { getMesh } from 'gfx/3d/mesh-asset-loader'
+import { startGameElements } from 'guis/elements/misc-buttons'
 
 export const MOUSE_DEADZONE = 50 // (px) center of screen with zero force
 export const MOUSE_MAX_RAD = 200 // (px) radius with max force
 // const mouseVec = new Vector2()
 const force = new Vector3()
 // const lastScreenPosDummy = new Vector2()
-const targetDummy = new Vector3()
+const posDummy = new Vector3()
+const quatDummy = new Quaternion()
 
 const _lastPickedTileIndex: TileIndex | undefined = undefined
 
@@ -34,6 +36,30 @@ const pickablePieceElement: GameElement = {
     pickablePieceMesh = getMesh(`chess/${startPiece}.obj`)
     return pickablePieceMesh
   },
+  clickAction: () => {
+    // lock mesh to camera
+    targetElement.layoutKey = 'testLockedMesh'
+
+    // show chess game launch prompt
+    startGameElements.forEach(({ display }) => {
+      display.isVisible = true
+      display.needsUpdate = true
+    })
+  },
+}
+
+export const originalTargetMeshPosition = new Vector3()
+export let targetMesh: Mesh
+export const targetElement: GameElement = {
+
+  meshLoader: async () => {
+    targetMesh = new Mesh(
+      new BoxGeometry(1, 1, 1),
+      new MeshBasicMaterial({ color: 0xff0000 }),
+    )
+    targetMesh.visible = false
+    return targetMesh
+  },
 }
 
 export class FreeCamGame extends Game {
@@ -43,6 +69,7 @@ export class FreeCamGame extends Game {
       guiName: 'free-cam',
       elements: [
         pickablePieceElement, // chess piece appearing randomly on terrain
+        targetElement, // anchor that piece lerps towards
       ],
     })
   }
@@ -103,7 +130,9 @@ export class FreeCamGame extends Game {
     const scale = 10
     pickablePieceMesh.scale.set(scale, scale, scale)
     const { x, y, z } = context.orbitControls.target
-    pickablePieceMesh.position.set(x, y + 3, z)
+    originalTargetMeshPosition.set(x, y + 3, z)
+    targetMesh.position.copy(originalTargetMeshPosition)
+    pickablePieceMesh.position.copy(targetMesh.position)
   }
 
   public resetCamera(context: SeaBlock): void {
@@ -129,6 +158,11 @@ export class FreeCamGame extends Game {
 
   public update(context: GameUpdateContext): void {
     const { seaBlock, dt } = context
+
+    targetMesh.getWorldPosition(posDummy)
+    targetMesh.getWorldQuaternion(quatDummy)
+    pickablePieceMesh.position.lerp(posDummy, 0.01 * dt)
+    pickablePieceMesh.quaternion.slerp(quatDummy, 0.01 * dt)
 
     // pan grid if necessary
     this.centerOnAnchor(seaBlock)
@@ -197,10 +231,10 @@ export class FreeCamGame extends Game {
 
     // 4. Apply movement to intersection (copy anchor position first)
     const step = 10 // Or whatever step size you prefer
-    targetDummy.copy(this.cameraAnchor.position)
+    posDummy.copy(this.cameraAnchor.position)
       .addScaledVector(moveVec, step)
 
-    this.accelSphere(this.cameraAnchor, targetDummy, dt * CAM_ACCEL * moveMagnitude)
+    this.accelSphere(this.cameraAnchor, posDummy, dt * CAM_ACCEL * moveMagnitude)
 
     orbitWithRightJoystick(seaBlock, dt) // gui/elements/joysticks.ts
   }

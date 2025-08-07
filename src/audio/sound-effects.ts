@@ -45,7 +45,7 @@ const soundEffects: Record<SoundEffectName, Array<Howl>> = {} as Record<SoundEff
 
 // play sound only if audio actually working
 export function playSound(key: SoundEffectName) {
-  if( isDevMode ){
+  if (isDevMode) {
     return
   }
   if (Howler.ctx.state === 'running') {

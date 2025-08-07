@@ -9,14 +9,15 @@ import { GAME, GENERATOR, TILING } from '../imp-names'
 import { Configurable } from './configurable'
 import type { ConfigTree, OptionItem } from './config-tree'
 
-export const isDevMode = false
+export const isDevMode = true
 function applyDevMode(cfg: typeof topConfigTree.children) {
   cfg.game.value = 'free-cam'
   cfg.game.isHidden = false
 
-  cfg.generator.value = 'all-ocean'
-  cfg.tiling.value = 'square'
-  cfg.transitionMode.value = 'skip'
+  // cfg.generator.value = 'all-ocean'
+  // cfg.tiling.value = 'square'
+
+  // cfg.transitionMode.value = 'skip'
 
   // cfg.testGui.value = 'sprite-atlas'
   // cfg.testGui.isHidden = false
@@ -26,7 +27,7 @@ const topConfigTree = {
   children: {
 
     generator: {
-      value: 'all-ocean', // randChoice(Object.keys(allGenerators)),
+      value: 'Michael2-3B', // randChoice(Object.keys(allGenerators)),
       options: GENERATOR.NAMES,
       resetOnChange: 'full',
     } as OptionItem<GeneratorName>,

@@ -5,8 +5,8 @@
  */
 
 export const CHESS_PHASES = [
-  'player-choice', 'player-anim','place-pawn', // chess board gameplay
-  'reward-choice' // reward screen after reaching chest
+  'player-choice', 'player-anim', 'place-pawn', // chess board gameplay
+  'reward-choice', // reward screen after reaching chest
 ] as const
 export type ChessPhase = (typeof CHESS_PHASES)[number]
 

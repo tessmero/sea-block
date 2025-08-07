@@ -10,9 +10,9 @@ import { pickColorsForChessTile } from './chess-colors'
 import type { Chess } from './chess-helper'
 import type { ChessTileHighlight } from './chess-hl-tiles'
 import { CHESS_MOVES } from './chess-rules'
-import { COLLECTIBLES, type Collectible  } from './chess-rewards'
+import { COLLECTIBLES } from './chess-rewards'
 import type { StaticElement } from 'guis/gui'
-import { CollectibleName } from './levels/chess-levels.json.d'
+import type { CollectibleName } from './levels/chess-levels.json.d'
 
 export function buildRewardChoiceDiagram(elem: StaticElement, reward: CollectibleName) {
   const buffer = elem.display.imageset?.default

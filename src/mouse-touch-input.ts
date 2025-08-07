@@ -43,7 +43,8 @@ export interface ProcessedSubEvent {
   screenPos: THREE.Vector2 // point in viewport in browser px
   lvPos: THREE.Vector2 // poitn in viewport in layeredViewport big pixels
   intersection: THREE.Vector3 // picked point at sea level
-  pickedTileIndex?: TileIndex // picked tile in world
+  pickedMesh?: THREE.Object3D // picked game-specific mesh in world
+  pickedTile?: TileIndex // picked tile in world
   inputId: InputId
 }
 
@@ -51,6 +52,10 @@ type EventHandler = {
   on: ReadonlyArray<string> // event types
   action: (event: ProcessedSubEvent, context: SeaBlock) => void
 }
+
+let hoveredMesh: THREE.Mesh | undefined = undefined
+let originalMat: THREE.Material = new THREE.MeshBasicMaterial()
+const hlMat = new THREE.MeshBasicMaterial({ color: 0xffffff })
 
 const handlers: ReadonlyArray<EventHandler> = [
   {
@@ -76,10 +81,34 @@ const handlers: ReadonlyArray<EventHandler> = [
       }
 
       let hasConsumed = false
+
       if (!isDraggingOrbitControls && !isZoomingOrbitControls) {
-        // hasConsumed = context.game.gui.move(event)
-        // console.log('mouse-touch-input -> mouseMoveGuiLayers')
+        // check if hovering flat gui on front layer
         hasConsumed = context.mouseMoveGuiLayers(event)
+
+        if (hasConsumed && hoveredMesh) {
+          // restore previously hovered mesh
+          hoveredMesh.material = originalMat
+          hoveredMesh = undefined
+        }
+        if (!hasConsumed && event.pickedMesh) {
+          if (hoveredMesh) {
+            // restore previously hovered mesh
+            hoveredMesh.material = originalMat
+          }
+          // highlight hovered mesh in back layer
+          hoveredMesh = (event.pickedMesh as THREE.Mesh)
+          originalMat = hoveredMesh.material as THREE.Material
+          hoveredMesh.material = hlMat
+          hasConsumed = true
+          document.documentElement.style.cursor = 'pointer'
+        }
+      }
+
+      if (!event.pickedMesh && hoveredMesh) {
+        // restore previously hovered mesh
+        hoveredMesh.material = originalMat
+        hoveredMesh = undefined
       }
 
       if (!isDraggingOrbitControls && !hasConsumed && dragOrbitId
@@ -135,8 +164,12 @@ const handlers: ReadonlyArray<EventHandler> = [
       //   // do nothing
       // }
 
-      const hasConsumed = context.clickGuiLayers(event)
-      // const hasConsumed = context.game.gui.click(event)
+      let hasConsumed = context.clickGuiLayers(event)
+
+      if (!hasConsumed && event.pickedMesh) {
+        (event.pickedMesh as any).clickAction(event) // set in game.ts
+        hasConsumed = true
+      }
 
       if (!hasConsumed && (typeof dragOrbitId === 'undefined')) {
         dragOrbitId = event
@@ -239,7 +272,7 @@ export function handleEvent(
   //   return
   // }
 
-  const { terrain, camera, layeredViewport } = seaBlock
+  const { terrain, camera, layeredViewport, game } = seaBlock
 
   // for (const subgoup of terrain.subgroups) {
   //   subgoup.mesh.computeBoundingSphere()
@@ -254,17 +287,31 @@ export function handleEvent(
     dummy.x = (screenPos.x / window.innerWidth) * 2 - 1
     dummy.y = -(screenPos.y / window.innerHeight) * 2 + 1
     raycaster.setFromCamera(dummy, camera)
-    raycaster.ray.intersectPlane(planeY, intersection)
 
-    // pick tile on terrain
-    const { x, z } = terrain.grid.positionToCoord(intersection.x, intersection.z)
-    const pickedTile = terrain.grid.xzToIndex(x, z)
+    let pickedMesh: THREE.Object3D | undefined = undefined
+    let pickedTile: TileIndex | undefined = undefined
 
+    // pick game-specific  meshes
+    const pickedMeshes = raycaster.intersectObjects(game.pickableMeshes)
+    if (pickedMeshes.length > 0) {
+      pickedMesh = pickedMeshes[0].object
+    }
+
+    if (!pickedMesh) {
+      // pick tile on terrain
+      raycaster.ray.intersectPlane(planeY, intersection)
+      const { x, z } = terrain.grid.positionToCoord(intersection.x, intersection.z)
+      pickedTile = terrain.grid.xzToIndex(x, z)
+    }
+
+    // compute layered-viewport-position in terms of big pixels
     lvPos.x = screenPos.x * layeredViewport.pixelRatio
     lvPos.y = screenPos.y * layeredViewport.pixelRatio
 
+    // check for first touch input
     if (!isTouchDevice && event.type.startsWith('touch')) {
-      isTouchDevice = true // assume all future events are touch
+      // use touch input layout and only listen for touch events from now on
+      isTouchDevice = true
     }
 
     // do event-type-specific action
@@ -274,7 +321,8 @@ export function handleEvent(
       screenPos,
       lvPos,
       intersection,
-      pickedTileIndex: pickedTile,
+      pickedMesh,
+      pickedTile,
       inputId: sub.touchId,
     }, seaBlock)
   }

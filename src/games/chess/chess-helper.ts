@@ -313,7 +313,7 @@ export class Chess {
     // click is NOT in flat chessboard viewport (gui would have consumed it)
 
     // check picked 3D terrain tile from event
-    const { pickedTileIndex } = inputEvent
+    const { pickedTile: pickedTileIndex } = inputEvent
     // const clickedTile = this.getNearestValidMove(pickedTileIndex)
     // if (!clickedTile) {
     //   return false // do not consume event
@@ -399,7 +399,7 @@ export class Chess {
     }
 
     // hover 3d tile
-    return this._hoverTile(inputEvent.pickedTileIndex)
+    return this._hoverTile(inputEvent.pickedTile)
   }
 
   private _hoverTile(tile?: TileIndex) {

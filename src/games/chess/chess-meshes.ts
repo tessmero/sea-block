@@ -4,7 +4,7 @@
  * Defines chess pieces as game elements whos
  * meshes should be pre-loaded on startup.
  */
-import type { BufferGeometry, Group, InstancedMesh } from 'three'
+import type { BufferGeometry, Group } from 'three'
 import { CanvasTexture, Mesh, MeshLambertMaterial } from 'three'
 import type { GameElement } from 'games/game'
 import { getMesh } from 'gfx/3d/mesh-asset-loader'

@@ -24,7 +24,7 @@ export class TileInspectorGui extends Gui {
 
     this.pickedTile = undefined
     if (!hasConsumed) {
-      this.pickedTile = inputEvent.pickedTileIndex
+      this.pickedTile = inputEvent.pickedTile
     }
 
     return hasConsumed

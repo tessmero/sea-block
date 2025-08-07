@@ -17,10 +17,15 @@ import type { GameName, GuiName } from '../imp-names'
 import type { SeaBlock } from '../sea-block'
 
 import { CAMERA, CAMERA_LOOK_AT, PORTRAIT_CAMERA } from '../settings'
+import type { ElementEvent } from '../guis/gui'
 import { Gui } from '../guis/gui'
 
 export type GameElement = {
-  meshLoader: () => Promise<Object3D>
+  readonly meshLoader: () => Promise<Object3D>
+  clickAction?: (event: ElementEvent) => void
+  layoutKey?: string // only for camera-locked mesh
+
+  mesh?: Object3D // set after loading
 }
 
 // parameters for update each frame
@@ -35,7 +40,10 @@ export abstract class Game {
   public abstract reset(context: SeaBlock): void
   public resetCamera(_context: SeaBlock): void {}
 
-  public meshes: Array<Object3D> = []
+  public elements: Array<GameElement> = [] // mesh specifications
+
+  public meshes: Array<Object3D> = [] // all loaded game-specific meshes
+  public pickableMeshes: Array<Object3D> = [] // subset that can be hovered/clicked
 
   protected getCamOffset(context: SeaBlock): Vector3 {
     const { w, h } = context.layeredViewport
@@ -79,13 +87,23 @@ export abstract class Game {
 
     // Game
     // post-construction setup
+    instance.elements = elements
     if (context) {
       instance.gui = Gui.create(guiName)
     }
 
     // // preload all meshes
     return Promise.all(elements.map(async (elem) => {
-      instance.meshes.push(await elem.meshLoader())
+      const mesh = await elem.meshLoader()
+      elem.mesh = mesh
+      instance.meshes.push(mesh)
+      if (elem.clickAction) {
+        mesh.traverse((child) => {
+          // checked in moust-touch-input.ts
+          (child as any).clickAction = elem.clickAction
+        })
+        instance.pickableMeshes.push(mesh)
+      }
     }))
   }
 

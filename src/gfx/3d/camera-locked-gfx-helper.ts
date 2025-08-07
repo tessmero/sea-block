@@ -6,30 +6,37 @@
 
 import type { Group, Object3D, PerspectiveCamera } from 'three'
 import type { Rectangle } from '../../util/layout-parser'
-import type { CompositeMesh } from './composite-mesh'
 
-export function alignGuiGroup(guiGroup: Group, camera: PerspectiveCamera, depth = -10) {
+/**
+ * Aligns the GUI group to the camera, scaling it to fit the given screenRect in world space.
+ * @param guiGroup The group to align
+ * @param camera The camera
+ * @param screenRect The rectangle (in screen pixels) to fit the GUI group to
+ * @param depth The Z offset from the camera
+ */
+export function alignGuiGroup(
+  guiGroup: Group,
+  camera: PerspectiveCamera,
+  screenRect: Rectangle,
+  depth = -10,
+) {
   const fov = camera.fov * (Math.PI / 180)
   const height = 2 * Math.abs(depth) * Math.tan(fov / 2)
-  const width = height * camera.aspect
-
-  const scaleX = width / window.innerWidth
-  const scaleY = height / window.innerHeight
+  // Use the screenRect height for scaling
+  const scale = height / screenRect.h
 
   guiGroup.position.copy(camera.position)
   guiGroup.quaternion.copy(camera.quaternion)
   guiGroup.translateZ(depth)
 
-  guiGroup.scale.set(scaleX, scaleY, 1)
+  guiGroup.scale.set(scale, scale, scale)
 }
 
-export function alignMeshInGuiGroup(childMesh: CompositeMesh | Object3D, guiGroup: Group, childRect: Rectangle) {
-  // Position: center of the rectangle, relative to top-left
-  const x = childRect.x + childRect.w / 2 - window.innerWidth / 2
-  const y = window.innerHeight / 2 - (childRect.y + childRect.h / 2)
+export function alignMeshInGuiGroup(childMesh: Object3D, guiGroup: Group, screenRect: Rectangle, childRect: Rectangle) {
+  // Position the mesh relative to the screenRect center
+  const x = childRect.x + childRect.w / 2 - (screenRect.x + screenRect.w / 2)
+  const y = (screenRect.y + screenRect.h / 2) - (childRect.y + childRect.h / 2)
 
   childMesh.position.set(x, y, 0)
-
-  // Scale: match rectangle size
-  childMesh.scale.set(childRect.w, childRect.h, 1)
+  childMesh.scale.set(100, 100, 100)
 }

@@ -57,6 +57,42 @@ export const commonLayout = {
     right: btn.width + 2 * pad,
   },
 
+  // test
+  testLockedMesh: {
+    width: 0,
+    height: 0,
+    left: 'auto',
+    top: 'auto',
+  },
+
+  // dialog to start mini-game
+  startGamePanel: {
+    width: 100,
+    height: 100,
+    left: 'auto',
+    top: 'auto',
+  },
+  startGameLabel: {
+    parent: 'startGamePanel',
+    top: 16,
+    height: 20,
+  },
+  startGameButton: {
+    parent: 'startGamePanel',
+    width: 64,
+    height: 20,
+    left: 'auto',
+    bottom: 20,
+  },
+  cancelGameButton: {
+
+    parent: 'startGamePanel',
+    width: 64,
+    height: 20,
+    left: 'auto',
+    bottom: 0,
+  },
+
 } as const satisfies CssLayout
 
 // used to preload elements for guis that may switch layout modes
