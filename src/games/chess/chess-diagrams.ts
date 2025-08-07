@@ -3,7 +3,7 @@
  *
  * Helpers to draw chess help panel and 2d view mode.
  */
-import { goalDisplay, movesDisplay, flatViewportDisplay } from 'guis/imp/chess-gui'
+import { goalDisplays, flatViewportDisplay } from 'guis/imp/chess-gui'
 import type { PieceName } from './chess-enums'
 import { getImage } from 'gfx/2d/image-asset-loader'
 import { pickColorsForChessTile } from './chess-colors'
@@ -32,12 +32,19 @@ export function buildRewardChoiceDiagram(elem: StaticElement, reward: Collectibl
 }
 
 export function buildGoalDiagram(piece: PieceName) {
-  const buffer = goalDisplay?.imageset?.default
-  if (!buffer) {
-    throw new Error('chess goal diagram element has no buffer')
+  let frameIndex = 0
+  for (const goalDisplay of goalDisplays) {
+    const buffer = goalDisplay?.imageset?.default
+    if (!buffer) {
+      throw new Error('chess goal diagram element has no buffer')
+    }
+    buildGoalFrame(buffer, piece, frameIndex - 1)
+    goalDisplay.needsUpdate = true
+    frameIndex++
   }
-  goalDisplay.needsUpdate = true
+}
 
+function buildGoalFrame(buffer: OffscreenCanvas, piece: PieceName, arrowOffset = 0) {
   const { width, height } = buffer
   const ctx = buffer.getContext('2d') as OffscreenCanvasRenderingContext2D
   ctx.clearRect(0, 0, buffer.width, buffer.height)
@@ -59,14 +66,15 @@ export function buildGoalDiagram(piece: PieceName) {
   // Draw piece (left)
   ctx.drawImage(pieceImage, startX, centerY, ICON_SIZE, ICON_SIZE)
   // Draw arrow (center)
-  ctx.drawImage(arrowImage, startX + ICON_SIZE + ICON_DIST, centerY, ICON_SIZE, ICON_SIZE)
+  ctx.drawImage(arrowImage, startX + arrowOffset + ICON_SIZE + ICON_DIST, centerY, ICON_SIZE, ICON_SIZE)
   // Draw chest (right)
   ctx.drawImage(chestImage, startX + 2 * (ICON_SIZE + ICON_DIST), centerY, ICON_SIZE, ICON_SIZE)
 }
 
 export function buildMovesDiagram(piece: PieceName) {
-  const buffer = movesDisplay?.imageset?.default
+  const buffer = undefined as OffscreenCanvas | undefined // movesDisplay?.imageset?.default
   if (!buffer) {
+    return
     throw new Error('chess moves diagram element has no buffer')
   }
   const ctx = buffer.getContext('2d') as OffscreenCanvasRenderingContext2D
@@ -130,10 +138,11 @@ export function renderFlatView(
     throw new Error('flat viewport diagram element has no buffer')
   }
 
+  flatViewportDisplay.isVisible = true
   flatViewportDisplay.needsUpdate = true
   const ctx = buffer.getContext('2d') as OffscreenCanvasRenderingContext2D
 
-  const { centerTile, goalTile, hlTiles, currentPiece } = chess
+  const { centerTile, goalTile, hlTiles, player: currentPiece } = chess
 
   // Board constants
   const BOARD_SIZE = 5

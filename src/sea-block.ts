@@ -16,8 +16,6 @@ import { getStyle, STYLES } from './gfx/styles/styles-list'
 import type { ProcessedSubEvent } from './mouse-touch-input'
 import { initMouseListeners } from './mouse-touch-input'
 import { CAMERA, GRID_DETAIL, PORTRAIT_CAMERA, STEP_DURATION } from './settings'
-import { Transition } from './gfx/transition'
-import { randomTransition } from './gfx/transition'
 import { GAME, GUI, type GameName, type GeneratorName } from './imp-names'
 import { Game } from './games/game'
 import type { LayeredViewport } from './gfx/layered-viewport'
@@ -37,6 +35,7 @@ import { gfxConfig } from './configs/gfx-config'
 import { physicsConfig } from './configs/physics-config'
 import { updateFrontLayer } from './gfx/2d/flat-gui-gfx-helper'
 import { alignGuiGroup, alignMeshInGuiGroup } from 'gfx/3d/camera-locked-gfx-helper'
+import { randomTransition, Transition } from 'gfx/transitions/transition'
 
 // can only be constructed once
 let didConstruct = false
@@ -201,8 +200,14 @@ export class SeaBlock {
     // console.log(dist)
   }
 
-  public startTransition(callback?: () => void) {
-    this.transition = randomTransition(this)
+  public startTransition(
+    params: {
+      transition?: Transition
+      callback?: () => void
+    } = {},
+  ) {
+    const { transition, callback } = params
+    this.transition = transition || randomTransition(this)
     this.isCovering = true
     this.midTransitionCallback = callback
     updateFrontLayer(this)

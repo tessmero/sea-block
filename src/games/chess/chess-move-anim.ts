@@ -4,6 +4,7 @@
  * Animation of a chess piece moving between two tiles.
  */
 
+import type { TileIndex } from 'core/grid-logic/indexed-grid'
 import { Vector3 } from 'three'
 
 const duration = 300 // ms
@@ -12,17 +13,20 @@ const jumpHeight = 1
 export class ChessMoveAnim {
   private t = 0
 
+  public isFinished = false
+
   constructor(
     private readonly startPos: Vector3,
     private readonly endPos: Vector3,
+    public readonly endTile: TileIndex,
   ) {
   }
 
   public update(dt: number): boolean {
     this.t += dt
 
-    const isFinished = this.t > duration
-    return isFinished
+    this.isFinished = this.t > duration
+    return this.isFinished
   }
 
   public getLivePosition(): Vector3 {

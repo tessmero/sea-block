@@ -30,7 +30,7 @@ function getChessTileOverrides(tile: TileIndex): TileOverrides {
 
 type LevelStartState = {
   playerPiece: ParsedPiece
-  playerTile: TileIndex
+  enemyPieces: Array<ParsedPiece>
   goalTile: TileIndex
 }
 
@@ -84,22 +84,22 @@ export function loadChessLevel(chess: Chess): LevelStartState {
   const instance = new ChessLevelParser(levelIndex, terrain)
   instance.loadLevel(center)
 
-  const { playerPiece, playerTile, goalTile } = instance
+  const { playerPiece, enemyPieces, goalTile } = instance
 
-  if (!playerPiece || !playerTile) {
-    throw new Error('level has no chess piece')
+  if (!playerPiece) {
+    throw new Error('level has no player ("B_")')
   }
 
   if (!goalTile) {
     throw new Error('level has no "GG" target cell')
   }
 
-  return { playerPiece, playerTile, goalTile }
+  return { playerPiece, enemyPieces, goalTile }
 }
 
 class ChessLevelParser {
   public playerPiece?: ParsedPiece
-  public playerTile?: TileIndex
+  public enemyPieces: Array<ParsedPiece> = []
   public goalTile?: TileIndex
 
   constructor(
@@ -137,9 +137,11 @@ class ChessLevelParser {
           else if (tileValue === 'WA') {
             isWater = true// water
           }
-          else {
-            this.playerPiece = parsePiece(tileValue as Piece)
-            this.playerTile = tileIdx // player
+          else if (tileValue.startsWith('B')) {
+            this.playerPiece = parsePiece(tileValue as Piece, tileIdx) // player
+          }
+          else if (tileValue.startsWith('W')) {
+            this.enemyPieces.push(parsePiece(tileValue as Piece, tileIdx)) // enemy
           }
 
           if (!isWater) {
@@ -156,7 +158,7 @@ class ChessLevelParser {
 }
 
 // parse piece from json dataa e.g. 'BH' -> black knight
-function parsePiece(piece: Piece): ParsedPiece {
+function parsePiece(piece: Piece, tile: TileIndex): ParsedPiece {
   const suffix = piece.at(1) as ShortName
   if (!(suffix in expansions)) {
     throw new Error(`invalid piece in chess level json: '${piece}'`)
@@ -164,6 +166,7 @@ function parsePiece(piece: Piece): ParsedPiece {
   return {
     color: piece.at(1) as PieceColor,
     type: expansions[suffix as ShortName],
+    tile,
   }
 }
 const expansions = {
@@ -177,4 +180,5 @@ const expansions = {
 export type ParsedPiece = {
   type: PieceName
   color: PieceColor
+  tile: TileIndex
 }

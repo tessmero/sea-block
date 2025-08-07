@@ -33,41 +33,47 @@ function getValidCollectibles(context: Chess): Array<CollectibleName> {
 
 export const COLLECTIBLES: Record<string, Collectible> = {
 
-  pawn: {
+  'pawn': {
     description: 'Loyal follower',
     icon: 'icons/chess/16x16-pawn.png',
     isValid: () => true, // can be collected multiple times
     collectAction: () => { chessRun.collectedPawns++ },
   },
 
-  bishop: {
+  'bishop': {
     description: 'Moves diagonally',
     icon: 'icons/chess/16x16-bishop.png',
     isValid: () => !chessRun.collected.includes('bishop'),
   },
 
-  knight: {
+  'knight': {
     description: 'Jumps in L-shape',
     icon: 'icons/chess/16x16-knight.png',
     isValid: () => !chessRun.collected.includes('knight'),
   },
 
-  rook: {
+  'rook': {
     description: 'Moves in straight lines',
     icon: 'icons/chess/16x16-rook.png',
     isValid: () => !chessRun.collected.includes('rook'),
   },
 
-  queen: {
+  'queen': {
     description: 'Moves in any direction',
     icon: 'icons/chess/16x16-queen.png',
     isValid: () => !chessRun.collected.includes('queen'),
   },
 
-  king: {
+  'king': {
     description: 'Moves in any direction',
     icon: 'icons/chess/16x16-king.png',
     isValid: () => !chessRun.collected.includes('king'),
+  },
+
+  'dual-vector-foil': {
+    description: 'reduce to 2D',
+    icon: 'icons/16x16-arrow-down.png',
+    isValid: () => !chessRun.collected.includes('dual-vector-foil'),
   },
 
 }

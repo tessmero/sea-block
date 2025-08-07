@@ -163,6 +163,9 @@ const handlers: ReadonlyArray<EventHandler> = [
       // catch (_e) {
       //   // do nothing
       // }
+      if (context.transition) {
+        return // disable click during transition
+      }
 
       let hasConsumed = context.clickGuiLayers(event)
 

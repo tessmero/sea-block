@@ -29,7 +29,7 @@ export class ChessHlTiles {
     const {
       currentPhase: phase,
       centerTile: center,
-      currentPiece: piece,
+      player: piece,
     } = chess
     const { terrain, allowedMoves, changed } = this
 

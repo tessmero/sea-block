@@ -12,11 +12,11 @@ import { Gui } from '../gui'
 import type { ChessPhase, PieceName } from 'games/chess/chess-enums'
 import { CHESS_PHASES, PIECE_NAMES } from 'games/chess/chess-enums'
 import type { Chess } from 'games/chess/chess-helper'
-import { clickChess, moveChess } from 'games/chess/chess-helper'
+import { clickChess, getChessPhase, moveChess } from 'games/chess/chess-helper'
 import { getImage } from 'gfx/2d/image-asset-loader'
 import { CHESS_LAYOUT } from 'guis/layouts/chess-layout'
 import type { ProcessedSubEvent } from 'mouse-touch-input'
-import type { SeaBlock } from 'sea-block'
+import { CHESS_REWARDS_LAYOUT } from 'guis/layouts/chess-rewards-layout'
 
 const defaultPhase: ChessPhase = 'player-choice'
 const defaultPiece: PieceName = 'rook'
@@ -60,6 +60,7 @@ export interface ChessButtonEvent extends ElementEvent {
 // 2D chess game view
 export const flatViewport: GuiElement = {
   layoutKey: 'flatViewport',
+  isPickable: false,
   display: {
     type: 'diagram',
     label: 'chess-flat-viewport', // give imageset unique hash
@@ -67,36 +68,117 @@ export const flatViewport: GuiElement = {
   },
 }
 
-const helpPanel: GuiElement = {
-  layoutKey: 'helpPanel',
-  display: { type: 'panel', isVisible: false },
-}
+// const helpPanel: GuiElement = {
+//   layoutKey: 'helpPanel',
+//   display: { type: 'panel', isVisible: false },
+// }
 
-const topLeftElem: GuiElement = {
-  layoutKey: 'topLeftDisplay',
+const switchPieceHint: GuiElement = {
+  layoutKey: 'switchPieceHint',
   display: {
-    type: 'diagram',
-    label: 'chess-goal', // give imageset unique hash
+    type: 'label',
+    label: 'Switch Piece',
     shouldClearBehind: true,
   },
 }
 
-const quitBtn: GuiElement = {
+const pawnHint: GuiElement = {
+  layoutKey: 'pawnHint',
+  display: {
+    type: 'label',
+    label: 'Place Pawn',
+    shouldClearBehind: true,
+  },
+}
+
+// top left display with two frames
+const topLeftA: GuiElement = {
+  layoutKey: 'topLeftDisplay',
+  display: {
+    type: 'diagram',
+    label: 'chess-goal-a', // give imageset unique hash
+    shouldClearBehind: true,
+  },
+}
+const topLeftB: GuiElement = {
+  layoutKey: 'topLeftDisplay',
+  display: {
+    type: 'diagram',
+    label: 'chess-goal-b', // give imageset unique hash
+    shouldClearBehind: true,
+    isVisible: false,
+  },
+}
+
+const topRightBtn: GuiElement = {
   layoutKey: 'topRightBtn',
   display: {
     type: 'button',
     icon: 'icons/16x16-x.png',
   },
+  clickAction: (event) => {
+    togglePauseMenu(event)
+  },
 }
 
-const helpElement: GuiElement = {
-  layoutKey: 'movesDisplay',
+const pauseMenuPanel: GuiElement = {
+  layoutKey: 'pauseMenuPanel',
   display: {
-    type: 'diagram',
-    label: 'chess-piece-info', // give imageset unique hash
+    type: 'panel',
     isVisible: false,
   },
 }
+
+const resetBtn: GuiElement = {
+  layoutKey: 'resetBtn',
+  display: {
+    type: 'button',
+    label: 'reset level',
+    isVisible: false,
+  },
+}
+const resumeBtn: GuiElement = {
+  layoutKey: 'resumeBtn',
+  display: {
+    type: 'button',
+    label: 'resume',
+    isVisible: false,
+  },
+  clickAction: (event) => {
+    togglePauseMenu(event)
+  },
+}
+const quitBtn: GuiElement = {
+  layoutKey: 'quitBtn',
+  display: {
+    type: 'button',
+    label: 'quit chess',
+    isVisible: false,
+  },
+}
+
+const pauseMenuElements = [
+  pauseMenuPanel, resetBtn, resumeBtn, quitBtn,
+]
+
+let isPauseMenuVisible = false
+function togglePauseMenu(event: ElementEvent) {
+  isPauseMenuVisible = !isPauseMenuVisible
+  for (const { display } of pauseMenuElements) {
+    display.isVisible = isPauseMenuVisible
+    display.needsUpdate = true
+  }
+  event.seaBlock.layeredViewport.handleResize(event.seaBlock)
+}
+
+// const helpElement: GuiElement = {
+//   layoutKey: 'movesDisplay',
+//   display: {
+//     type: 'diagram',
+//     label: 'chess-piece-info', // give imageset unique hash
+//     isVisible: false,
+//   },
+// }
 
 // const prevPiece: ChessButton = {
 //   layoutKey: 'prevPiece',
@@ -185,13 +267,16 @@ const pawnBtn: ChessButton = {
 
 const rewardsPanel: GuiElement = {
   layoutKey: 'rewardsPanel',
-  display: { type: 'panel', isVisible: false },
+  display: {
+    type: 'panel',
+    // isVisible: false
+  },
 }
 export const leftRewardBtn: ChessButton = {
   layoutKey: 'leftReward',
   display: {
     type: 'button',
-    isVisible: false,
+    // isVisible: false,
   },
   chessAction: ({ chess }) => {
     chess.collectReward(chess.leftReward)
@@ -203,14 +288,14 @@ export const leftRewardDisplay: GuiElement = {
   display: {
     type: 'diagram',
     label: 'chess-left-reward', // give imageset unique hash
-    isVisible: false,
+    // isVisible: false,
   },
 }
 export const rightRewardBtn: ChessButton = {
   layoutKey: 'rightReward',
   display: {
     type: 'button',
-    isVisible: false,
+    // isVisible: false,
   },
   chessAction: ({ chess }) => {
     chess.collectReward(chess.rightReward)
@@ -222,7 +307,7 @@ export const rightRewardDisplay: GuiElement = {
   display: {
     type: 'diagram',
     label: 'chess-right-reward', // give imageset unique hash
-    isVisible: false,
+    // isVisible: false,
   },
 }
 export const rewardChoiceElements = [rewardsPanel,
@@ -230,31 +315,33 @@ export const rewardChoiceElements = [rewardsPanel,
   rightRewardBtn, rightRewardDisplay,
 ]
 
-export const goalDisplay = topLeftElem.display
-export const movesDisplay = helpElement.display
+export const goalDisplays = [topLeftA.display, topLeftB.display]
+// export const movesDisplay = helpElement.display
 export const flatViewportDisplay = flatViewport.display
-
-function toggleHelp(context: SeaBlock) {
-  const isVisible = !helpPanel.display.isVisible
-  helpPanel.display.isVisible = isVisible
-  helpElement.display.isVisible = isVisible
-  context.layeredViewport.handleResize(context)
-}
 
 export class ChessGui extends Gui {
   static {
     Gui.register('chess', {
       factory: () => new ChessGui(),
-      layoutFactory: () => CHESS_LAYOUT,
+      allLayouts: [CHESS_LAYOUT, CHESS_REWARDS_LAYOUT],
+      layoutFactory: () => {
+        if (getChessPhase() === 'reward-choice') {
+          return CHESS_REWARDS_LAYOUT
+        }
+        return CHESS_LAYOUT
+      },
       elements: [
-        topLeftElem, // top left HUD
+        topLeftA, topLeftB, // top left HUD
         ...Object.values(phaseLabels), // top center HUD
-        quitBtn, // top right HUD
+        topRightBtn, // top right HUD
+        switchPieceHint, // bottom left hint
         currentPiece, ...pieceLabels, pieceIcon, // bottom left HUD
+        pawnHint, // bottom right hint
         pawnBtn, // bottom right HUD
-        helpPanel, helpElement, // bottom left dialog
+        // helpPanel, helpElement, // bottom left dialog
         flatViewport, // after collecting dual-vector-foil
         ...rewardChoiceElements, // after reaching chest
+        ...pauseMenuElements,
       ],
     })
   }
@@ -277,6 +364,9 @@ export class ChessGui extends Gui {
     if (chess && 'chessAction' in elem) {
       const btn = elem as ChessButton
       btn.chessAction({ ...event, chess })
+    }
+    else {
+      super.clickElem(elem, event) // allow regular buttons with clickAction to work
     }
   }
 

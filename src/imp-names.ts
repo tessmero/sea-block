@@ -50,12 +50,8 @@ export type GridAnimName = (typeof GRID_ANIM.NAMES)[number]
 
 // transition animation sequences
 export const TRANSITION = {
-  NAMES: ['flat', 'drop', 'ssd'],
-  SOURCES: [
-    'src/gfx/2d/flat-transition.ts',
-    'src/gfx/3d/drop-transition.ts',
-    'src/gfx/ssd-transition.ts',
-  ],
+  NAMES: ['flat', 'drop', 'ssd', 'checkered'],
+  SOURCES: ['src/gfx/transitions/imp/**/*.ts'],
 } as const satisfies ImpManifest
 export type TransitionName = (typeof TRANSITION.NAMES)[number]
 

@@ -12,17 +12,17 @@ import { Configurable } from './configurable'
 const chessGameConfigTree = {
   children: {
 
-    chessPieceType: {
-      value: 'knight',
-      options: PIECE_NAMES,
-      resetOnChange: 'full',
-    } as OptionItem<PieceName>,
+    // chessPieceType: {
+    //   value: 'knight',
+    //   options: PIECE_NAMES,
+    //   resetOnChange: 'full',
+    // } as OptionItem<PieceName>,
 
-    chessViewMode: {
-      value: '3D',
-      options: ['2D', '3D'],
-      resetOnChange: 'full',
-    } as OptionItem<'2D' | '3D'>,
+    // chessViewMode: {
+    //   value: '3D',
+    //   options: ['2D', '3D'],
+    //   resetOnChange: 'full',
+    // } as OptionItem<'2D' | '3D'>,
 
   },
 } satisfies ConfigTree

@@ -133,7 +133,7 @@ export function getAllowedMoves(params: GamPars): Array<TileIndex> {
   return result
 }
 
-function canLandOn(targetTile: TileIndex, params: GamPars): boolean {
+export function canLandOn(targetTile: TileIndex, params: GamPars): boolean {
   const { isWater } = params.terrain.members[targetTile.i]
   return !isWater
 }

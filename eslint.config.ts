@@ -131,11 +131,9 @@ export default tseslint.config(
       'src/generators/**/*.ts',
       'src/games/imp/**/*.ts',
       'src/guis/imp/**/*.ts',
+      'src/gfx/transitions/imp/**/*.ts',
       'src/configs/**/*.ts',
       'src/gfx/grid-anims/**/*.ts',
-      'src/gfx/2d/flat-transition.ts',
-      'src/gfx/3d/drop-transition.ts',
-      'src/gfx/ssd-transition.ts',
     ],
     ignores: [
       // base classes are exempt (they define protected constructor)

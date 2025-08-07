@@ -52,6 +52,45 @@ export const CHESS_LAYOUT = {
     right: 0,
   },
 
+  // pause menu
+  pauseMenuPanel: {
+    width: 5 * 16,
+    height: 5 * 16,
+    left: 'auto',
+    top: 'auto',
+  },
+  pauseMenuInner: {
+    parent: 'pauseMenuPanel',
+    margin: 8,
+  },
+  resetBtn: {
+    parent: 'pauseMenuInner',
+    height: 16,
+  },
+  resumeBtn: {
+    parent: 'pauseMenuInner',
+    height: 16,
+    top: 'auto',
+  },
+  quitBtn: {
+    parent: 'pauseMenuInner',
+    height: 16,
+    bottom: 0,
+  },
+
+  // game over dialog
+  gameOverLabel: {
+    parent: 'pauseMenuInner',
+    height: 20,
+  },
+
+  // change piece hint
+  switchPieceHint: {
+    height: 16,
+    width: 64,
+    bottom: 20,
+  },
+
   // piece select bottom left
   bottomLeft: {
     height: 20,
@@ -83,51 +122,33 @@ export const CHESS_LAYOUT = {
   //   right: 0,
   // },
 
-  // piece info panel
-  helpPanel: {
-    width: 64,
-    height: 64,
-    bottom: 16,
-  },
-  movesDisplay: {
-    parent: 'helpPanel',
-    width: 50,
-    height: 50,
-    left: 'auto',
-    top: 'auto',
-  },
+  // // piece info panel
+  // helpPanel: {
+  //   width: 64,
+  //   height: 64,
+  //   bottom: 16,
+  // },
+  // movesDisplay: {
+  //   parent: 'helpPanel',
+  //   width: 50,
+  //   height: 50,
+  //   left: 'auto',
+  //   top: 'auto',
+  // },
 
   // spawn pawn button bottom right
   pawnBtn: {
-    ...btn,
+    width: 20,
+    height: 20,
     bottom: 0,
     right: 0,
   },
 
-  // rewards selection dialog
-  rewardsPanel: {
-    parent: 'flatViewport',
-  },
-  rewardsInner: {
-    parent: 'rewardsPanel',
-    margin: 8,
-  },
-  leftReward: {
-    parent: 'rewardsInner',
-    width: 32,
-  },
-  leftRewardDisplay: {
-    parent: 'leftReward',
-    ...btn, left: 'auto', top: 'auto',
-  },
-  rightReward: {
-    parent: 'rewardsInner',
-    width: 32,
+  // pawn hint
+  pawnHint: {
+    width: 64,
+    height: 16,
+    bottom: 16,
     right: 0,
   },
-  rightRewardDisplay: {
-    parent: 'rightReward',
-    ...btn, left: 'auto', top: 'auto',
-  },
-
 } as const satisfies CssLayout

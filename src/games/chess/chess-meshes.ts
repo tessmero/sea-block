@@ -17,7 +17,7 @@ import { ColoredInstancedMesh } from 'gfx/3d/colored-instanced-mesh'
 export const chessPieceMeshes: Partial<Record<PieceName, ColoredInstancedMesh>> = {}
 export let treasureChestMesh: Group
 
-export const treasureChestElement = {
+export const treasureChestElement: GameElement = {
   meshLoader: async () => {
     treasureChestMesh = getMesh('kenney/chest.obj')
 
@@ -40,7 +40,7 @@ export const treasureChestElement = {
 
     return treasureChestMesh
   },
-} as const satisfies GameElement
+}
 
 // elements to register -> pre-load mesh for each piece type
 export const chessPieceElements: Array<GameElement>
