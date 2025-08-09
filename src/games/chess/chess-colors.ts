@@ -9,7 +9,6 @@ import type { ChessTileHighlight } from './chess-hl-tiles'
 import type { TileColors } from 'gfx/styles/style'
 import { Color } from 'three'
 
-
 export function pickColorsForChessTile(tile: TileIndex, highlight?: ChessTileHighlight): TileColors {
   const { x, z } = tile
   const checkeredIndex = Math.abs((x + z) % 2)

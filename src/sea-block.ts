@@ -151,9 +151,8 @@ export class SeaBlock {
         // just hit mid-transition, old scene hidden
         // console.log('mid transition')
         this.isCovering = false
-        if( transition.doesAllowMidTransitionReset ){
-
-        await this.onMidTransition()
+        if (transition.doesAllowMidTransitionReset) {
+          await this.onMidTransition()
         }
         // resetFrontLayer()
         transition.cleanupHide()

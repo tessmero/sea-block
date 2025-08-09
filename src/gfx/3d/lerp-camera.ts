@@ -1,11 +1,12 @@
 /**
  * @file lerp-camera.ts
- * 
+ *
  * Helper function to lerp between two camera angles in
  * a way that looks natural.
  */
 
-import { Spherical, Vector3, Camera } from 'three'
+import type { Camera } from 'three'
+import { Spherical, Vector3 } from 'three'
 
 const _desiredOffset = new Vector3()
 const _relPos = new Vector3()
@@ -40,4 +41,3 @@ export function lerpCameraSpherical(
     _relPos.setFromSpherical(_currentSpherical).add(target),
   )
 }
-

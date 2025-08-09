@@ -6,9 +6,6 @@
 import { Game } from 'games/game'
 import { chessAllow3DRender, getChessPipeline, resetChess, updateChess } from 'games/chess/chess-helper'
 import { treasureChestElement, chessPieceElements } from 'games/chess/chess-meshes'
-import { freeCamPipeline } from 'gfx/3d/tile-render-pipeline/free-cam-pipeline'
-import type { Pipeline } from 'gfx/3d/tile-render-pipeline/pipeline'
-import type { TileIndex } from 'core/grid-logic/indexed-grid'
 
 export class ChessGame extends Game {
   static {
@@ -21,7 +18,6 @@ export class ChessGame extends Game {
       ],
     })
   }
-
 
   reset = resetChess
   getTerrainRenderPipeline = getChessPipeline

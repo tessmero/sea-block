@@ -66,7 +66,7 @@ export class TileGroup extends Group<Tile, WaterSim> {
 
   protected updateMeshes(seaBlock: SeaBlock, dt: number): void {
     this.gfxHelper.updateTileMeshes(
-      seaBlock,      dt,
+      seaBlock, dt,
     )
   }
 

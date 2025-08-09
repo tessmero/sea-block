@@ -11,7 +11,6 @@ import type { SeaBlock } from 'sea-block'
 import { Transition } from '../transition'
 import type { SweepSegment } from './flat-transition-segments'
 import { buildHideSegments, buildShowSegments } from './flat-transition-segments'
-import { Step } from 'gfx/3d/tile-render-pipeline/pipeline'
 
 // planned sweeps (halfway screen is fully black)
 const hideSegments = buildHideSegments() // overlapping during first half

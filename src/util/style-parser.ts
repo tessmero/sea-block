@@ -8,7 +8,6 @@
 import { Color } from 'three'
 import type { TilePart } from 'gfx/3d/tile-mesh'
 import type { TileColoringParams, TileColors } from 'gfx/styles/style'
-import { StartSequenceGame } from 'games/imp/start-sequence-game'
 import { typedEntries } from './typed-entries'
 
 export type CssStyle = Partial<Record<Selector, CssRuleset>>
@@ -46,22 +45,22 @@ export class StyleParser {
       }
     }
 
-    // check for special case
-    if (StartSequenceGame.isColorTransformEnabled) {
-      // apply start sequence transformation
-      const anim = StartSequenceGame.colorTransformAnim
-      const lMult = Math.pow(0.2 + 0.8 * anim, -1) // lightness multiplier
-      for (const key in result) {
-      // result[key] = ruleHandlers['saturation'](result[key], StartSequenceGame.saturationPct)
-        const color = result[key] as Color
-        color.getHSL(hsl)
-        if (key === 'top') {
-          hsl.l *= lMult
-        }
-        hsl.h -= 0.95 * (1 - anim) // rotate hues
-        color.setHSL(hsl.h, hsl.s, hsl.l)
-      }
-    }
+    // // check for special case
+    // if (StartSequenceGame.isColorTransformEnabled) {
+    //   // apply start sequence transformation
+    //   const anim = StartSequenceGame.colorTransformAnim
+    //   const lMult = Math.pow(0.2 + 0.8 * anim, -1) // lightness multiplier
+    //   for (const key in result) {
+    //   // result[key] = ruleHandlers['saturation'](result[key], StartSequenceGame.saturationPct)
+    //     const color = result[key] as Color
+    //     color.getHSL(hsl)
+    //     if (key === 'top') {
+    //       hsl.l *= lMult
+    //     }
+    //     hsl.h -= 0.95 * (1 - anim) // rotate hues
+    //     color.setHSL(hsl.h, hsl.s, hsl.l)
+    //   }
+    // }
 
     return result
   }

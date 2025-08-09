@@ -226,7 +226,7 @@ export class FreeCamGame extends Game {
     }
 
     // 4. Apply movement to intersection (copy anchor position first)
-    const step = 10 
+    const step = 10
     posDummy.copy(this.cameraAnchor.position)
       .addScaledVector(moveVec, step)
 

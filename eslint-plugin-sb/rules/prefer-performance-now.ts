@@ -22,11 +22,11 @@ export default ESLintUtils.RuleCreator.withoutDocs({
     return {
       CallExpression(node: TSESTree.CallExpression) {
         if (
-          node.callee.type === 'MemberExpression' &&
-          node.callee.object.type === 'Identifier' &&
-          node.callee.object.name === 'Date' &&
-          node.callee.property.type === 'Identifier' &&
-          node.callee.property.name === 'now'
+          node.callee.type === 'MemberExpression'
+          && node.callee.object.type === 'Identifier'
+          && node.callee.object.name === 'Date'
+          && node.callee.property.type === 'Identifier'
+          && node.callee.property.name === 'now'
         ) {
           context.report({
             node,

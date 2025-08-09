@@ -49,8 +49,8 @@ async function main() {
   seaBlock.init()
   seaBlock.reset()
 
-  if (false && isDevMode) { // show controls gui on startup
-    seaBlock.rebuildControls()
+  if (false && isDevMode) { 
+    seaBlock.rebuildControls() // show controls gui on startup
   }
 
   // Animation loop

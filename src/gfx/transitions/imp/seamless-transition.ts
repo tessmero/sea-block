@@ -13,7 +13,7 @@ import type { Step } from 'gfx/3d/tile-render-pipeline/pipeline'
 export class SeamlessTransition extends Transition {
   static { Transition.register('seamless', () => new SeamlessTransition()) }
 
-  // game/terrain change shuold be applied when starting transition
+  // game/terrain changes should be applied when starting this transition
   public doesAllowMidTransitionReset = false // not halfway through
 
   static desiredCameraOffset = new Vector3(10, 10, 10)
