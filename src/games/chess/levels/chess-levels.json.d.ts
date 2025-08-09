@@ -19,7 +19,7 @@ export interface ChessLevel {
   layout: Array<Array<Cell>>
 }
 
-export type Cell = 'GG' | '  ' | Piece // goal or empty cell or piece
+export type Cell = 'GG' | 'WA' | '  ' | Piece // goal or water or empty cell or piece
 export type Piece = `${PieceColor}${PieceName}` // piece shorthand e.g. 'BP' for black pawn
 export type PieceColor = 'W' | 'B' // white/black
 export type PieceName = 'P' | 'K' | 'Q' | 'H' | 'B' | 'R'

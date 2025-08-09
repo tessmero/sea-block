@@ -19,13 +19,6 @@ import { extrude, TileMeshIm } from '../../gfx/3d/tile-mesh'
 import { gfxConfig } from '../../configs/gfx-config'
 import { Group } from './group'
 
-export type TileOverrides = {
-  height?: number
-  isWater?: boolean
-  isFlora?: boolean
-  isVisible?: boolean
-}
-
 const dummy = new THREE.Object3D()
 const dummyVec = new THREE.Vector3()
 export class TileGroup extends Group<Tile, WaterSim> {
@@ -72,7 +65,9 @@ export class TileGroup extends Group<Tile, WaterSim> {
   }
 
   protected updateMeshes(seaBlock: SeaBlock, dt: number): void {
-    this.gfxHelper.updateTileMeshes(seaBlock.style, dt)
+    this.gfxHelper.updateTileMeshes(
+      seaBlock,      dt,
+    )
   }
 
   private buildTileMember(idx: TileIndex): Tile {
@@ -94,23 +89,23 @@ export class TileGroup extends Group<Tile, WaterSim> {
     return tile
   }
 
-  public overrideTile(idx: TileIndex, values: TileOverrides) {
-    const { i } = idx
-    const member = this.members[i]
-    const gTile = this.generatedTiles[i] || this.generateTile(idx)
-    for (const prop in values) {
-      member[prop] = values[prop]
-      gTile.gTile[prop] = values[prop]
-    }
-  }
+  // public overrideTile(idx: TileIndex, values: TileValues) {
+  //   const { i } = idx
+  //   const member = this.members[i]
+  //   const gTile = this.generatedTiles[i] || this.generateTile(idx)
+  //   for (const prop in values) {
+  //     member[prop] = values[prop]
+  //     gTile.gTile[prop] = values[prop]
+  //   }
+  // }
 
-  public generateAllTiles() {
-    for (const idx of this.grid.tileIndices) {
-      if (!this.generatedTiles[idx.i]) {
-        this.generateTile(idx)
-      }
-    }
-  }
+  // public generateAllTiles() {
+  //   for (const idx of this.grid.tileIndices) {
+  //     if (!this.generatedTiles[idx.i]) {
+  //       this.generateTile(idx)
+  //     }
+  //   }
+  // }
 
   public generateTile(idx: TileIndex): RenderableTile {
     // console.log(`generate tile ${this.generator.constructor.name} ${this.generator.flatConfig.peaks}`)
@@ -229,8 +224,8 @@ export class TileGroup extends Group<Tile, WaterSim> {
     // this.generator.refreshConfig()
     console.log('reset colors')
     this.generatedTiles.fill(null)
-    this.gfxHelper.liveRenderHeights.fill(NaN)
-    this.gfxHelper.restoreTileColors()
+    // this.gfxHelper.liveRenderHeights.fill(NaN)
+    // chessHlTiles.restoreTileColors()
     // for (const gTile of this.generatedTiles) {
     //   if (gTile) {
     //     gTile.style = undefined

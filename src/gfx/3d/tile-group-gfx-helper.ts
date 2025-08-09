@@ -8,50 +8,43 @@
  */
 
 import { Object3D } from 'three'
-import { gfxConfig } from '../../configs/gfx-config'
 import type { GeneratedTile } from '../../generators/terrain-generator'
-import type { StyleParser } from '../../util/style-parser'
 import type { TileGroup } from '../../core/groups/tile-group'
 import type { TileColors } from '../styles/style'
 import type { TileIndex } from 'core/grid-logic/indexed-grid'
 import type { TileMesh } from './tile-mesh'
-import { DropTransition } from 'gfx/transitions/imp/drop-transition'
+import { freeCamPipeline } from './tile-render-pipeline/free-cam-pipeline'
+import type { Pipeline, Step, TileValues } from './tile-render-pipeline/pipeline'
+import { gfxConfig } from 'configs/gfx-config'
+import { chessBoardPipeline } from './tile-render-pipeline/chess-board-pipeline'
+import type { SeaBlock } from 'sea-block'
+import type { StyleParser } from 'util/style-parser'
 
 const dummy = new Object3D()
 
-// (ms) duration of tile entrance and exit animation
-const ENTR_DURATION = 300
-const EXIT_DURATION = 300
-
 export interface RenderableTile {
   gTile: GeneratedTile // includes base color
-  entranceStartTime?: number // time when entered visible radius
-  exitStartTime?: number // time when exited visible radius
   originalColors?: TileColors // computed colors, set on first render
   liveColors?: TileColors // potentially animated copy of original colors
-}
-
-function deepCopy(colors: TileColors): TileColors {
-  return {
-    top: colors.top.clone(),
-    sides: colors.sides.clone(),
-  }
+  liveHeight?: number // precise y-value of top surface rendered in world
 }
 
 export class TileGroupGfxHelper {
   public readonly amplitude: number = 20
-  public readonly liveRenderHeights: Array<number> // used for flora gfx
-
-  private colorOverrides: Record<number, TileColors> = {}
 
   constructor(private readonly group: TileGroup) {
-    this.liveRenderHeights = new Array(group.n).fill(NaN)
   }
 
-  updateTileMeshes(style: StyleParser, dt: number) {
+  updateTileMeshes(seaBlock: SeaBlock, dt: number) {
     const { group } = this
-    const lerpAlpha = 0.05 * dt
-    const maxD2 = Math.pow(gfxConfig.flatConfig.visibleRadius, 2)
+    const lerpAlpha = 0.005 * dt
+
+    const pipelineFactory = seaBlock.game.getTerrainRenderPipeline
+    const { style } = seaBlock
+
+    freeCamPipeline.update(dt)
+    chessBoardPipeline.update(dt)
+    // const maxD2 = Math.pow(gfxConfig.flatConfig.visibleRadius, 2)
 
     // reset index of mesh instances for rendering
     for (const subgroup of group.subgroups) {
@@ -59,76 +52,10 @@ export class TileGroupGfxHelper {
     }
 
     for (const tileIndex of group.grid.tileIndices) {
-      const { x, z, i: memberIndex } = tileIndex
-      const box = group.tilePositions[memberIndex]
-      const dx = box.x - group.centerXZ.x
-      const dz = box.z - group.centerXZ.z
-      const dSquared = dx * dx + dz * dz
-
-      let rTile = group.generatedTiles[memberIndex]
-      if (dSquared < maxD2) {
-        // tile is inside visible radius
-        group.members[memberIndex].isVisible = true
-
-        if (rTile && !rTile.entranceStartTime) {
-          // tile just entered radius
-          rTile.entranceStartTime = Date.now()
-          delete rTile.exitStartTime
-        }
-        if (!rTile) {
-          rTile = group.generateTile(tileIndex)
-        }
-
-        // compute new colors if necessary
-        if (!rTile.originalColors) {
-          const { gTile } = rTile
-
-          // compute styled colors only on first render
-          rTile.originalColors = style.getTileColors({
-            x, z, generatedTile: gTile,
-
-            // support @land and @sea conditions in styles
-            land: !gTile.isWater, sea: gTile.isWater,
-          })
-
-          // deep copy that may be modified
-          rTile.liveColors = deepCopy(rTile.originalColors)
-        }
-
-        // have group member rendered
-        // always re-apply mesh instance colors
-        if (!this._updateRenderInstance(tileIndex, rTile, lerpAlpha)) {
-          // break // reached count limit
-        }
-      }
-      else {
-        // tile is outside visible radius
-        group.members[memberIndex].isVisible = false
-
-        if (rTile?.originalColors) {
-          // tile was generated and previously rendered
-
-          if (!rTile.exitStartTime) {
-            // tile just left visible radius
-            rTile.entranceStartTime = undefined
-            rTile.exitStartTime = Date.now()
-          }
-
-          const elapsed = Date.now() - rTile.exitStartTime
-          if (elapsed < EXIT_DURATION) {
-            // special case, tile recently left visible radius
-            // render even though outside of visible radius
-            if (!this._updateRenderInstance(tileIndex, rTile, lerpAlpha)) {
-              // break // reached count limit (subgroup.ts)
-            }
-          }
-          else {
-            // tile out of radius an will not be rendered
-            // rTile.exitStartTime = null
-            // rTile.style = null
-            this.liveRenderHeights[memberIndex] = NaN
-          }
-        }
+      const pipeline = pipelineFactory(tileIndex)
+      const stepsToRun = this.getFullStepsToRun(pipeline, seaBlock)
+      if (!this._updateRenderInstance(stepsToRun, style, tileIndex, lerpAlpha)) {
+        // break // reached count limit
       }
     }
 
@@ -139,33 +66,31 @@ export class TileGroupGfxHelper {
     }
   }
 
-  public setTempColorsForTile(colors: TileColors, tile: TileIndex) {
-    this.colorOverrides[tile.i] = colors
-  }
-
-  public restoreColorsForTile(tile: TileIndex) {
-    delete this.colorOverrides[tile.i]
-  }
-
-  public restoreTileColors() {
-    this.colorOverrides = {}
-  }
-
-  public setColorsForTile(colors: TileColors, tile: TileIndex): void {
-    let rTile = this.group.generatedTiles[tile.i]
-    if (!rTile) {
-      rTile = this.group.generateTile(tile)
+  private getFullStepsToRun(pipeline: Pipeline, seaBlock: SeaBlock) {
+    const result = [...pipeline.steps]
+    const extraStep = seaBlock.transition?.getExtraPipelineStep()
+    if (extraStep) {
+      result.push(extraStep)
     }
-
-    rTile.originalColors = colors
-    rTile.liveColors = deepCopy(colors)
-    // const { colorOverrides } = this
-    // delete (colorOverrides[tile.i])
+    return result
   }
 
-  private _updateRenderInstance(tileIndex: TileIndex, rTile: RenderableTile, lerpAlpha: number): boolean {
+  // public setColorsForTile(colors: TileColors, tile: TileIndex): void {
+  //   let rTile = this.group.generatedTiles[tile.i]
+  //   if (!rTile) {
+  //     rTile = this.group.generateTile(tile)
+  //   }
+
+  //   rTile.originalColors = colors
+  //   rTile.liveColors = deepCopy(colors)
+  // }
+
+  private _updateRenderInstance(
+    stepsToRun: Array<Step>, style: StyleParser, tileIndex: TileIndex, lerpAlpha: number,
+  ): boolean {
     const { group } = this
     const { x, z, i: memberIndex } = tileIndex
+
     if (typeof x === 'undefined') {
       throw new Error(`grid has no xz for memberIndex ${memberIndex}`)
     }
@@ -186,53 +111,34 @@ export class TileGroupGfxHelper {
       throw new Error('subgroup changed')
     }
 
-    const { gTile, originalColors, liveColors } = rTile
-
-    const box = group.tilePositions[memberIndex]
-
-    // distance to truncate from bottom of tile
-    const cutoff = -gfxConfig.flatConfig.extendBottom / this.amplitude
-
-    let renderHeight: number
-    if (gTile.isWater) {
-      renderHeight = this.getAnimatedRenderHeight(
-        gTile.height,
-        group.sim.getWavePos(memberIndex),
-      )
+    // run pipeline
+    let current: TileValues = { height: 0, yOffset: 0 }
+    for (const step of stepsToRun) {
+      const result = step({ group: this.group, current, tileIndex, style })
+      if (!result) { return true }
+      current = result
     }
-    else {
-      renderHeight = this.getNewRenderHeight(gTile, memberIndex)
-    }
-    group.members[memberIndex].height = renderHeight // height for sphere collision
 
-    // compute tile animation (enter/exit at visible radius)
-    let anim = 1
-    const { entranceStartTime, exitStartTime } = rTile
-    if (exitStartTime) {
-      const elapsed = EXIT_DURATION - (Date.now() - exitStartTime)
-      anim = this._dampedAnim(elapsed, EXIT_DURATION)
-    }
-    else if (entranceStartTime) {
-      const elapsed = Date.now() - entranceStartTime
-      anim = this._dampedAnim(elapsed, ENTR_DURATION)
-    }
-    const entranceOffset = -Math.min(renderHeight - cutoff, anim)
+    // check pipeline result
+    const rTile = group.generatedTiles[memberIndex]
+    if (!rTile) { return true }
+    const { originalColors, liveColors } = rTile
+
+    const { height, yOffset } = current // result of pipeline
+    group.members[memberIndex].height = height // height for sphere collision
 
     // compute tile animation (global drop-transition)
-    let transitionOffset = 0
-    if (DropTransition.gridAnim) {
-      const tileAnim = DropTransition.gridAnim.getTileValue(tileIndex, DropTransition.t)
-      transitionOffset = 500 * this._dampedAnim(1 - tileAnim, 1)
-    }
 
+    const cutoff = -gfxConfig.flatConfig.extendBottom / this.amplitude
+    const box = group.tilePositions[memberIndex]
     dummy.position.set(
       box.x,
-      Math.max(cutoff, renderHeight / 2 + cutoff / 2 + entranceOffset) + transitionOffset,
+      Math.max(cutoff, height / 2 + cutoff / 2) + yOffset,
       box.z,
     )
-    dummy.scale.set(1, Math.max(0, renderHeight + entranceOffset - cutoff), 1)
+    dummy.scale.set(1, Math.max(0, height - cutoff), 1)
 
-    this.liveRenderHeights[memberIndex] = dummy.position.y + dummy.scale.y / 2
+    rTile.liveHeight = dummy.position.y + dummy.scale.y / 2
 
     dummy.updateMatrix()
     const newIndexInSubgroup = subgroup.setMemberMatrix(memberIndex, dummy.matrix)
@@ -240,7 +146,7 @@ export class TileGroupGfxHelper {
 
     if (originalColors && liveColors) {
       const tileMesh = subgroup.mesh as TileMesh
-      const targetColors = this.colorOverrides[tileIndex.i] || originalColors
+      const targetColors = current.targetColors || originalColors
       liveColors.sides.lerp(targetColors.sides, lerpAlpha)
       liveColors.top.lerp(targetColors.top, lerpAlpha)
       tileMesh.setColorsForInstance(newIndexInSubgroup, liveColors)
@@ -274,7 +180,18 @@ export class TileGroupGfxHelper {
     return axisVal
   }
 
+  getLiveHeight(tile: TileIndex): number | undefined {
+    return this.group.generatedTiles[tile.i]?.liveHeight
+  }
+
   getAnimatedRenderHeight(tileHeight: number, wavePos: number) {
     return tileHeight * this.amplitude / 255 + 1 + wavePos
+  }
+}
+
+function deepCopy(colors: TileColors): TileColors {
+  return {
+    top: colors.top.clone(),
+    sides: colors.sides.clone(),
   }
 }

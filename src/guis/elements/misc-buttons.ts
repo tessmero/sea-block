@@ -6,6 +6,8 @@
 
 import { toggleRadio } from 'audio/song-playlist'
 import { originalTargetMeshPosition, targetElement, targetMesh } from 'games/imp/free-cam-game'
+import { SeamlessTransition } from 'gfx/transitions/imp/seamless-transition'
+import { Transition } from 'gfx/transitions/transition'
 import type { GuiElement } from 'guis/gui'
 
 export const startGamePanel: GuiElement = {
@@ -31,8 +33,23 @@ export const startGameButton: GuiElement = {
     isVisible: false,
   },
   clickAction: ({ seaBlock }) => {
+    // return mesh
+    targetElement.layoutKey = undefined
+    targetMesh.position.copy(originalTargetMeshPosition)
+
+    // close display
+    for (const { display } of startGameElements) {
+      display.isVisible = false
+    }
+
+    // switch to chess game
     const item = seaBlock.config.tree.children.game
     item.value = 'chess'
+    SeamlessTransition.desiredCameraOffset.set(0, 5, 5)
+    SeamlessTransition.snapshotTerrain(seaBlock)
+    seaBlock.startTransition({
+      transition: Transition.create('seamless', seaBlock),
+    })
     seaBlock.onCtrlChange(item)
   },
 }
@@ -44,8 +61,11 @@ export const cancelGameButton: GuiElement = {
     isVisible: false,
   },
   clickAction: ({ seaBlock }) => {
+    // return mesh
     targetElement.layoutKey = undefined
     targetMesh.position.copy(originalTargetMeshPosition)
+
+    // close display
     for (const { display } of startGameElements) {
       display.isVisible = false
     }

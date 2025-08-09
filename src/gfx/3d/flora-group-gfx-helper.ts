@@ -21,17 +21,19 @@ export class FloraGroupGfxHelper {
       subgroup.resetCount()
     }
 
-    const { liveRenderHeights } = group.terrain.gfxHelper
+    // const { liveRenderHeights } = group.terrain.gfxHelper
 
     // compute direction for to face camera from center tile
     lookOffset.subVectors(seaBlock.camera.position, seaBlock.orbitControls.target)
 
     for (const tileIndex of group.grid.tileIndices) {
       const tile = group.members[tileIndex.i]
-      const height = liveRenderHeights[tileIndex.i]
-      if (tile.isFlora && !Number.isNaN(height)) {
+      if (!tile.isFlora) {
+        continue
+      }
+      const height = group.terrain.generatedTiles[tileIndex.i]?.liveHeight // liveRenderHeights[tileIndex.i]
+      if (typeof height === 'number') {
         // group member should be rendered
-        // always re-apply mesh instance colors
         if (!this._updateRenderInstance(tileIndex, height)) {
           // break // reached count limit
         }

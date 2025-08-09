@@ -4,7 +4,7 @@
  * Used in ssd-transition to build series of sweeps with shifting colors.
  */
 
-import { Tiling } from 'core/grid-logic/tilings/tiling'
+import type { Tiling } from 'core/grid-logic/tilings/tiling'
 import { type ColorRepresentation } from 'three'
 
 export type SweepSegment = {

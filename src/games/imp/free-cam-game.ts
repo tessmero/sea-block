@@ -3,7 +3,7 @@
  *
  * Like sphere-test, but without the sphere.
  */
-import type { Group, Vector2 } from 'three'
+import type { Group } from 'three'
 import { BoxGeometry, Color, Mesh, MeshBasicMaterial, MeshLambertMaterial, Quaternion, Vector3 } from 'three'
 import { CAMERA_LOOK_AT } from 'settings'
 import type { SeaBlock } from 'sea-block'
@@ -88,14 +88,10 @@ export class FreeCamGame extends Game {
   protected cameraAnchor!: Sphere
   protected waveMaker!: Sphere
 
-  private lastScreenPos?: Vector2
-
   protected _lastAnchorPosition = new Vector3()
 
   public reset(context: SeaBlock): void {
     const { sphereGroup } = context
-
-    this.lastScreenPos = undefined
 
     // init ghost sphere to act as camera anchor
     this.cameraAnchor = sphereGroup.members[0]
@@ -230,7 +226,7 @@ export class FreeCamGame extends Game {
     }
 
     // 4. Apply movement to intersection (copy anchor position first)
-    const step = 10 // Or whatever step size you prefer
+    const step = 10 
     posDummy.copy(this.cameraAnchor.position)
       .addScaledVector(moveVec, step)
 

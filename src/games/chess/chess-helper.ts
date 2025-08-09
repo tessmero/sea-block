@@ -31,6 +31,9 @@ import type { CollectibleName } from './levels/chess-levels.json.d'
 import type { TilePosition } from 'core/grid-logic/tiled-grid'
 import { buildPawnMoves, buildEnemyMoves, nextPhasePickers } from './chess-sequences'
 import { Transition } from 'gfx/transitions/transition'
+import { freeCamPipeline } from 'gfx/3d/tile-render-pipeline/free-cam-pipeline'
+import type { Pipeline } from 'gfx/3d/tile-render-pipeline/pipeline'
+import { chessBoardPipeline } from 'gfx/3d/tile-render-pipeline/chess-board-pipeline'
 
 const enemyColor = new Color(0xff0000)
 
@@ -50,8 +53,14 @@ export function chessAllow3DRender(): boolean {
   return true
 }
 
+export function clearChessRun(): void {
+  isResetQueued = true
+  chessRun.collected = [...START_COLLECTED]
+}
+
 let isResetQueued = true
 export function resetChess(context: SeaBlock): void {
+  // get freecam game just to call reset
   const freeCam = Game.create('free-cam', context) as FreeCamGame
   freeCam.reset(context)
 
@@ -59,6 +68,14 @@ export function resetChess(context: SeaBlock): void {
     isResetQueued = false
     instance = new Chess(context)
   }
+  chessBoardPipeline.setHlTiles(instance.hlTiles)
+}
+
+export function getChessPipeline(tile: TileIndex): Pipeline {
+  if (instance && instance.boardTiles.includes(tile.i)) {
+    return chessBoardPipeline
+  }
+  return freeCamPipeline
 }
 
 export function getChessPhase() {
@@ -99,11 +116,16 @@ type ChessRun = {
   collected: Array<CollectibleName>
   completedLevels: Array<number>
 }
+
+const START_COLLECTED = [
+  ...PIECE_NAMES,
+] as const satisfies Array<CollectibleName>
+
 export const chessRun: ChessRun = {
   hasSwitchedPiece: false,
   hasPlacedPawn: false,
   collectedPawns: 0,
-  collected: [...PIECE_NAMES], // history of collected rewards
+  collected: [...START_COLLECTED], // history of collected rewards
   completedLevels: [],
 }
 
@@ -114,6 +136,7 @@ export class Chess {
 
   public readonly centerTile: TileIndex
   public readonly centerPos: TilePosition
+  public readonly boardTiles: Array<number>
   public readonly goalTile: TileIndex
 
   // visible pieces on board
@@ -153,11 +176,12 @@ export class Chess {
     // make sure camera taret is exactly on center of tile
     const exact = terrain.grid.indexToPosition(center)
     this.centerPos = exact
-    this.centerCameraOnChessBoard()
+    // this.centerCameraOnChessBoard(0)
     // this.hlTiles.set(center, 'center')
     // terrain.gfxHelper.setColorsForTile(centerColors, center)
     this.centerTile = center
-    const { playerPiece, enemyPieces, goalTile } = loadChessLevel(this)
+    const { playerPiece, enemyPieces, boardTiles, goalTile } = loadChessLevel(this)
+    this.boardTiles = boardTiles
     this.goalTile = goalTile
 
     // reset instance counts and setup current piece mesh
@@ -181,14 +205,20 @@ export class Chess {
     }
   }
 
-  private centerCameraOnChessBoard() {
+  private centerCameraOnChessBoard(dt: number) {
     const { orbitControls } = this.context
     const { target } = orbitControls
     const { x, z } = this.centerPos
-    // console.log(`chess-helper exact center pos: ${x},${z}`)
     target.x = x
     target.z = z
     target.y = 12
+
+    // // Desired offset from target (orbit radius and angles)
+    // const desiredOffset = new Vector3(0, 5, 5)
+
+    // // Use helper to smoothly lerp camera position
+    // lerpCameraSpherical(this.context.camera, target, desiredOffset, dt)
+
     orbitControls.update()
   }
 
@@ -266,10 +296,11 @@ export class Chess {
       display.needsUpdate = true
     }
 
-    this.centerCameraOnChessBoard()
+    this.centerCameraOnChessBoard(context.dt)
 
     //
-    setTilePickY(terrain.gfxHelper.liveRenderHeights[this.centerTile.i])
+    const centerHeight = terrain.gfxHelper.getLiveHeight(this.centerTile)
+    if (typeof centerHeight === 'number') setTilePickY(centerHeight)
 
     hlTiles.update()
     showPhaseLabel(this.currentPhase)
@@ -353,6 +384,9 @@ export class Chess {
     // if( this.context.config.flatConfig.chessViewMode === '2D' ){
     if (chessRun.collected.includes('dual-vector-foil')) {
       renderFlatView(this)
+    }
+    else {
+      flatViewport.display.isVisible = false
     }
   }
 

@@ -4,9 +4,7 @@
  * Configurable for chess game.
  */
 
-import type { PieceName } from 'games/chess/chess-enums'
-import { PIECE_NAMES } from 'games/chess/chess-enums'
-import type { ConfigTree, OptionItem } from './config-tree'
+import type { ConfigTree } from './config-tree'
 import { Configurable } from './configurable'
 
 const chessGameConfigTree = {

@@ -26,7 +26,7 @@ export class ChessTransition extends SsdTransition {
     return [
       {
         ...result[0],
-        t0: .4,
+        t0: 0.4,
         t1: 0.6,
         tiling: checkeredTiling,
         colors: ['#D1BB9E', '#E1E2EF'],

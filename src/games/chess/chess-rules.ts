@@ -95,6 +95,7 @@ export const CHESS_MOVES = {
 type GamPars = {
   piece: RenderablePiece
   terrain: TileGroup
+  boardTiles: Array<number>
 }
 
 export function getAllowedMoves(params: GamPars): Array<TileIndex> {
@@ -134,11 +135,11 @@ export function getAllowedMoves(params: GamPars): Array<TileIndex> {
 }
 
 export function canLandOn(targetTile: TileIndex, params: GamPars): boolean {
-  const { isWater } = params.terrain.members[targetTile.i]
-  return !isWater
+  const { boardTiles } = params
+  return boardTiles.includes(targetTile.i)
 }
 
 function canMoveThrough(targetTile: TileIndex, params: GamPars): boolean {
-  const { isWater } = params.terrain.members[targetTile.i]
-  return !isWater
+  const { boardTiles } = params
+  return boardTiles.includes(targetTile.i)
 }

@@ -10,6 +10,7 @@ import type { TileGroup } from 'core/groups/tile-group'
 import { getAllowedMoves } from './chess-rules'
 import { pickColorsForChessTile } from './chess-colors'
 import type { Chess } from './chess-helper'
+import type { TileColors } from 'gfx/styles/style'
 
 const _HIGHLIGHTS = [
   'hover', 'allowedMove',
@@ -21,6 +22,8 @@ export class ChessHlTiles {
   private changed: Set<number> = new Set()
   public allowedMoves: Set<number> = new Set()
 
+  public colorOverrides: Record<number, TileColors> = {}
+
   constructor(
     private readonly terrain: TileGroup,
   ) {}
@@ -30,6 +33,7 @@ export class ChessHlTiles {
       currentPhase: phase,
       centerTile: center,
       player: piece,
+      boardTiles,
     } = chess
     const { terrain, allowedMoves, changed } = this
 
@@ -52,7 +56,7 @@ export class ChessHlTiles {
     }
     else {
       // highlight allowed moves
-      const targets = getAllowedMoves({ piece, terrain })
+      const targets = getAllowedMoves({ piece, terrain, boardTiles })
       for (const { i } of targets) {
         allowedMoves.add(i)
         changed.add(i)
@@ -97,14 +101,26 @@ export class ChessHlTiles {
         const colors = pickColorsForChessTile(tile, hl)
 
         // start lerping to highlight colors
-        gfxHelper.setTempColorsForTile(colors, tile)
+        this.setTempColorsForTile(colors, tile)
       }
       else {
         // start lerping to original colors
-        gfxHelper.restoreColorsForTile(tile)
+        this.restoreColorsForTile(tile)
       }
     }
 
     this.changed.clear()
+  }
+
+  public setTempColorsForTile(colors: TileColors, tile: TileIndex) {
+    this.colorOverrides[tile.i] = colors
+  }
+
+  public restoreColorsForTile(tile: TileIndex) {
+    delete this.colorOverrides[tile.i]
+  }
+
+  public restoreTileColors() {
+    this.colorOverrides = {}
   }
 }

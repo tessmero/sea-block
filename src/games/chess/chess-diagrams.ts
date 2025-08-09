@@ -166,16 +166,21 @@ export function renderFlatView(
   for (let row = -2; row <= 2; row++) {
     for (let col = -2; col <= 2; col++) {
       const tileIndex = chess.context.terrain.grid.xzToIndex(centerTile.x + col, centerTile.z + row)
+      if (!tileIndex) {
+        continue
+      }
 
       // pick highlight mode
       let hl: ChessTileHighlight | undefined = undefined
-      if (tileIndex && hlTiles.allowedMoves.has(tileIndex.i)) {
+      if (hlTiles.allowedMoves.has(tileIndex.i)) {
         hl = 'allowedMove'
       }
       if (tileIndex === chess.lastHoveredTile) {
         hl = 'hover'
       }
-      const tileColors = pickColorsForChessTile({ x: row, z: col, i: 0 }, hl)
+      const tileColors
+      = chess.context.terrain.generatedTiles[tileIndex.i]?.liveColors
+        || pickColorsForChessTile(tileIndex, hl)
       ctx.fillStyle = tileColors.top.getStyle()
 
       const x = cx + col * TILE_SIZE

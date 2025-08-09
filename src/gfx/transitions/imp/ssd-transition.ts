@@ -11,6 +11,7 @@ import type { SeaBlock } from 'sea-block'
 import { Transition } from '../transition'
 import type { SweepSegment } from './flat-transition-segments'
 import { buildHideSegments, buildShowSegments } from './flat-transition-segments'
+import { Step } from 'gfx/3d/tile-render-pipeline/pipeline'
 
 // planned sweeps (halfway screen is fully black)
 const hideSegments = buildHideSegments() // overlapping during first half
@@ -33,6 +34,9 @@ function buildSweepTransition(context: SeaBlock, seg: SweepSegment): BufferedSeg
 export class SsdTransition extends Transition {
   static { Transition.register('ssd', () => new SsdTransition()) }
 
+  // aply drop transition offset just before rendering a tile
+  public getExtraPipelineStep() { return this.ssdFinalShow.getExtraPipelineStep() }
+
   // assigned in create -> reset
   context!: SeaBlock
   ssdHide!: Array<BufferedSegment> // corresponds with hideSegments
@@ -42,6 +46,8 @@ export class SsdTransition extends Transition {
   protected reset(context: SeaBlock): void {
     this.context = context
     this.ssdHide = this.buildSsdHideSegments().map(seg => buildSweepTransition(context, seg))
+
+    this.ssdFinalShow = Transition.create('drop', this.context)
   }
 
   protected buildSsdHideSegments() {
@@ -94,9 +100,9 @@ export class SsdTransition extends Transition {
     if (!this.ssdShow) {
       this.ssdShow = showSegments.map(seg => buildSweepTransition(this.context, seg))
     }
-    if (!this.ssdFinalShow) {
-      this.ssdFinalShow = Transition.create('drop', this.context)
-    }
+    // if (!this.ssdFinalShow) {
+    //   this.ssdFinalShow = Transition.create('drop', this.context)
+    // }
   }
 
   public _show(t0: number, t1: number): void {

@@ -15,6 +15,7 @@ import type { SeaBlock } from 'sea-block'
 import { Color } from 'three'
 import type { SweepSegment } from './imp/flat-transition-segments'
 import type { FlatTransition } from './imp/flat-transition'
+import type { Step } from 'gfx/3d/tile-render-pipeline/pipeline'
 
 const totalDuration = 1500 // ms
 
@@ -30,6 +31,10 @@ export function randomTransition(context: SeaBlock): Transition {
 
 export abstract class Transition {
   static isFirstUncover = true
+
+  // optional extra step before rendering tile (tile-group-gfx-helper.ts)
+  public getExtraPipelineStep(): Step | null { return null }
+  public doesAllowMidTransitionReset = true
 
   private elapsed = 0 // ms
   public didFinishCover = false

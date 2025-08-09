@@ -8,7 +8,7 @@
  */
 
 import type { Matrix4 } from 'three'
-import { Group, Mesh } from 'three'
+import { Group, Mesh, Quaternion, Vector3 } from 'three'
 import { MeshBasicMaterial, type BufferGeometry } from 'three'
 import type { CompositeColors, CompositeElement } from '../composite-element'
 import { ColoredInstancedMesh } from './colored-instanced-mesh'

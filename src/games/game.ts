@@ -19,6 +19,9 @@ import type { SeaBlock } from '../sea-block'
 import { CAMERA, CAMERA_LOOK_AT, PORTRAIT_CAMERA } from '../settings'
 import type { ElementEvent } from '../guis/gui'
 import { Gui } from '../guis/gui'
+import { freeCamPipeline } from 'gfx/3d/tile-render-pipeline/free-cam-pipeline'
+import type { Pipeline } from 'gfx/3d/tile-render-pipeline/pipeline'
+import type { TileIndex } from 'core/grid-logic/indexed-grid'
 
 export type GameElement = {
   readonly meshLoader: () => Promise<Object3D>
@@ -36,6 +39,10 @@ export interface GameUpdateContext {
 
 export abstract class Game {
   public gui!: Gui // assigned in create
+
+  public getTerrainRenderPipeline(_tile: TileIndex): Pipeline {
+    return freeCamPipeline
+  }
 
   public abstract reset(context: SeaBlock): void
   public resetCamera(_context: SeaBlock): void {}

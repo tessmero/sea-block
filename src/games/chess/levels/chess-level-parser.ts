@@ -8,29 +8,17 @@
 import * as chessLevels from './chess-levels.json'
 
 import type { TileIndex } from 'core/grid-logic/indexed-grid'
-import type { TileGroup, TileOverrides } from 'core/groups/tile-group'
-import { pickColorsForChessTile } from '../chess-colors'
+import type { TileGroup } from 'core/groups/tile-group'
 import type { ChessLevel, CollectibleName, PieceName as ShortName } from './chess-levels.json.d'
 import type { PieceName } from '../chess-enums.ts'
 import type { PieceColor } from './chess-levels.json.d'
 import type { Piece } from './chess-levels.json.d'
 import { chessRun, type Chess } from '../chess-helper'
 
-// make terrain tile part of chess board
-function getChessTileOverrides(tile: TileIndex): TileOverrides {
-  const { x, z } = tile
-  const checkeredIndex = Math.abs((x + z) % 2)
-  return {
-    isWater: false,
-    isFlora: false,
-    height: 135 + checkeredIndex,
-    isVisible: true,
-  }
-}
-
 type LevelStartState = {
   playerPiece: ParsedPiece
   enemyPieces: Array<ParsedPiece>
+  boardTiles: Array<number>
   goalTile: TileIndex
 }
 
@@ -84,7 +72,11 @@ export function loadChessLevel(chess: Chess): LevelStartState {
   const instance = new ChessLevelParser(levelIndex, terrain)
   instance.loadLevel(center)
 
-  const { playerPiece, enemyPieces, goalTile } = instance
+  const { playerPiece, enemyPieces, boardTiles, goalTile } = instance
+
+  if (!boardTiles || boardTiles.length === 0) {
+    throw new Error('level has no chessboard tiles')
+  }
 
   if (!playerPiece) {
     throw new Error('level has no player ("B_")')
@@ -94,13 +86,15 @@ export function loadChessLevel(chess: Chess): LevelStartState {
     throw new Error('level has no "GG" target cell')
   }
 
-  return { playerPiece, enemyPieces, goalTile }
+  return { playerPiece, enemyPieces, boardTiles, goalTile }
 }
 
 class ChessLevelParser {
-  public playerPiece?: ParsedPiece
-  public enemyPieces: Array<ParsedPiece> = []
-  public goalTile?: TileIndex
+  public playerPiece?: ParsedPiece // B_ single black piece in level data
+  public enemyPieces: Array<ParsedPiece> = [] // W_ white pieces in level data
+
+  public boardTiles?: Array<number> = [] // all playable non-WA tiles
+  public goalTile?: TileIndex // GG tile with treasure chest
 
   constructor(
     private readonly levelIndex: number,
@@ -111,7 +105,7 @@ class ChessLevelParser {
     console.log('load chess level')
 
     const { terrain } = this
-    terrain.generateAllTiles()
+    // terrain.generateAllTiles()
     // Get the first level's layout (assume 8x8)
     const layout = chessLevels.levels[this.levelIndex % chessLevels.levels.length].layout
     const nRows = layout.length // 8
@@ -146,10 +140,11 @@ class ChessLevelParser {
 
           if (!isWater) {
             // solid chessboard tile
-            terrain.overrideTile(tileIdx, getChessTileOverrides(tileIdx))
-            terrain.members[tileIdx.i].isWater = false
-            const colors = pickColorsForChessTile(tileIdx)
-            terrain.gfxHelper.setColorsForTile(colors, tileIdx)
+            this.boardTiles?.push(tileIdx.i)
+            // terrain.overrideTile(tileIdx, getChessTileOverrides(tileIdx))
+            // terrain.members[tileIdx.i].isWater = false
+            // const colors = pickColorsForChessTile(tileIdx)
+            // terrain.gfxHelper.setColorsForTile(colors, tileIdx)
           }
         }
       }

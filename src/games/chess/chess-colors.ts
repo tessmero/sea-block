@@ -7,82 +7,57 @@
 import type { TileIndex } from 'core/grid-logic/indexed-grid'
 import type { ChessTileHighlight } from './chess-hl-tiles'
 import type { TileColors } from 'gfx/styles/style'
-import { Color, type ColorRepresentation } from 'three'
+import { Color } from 'three'
 
-type ChessTileColorData = { top: ColorRepresentation, sides: ColorRepresentation }
 
 export function pickColorsForChessTile(tile: TileIndex, highlight?: ChessTileHighlight): TileColors {
   const { x, z } = tile
   const checkeredIndex = Math.abs((x + z) % 2)
   const data = highlight && hlColors[highlight]
     ? hlColors[highlight][checkeredIndex]
-    : baseColors[checkeredIndex]
+    : baseChessBoardColors[checkeredIndex]
   return {
-    top: new Color(data.top),
-    sides: new Color(data.sides),
+    top: data.top,
+    sides: data.sides,
   }
 }
 
-const baseColors: readonly [ChessTileColorData, ChessTileColorData] = [
+export const baseChessBoardColors: readonly [TileColors, TileColors] = [
   {
     // White tile: light gray
-    top: '#E1E2EF',
-    sides: '#C1C2CF',
+    top: new Color('#E1E2EF'),
+    sides: new Color('#C1C2CF'),
   },
   {
     // Black tile: tan
-    top: '#D1BB9E',
-    sides: '#A79277',
+    top: new Color('#D1BB9E'),
+    sides: new Color('#A79277'),
   },
 ]
 
-const hlColors: Record<ChessTileHighlight, [ChessTileColorData, ChessTileColorData]> = {
+const hlColors: Record<ChessTileHighlight, [TileColors, TileColors]> = {
   hover: [
     {
       // White tile hover: blue highlight
-      top: '#B3CFFF',
-      sides: '#7FA7E0',
+      top: new Color('#B3CFFF'),
+      sides: new Color('#7FA7E0'),
     },
     {
       // Black tile hover: orange highlight
-      top: '#8aabe3',
-      sides: '#4f6584',
+      top: new Color('#8aabe3'),
+      sides: new Color('#4f6584'),
     },
   ],
   allowedMove: [
     {
       // White tile allowed move: greenish
-      top: '#81E28F',
-      sides: '#71C27F',
+      top: new Color('#81E28F'),
+      sides: new Color('#71C27F'),
     },
     {
       // Black tile allowed move: greenish
-      top: '#41BB6E',
-      sides: '#379247',
+      top: new Color('#41BB6E'),
+      sides: new Color('#379247'),
     },
   ],
 }
-
-// const schemes = target ? {
-//   white: { // greenish
-//     main: '#81E28F',
-//     light: '#91F29F',
-//     dark: '#71C27F',
-//   },
-//   black: { // greenish
-//     main: '#41BB6E',
-//     light: '#5AD880',
-//     dark: '#379247',
-//   },
-// } : {
-//   white: {
-//     main: '#E1E2EF',
-//     light: '#F1F2FF',
-//     dark: '#C1C2CF',
-//   },
-//   black: {
-//     main: '#D1BB9E',
-//     light: '#EAD8C0',
-//     dark: '#A79277',
-//   },
-// }

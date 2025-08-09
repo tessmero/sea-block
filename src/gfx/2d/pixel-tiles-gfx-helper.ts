@@ -45,10 +45,10 @@ const nTempBuffers = 10
 const tempImageCache: Array<OffscreenCanvas> = []
 let ticIndex = 0
 
-type RGB = [number,number,number]
-export function getTempImageset(tiling: Tiling, colors: [RGB,RGB]) {
+type RGB = [number, number, number]
+export function getTempImageset(tiling: Tiling, colors: [RGB, RGB]) {
   // console.log(`build temp imageset with color ${color}`)
-  return tiling.shapes.map((shape, i) => _getTempImage(shape, colors[i%2]))
+  return tiling.shapes.map((shape, i) => _getTempImage(shape, colors[i % 2]))
 }
 
 function _getTempImage(shape: TileShape, color: [number, number, number]): OffscreenCanvas {

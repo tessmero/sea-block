@@ -12,11 +12,14 @@ import { Gui } from '../gui'
 import type { ChessPhase, PieceName } from 'games/chess/chess-enums'
 import { CHESS_PHASES, PIECE_NAMES } from 'games/chess/chess-enums'
 import type { Chess } from 'games/chess/chess-helper'
-import { clickChess, getChessPhase, moveChess } from 'games/chess/chess-helper'
+import { clearChessRun, clickChess, getChessPhase, moveChess, resetChess } from 'games/chess/chess-helper'
 import { getImage } from 'gfx/2d/image-asset-loader'
 import { CHESS_LAYOUT } from 'guis/layouts/chess-layout'
 import type { ProcessedSubEvent } from 'mouse-touch-input'
 import { CHESS_REWARDS_LAYOUT } from 'guis/layouts/chess-rewards-layout'
+import { SeamlessTransition } from 'gfx/transitions/imp/seamless-transition'
+import { Transition } from 'gfx/transitions/transition'
+import { CAMERA } from 'settings'
 
 const defaultPhase: ChessPhase = 'player-choice'
 const defaultPiece: PieceName = 'rook'
@@ -117,7 +120,19 @@ const topRightBtn: GuiElement = {
     icon: 'icons/16x16-x.png',
   },
   clickAction: (event) => {
-    togglePauseMenu(event)
+
+    clearChessRun()
+    const {seaBlock} = event
+    const item = seaBlock.config.tree.children.game
+    item.value = 'free-cam'
+    SeamlessTransition.desiredCameraOffset.copy(CAMERA)
+    SeamlessTransition.snapshotTerrain(seaBlock)
+    seaBlock.startTransition({
+      transition: Transition.create('seamless', seaBlock),
+    })
+    seaBlock.onCtrlChange(item)
+    
+   // togglePauseMenu(event)
   },
 }
 

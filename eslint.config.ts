@@ -32,6 +32,9 @@ export default tseslint.config(
   {
     rules: {
 
+      // must use performance.now() instead of Date.now()
+      'sb/prefer-performance-now': ['warn'],
+
       // must use === and !== instead of == and !=
       'eqeqeq': ['warn'],
 

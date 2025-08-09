@@ -7,7 +7,7 @@
  * redraws tiles that are actively changing.
  */
 
-import { TileIndex } from 'core/grid-logic/indexed-grid'
+import type { TileIndex } from 'core/grid-logic/indexed-grid'
 import { TILING } from 'imp-names'
 import { Transition } from '../transition'
 import { TiledGrid } from 'core/grid-logic/tiled-grid'

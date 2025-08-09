@@ -151,7 +151,10 @@ export class SeaBlock {
         // just hit mid-transition, old scene hidden
         // console.log('mid transition')
         this.isCovering = false
+        if( transition.doesAllowMidTransitionReset ){
+
         await this.onMidTransition()
+        }
         // resetFrontLayer()
         transition.cleanupHide()
         // this.rebuildControls()
@@ -324,7 +327,7 @@ export class SeaBlock {
     this.scene.threeScene.add(...this.game.meshes)
     this.showHideGameSpecificElems()
     this.layeredViewport.handleResize(this)
-    this.terrain.gfxHelper.restoreTileColors() // remove chess allowed-move highlights
+    // this.terrain.gfxHelper.restoreTileColors() // remove chess allowed-move highlights
   }
 
   private showHideGameSpecificElems() {
