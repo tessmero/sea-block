@@ -115,13 +115,17 @@ export class TileGroupGfxHelper {
     let current: TileValues = { height: 0, yOffset: 0 }
     for (const step of stepsToRun) {
       const result = step({ group: this.group, current, tileIndex, style })
-      if (!result) { return true }
+      if (!result) {
+        return true
+      }
       current = result
     }
 
     // check pipeline result
     const rTile = group.generatedTiles[memberIndex]
-    if (!rTile) { return true }
+    if (!rTile) {
+      return true
+    }
     const { originalColors, liveColors } = rTile
 
     const { height, yOffset } = current // result of pipeline
@@ -189,9 +193,9 @@ export class TileGroupGfxHelper {
   }
 }
 
-function deepCopy(colors: TileColors): TileColors {
-  return {
-    top: colors.top.clone(),
-    sides: colors.sides.clone(),
-  }
-}
+// function deepCopy(colors: TileColors): TileColors {
+//   return {
+//     top: colors.top.clone(),
+//     sides: colors.sides.clone(),
+//   }
+// }

@@ -18,7 +18,7 @@ const TRACKED_CTORS = [
 type TrackedCtor = (typeof TRACKED_CTORS)[number]
 
 function getCount(ctorName) {
-  return (THREE as any)[ctorName].constructedCount || 0
+  return THREE[ctorName].constructedCount || 0
 }
 
 function snapshot() {

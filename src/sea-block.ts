@@ -435,7 +435,7 @@ export class SeaBlock {
       })
     }
 
-    const { generator, terrain, scene } = this
+    const { generator, scene } = this
 
     // if (!this.didBuildControls) {
     //   this.rebuildControls() // build for first time after user skipped start

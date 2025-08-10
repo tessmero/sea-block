@@ -221,9 +221,11 @@ export class TileGroup extends Group<Tile, WaterSim> {
   }
 
   public resetColors() {
-    // this.generator.refreshConfig()
-    console.log('reset colors')
+    // console.log('reset colors')
     this.generatedTiles.fill(null)
+
+    // this.generator.refreshConfig()
+
     // this.gfxHelper.liveRenderHeights.fill(NaN)
     // chessHlTiles.restoreTileColors()
     // for (const gTile of this.generatedTiles) {

@@ -13,7 +13,8 @@ import type { ChessLevel, CollectibleName, PieceName as ShortName } from './ches
 import type { PieceName } from '../chess-enums.ts'
 import type { PieceColor } from './chess-levels.json.d'
 import type { Piece } from './chess-levels.json.d'
-import { chessRun, type Chess } from '../chess-helper'
+import { chessRun } from '../chess-run'
+import type { Chess } from '../chess-helper'
 
 type LevelStartState = {
   playerPiece: ParsedPiece
@@ -23,7 +24,6 @@ type LevelStartState = {
 }
 
 function pickValidLevel(): number {
-  const result = 0
   const { levels } = chessLevels
 
   const candidates: Array<number> = []
@@ -37,7 +37,7 @@ function pickValidLevel(): number {
   }
 
   if (candidates.length === 0) {
-    console.log('no valid chess levels')
+    // console.log('no valid chess levels')
     return 0
   }
 
@@ -102,7 +102,7 @@ class ChessLevelParser {
   ) {}
 
   loadLevel(center: TileIndex) {
-    console.log('load chess level')
+    // console.log('load chess level')
 
     const { terrain } = this
     // terrain.generateAllTiles()

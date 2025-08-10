@@ -25,7 +25,7 @@ const WATER_DAMPING = 1e-4
 // hacky sphere-water interaction
 const WAVE_AMPLITUDE = 10 // how far water tile moves
 const BUOYANT_FORCE = 2e-4 // tile pushes sphere up
-const PRESSURE_FORCE = 4e-4 // sphere pushes tile down
+const PRESSURE_FORCE = 8e-5 // sphere pushes tile down
 
 const physicsConfigTree = {
   tooltip: 'settings for spheres and waves',

@@ -296,7 +296,7 @@ export class Gui {
     this.held[elementId] = inputId
 
     const elem = this.elements[elementId]
-    const { isSticky, clickAction } = elem
+    const { isSticky } = elem
 
     if (lvPos && 'slideIn' in elem) {
       event.sliderState = this._slide(elem, lvPos)

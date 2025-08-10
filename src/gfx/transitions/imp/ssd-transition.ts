@@ -21,7 +21,7 @@ interface BufferedSegment extends SweepSegment {
   isFinished: boolean
 }
 
-type RGB = [number, number, number]
+// type RGB = [number, number, number]
 
 function buildSweepTransition(context: SeaBlock, seg: SweepSegment): BufferedSegment {
   const transition = Transition.create(
@@ -54,7 +54,7 @@ export class SsdTransition extends Transition {
   }
 
   public _hide(t0: number, t1: number): void {
-    for (const [i, seg] of this.ssdHide.entries()) {
+    for (const [_i, seg] of this.ssdHide.entries()) {
       if (seg.isFinished) {
         continue
       }

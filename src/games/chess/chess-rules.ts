@@ -135,11 +135,13 @@ export function getAllowedMoves(params: GamPars): Array<TileIndex> {
 }
 
 export function canLandOn(targetTile: TileIndex, params: GamPars): boolean {
-  const { boardTiles } = params
-  return boardTiles.includes(targetTile.i)
+  const { boardTiles, terrain } = params
+  const { i } = targetTile
+  return boardTiles.includes(i) || (terrain.generatedTiles[i]?.gTile.isWater === false)
 }
 
 function canMoveThrough(targetTile: TileIndex, params: GamPars): boolean {
-  const { boardTiles } = params
-  return boardTiles.includes(targetTile.i)
+  const { boardTiles, terrain } = params
+  const { i } = targetTile
+  return boardTiles.includes(i) || (terrain.generatedTiles[i]?.gTile.isWater === false)
 }

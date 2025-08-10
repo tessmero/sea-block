@@ -100,6 +100,7 @@ export class SphereGroup extends Group<Sphere, SphereSim> {
           dummy.scale.set(1, 1, 1)
         }
         else {
+          // dummy.scale.set(1, 1, 1)
           dummy.scale.set(0, 0, 0)
         }
       }

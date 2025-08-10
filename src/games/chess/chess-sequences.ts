@@ -32,28 +32,20 @@ export const nextPhasePickers: Record<ChessPhase, (chess: Chess) => ChessPhase> 
   'player-choice': () => 'player-anim',
   'place-pawn': () => 'player-choice',
   'reward-choice': () => 'player-choice',
+  'game-over': () => 'game-over',
 }
 
 export function buildPawnMoves(chess: Chess): Array<ChessMoveAnim | null> {
-  const result: Array<ChessMoveAnim | null> = []
-  const { terrain } = chess.context
-  const { grid } = terrain
-
   return chess.pawns.map(p => pickPawnMove(p, chess))
 }
 
 export function buildEnemyMoves(chess: Chess): Array<ChessMoveAnim | null> {
-  const result: Array<ChessMoveAnim | null> = []
-  const { terrain } = chess.context
-  const { grid } = terrain
-
   return chess.enemies.map(p => pickEnemyMove(p, chess))
 }
 
 function pickEnemyMove(enemy: RenderablePiece, chess: Chess): ChessMoveAnim | null {
   const { boardTiles } = chess
   const { terrain } = chess.context
-  const { grid } = terrain
 
   // get all allowed moves for this enemy
   const allowedMoves = getAllowedMoves({ piece: enemy, terrain, boardTiles })

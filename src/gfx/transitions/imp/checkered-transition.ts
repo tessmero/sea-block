@@ -9,7 +9,7 @@ import { SsdTransition } from 'gfx/transitions/imp/ssd-transition'
 import { Transition } from 'gfx/transitions/transition'
 import type { SweepSegment } from './flat-transition-segments'
 import type { SeaBlock } from 'sea-block'
-type RGB = [number, number, number]
+// type RGB = [number, number, number]
 
 export class ChessTransition extends SsdTransition {
   static { Transition.register('checkered', () => new ChessTransition() as unknown as Transition) }

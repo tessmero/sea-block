@@ -6,7 +6,7 @@
 
 import { Color, Vector3 } from 'three'
 import { MeshLambertMaterial } from 'three'
-import { Game, type GameUpdateContext } from '../game'
+import { type GameUpdateContext } from '../game'
 import type { SeaBlock } from 'sea-block'
 import type { TileIndex } from 'core/grid-logic/indexed-grid'
 import { setTilePickY, type ProcessedSubEvent } from 'mouse-touch-input'
@@ -14,11 +14,6 @@ import { chessPieceMeshes, treasureChestElement, treasureChestMesh } from './che
 import { ChessHlTiles } from './chess-hl-tiles'
 import { ChessMoveAnim } from './chess-move-anim'
 import type { ChessGui } from 'guis/imp/chess-gui'
-import { flatViewport,
-  goalDisplays,
-  leftRewardDisplay,
-  rightRewardDisplay, showCurrentPiece, showPhaseLabel,
-} from 'guis/imp/chess-gui'
 import { PIECE_NAMES, type ChessPhase, type PieceName } from './chess-enums'
 import { loadChessLevel, markLevelCompleted } from './levels/chess-level-parser'
 import { playSound } from 'audio/sound-effects'
@@ -26,7 +21,6 @@ import type { ColoredInstancedMesh } from 'gfx/3d/colored-instanced-mesh'
 import { buildGoalDiagram, buildMovesDiagram, buildRewardChoiceDiagram, renderFlatView } from './chess-diagrams'
 import { Gui } from 'guis/gui'
 import { COLLECTIBLES, randomCollectible } from './chess-rewards'
-import type { FreeCamGame } from 'games/imp/free-cam-game'
 import type { CollectibleName } from './levels/chess-levels.json.d'
 import type { TilePosition } from 'core/grid-logic/tiled-grid'
 import { buildPawnMoves, buildEnemyMoves, nextPhasePickers } from './chess-sequences'
@@ -34,6 +28,15 @@ import { Transition } from 'gfx/transitions/transition'
 import { freeCamPipeline } from 'gfx/3d/tile-render-pipeline/free-cam-pipeline'
 import type { Pipeline } from 'gfx/3d/tile-render-pipeline/pipeline'
 import { chessBoardPipeline } from 'gfx/3d/tile-render-pipeline/chess-board-pipeline'
+import type { Sphere } from 'core/sphere'
+import type { SphereGroup } from 'core/groups/sphere-group'
+import { chessRun, START_COLLECTED } from './chess-run'
+import { SeamlessTransition } from 'gfx/transitions/imp/seamless-transition'
+import { CAMERA } from 'settings'
+import { flatViewport, goalDisplays, showCurrentPiece } from './gui/chess-hud-elements'
+import { toggleGameOverMenu, togglePauseMenu } from './gui/chess-dialog-elements'
+import { showPhaseLabel } from './gui/chess-debug-elements'
+import { leftRewardDisplay, rightRewardDisplay } from './gui/chess-reward-elements'
 
 const enemyColor = new Color(0xff0000)
 
@@ -60,15 +63,32 @@ export function clearChessRun(): void {
 
 let isResetQueued = true
 export function resetChess(context: SeaBlock): void {
-  // get freecam game just to call reset
-  const freeCam = Game.create('free-cam', context) as FreeCamGame
-  freeCam.reset(context)
+  // // get freecam game just to call reset
+  // const freeCam = Game.create('free-cam', context) as FreeCamGame
+  // freeCam.reset(context)
 
   if (isResetQueued) {
     isResetQueued = false
     instance = new Chess(context)
   }
   chessBoardPipeline.setHlTiles(instance.hlTiles)
+}
+
+export function quitChess(seaBlock: SeaBlock): void {
+  // reset ui to default state
+  togglePauseMenu(seaBlock, false)
+  toggleGameOverMenu(seaBlock, false)
+  clearChessRun()
+
+  // start transition
+  const item = seaBlock.config.tree.children.game
+  item.value = 'free-cam'
+  SeamlessTransition.desiredCameraOffset.copy(CAMERA)
+  SeamlessTransition.snapshotTerrain(seaBlock)
+  seaBlock.startTransition({
+    transition: Transition.create('seamless', seaBlock),
+  })
+  seaBlock.onCtrlChange(item)
 }
 
 export function getChessPipeline(tile: TileIndex): Pipeline {
@@ -80,7 +100,7 @@ export function getChessPipeline(tile: TileIndex): Pipeline {
 
 export function getChessPhase() {
   const result = instance?.currentPhase || 'player-choice'
-  console.log('get ches sphase', result, instance)
+  // console.log('get ches sphase', result, instance)
   return result
 }
 
@@ -108,29 +128,10 @@ export type RenderablePiece = {
 
 const positionDummy = new Vector3()
 
-// state of current rogeulike game run
-type ChessRun = {
-  hasSwitchedPiece: boolean
-  hasPlacedPawn: boolean
-  collectedPawns: number
-  collected: Array<CollectibleName>
-  completedLevels: Array<number>
-}
-
-const START_COLLECTED = [
-  ...PIECE_NAMES,
-] as const satisfies Array<CollectibleName>
-
-export const chessRun: ChessRun = {
-  hasSwitchedPiece: false,
-  hasPlacedPawn: false,
-  collectedPawns: 0,
-  collected: [...START_COLLECTED], // history of collected rewards
-  completedLevels: [],
-}
-
 // state of current level in run, (one specific 5x5 puzzle board)
 export class Chess {
+  protected waveMaker!: Sphere
+
   public lastHoveredTile?: TileIndex
   public readonly hlTiles: ChessHlTiles
 
@@ -203,9 +204,53 @@ export class Chess {
         }
       }
     }
+
+    // sphere to interact with water and make waves
+    this.initWaveMaker(context.sphereGroup, exact)
   }
 
-  private centerCameraOnChessBoard(dt: number) {
+  private wmAngle = 0 // radians
+  private wmSpeed = 3e-4 // change in angle per ms
+  private wmRadius = 7 // distance from center of chess board
+  private readonly wmTarget = new Vector3() // point at angle/radius
+  private wmForce = 1e-5 // push sphere towards target
+
+  private initWaveMaker(sphereGroup: SphereGroup, exact: TilePosition) {
+    this.waveMaker = sphereGroup.members[1]
+    this.waveMaker.isGhost = false
+    // this.waveMaker.isFish = true
+    // this.waveMaker.isVisible = false
+    this.waveMaker.position = new Vector3(exact.x, 20, exact.z)
+    sphereGroup.setInstanceColor(1, new Color(0xff0000))
+  }
+
+  private updateWaveMaker(dt: number) {
+    // update target
+    this.wmAngle += this.wmSpeed * dt
+    this.wmTarget.set(
+      this.wmRadius * Math.cos(this.wmAngle),
+      this.waveMaker.position.y,
+      this.wmRadius * Math.sin(this.wmAngle),
+    )
+
+    // push towards target
+    this.accelSphere(this.waveMaker, this.wmTarget, this.wmForce * dt)
+  }
+
+  private readonly force = new Vector3()
+  protected accelSphere(sphere: Sphere, target: Vector3, magnitude: number) {
+    this.force.set(
+      target.x - sphere.position.x,
+      0,
+      target.z - sphere.position.z,
+    ).normalize()
+
+    this.force.multiplyScalar(magnitude)
+    sphere.velocity.x += this.force.x
+    sphere.velocity.z += this.force.z
+  }
+
+  private centerCameraOnChessBoard(_dt: number) {
     const { orbitControls } = this.context
     const { target } = orbitControls
     const { x, z } = this.centerPos
@@ -286,7 +331,8 @@ export class Chess {
 
   public update(context: GameUpdateContext) {
     const { hlTiles, player: currentPiece } = this
-    const { terrain } = context.seaBlock
+    const { seaBlock, dt } = context
+    const { terrain } = seaBlock
 
     // update gui animation
     const frameIndex = Math.floor(performance.now() / 500) % 2
@@ -296,7 +342,8 @@ export class Chess {
       display.needsUpdate = true
     }
 
-    this.centerCameraOnChessBoard(context.dt)
+    this.updateWaveMaker(dt)
+    this.centerCameraOnChessBoard(dt)
 
     //
     const centerHeight = terrain.gfxHelper.getLiveHeight(this.centerTile)
@@ -307,7 +354,7 @@ export class Chess {
 
     if (this.currentPhase === 'player-anim') {
       if (this.currentMove) {
-        const isFinished = this.currentMove.update(context.dt)
+        const isFinished = this.currentMove.update(dt)
         if (isFinished) {
           this.currentMove = undefined
           this.currentPhase = this.pickNextPhase()
@@ -369,6 +416,10 @@ export class Chess {
         this.setPiecePosition(piece, move.getLivePosition())
         if (isFinished) {
           piece.tile = move.endTile // update logical tile
+
+          // any enemy move means player was captured
+          this.currentPhase = 'game-over'
+          toggleGameOverMenu(this.context, true)
         }
       }
       else {
@@ -391,7 +442,7 @@ export class Chess {
   }
 
   public collectReward(name: CollectibleName) {
-    console.log(`collect reward ${name}`)
+    // console.log(`collect reward ${name}`)
 
     chessRun.collected.push(name) // add to history
     const { collectAction } = COLLECTIBLES[name]
@@ -612,9 +663,10 @@ export class Chess {
 
   public getPosOnTile(tile: TileIndex, target?: Vector3): Vector3 {
     const { x, z } = this.context.terrain.grid.indexToPosition(tile)
+    const height = this.context.terrain.generatedTiles[tile.i]?.liveHeight
 
     const writeTo = target || positionDummy
-    writeTo.set(x, 12, z)
+    writeTo.set(x, (height || 13) + 1, z)
 
     return writeTo
   }

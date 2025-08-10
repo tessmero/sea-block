@@ -3,7 +3,6 @@
  *
  * Helpers to draw chess help panel and 2d view mode.
  */
-import { goalDisplays, flatViewportDisplay } from 'guis/imp/chess-gui'
 import type { PieceName } from './chess-enums'
 import { getImage } from 'gfx/2d/image-asset-loader'
 import { pickColorsForChessTile } from './chess-colors'
@@ -13,6 +12,7 @@ import { CHESS_MOVES } from './chess-rules'
 import { COLLECTIBLES } from './chess-rewards'
 import type { StaticElement } from 'guis/gui'
 import type { CollectibleName } from './levels/chess-levels.json.d'
+import { flatViewportDisplay, goalDisplays } from './gui/chess-hud-elements'
 
 export function buildRewardChoiceDiagram(elem: StaticElement, reward: CollectibleName) {
   const buffer = elem.display.imageset?.default

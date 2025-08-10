@@ -49,7 +49,7 @@ async function main() {
   seaBlock.init()
   seaBlock.reset()
 
-  if (false && isDevMode) { 
+  if (false && isDevMode) {
     seaBlock.rebuildControls() // show controls gui on startup
   }
 

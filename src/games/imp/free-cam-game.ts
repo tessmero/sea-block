@@ -110,8 +110,10 @@ export class FreeCamGame extends Game {
     this.waveMaker.position = new Vector3(x, 20, z)
     sphereGroup.setInstanceColor(1, new Color(0xff0000))
 
+    // pan terrain,camera,target based on anchor x/z
     this.centerOnAnchor(context)
 
+    // clickable mesh in world
     this.initPickableChessPiece(context)
   }
 

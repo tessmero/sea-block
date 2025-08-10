@@ -25,4 +25,4 @@ export type PieceColor = 'W' | 'B' // white/black
 export type PieceName = 'P' | 'K' | 'Q' | 'H' | 'B' | 'R'
 export type CollectibleName
   = 'pawn' | 'bishop' | 'rook' | 'knight' | 'queen' | 'king' // pieces
-    | 'dual-vector-foil' // powerups
+    | 'dual-vector-foil' | 'long-stride' // powerups

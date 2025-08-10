@@ -91,7 +91,7 @@ export class ChessHlTiles {
 
   update() {
     const { terrain } = this
-    const { grid, gfxHelper } = terrain
+    const { grid } = terrain
     const { tileIndices } = grid
 
     for (const i of this.changed) {

@@ -137,7 +137,7 @@ export abstract class Transition {
       flatInstance.hideColors = hideColors
 
       if (tiling) {
-        console.log(`transitioncreate override tiling: ${tiling}`)
+        // console.log(`transitioncreate override tiling: ${tiling}`)
         flatInstance.tiling = tiling
       }
     }

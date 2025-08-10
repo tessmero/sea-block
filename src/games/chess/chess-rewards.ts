@@ -5,8 +5,9 @@
  */
 
 import type { ImageAssetUrl } from 'gfx/2d/image-asset-loader'
-import { chessRun, type Chess } from './chess-helper'
 import type { CollectibleName } from './levels/chess-levels.json.d'
+import type { Chess } from './chess-helper'
+import { chessRun } from './chess-run'
 
 // unlock playable piece, or add one spawnable pawn, or add passive powerup
 export type Collectible = {
@@ -32,6 +33,19 @@ function getValidCollectibles(context: Chess): Array<CollectibleName> {
 }
 
 export const COLLECTIBLES: Record<string, Collectible> = {
+
+  'dual-vector-foil': {
+    description: 'flatten reality. prevents exploration.',
+    icon: 'icons/16x16-arrow-down.png',
+    isValid: () => !chessRun.collected.includes('dual-vector-foil'),
+  },
+
+  'long-stride': {
+    description: 'increases max move to 8 tiles',
+    icon: 'icons/16x16-arrow-right.png',
+    isValid: () => chessRun.hasLeftBoard // only useful in open-world
+      && !chessRun.collected.includes('long-stride'),
+  },
 
   'pawn': {
     description: 'Loyal follower',
@@ -68,12 +82,6 @@ export const COLLECTIBLES: Record<string, Collectible> = {
     description: 'Moves in any direction',
     icon: 'icons/chess/16x16-king.png',
     isValid: () => !chessRun.collected.includes('king'),
-  },
-
-  'dual-vector-foil': {
-    description: 'reduce to 2D',
-    icon: 'icons/16x16-arrow-down.png',
-    isValid: () => !chessRun.collected.includes('dual-vector-foil'),
   },
 
 }

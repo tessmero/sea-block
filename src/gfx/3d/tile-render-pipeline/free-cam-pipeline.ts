@@ -37,7 +37,7 @@ export const freeCamPipeline = {
 
     // 1. check if in radius (or recently passed outside), if not cancel pipeline
     ({ group, tileIndex, current }) => {
-      const { x, z, i } = tileIndex
+      const { i } = tileIndex
 
       // check distance to center
       const box = group.tilePositions[i]
