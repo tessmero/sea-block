@@ -11,11 +11,11 @@ import type { ConfigTree, OptionItem } from './config-tree'
 
 export const isDevMode = true
 function applyDevMode(cfg: typeof topConfigTree.children) {
-  cfg.game.value = 'free-cam'
+  cfg.game.value = 'free-chess'
   cfg.game.isHidden = false
 
-  // cfg.generator.value = 'all-ocean'
-  // cfg.tiling.value = 'square'
+  cfg.generator.value = 'flat'
+  cfg.tiling.value = 'square'
 
   // cfg.transitionMode.value = 'skip'
 

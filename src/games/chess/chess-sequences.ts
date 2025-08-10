@@ -48,7 +48,7 @@ function pickEnemyMove(enemy: RenderablePiece, chess: Chess): ChessMoveAnim | nu
   const { terrain } = chess.context
 
   // get all allowed moves for this enemy
-  const allowedMoves = getAllowedMoves({ piece: enemy, terrain, boardTiles })
+  const allowedMoves = getAllowedMoves({ type: enemy.type, tile: enemy.tile, terrain, boardTiles })
 
   for (const targetTile of allowedMoves) {
     const target = chess.getPieceOnTile(targetTile)
@@ -93,7 +93,7 @@ function pickPawnMove(pawn: RenderablePiece, chess: Chess): ChessMoveAnim | null
   // check forward move
   const forwardTile = grid.xzToIndex(x, z - 1)
   if (forwardTile
-    && canLandOn(forwardTile, { piece: pawn, terrain, boardTiles })
+    && canLandOn(forwardTile, { type: pawn.type, tile: pawn.tile, terrain, boardTiles })
     && !chess.getPieceOnTile(forwardTile) // tile must not be occupied
   ) {
     // pawn will move forward

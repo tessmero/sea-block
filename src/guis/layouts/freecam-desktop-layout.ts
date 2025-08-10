@@ -10,7 +10,6 @@ import { commonLayout, standards } from './layout-helper'
 const { btn, btnSize, pad } = standards
 
 const wasdBtn = {
-
   parent: '_wasdBtnRegion',
   ...btn,
 }

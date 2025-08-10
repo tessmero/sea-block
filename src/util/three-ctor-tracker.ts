@@ -42,4 +42,4 @@ export function startThreeCtorCheck() {
 }
 
 // Sample every second
-window.setInterval(startThreeCtorCheck, 1000)
+//window.setInterval(startThreeCtorCheck, 1000)

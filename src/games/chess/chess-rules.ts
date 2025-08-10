@@ -93,15 +93,16 @@ export const CHESS_MOVES = {
 
 // Get Allowed Moves Parameters
 type GamPars = {
-  piece: RenderablePiece
+  //piece: RenderablePiece
+  tile: TileIndex
+  type: PieceName
   terrain: TileGroup
   boardTiles: Array<number>
 }
 
 export function getAllowedMoves(params: GamPars): Array<TileIndex> {
-  const { piece, terrain } = params
-  const { range, deltas } = CHESS_MOVES[piece.type]
-  const { tile } = piece
+  const { tile, type, terrain } = params
+  const { range, deltas } = CHESS_MOVES[type]
 
   // console.log(`getallowedmoves ${tile.x},${tile.z}`)
 

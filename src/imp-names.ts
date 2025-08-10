@@ -22,7 +22,10 @@ export type ConfigurableName = (typeof CONFIGURABLE.NAMES)[number]
 
 // games
 export const GAME = {
-  NAMES: ['start-sequence', 'free-cam', 'sphere-test', 'tile-inspector', 'splash-screen', 'chess'],
+  NAMES: ['splash-screen', 'start-sequence', 'free-cam', 
+    'sphere-test', 'tile-inspector', 
+    'chess', 'free-chess',
+  ],
   SOURCES: ['src/games/imp/**/*.ts'],
 } as const satisfies ImpManifest
 export type GameName = (typeof GAME.NAMES)[number]

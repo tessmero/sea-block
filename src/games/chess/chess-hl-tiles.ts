@@ -56,7 +56,7 @@ export class ChessHlTiles {
     }
     else {
       // highlight allowed moves
-      const targets = getAllowedMoves({ piece, terrain, boardTiles })
+      const targets = getAllowedMoves({ type: piece.type, tile: piece.tile, terrain, boardTiles })
       for (const { i } of targets) {
         allowedMoves.add(i)
         changed.add(i)

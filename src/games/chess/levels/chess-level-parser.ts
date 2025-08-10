@@ -9,7 +9,7 @@ import * as chessLevels from './chess-levels.json'
 
 import type { TileIndex } from 'core/grid-logic/indexed-grid'
 import type { TileGroup } from 'core/groups/tile-group'
-import type { ChessLevel, CollectibleName, PieceName as ShortName } from './chess-levels.json.d'
+import type { ChessLevel, CollectibleName, ShortPieceName as ShortName } from './chess-levels.json.d'
 import type { PieceName } from '../chess-enums.ts'
 import type { PieceColor } from './chess-levels.json.d'
 import type { Piece } from './chess-levels.json.d'

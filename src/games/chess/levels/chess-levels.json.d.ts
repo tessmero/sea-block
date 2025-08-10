@@ -20,9 +20,9 @@ export interface ChessLevel {
 }
 
 export type Cell = 'GG' | 'WA' | '  ' | Piece // goal or water or empty cell or piece
-export type Piece = `${PieceColor}${PieceName}` // piece shorthand e.g. 'BP' for black pawn
+export type Piece = `${PieceColor}${ShortPieceName}` // piece shorthand e.g. 'BP' for black pawn
 export type PieceColor = 'W' | 'B' // white/black
-export type PieceName = 'P' | 'K' | 'Q' | 'H' | 'B' | 'R'
+export type ShortPieceName = 'P' | 'K' | 'Q' | 'H' | 'B' | 'R'
 export type CollectibleName
   = 'pawn' | 'bishop' | 'rook' | 'knight' | 'queen' | 'king' // pieces
     | 'dual-vector-foil' | 'long-stride' // powerups

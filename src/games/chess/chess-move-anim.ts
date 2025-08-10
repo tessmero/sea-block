@@ -20,6 +20,9 @@ export class ChessMoveAnim {
     private readonly endPos: Vector3,
     public readonly endTile: TileIndex,
   ) {
+    console.log(
+      `build chess move: start=(${startPos.x.toFixed(2)}, ${startPos.z.toFixed(2)}), end=(${endPos.x.toFixed(2)}, ${endPos.z.toFixed(2)})`,
+    )
   }
 
   public update(dt: number): boolean {
