@@ -85,8 +85,6 @@ export class SphereGroup extends Group<Sphere, SphereSim> {
   }
 
   updateMeshes() {
-    const dummy = new THREE.Object3D()
-
     for (let i = 0; i < this.n; i++) {
       const sphere = this.members[i]
       if (sphere) {
@@ -112,3 +110,5 @@ export class SphereGroup extends Group<Sphere, SphereSim> {
     }
   }
 }
+
+const dummy = new THREE.Object3D()

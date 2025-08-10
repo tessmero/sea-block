@@ -27,6 +27,12 @@ const force = new Vector3()
 const posDummy = new Vector3()
 const quatDummy = new Quaternion()
 
+// used when computing acel for cam anchor
+const fixedUp = { x: 0, y: 1, z: 0 } as const
+const forward = new Vector3()
+const right = new Vector3()
+const moveVec = new Vector3()
+
 const _lastPickedTileIndex: TileIndex | undefined = undefined
 
 const startPiece = randChoice(['rook', 'bishop']) as PieceName
@@ -99,7 +105,7 @@ export class FreeCamGame extends Game {
     this.cameraAnchor.isVisible = false
     sphereGroup.setInstanceColor(0, new Color(0x00ff00))
     const { x, z } = context.terrain.centerXZ // this.cameraAnchor.position
-    this.cameraAnchor.position = new Vector3(x, 30, z)
+    this.cameraAnchor.position.set(x, 30, z)
     this._lastAnchorPosition.copy(this.cameraAnchor.position)
 
     // init sphere to interact with water and make waves
@@ -107,7 +113,7 @@ export class FreeCamGame extends Game {
     this.waveMaker.isGhost = false
     // this.waveMaker.isFish = true
     // this.waveMaker.isVisible = false
-    this.waveMaker.position = new Vector3(x, 20, z)
+    this.waveMaker.position.set(x, 20, z)
     sphereGroup.setInstanceColor(1, new Color(0xff0000))
 
     // pan terrain,camera,target based on anchor x/z
@@ -146,11 +152,12 @@ export class FreeCamGame extends Game {
     // this.accelSphere(this.waveMaker, mouseState.intersection, 1e-4 * dt)
 
     // move towards center
-    this.accelSphere(this.waveMaker, new Vector3(x, 0, z), 1e-4 * dt)
+    posDummy.set(x, 0, z)
+    this.accelSphere(this.waveMaker, posDummy, 1e-4 * dt)
 
     // respawn if fell under terrain
     if (this.waveMaker.position.y < 10) {
-      this.waveMaker.position = new Vector3(x, 10, z)
+      this.waveMaker.position.set(x, 10, z)
     }
   }
 
@@ -173,7 +180,7 @@ export class FreeCamGame extends Game {
     const { camera } = seaBlock
 
     // 1. Calculate camera-to-anchor direction in xz-plane (projected forward)
-    const forward = new Vector3(
+    forward.set(
       camera.position.x - this.cameraAnchor.position.x,
       0,
       camera.position.z - this.cameraAnchor.position.z,
@@ -183,10 +190,9 @@ export class FreeCamGame extends Game {
 
     // 2. Compute right vector in xz-plane (perpendicular to forward)
     // Cross product with up (0,1,0) for rightward direction
-    const right = new Vector3().crossVectors(forward, new Vector3(0, 1, 0))
+    right.crossVectors(forward, fixedUp)
 
     // 3. Build movement vector from input
-    const moveVec = new Vector3()
     const isUpHeld = wasdInputState['upBtn']
     const isDownHeld = wasdInputState['downBtn']
     const isLeftHeld = wasdInputState['leftBtn']
@@ -207,6 +213,7 @@ export class FreeCamGame extends Game {
     // }
 
     // WASD input
+    moveVec.set(0, 0, 0)
     if (isUpHeld) moveVec.sub(forward)
     if (isDownHeld) moveVec.add(forward)
     if (isLeftHeld) moveVec.add(right)

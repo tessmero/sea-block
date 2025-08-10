@@ -56,6 +56,9 @@ export class SphereSim extends Simulation<Sphere> {
   }
 }
 
+const positionDelta = new Vector3()
+const futurePosition = new Vector3()
+
 function sphereStep(sphere: Sphere, tileGroup: TileGroup, params: PhysParams) {
   const { GRAVITY, AIR_RESISTANCE } = params
 
@@ -70,7 +73,9 @@ function sphereStep(sphere: Sphere, tileGroup: TileGroup, params: PhysParams) {
   }
 
   // Predict next position
-  const futurePosition = sphere.position.clone().add(sphere.velocity.clone().multiplyScalar(STEP_DURATION))
+  positionDelta.copy(sphere.velocity).multiplyScalar(STEP_DURATION)
+  futurePosition.copy(sphere.position).add(positionDelta)
+  // const futurePosition = sphere.position.clone().add(sphere.velocity.clone().multiplyScalar(STEP_DURATION))
 
   if (sphere.isGhost) {
     // ghosts just move to tile height
@@ -93,7 +98,7 @@ function sphereStep(sphere: Sphere, tileGroup: TileGroup, params: PhysParams) {
   }
 
   // Move to next position
-  sphere.position = sphere.position.add(sphere.velocity.clone().multiplyScalar(STEP_DURATION))
+  sphere.position = sphere.position.add(positionDelta)
 }
 
 function collideSphereWithSphere(
