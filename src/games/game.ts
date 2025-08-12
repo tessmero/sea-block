@@ -26,6 +26,7 @@ import type { TileIndex } from 'core/grid-logic/indexed-grid'
 
 export type GameElement = {
   readonly meshLoader: () => Promise<Object3D>
+  isPickable?: boolean // used to enable picking even if no click action
   clickAction?: (event: ElementEvent) => void
   layoutKey?: string // only for camera-locked mesh
 
@@ -107,7 +108,7 @@ export abstract class Game {
       const mesh = await elem.meshLoader()
       elem.mesh = mesh
       instance.meshes.push(mesh)
-      if (elem.clickAction) {
+      if (elem.clickAction || elem.isPickable) {
         // add property to element and descendants to check when picked (moust-touch-input.ts)
         (mesh as any).gameElement = elem // eslint-disable-line @typescript-eslint/no-explicit-any
         mesh.traverse((child) => {

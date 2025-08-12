@@ -32,10 +32,10 @@ export class ChessGui extends Gui {
         return CHESS_LAYOUT
       },
       elements: [
-        ...CHESS_HUD_ELEMENTS,
-        ...CHESS_DIALOG_ELEMENTS,
         ...CHESS_REWARD_ELEMENTS,
         ...CHESS_DEBUG_ELEMENTS,
+        ...CHESS_HUD_ELEMENTS,
+        ...CHESS_DIALOG_ELEMENTS,
       ],
     })
   }

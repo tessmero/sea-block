@@ -7,6 +7,7 @@
 export const CHESS_PHASES = [
   'player-choice', 'player-anim', 'pawn-anim', 'enemy-anim', // regular gameplay
   'place-pawn', // choose free tile on bottom row
+  'reached-chest', // just cleared level, waiting for transition to reward-choice
   'reward-choice', // reward screen after reaching chest
   'game-over', // player was captured by red chess piece
 ] as const

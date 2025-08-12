@@ -9,6 +9,7 @@ import type { GuiElement } from 'guis/gui'
 import { quitChess } from '../chess-helper'
 import type { SeaBlock } from 'sea-block'
 import type { ChessButton } from './chess-button'
+import { playSound } from 'audio/sound-effects'
 
 export const gameOverLabel: GuiElement = {
   layoutKey: 'gameOverLabel',
@@ -42,8 +43,9 @@ const resumeBtn: ChessButton = {
     isVisible: false,
   },
   chessAction: ({ chess, seaBlock }) => {
-    quitChess(chess, seaBlock)
-    // togglePauseMenu(seaBlock, false)
+    playSound('click')
+    // quitChess(chess, seaBlock)
+    togglePauseMenu(seaBlock, false)
   },
 }
 const gameOverPanel: GuiElement = {
@@ -61,6 +63,7 @@ const quitBtn: ChessButton = {
     isVisible: false,
   },
   chessAction: ({ chess, seaBlock }) => {
+    playSound('click')
     quitChess(chess, seaBlock)
   },
 }

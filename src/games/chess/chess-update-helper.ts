@@ -31,6 +31,7 @@ const PHASE_UPDATERS = {
   // phases with no passive chess-related animation
   'game-over': () => {},
   'place-pawn': () => {},
+  'reached-chest': () => {},
   'reward-choice': () => {},
   'player-choice': () => {},
 
@@ -58,19 +59,20 @@ const PHASE_UPDATERS = {
 
         // update logical tile
         player.tile = endTile
-        chess.hlTiles.updateAllowedMoves(chess)
 
         chess.currentMove = undefined
-        chess.gotoNextPhase()
 
         setPiecePosition(player, chess.getPosOnTile(player.tile))
 
         // check if landed on treasure chest
         if (player.tile.i === chess.goalTile.i) {
           completeLevel(chess)
+          chess.currentPhase = 'reached-chest'
         }
         else {
           // playSound('chessPlonk')
+          chess.hlTiles.updateAllowedMoves(chess)
+          chess.gotoNextPhase()
         }
       }
       else {

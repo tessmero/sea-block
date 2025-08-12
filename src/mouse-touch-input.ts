@@ -111,10 +111,15 @@ const handlers: ReadonlyArray<EventHandler> = [
             if (hoverMat) {
               setMaterial(hoveredGameElem, hoverMat)
             }
-          }
 
-          hasConsumed = true
-          document.documentElement.style.cursor = 'pointer'
+            if (hoveredGameElem.clickAction) {
+              hasConsumed = true
+              document.documentElement.style.cursor = 'pointer'
+            }
+            else {
+              // element has isPickable = true
+            }
+          }
         }
       }
 
@@ -180,8 +185,13 @@ const handlers: ReadonlyArray<EventHandler> = [
         // check for added property set in game.ts
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { clickAction } = (event.pickedMesh as any).gameElement as GameElement // set in game.ts
-        if (clickAction) clickAction({ seaBlock: context, inputEvent: event })
-        hasConsumed = true
+        if (clickAction) {
+          clickAction({ seaBlock: context, inputEvent: event })
+          hasConsumed = true
+        }
+        else {
+          // element has isPickable = true
+        }
       }
 
       if (!hasConsumed && (typeof dragOrbitId === 'undefined')) {

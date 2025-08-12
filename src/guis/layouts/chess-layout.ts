@@ -12,9 +12,10 @@ import type { CssLayout } from 'util/layout-parser'
 export const CHESS_LAYOUT = {
 
   phaseLabel: {
-    height: 16,
-    width: 100,
-    left: 'auto',
+    'height': 16,
+    'top@portrait': 16,
+    'width@landscape': 100,
+    'left': 'auto',
   },
 
   // view after using dual-vector-foil

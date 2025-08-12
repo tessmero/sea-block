@@ -33,11 +33,12 @@ function pickValidLevel(): number {
     }
     if (isLevelValid(levels[i] as ChessLevel, chessRun.collected)) {
       candidates.push(i)
+      break // use first valid level
     }
   }
 
   if (candidates.length === 0) {
-    // console.log('no valid chess levels')
+    console.log('no valid chess levels')
     return 0
   }
 
@@ -57,6 +58,7 @@ function isLevelValid(level: ChessLevel, context: Array<CollectibleName>) {
     }
     collected.splice(i, 1) // remove element at index i
   }
+  return true // level is valid (collected all requirements)
 }
 
 export function markLevelCompleted() {
@@ -128,7 +130,7 @@ class ChessLevelParser {
           else if (tileValue === 'GG') {
             this.goalTile = tileIdx // goal
           }
-          else if (tileValue === 'WA') {
+          else if (tileValue === '~~') {
             isWater = true// water
           }
           else if (tileValue.startsWith('B')) {

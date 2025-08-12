@@ -110,6 +110,9 @@ export class SeaBlock {
       this.layeredViewport.backCanvas,
     )
     this.orbitControls.enabled = false
+    this.orbitControls.maxPolarAngle = Math.PI / 2
+    this.orbitControls.minDistance = 4
+    this.orbitControls.maxDistance = 60
 
     // Responsive resize
     window.addEventListener('resize', () => this.onResize())

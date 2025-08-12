@@ -144,7 +144,7 @@ export function canLandOn(targetTile: TileIndex, params: GamPars): boolean {
 function canMoveThrough(targetTile: TileIndex, params: GamPars): boolean {
   const { chess, terrain } = params
   const { i } = targetTile
-  if (chess && chess.getPieceOnTile(targetTile)) {
+  if (chess && chess.getPieceOnTile(targetTile) || chess?.goalTile.i === i ) {
     return false // tile is occupied
   }
   return (chess && chess.boardTiles.includes(i)) || (terrain.generatedTiles[i]?.gTile.isWater === false)

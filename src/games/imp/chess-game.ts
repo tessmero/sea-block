@@ -7,7 +7,8 @@ import { Game } from 'games/game'
 import type { Chess } from 'games/chess/chess-helper'
 import { chessAllow3DRender, resetChess, updateChess } from 'games/chess/chess-helper'
 import {
-  treasureChestElement, chessPieceElements, getChessPipeline, getChessCamOffset,
+  treasureChestElement, instancedPieceElements, getChessPipeline, getChessCamOffset,
+  outlinedPieceElements,
 } from 'games/chess/chess-3d-gfx-helper'
 
 export class ChessGame extends Game {
@@ -16,7 +17,8 @@ export class ChessGame extends Game {
       factory: () => new ChessGame(),
       guiName: 'chess',
       elements: [
-        ...chessPieceElements,
+        ...instancedPieceElements,
+        ...outlinedPieceElements,
         treasureChestElement,
       ],
     })

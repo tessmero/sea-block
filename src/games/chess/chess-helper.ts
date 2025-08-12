@@ -5,12 +5,12 @@
  */
 
 import { Vector3 } from 'three'
-import { type GameUpdateContext } from '../game'
+import { GameElement, type GameUpdateContext } from '../game'
 import { emptyScene, type SeaBlock } from 'sea-block'
 import type { TileIndex } from 'core/grid-logic/indexed-grid'
 import { setTilePickY, type ProcessedSubEvent } from 'mouse-touch-input'
-import type { RenderablePiece } from './chess-3d-gfx-helper'
-import { chessPieceMeshes, resetMeshes, treasureChestElement, updateMeshes } from './chess-3d-gfx-helper'
+import type { RenderablePiece, UniquePiece } from './chess-3d-gfx-helper'
+import { instancedPieceMeshes, resetMeshes, treasureChestElement, updateMeshes } from './chess-3d-gfx-helper'
 import { ChessHlTiles } from './chess-hl-tiles'
 import { ChessMoveAnim } from './chess-move-anim'
 import type { ChessGui } from 'guis/imp/chess-gui'
@@ -36,7 +36,7 @@ import { toggleGameOverMenu, togglePauseMenu } from './gui/chess-dialog-elements
 import { showPhaseLabel } from './gui/chess-debug-elements'
 import { updateChessPhase } from './chess-update-helper'
 import { FREECAM_PLAYLIST, playNextTrack } from 'audio/song-playlist'
-import { flatViewPortClick, flatViewPortUnclick, fullClickTile, updateHeldChessInputs } from './chess-input-helper'
+import { flatViewPortClick, flatViewPortUnclick, updateHeldChessInputs } from './chess-input-helper'
 import { ChessWaveMaker } from './chess-wave-maker'
 
 // no 3D terrrain in background when selecting reward
@@ -122,7 +122,8 @@ export class Chess {
   public readonly goalTile: TileIndex
 
   // visible pieces on board
-  public player!: RenderablePiece
+  public player!: UniquePiece
+  public playerElement!: GameElement
   public readonly pawns: Array<RenderablePiece> = []
   public readonly enemies: Array<RenderablePiece> = []
 
@@ -190,11 +191,6 @@ export class Chess {
       flatViewPortUnclick(this, inputEvent as ProcessedSubEvent)
     }
 
-    // clicking chest mesh counts as clicking its tile
-    treasureChestElement.clickAction = () => {
-      fullClickTile(this, this.goalTile)
-    }
-
     // sphere to interact with water and make waves
     this.waveMaker = new ChessWaveMaker(context.sphereGroup.members[1])
   }
@@ -243,17 +239,6 @@ export class Chess {
     this.context.layeredViewport.handleResize(this.context)
   }
 
-  public registerPiece(type: PieceName, tile: TileIndex, isEnemy: boolean): RenderablePiece {
-    const instancedMesh = chessPieceMeshes[type]
-    if (!instancedMesh) {
-      throw new Error(`missing mesh for ches piece ${type}`)
-    }
-    const index = instancedMesh.count
-    instancedMesh.count++
-    instancedMesh.visible = true
-    return { instancedMesh, index, tile, type, isEnemy }
-  }
-
   public gotoNextPhase(): ChessPhase {
     const result = nextPhasePickers[this.currentPhase](this)
 
@@ -284,8 +269,8 @@ export class Chess {
     this.waveMaker.updateWaveMaker(dt)
     this.centerCameraOnChessBoard(dt)
 
-    //
-    const centerHeight = terrain.gfxHelper.getLiveHeight(this.centerTile)
+    // use goal tile as representative (should always be part of chess board)
+    const centerHeight = terrain.gfxHelper.getLiveHeight(this.goalTile)
     if (typeof centerHeight === 'number') setTilePickY(centerHeight)
 
     // update color-coding of valid move tiles
@@ -307,7 +292,7 @@ export class Chess {
   public identifyPiece(type: PieceName, index: number): RenderablePiece | undefined {
     const candidates = [this.player, ...this.pawns, ...this.enemies]
     for (const piece of candidates) {
-      if (piece.type === type && piece.index === index) {
+      if ( piece.type === type && 'index' in piece && piece.index === index) {
         return piece
       }
     }

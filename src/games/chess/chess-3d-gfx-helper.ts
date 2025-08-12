@@ -4,8 +4,9 @@
  * Helpers for rendering 3D chess pieces and
  * terrain tiles beings used as chess board.
  */
-import type { BufferGeometry, Group, Intersection } from 'three'
-import { Box3, InstancedMesh } from 'three'
+import type { BufferGeometry, Box3, Material } from 'three'
+import { Group } from 'three'
+import { InstancedMesh } from 'three'
 import { Color, Vector3 } from 'three'
 import { CanvasTexture, Mesh, MeshLambertMaterial } from 'three'
 import type { GameElement } from 'games/game'
@@ -20,9 +21,8 @@ import type { Pipeline } from 'gfx/3d/tile-render-pipeline/pipeline'
 import { chessBoardPipeline } from 'gfx/3d/tile-render-pipeline/chess-board-pipeline'
 import { freeCamPipeline } from 'gfx/3d/tile-render-pipeline/free-cam-pipeline'
 import type { SeaBlock } from 'sea-block'
-import type { ProcessedSubEvent } from 'mouse-touch-input'
-import type { ChessGame } from 'games/imp/chess-game'
-import { fullClickTile } from './chess-input-helper'
+import { getOutlinedMesh } from './chess-outline-gfx'
+import { setMaterial } from 'gfx/3d/gui-3d-gfx-helper'
 
 const LANDSCAPE_CAMERA = new Vector3(0, 5, 4)
 const PORTRAIT_CAMERA = LANDSCAPE_CAMERA.clone().multiplyScalar(1.5)
@@ -40,29 +40,36 @@ export function getChessPipeline(chess: Chess, tile: TileIndex): Pipeline {
 }
 
 // visible chess piece in world
-export type RenderablePiece = {
+export type UniquePiece = {
+  readonly mesh: Group
+  type: PieceName
+  tile: TileIndex
+  isEnemy: boolean
+}
+export type InstancedPiece = {
   readonly instancedMesh: InstancedMesh
   readonly index: number
   type: PieceName
   tile: TileIndex
   isEnemy: boolean
 }
+export type RenderablePiece = UniquePiece | InstancedPiece
 const enemyColor = new Color(0xff0000)
+const friendColor = new Color(0x00ff00)
 
 // loaded meshes
-export const chessPieceMeshes: Partial<Record<PieceName, InstancedMesh>> = {}
+export const instancedPieceMeshes: Partial<Record<PieceName, InstancedMesh>> = {}
+export const outlinedPieceMeshes: Partial<Record<PieceName, Group>> = {}
 export let treasureChestMesh: Group
+export let chestMat: Material
 
 export const treasureChestElement: GameElement = {
 
-  clickAction: () => {},
+  isPickable: true, // clickAction: () => {},
   meshLoader: async () => {
     treasureChestMesh = getMesh('kenney/chest.obj').clone()
 
-    const aabb = new Box3()
-    aabb.setFromObject(treasureChestMesh)
-
-    const chestMat = new MeshLambertMaterial({
+    chestMat = new MeshLambertMaterial({
       map: new CanvasTexture(getImage('textures/kenney-colormap.png')),
       color: 0xaaaaaa,
     })
@@ -73,45 +80,80 @@ export const treasureChestElement: GameElement = {
     treasureChestElement.defaultMat = chestMat
     treasureChestElement.hoverMat = hoveredChestMat
 
-    treasureChestMesh.traverse((child) => {
-      if (child instanceof Mesh) {
-        child.material = chestMat
-        // sit on y=0
-        child.geometry.translate(0, -aabb.min.y, 0)
-      }
-    })
-    const scale = 0.5
-    treasureChestMesh.scale.set(scale, scale, scale)
+    treasureChestMesh = getOutlinedMesh(treasureChestMesh, { scale: 1.1, dilate: -0.04 })
+
+    setMaterial(treasureChestMesh, chestMat)
+    treasureChestMesh.scale.multiplyScalar(0.5)
 
     return treasureChestMesh
   },
 }
 
-// elements to register with chess-game
-export const chessPieceElements: Array<GameElement>
+// preload outlined meshes for each piece type
+export const outlinedPieceElements: Array<GameElement>
+= PIECE_NAMES.map(pieceType => ({
+  isPickable: true,
+
+  // preload instanced meshes for each piece type
+  meshLoader: async () => {
+    const group = getMesh(`chess/${pieceType}.obj`).clone()
+    if (group.children.length !== 1) {
+      throw new Error(`group has ${group.children.length} children (expected 1)`)
+    }
+    const child = group.children[0]
+    if (!(child instanceof Mesh)) {
+      throw new Error(`child is ${group.children} (expected Mesh)`)
+    }
+    const geom = (child.geometry as BufferGeometry).clone()
+
+    // center and sit on y=0
+    geom.center()
+    geom.computeBoundingBox()
+    const { min, max } = geom.boundingBox as Box3
+    geom.translate(0, -min.y, 0)
+
+    const scale = 0.3
+    geom.scale(scale, scale, scale)
+    let result = new Group().add(new Mesh(geom, child.material))
+
+    result = getOutlinedMesh(result, { scale: 1.1, dilate: -0.04 })
+    result.visible = false
+    outlinedPieceMeshes[pieceType] = result
+    // (im as any).gameElement = chessPieceElements[pieceType] // checked in mouse-touch-input.ts
+
+    return result
+  },
+}))
+
+interface InstancedPieceElement extends GameElement {
+  pieceType: PieceName
+}
+
+// preload instanced meshes for each piece type
+export const instancedPieceElements: Array<InstancedPieceElement>
   = PIECE_NAMES.map(pieceType => ({
+    pieceType,
+    isPickable: true,
+    // // clicking chess piece instance counts as clicking its tile
+    // clickAction: ({ inputEvent, seaBlock }) => {
+    //   const { instanceId } = (inputEvent as ProcessedSubEvent).rawPick as Intersection
 
-    // clicking chess piece instance counts as clicking its tile
-    clickAction: ({ inputEvent, seaBlock }) => {
-      const { instanceId } = (inputEvent as ProcessedSubEvent).rawPick as Intersection
+    //   // console.log(`clicked chess piece ${pieceType}, index ${instanceId}`)
 
-      // console.log(`clicked chess piece ${pieceType}, index ${instanceId}`)
+    //   if (typeof instanceId !== 'number') {
+    //     return
+    //   }
 
-      if (typeof instanceId !== 'number') {
-        return
-      }
+    //   const chess = (seaBlock.game as ChessGame).chess
+    //   const piece = chess.identifyPiece(pieceType, instanceId)
 
-      const chess = (seaBlock.game as ChessGame).chess
-      const piece = chess.identifyPiece(pieceType, instanceId)
+    //   if (!piece) {
+    //     return
+    //   }
 
-      if (!piece) {
-        return
-      }
+    //   fullClickTile(chess, piece.tile)
+    // },
 
-      fullClickTile(chess, piece.tile)
-    },
-
-    // preload instanced meshes for each piece type
     meshLoader: async () => {
       const group = getMesh(`chess/${pieceType}.obj`).clone()
       if (group.children.length !== 1) {
@@ -121,7 +163,7 @@ export const chessPieceElements: Array<GameElement>
       if (!(child instanceof Mesh)) {
         throw new Error(`child is ${group.children} (expected Mesh)`)
       }
-      const geom = child.geometry as BufferGeometry
+      const geom = (child.geometry as BufferGeometry).clone()
 
       // center and sit on y=0
       geom.center()
@@ -132,18 +174,29 @@ export const chessPieceElements: Array<GameElement>
       const scale = 0.3
       geom.scale(scale, scale, scale)
       const im = new InstancedMesh(geom, child.material, 16)
+      im.setColorAt(0, new Color()) // init color buffer
       im.count = 0
-      chessPieceMeshes[pieceType] = im
+      instancedPieceMeshes[pieceType] = im
       // (im as any).gameElement = chessPieceElements[pieceType] // checked in mouse-touch-input.ts
 
       return im
     },
   }))
 
-export function setPiecePosition(mesh: RenderablePiece, position: Vector3): void {
+export function setPiecePosition(piece: RenderablePiece, position: Vector3): void {
   // console.log(`setpiecepos ${position.x.toFixed(2)}, ${position.z.toFixed(2)}`)
 
-  const { instancedMesh, index } = mesh
+  if ('instancedMesh' in piece) {
+    setInstancePosition(piece, position)
+  }
+  else {
+    // set unique piece position
+    piece.mesh.position.copy(position)
+  }
+}
+
+function setInstancePosition(piece: InstancedPiece, position: Vector3): void {
+  const { instancedMesh, index } = piece
   const posArray = instancedMesh.instanceMatrix.array
 
   // start of position in meshes arrays
@@ -153,17 +206,28 @@ export function setPiecePosition(mesh: RenderablePiece, position: Vector3): void
   posArray[offset++] = x
   posArray[offset++] = y
   posArray[offset++] = z
+  // instancedMesh.setColorAt(index, piece.isEnemy ? enemyColor : friendColor )
   instancedMesh.instanceMatrix.needsUpdate = true
   instancedMesh.frustumCulled = false
 }
 
 const positionDummy = new Vector3()
 
-export function getPiecePosition(mesh: RenderablePiece, target?: Vector3): Vector3 {
-  const { instancedMesh, index } = mesh
-  const posArray = instancedMesh.instanceMatrix.array
-
+export function getPiecePosition(piece: RenderablePiece, target?: Vector3): Vector3 {
   const writeTo = target || positionDummy
+
+  if ('instancedMesh' in piece) {
+    getInstancePosition(piece, writeTo)
+  }
+  else {
+    // get unique piece position
+    writeTo.copy(piece.mesh.position)
+  }
+  return writeTo
+}
+function getInstancePosition(piece: InstancedPiece, writeTo: Vector3) {
+  const { instancedMesh, index } = piece
+  const posArray = instancedMesh.instanceMatrix.array
 
   // start of position in meshes arrays
   let offset = index * 16 + 12
@@ -172,7 +236,6 @@ export function getPiecePosition(mesh: RenderablePiece, target?: Vector3): Vecto
     posArray[offset++],
     posArray[offset++],
   )
-  return writeTo
 }
 
 export function updateMeshes(chess: Chess) {
@@ -182,9 +245,25 @@ export function updateMeshes(chess: Chess) {
   }
   treasureChestMesh.position.copy(chess.getPosOnTile(goalTile))
 
-  for (const im of Object.values(chessPieceMeshes)) {
+  for (const im of Object.values(instancedPieceMeshes)) {
     im.computeBoundingSphere()
   }
+}
+
+export function registerInstancedPiece(type: PieceName, tile: TileIndex, isEnemy: boolean): RenderablePiece {
+  const instancedMesh = instancedPieceMeshes[type]
+  if (!instancedMesh) {
+    throw new Error(`missing mesh for ches piece ${type}`)
+  }
+  const index = instancedMesh.count
+  instancedMesh.count++
+  instancedMesh.visible = true
+
+  const color = isEnemy ? enemyColor : friendColor
+  instancedMesh.setColorAt(index, color)
+  instancedMesh.instanceColor!.needsUpdate = true
+  console.log(`registered ${type} piece at index ${index}, isEnemy = ${isEnemy}, color ${color.getStyle()}`)
+  return { instancedMesh, index, tile, type, isEnemy }
 }
 
 export function resetMeshes(chess: Chess,
@@ -200,21 +279,35 @@ export function resetMeshes(chess: Chess,
   chess.pawns.length = 0
 
   // reset instanced meshes
-  const mat = new MeshLambertMaterial({ color: 0xaaaaaa })
-  for (const pieceType in chessPieceMeshes) {
-    const mesh = chessPieceMeshes[pieceType] as InstancedMesh
+  // const mat = new MeshLambertMaterial({ color: 0xaaaaaa })
+  for (const pieceType in instancedPieceMeshes) {
+    const mesh = instancedPieceMeshes[pieceType] as InstancedMesh
     mesh.count = 0
     mesh.visible = true
-    mesh.material = mat
+    // mesh.material = mat
   }
 
-  // register all pieces to render
-  chess.player = chess.registerPiece(player.type, player.tile, false)
-  chess.enemies.push(...enemies
-    .map(({ type, tile }) => chess.registerPiece(type, tile, true)),
-  )
+  // player has unique mesh
+  chess.player = {
+    isEnemy: false,
+    mesh: outlinedPieceMeshes[player.type] as Group,
+    tile: player.tile,
+    type: player.type,
+  }
+  chess.playerElement = outlinedPieceElements[PIECE_NAMES.indexOf(player.type)]
+
+  // only player's unique mesh is visible
+  for (const mesh of Object.values(outlinedPieceMeshes)) {
+    mesh.visible = false
+  }
+  chess.player.mesh.visible = true
+
+  // pawns and enemies are instnaced
   chess.pawns.push(...pawns
-    .map(({ type, tile }) => chess.registerPiece(type, tile, true)),
+    .map(({ type, tile }) => registerInstancedPiece(type, tile, false)),
+  )
+  chess.enemies.push(...enemies
+    .map(({ type, tile }) => registerInstancedPiece(type, tile, true)),
   )
 
   if (!chess.player) {
@@ -225,6 +318,6 @@ export function resetMeshes(chess: Chess,
   setPiecePosition(chess.player, chess.getPosOnTile(chess.player.tile))
   for (const nme of chess.enemies) {
     setPiecePosition(nme, chess.getPosOnTile(nme.tile))
-    nme.instancedMesh.setColorAt(nme.index, enemyColor)
+    // setPieceColor(nme, enemyColor)
   }
 }

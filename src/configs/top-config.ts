@@ -11,7 +11,7 @@ import type { ConfigTree, OptionItem } from './config-tree'
 
 export const isDevMode = true
 function applyDevMode(cfg: typeof topConfigTree.children) {
-  cfg.game.value = 'free-cam'
+  cfg.game.value = 'chess'
   cfg.game.isHidden = false
 
   cfg.generator.value = 'Michael2-3B'

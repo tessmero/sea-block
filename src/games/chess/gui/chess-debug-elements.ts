@@ -14,8 +14,9 @@ const userFriendlyLabels = {
   'enemy-anim': '...',
   'game-over': 'Game Over',
   'place-pawn': 'Place Pawn',
-  'reward-choice': 'Select Reward',
   'player-choice': 'Reach Treasure',
+  'reached-chest': 'Level Cleared',
+  'reward-choice': 'Select Reward',
 } as const satisfies Record<ChessPhase, string>
 
 // debug labels
@@ -25,6 +26,7 @@ const phaseLabels = Object.fromEntries(
     phase,
     {
       layoutKey: 'phaseLabel',
+      isPickable: false,
       display: {
         type: 'panel',
         // label: phase,

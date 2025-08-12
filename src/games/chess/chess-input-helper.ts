@@ -8,10 +8,12 @@ import { isTouchDevice, type ProcessedSubEvent } from 'mouse-touch-input'
 import { chessRun } from './chess-run'
 import type { Chess } from './chess-helper'
 import type { TileIndex } from 'core/grid-logic/indexed-grid'
-import { chessPieceMeshes, setPiecePosition } from './chess-3d-gfx-helper'
+import { instancedPieceMeshes, registerInstancedPiece, setPiecePosition, treasureChestElement } from './chess-3d-gfx-helper'
 import type { InputId } from 'input-id'
 import { playSound } from 'audio/sound-effects'
 import { updatePawnButtonLabel } from './chess-2d-gfx-helper'
+import type { PieceName } from './chess-enums'
+import type { Intersection } from 'three'
 
 // click action for flat viewport gui element
 export function flatViewPortClick(chess: Chess, inputEvent: ProcessedSubEvent) {
@@ -31,31 +33,114 @@ export function flatViewPortUnclick(chess: Chess, inputEvent: ProcessedSubEvent)
   }
 }
 
-export function pickTileInFlatView(chess: Chess, inputEvent: ProcessedSubEvent): TileIndex | undefined {
-  const { lvPos } = inputEvent
-  const { gui } = inputEvent.seaBlock.game
+// handle move that wasn't consumed by regular gui or orbit controls
+export function hoverChessWorld(chess: Chess, inputEvent: ProcessedSubEvent) {
+  // if (inputEvent.seaBlock.config.flatConfig.chessViewMode === '2D') {
+  if (chessRun.collected.includes('dual-vector-foil')) {
+    // hover 2d tile
+    const flatTile = pickTileInFlatView(chess, inputEvent)
+    hoverTile(chess, flatTile, inputEvent)
+  }
+  else if (chess.currentPhase === 'reward-choice') {
+    // do nothing
+  }
+  else {
+    // check for mesh on 3d tile
+    const pickedPieceMesh = getPickedPieceMesh(chess, inputEvent)
 
-  // check if hovering flat view
-  if (lvPos) {
-    const layoutKey = 'flatViewport'
-    const rectangle = gui.overrideLayoutRectangles[layoutKey] || gui.layoutRectangles[layoutKey]
-    if (rectangle) {
-      // compute point in units of flat view tiles
-      const { x, y } = rectangle
-      const col = (lvPos.x - x) / 16
-      const row = (lvPos.y - y) / 16
-      if (col > 0 && col < 5 && row > 0 && row < 5) {
-        // point is inside flat view
-        const tile = chess.context.terrain.grid.xzToIndex(
-          Math.floor(chess.centerTile.x + col - 2),
-          Math.floor(chess.centerTile.z + row - 2),
-        )
-        return tile
-      }
+    if (pickedPieceMesh) {
+      // act like hovering tile under piece
+      hoverTile(chess, pickedPieceMesh.tile, inputEvent)
+    }
+    else {
+      // hover 3d tile
+      hoverTile(chess, inputEvent.pickedTile, inputEvent)
     }
   }
 }
 
+// handle click that wasn't consumed by regular gui
+export function clickChessWorld(chess: Chess, inputEvent: ProcessedSubEvent): boolean {
+  if (chessRun.collected.includes('dual-vector-foil')) {
+    // pick flat tile in 2d view
+    const flatTile = pickTileInFlatView(chess, inputEvent)
+    if (flatTile) {
+      clickTile(chess, flatTile, inputEvent)
+      return true // consume event
+    }
+  }
+  else if (chess.currentPhase === 'reward-choice') {
+    // do nothing
+  }
+  else {
+    // check for mesh on tile
+    const pickedPieceMesh = getPickedPieceMesh(chess, inputEvent)
+
+    if (pickedPieceMesh) {
+      // act like clicking tile under piece
+      clickTile(chess, pickedPieceMesh.tile, inputEvent)
+      return true // consume event
+    }
+
+    // pick terrain tile in 3d view
+    const { pickedTile: pickedTileIndex } = inputEvent
+    const clickedTile = pickedTileIndex
+    if (!clickedTile || !chess.hlTiles.allowedMoves.has(clickedTile.i)) {
+      return false // do not consume event
+    }
+
+    clickTile(chess, clickedTile, inputEvent)
+    return true // consume event
+  }
+
+  return false // do not consume event
+}
+
+// handle mouseup
+export function unclickChessWorld(chess: Chess, inputEvent: ProcessedSubEvent): void {
+  if (chessRun.collected.includes('dual-vector-foil')) {
+    // pick flat tile in 2d view
+    const flatTile = pickTileInFlatView(chess, inputEvent)
+    if (flatTile) {
+      unclickTile(chess, flatTile, inputEvent)
+    }
+  }
+  else if (chess.currentPhase === 'reward-choice') {
+    // do nothing
+  }
+  else {
+    // check for mesh on tile
+    const pickedPieceMesh = getPickedPieceMesh(chess, inputEvent)
+
+    if (pickedPieceMesh) {
+      // act like unclicking tile under piece
+      unclickTile(chess, pickedPieceMesh.tile, inputEvent)
+    }
+
+    // pick terrain tile in 3d view
+    const { pickedTile } = inputEvent
+    if (pickedTile) {
+      unclickTile(chess, pickedTile, inputEvent)
+    }
+  }
+}
+
+// tile being held by input id
+type ChessInputHold = { time: number, tile: TileIndex }
+const chessInputHolds: Partial<Record<InputId, ChessInputHold>> = {}
+
+const holdExpireTime = 500 // (ms)
+
+export function isTileHeld(tile: TileIndex) {
+  const { i } = tile
+  for (const hold of Object.values(chessInputHolds)) {
+    if (hold && hold.tile.i === i) {
+      return true
+    }
+  }
+}
+
+// called periodically, make holds expire over time
 export function updateHeldChessInputs() {
   const t = performance.now()
   for (const inputId in chessInputHolds) {
@@ -68,21 +153,11 @@ export function updateHeldChessInputs() {
   }
 }
 
-// hover 3d terrain chessboard
-export function hoverChessWorld(chess: Chess, inputEvent: ProcessedSubEvent) {
-  // if (inputEvent.seaBlock.config.flatConfig.chessViewMode === '2D') {
-  if (chessRun.collected.includes('dual-vector-foil')) {
-    // hover 2d tile
-    const flatTile = pickTileInFlatView(chess, inputEvent)
-    hoverTile(chess, flatTile, inputEvent)
-  }
-  else if (chess.currentPhase !== 'reward-choice') {
-    // hover 3d tile
-    hoverTile(chess, inputEvent.pickedTile, inputEvent)
-  }
-}
 function hoverTile(chess: Chess, hoveredTile: TileIndex | undefined, event: ProcessedSubEvent) {
   const { inputId } = event
+
+  // console.log('hover tile', JSON.stringify(hoveredTile))
+
   if (inputId in chessInputHolds) {
     const { time, tile } = chessInputHolds[inputId] as ChessInputHold
     const dt = performance.now() - time
@@ -115,63 +190,6 @@ function hoverTile(chess: Chess, hoveredTile: TileIndex | undefined, event: Proc
     // return true // consume event
   }
   return false // do not consume event
-}
-
-export function unclickChessWorld(chess: Chess, inputEvent: ProcessedSubEvent): void {
-  if (chessRun.collected.includes('dual-vector-foil')) {
-    // pick flat tile in 2d view
-    const flatTile = pickTileInFlatView(chess, inputEvent)
-    if (flatTile) {
-      unclickTile(chess, flatTile, inputEvent)
-    }
-  }
-  else if (chess.currentPhase !== 'reward-choice') {
-    // pick terrain tile in 3d view
-    const { pickedTile } = inputEvent
-    if (pickedTile) {
-      unclickTile(chess, pickedTile, inputEvent)
-    }
-  }
-}
-
-// click 3d terrain chessboard
-export function clickChessWorld(chess: Chess, inputEvent: ProcessedSubEvent): boolean {
-  if (chessRun.collected.includes('dual-vector-foil')) {
-    // pick flat tile in 2d view
-    const flatTile = pickTileInFlatView(chess, inputEvent)
-    if (flatTile) {
-      clickTile(chess, flatTile, inputEvent)
-      return true // consume event
-    }
-  }
-  else if (chess.currentPhase !== 'reward-choice') {
-    // pick terrain tile in 3d view
-    const { pickedTile: pickedTileIndex } = inputEvent
-    const clickedTile = pickedTileIndex
-    if (!clickedTile || !chess.hlTiles.allowedMoves.has(clickedTile.i)) {
-      return false // do not consume event
-    }
-
-    clickTile(chess, clickedTile, inputEvent)
-    return true // consume event
-  }
-
-  return false // do not consume event
-}
-
-// tile being held by input id
-type ChessInputHold = { time: number, tile: TileIndex }
-const chessInputHolds: Partial<Record<InputId, ChessInputHold>> = {}
-
-const holdExpireTime = 500 // (ms)
-
-export function isTileHeld(tile: TileIndex) {
-  const { i } = tile
-  for (const hold of Object.values(chessInputHolds)) {
-    if (hold && hold.tile.i === i) {
-      return true
-    }
-  }
 }
 
 // click tile, either through flat view or 3d terrain
@@ -209,7 +227,8 @@ export function unclickTile(chess: Chess, unclickedTile: TileIndex, event: Proce
   }
 }
 
-export function fullClickTile(chess: Chess, clickedTile: TileIndex) {
+// called after deliberate short press and unpress on a piece/tile
+function fullClickTile(chess: Chess, clickedTile: TileIndex) {
   // playSound('chessConfirm')
 
   // check if can move to clicked tile
@@ -220,16 +239,72 @@ export function fullClickTile(chess: Chess, clickedTile: TileIndex) {
     else if (chess.currentPhase === 'place-pawn') {
       // spawn pawn
       chessRun.hasPlacedPawn = true
-      const mesh = chessPieceMeshes.pawn
+      const mesh = instancedPieceMeshes.pawn
       if (!mesh) {
         throw new Error('missing pawn mesh')
       }
-      const spawned = chess.registerPiece('pawn', clickedTile, false)
+      const spawned = registerInstancedPiece('pawn', clickedTile, false)
       chess.pawns.push(spawned)
       setPiecePosition(spawned, chess.getPosOnTile(clickedTile))
       chess.cancelPlacePawn()
       chessRun.collectedPawns--
       updatePawnButtonLabel()
+    }
+  }
+}
+
+export function pickTileInFlatView(chess: Chess, inputEvent: ProcessedSubEvent): TileIndex | undefined {
+  const { lvPos } = inputEvent
+  const { gui } = inputEvent.seaBlock.game
+
+  // check if hovering flat view
+  if (lvPos) {
+    const layoutKey = 'flatViewport'
+    const rectangle = gui.overrideLayoutRectangles[layoutKey] || gui.layoutRectangles[layoutKey]
+    if (rectangle) {
+      // compute point in units of flat view tiles
+      const { x, y } = rectangle
+      const col = (lvPos.x - x) / 16
+      const row = (lvPos.y - y) / 16
+      if (col > 0 && col < 5 && row > 0 && row < 5) {
+        // point is inside flat view
+        const tile = chess.context.terrain.grid.xzToIndex(
+          Math.floor(chess.centerTile.x + col - 2),
+          Math.floor(chess.centerTile.z + row - 2),
+        )
+        return tile
+      }
+    }
+  }
+}
+
+// pick chess piece or treasure chest
+function getPickedPieceMesh(chess: Chess, inputEvent: ProcessedSubEvent): { tile: TileIndex } | undefined {
+  // hover mesh on 3d tile
+  const { pickedMesh } = inputEvent
+  if (pickedMesh) {
+    // console.log('chess input picked mesh')
+    const elem = (pickedMesh as any).gameElement
+
+    if (elem === treasureChestElement) {
+      // picked goal mesh
+      return { tile: chess.goalTile }
+    }
+
+    if (elem === chess.playerElement) {
+      // picked player chess piece
+      return { tile: chess.player.tile }
+    }
+
+    else if (elem && 'pieceType' in elem) {
+    // picked instanced chess piece
+      // console.log('chess input picked mesh with piecetype in element')
+      const pieceType = elem.pieceType as PieceName
+      const { instanceId } = inputEvent.rawPick as Intersection
+      if (typeof instanceId === 'number') {
+        // console.log('chess input picked instnaceId')
+        return chess.identifyPiece(pieceType, instanceId)
+      }
     }
   }
 }
