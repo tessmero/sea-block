@@ -29,20 +29,28 @@ const classicalMidi = (name: string) => `./music-data/midi/www-kunstderfuge-com/
 
 export const SONGS_TO_BUILD: Record<string, SongParams> = {
 
-  // Albeniz / Granada
-  albeniz: {
-    src: classicalMidi('granada_(c)yogore'),
+  // Chopin / Nocturne in E Flat Major
+  chopin: {
+    src: classicalMidi('chopin'),
     adjust: ({ synth }) => {
-      synth.programChange(0, 34) // 34 picked bass
-      synth.programChange(1, 34) // 34 picked bass
-      synth.programChange(2, 34) // 34 picked bass
-      synth.midiAudioChannels[0].transposeChannel(-12) // pitch down
-      synth.midiAudioChannels[1].transposeChannel(-12) // pitch down
+      synth.programChange(0, 12) // 12 marimba
     },
-    playbackRate: 0.5, // slow down
-    skip: 69.5,
-    cutoff: 88.8,
   },
+
+  // // Albeniz / Granada
+  // albeniz: {
+  //   src: classicalMidi('granada_(c)yogore'),
+  //   adjust: ({ synth }) => {
+  //     synth.programChange(0, 34) // 34 picked bass
+  //     synth.programChange(1, 34) // 34 picked bass
+  //     synth.programChange(2, 34) // 34 picked bass
+  //     synth.midiAudioChannels[0].transposeChannel(-12) // pitch down
+  //     synth.midiAudioChannels[1].transposeChannel(-12) // pitch down
+  //   },
+  //   playbackRate: 0.5, // slow down
+  //   skip: 69.5,
+  //   cutoff: 88.8,
+  // },
 
   // // Mozart / Andante cantabile con espressione
   // 'mozart': {

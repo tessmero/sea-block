@@ -8,10 +8,9 @@
  */
 
 import type { Matrix4 } from 'three'
-import { Group, Mesh } from 'three'
+import { Group, InstancedMesh, Mesh } from 'three'
 import { MeshBasicMaterial, type BufferGeometry } from 'three'
 import type { CompositeColors, CompositeElement } from '../composite-element'
-import { ColoredInstancedMesh } from './colored-instanced-mesh'
 
 // shapes for each part of a composite
 export type CompositeGeometry<TPart extends string = string> = {
@@ -50,7 +49,7 @@ export abstract class CompositeMesh<TPart extends string = string>
 export abstract class CompositeInstancedMesh<TPart extends string>
 implements CompositeElement<TPart> {
   abstract partNames: ReadonlyArray<TPart> // subclasses define partNames matching TPart
-  public readonly meshes: Array<ColoredInstancedMesh> = []
+  public readonly meshes: Array<InstancedMesh> = []
 
   constructor(
     partGeoms: CompositeGeometry<TPart>,
@@ -58,7 +57,7 @@ implements CompositeElement<TPart> {
   ) {
     let name: TPart
     for (name in partGeoms) {
-      const mesh = new ColoredInstancedMesh(
+      const mesh = new InstancedMesh(
         partGeoms[name],
         new MeshBasicMaterial({ color: 0xffffff }),
         n,
@@ -69,7 +68,7 @@ implements CompositeElement<TPart> {
 
   setColorsForInstance(index: number, style: CompositeColors<TPart>) {
     this.partNames.forEach((name, meshIndex) => {
-      this.meshes[meshIndex].setInstanceColor(index, style[name])
+      this.meshes[meshIndex].setColorAt(index, style[name])
     })
   }
 

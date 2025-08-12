@@ -23,8 +23,8 @@ export class StartSequenceGame extends FreeCamGame {
     })
   }
 
-  public static isColorTransformEnabled = false
-  public static colorTransformAnim = 0// '0%'
+  // public static isColorTransformEnabled = false
+  // public static colorTransformAnim = 0// '0%'
 
   public readonly distForFreeCam = 300 // distance to travel before switch to user-controlled accel
   public traveled = 0 // distance
@@ -33,7 +33,7 @@ export class StartSequenceGame extends FreeCamGame {
   reset(context: SeaBlock) {
     super.reset(context)
 
-    StartSequenceGame.isColorTransformEnabled = true
+    // StartSequenceGame.isColorTransformEnabled = true
     StartSequenceGame.wasSkipped = false
 
     this.traveled = 0
@@ -86,7 +86,7 @@ export class StartSequenceGame extends FreeCamGame {
       // if (!seaBlock.didBuildControls) {
       //   seaBlock.rebuildControls()
       // }
-      StartSequenceGame.isColorTransformEnabled = false
+      // StartSequenceGame.isColorTransformEnabled = false
       seaBlock.setGame('free-cam')
       seaBlock.onGameChange()
       return
@@ -94,7 +94,7 @@ export class StartSequenceGame extends FreeCamGame {
     else {
       // start seuqnce is ongoing
       // set var checked in css-style to enable extra color transform
-      StartSequenceGame.isColorTransformEnabled = true
+      // StartSequenceGame.isColorTransformEnabled = true
     }
 
     // prepare to measure distance traveled this update
@@ -177,9 +177,9 @@ const allSegments: Record<string, Segment> = {
   'saturation': {
     distances: [0, 180],
     multipliers: [0.3, 1],
-    apply: (value) => {
+    apply: (_value) => {
       // checked in css-style
-      StartSequenceGame.colorTransformAnim = value
+      // StartSequenceGame.colorTransformAnim = value
     },
     isFinished: false,
   },

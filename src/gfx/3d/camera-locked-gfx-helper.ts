@@ -18,7 +18,7 @@ export function alignGuiGroup(
   guiGroup: Group,
   camera: PerspectiveCamera,
   screenRect: Rectangle,
-  depth = -10,
+  depth = -20,
 ) {
   const fov = camera.fov * (Math.PI / 180)
   const height = 2 * Math.abs(depth) * Math.tan(fov / 2)

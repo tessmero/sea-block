@@ -8,6 +8,7 @@ import type { ImageAssetUrl } from 'gfx/2d/image-asset-loader'
 import type { CollectibleName } from './levels/chess-levels.json.d'
 import type { Chess } from './chess-helper'
 import { chessRun } from './chess-run'
+import { updatePawnButtonLabel } from './chess-2d-gfx-helper'
 
 // unlock playable piece, or add one spawnable pawn, or add passive powerup
 export type Collectible = {
@@ -32,54 +33,57 @@ function getValidCollectibles(context: Chess): Array<CollectibleName> {
   return result
 }
 
-export const COLLECTIBLES: Record<string, Collectible> = {
+export const COLLECTIBLES: Record<CollectibleName, Collectible> = {
 
   'dual-vector-foil': {
-    description: 'flatten reality. prevents exploration.',
+    description: '???',
     icon: 'icons/16x16-arrow-down.png',
     isValid: () => !chessRun.collected.includes('dual-vector-foil'),
   },
 
-  'long-stride': {
-    description: 'increases max move to 8 tiles',
-    icon: 'icons/16x16-arrow-right.png',
-    isValid: () => chessRun.hasLeftBoard // only useful in open-world
-      && !chessRun.collected.includes('long-stride'),
-  },
+  // 'long-stride': {
+  //   description: 'increases max move to 8 tiles',
+  //   icon: 'icons/16x16-arrow-right.png',
+  //   isValid: () => chessRun.hasLeftBoard // only useful in open-world
+  //     && !chessRun.collected.includes('long-stride'),
+  // },
 
   'pawn': {
-    description: 'Loyal follower',
+    description: '+1 Pawn',
     icon: 'icons/chess/16x16-pawn.png',
     isValid: () => true, // can be collected multiple times
-    collectAction: () => { chessRun.collectedPawns++ },
+    collectAction: () => {
+      chessRun.collectedPawns++
+      updatePawnButtonLabel()
+    },
   },
 
   'bishop': {
-    description: 'Moves diagonally',
+    description: 'Unlock Bishop',
     icon: 'icons/chess/16x16-bishop.png',
     isValid: () => !chessRun.collected.includes('bishop'),
   },
 
   'knight': {
-    description: 'Jumps in L-shape',
+    description: 'Unlock Knight',
     icon: 'icons/chess/16x16-knight.png',
     isValid: () => !chessRun.collected.includes('knight'),
   },
 
   'rook': {
-    description: 'Moves in straight lines',
+    description: 'Unlock Rook',
     icon: 'icons/chess/16x16-rook.png',
     isValid: () => !chessRun.collected.includes('rook'),
   },
 
   'queen': {
-    description: 'Moves in any direction',
+    description: 'Unlock Queen',
     icon: 'icons/chess/16x16-queen.png',
     isValid: () => !chessRun.collected.includes('queen'),
   },
 
   'king': {
-    description: 'Moves in any direction',
+    description: 'Unlock King',
     icon: 'icons/chess/16x16-king.png',
     isValid: () => !chessRun.collected.includes('king'),
   },

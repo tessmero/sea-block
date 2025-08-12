@@ -28,6 +28,8 @@ import type { InputId } from 'input-id'
 import { CAMERA_LOOK_AT } from './settings'
 import type { TileIndex } from './core/grid-logic/indexed-grid'
 import type { SeaBlock } from './sea-block'
+import type { GameElement } from 'games/game'
+import { setMaterial } from 'gfx/3d/gui-3d-gfx-helper'
 
 export let isTouchDevice = false // set to true on first touch event -> ignore mouse events
 
@@ -40,12 +42,16 @@ type SubEvent = {
 export interface ProcessedSubEvent {
   seaBlock: SeaBlock // context
   event: Event // raw event
+  inputId: InputId
+
   screenPos: THREE.Vector2 // point in viewport in browser px
   lvPos: THREE.Vector2 // poitn in viewport in layeredViewport big pixels
+
   intersection: THREE.Vector3 // picked point at sea level
+  pickedTile?: TileIndex // picked tile based on intersection
+
+  rawPick?: THREE.Intersection // result of picking game elements
   pickedMesh?: THREE.Object3D // picked game-specific mesh in world
-  pickedTile?: TileIndex // picked tile in world
-  inputId: InputId
 }
 
 type EventHandler = {
@@ -53,9 +59,7 @@ type EventHandler = {
   action: (event: ProcessedSubEvent, context: SeaBlock) => void
 }
 
-let hoveredMesh: THREE.Mesh | undefined = undefined
-let originalMat: THREE.Material = new THREE.MeshBasicMaterial()
-const hlMat = new THREE.MeshBasicMaterial({ color: 0xffffff })
+let hoveredGameElem: GameElement | undefined = undefined
 
 const handlers: ReadonlyArray<EventHandler> = [
   {
@@ -71,6 +75,15 @@ const handlers: ReadonlyArray<EventHandler> = [
       'touchmove',
     ],
     action: (event, context) => {
+      if (hoveredGameElem) {
+        // restore previously hovered mesh
+        const { defaultMat } = hoveredGameElem
+        if (defaultMat) {
+          setMaterial(hoveredGameElem, defaultMat)
+        }
+        hoveredGameElem = undefined
+      }
+
       const orbitControls = context.orbitControls as unknown as HackedOrbitControls
       // event.preventDefault()
 
@@ -86,29 +99,20 @@ const handlers: ReadonlyArray<EventHandler> = [
         // check if hovering flat gui on front layer
         hasConsumed = context.mouseMoveGuiLayers(event)
 
-        if (hasConsumed && hoveredMesh) {
-          // restore previously hovered mesh
-          hoveredMesh.material = originalMat
-          hoveredMesh = undefined
-        }
         if (!hasConsumed && event.pickedMesh) {
-          if (hoveredMesh) {
-            // restore previously hovered mesh
-            hoveredMesh.material = originalMat
-          }
+          console.log(`hovered mesh ${event.pickedMesh.constructor.name}`)
+          if (!isTouchDevice) {
           // highlight hovered mesh in back layer
-          hoveredMesh = (event.pickedMesh as THREE.Mesh)
-          originalMat = hoveredMesh.material as THREE.Material
-          hoveredMesh.material = hlMat
+            hoveredGameElem = (event.pickedMesh as any).gameElement as GameElement // set in game.ts
+            const { hoverMat } = hoveredGameElem
+            if (hoverMat) {
+              setMaterial(hoveredGameElem, hoverMat)
+            }
+          }
+
           hasConsumed = true
           document.documentElement.style.cursor = 'pointer'
         }
-      }
-
-      if (!event.pickedMesh && hoveredMesh) {
-        // restore previously hovered mesh
-        hoveredMesh.material = originalMat
-        hoveredMesh = undefined
       }
 
       if (!isDraggingOrbitControls && !hasConsumed && dragOrbitId
@@ -170,7 +174,10 @@ const handlers: ReadonlyArray<EventHandler> = [
       let hasConsumed = context.clickGuiLayers(event)
 
       if (!hasConsumed && event.pickedMesh) {
-        (event.pickedMesh as any).clickAction(event) // set in game.ts
+        console.log(`clicked mesh ${event.pickedMesh.constructor.name}`)
+
+        const { clickAction } = (event.pickedMesh as any).gameElement as GameElement // set in game.ts
+        if (clickAction) clickAction({ seaBlock: context, inputEvent: event })
         hasConsumed = true
       }
 
@@ -291,12 +298,14 @@ export function handleEvent(
     dummy.y = -(screenPos.y / window.innerHeight) * 2 + 1
     raycaster.setFromCamera(dummy, camera)
 
+    let rawPick: THREE.Intersection | undefined = undefined
     let pickedMesh: THREE.Object3D | undefined = undefined
     let pickedTile: TileIndex | undefined = undefined
 
     // pick game-specific  meshes
     const pickedMeshes = raycaster.intersectObjects(game.pickableMeshes)
     if (pickedMeshes.length > 0) {
+      rawPick = pickedMeshes[0]
       pickedMesh = pickedMeshes[0].object
     }
 
@@ -323,7 +332,9 @@ export function handleEvent(
       event,
       screenPos,
       lvPos,
+
       intersection,
+      rawPick,
       pickedMesh,
       pickedTile,
       inputId: sub.touchId,

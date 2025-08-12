@@ -10,7 +10,7 @@
 
 import { gfxConfig } from 'configs/gfx-config'
 import type { Pipeline } from './pipeline'
-import type { TileColors } from 'gfx/styles/style'
+import { setOriginalTileColors } from '../tile-group-color-buffer'
 
 // (ms) duration of tile entrance and exit animation
 const ENTR_DURATION = 300
@@ -84,15 +84,15 @@ export const freeCamPipeline = {
         const { gTile } = rTile
 
         // compute styled colors only on first render
-        rTile.originalColors = style.getTileColors({
+        // rTile.originalColors = style.getTileColors({
+        const originalColors = style.getTileColors({
           x, z, generatedTile: gTile,
 
           // support @land and @sea conditions in styles
           land: !gTile.isWater, sea: gTile.isWater,
         })
 
-        // deep copy that may be modified
-        rTile.liveColors = deepCopy(rTile.originalColors)
+        setOriginalTileColors(tileIndex, originalColors, true)
       }
 
       // current.colors = rTile.liveColors as TileColors
@@ -154,13 +154,6 @@ function _dampedAnim(time: number, duration: number): number {
   const progress = 1 - Math.pow(1 - t, 4)
   const axisVal = (1 - progress)
   return axisVal
-}
-
-function deepCopy(colors: TileColors): TileColors {
-  return {
-    top: colors.top.clone(),
-    sides: colors.sides.clone(),
-  }
 }
 
 function getAnimatedRenderHeight(tileHeight: number, wavePos: number) {

@@ -5,7 +5,6 @@
  * Helpers to save in localstorage and resume on startup.
  */
 
-import { PIECE_NAMES } from './chess-enums'
 import type { CollectibleName } from './levels/chess-levels.json.d'
 
 type ChessRun = {
@@ -18,14 +17,16 @@ type ChessRun = {
 }
 
 export const START_COLLECTED = [
-  ...PIECE_NAMES,
+  'rook', // ...PIECE_NAMES,
 ] as const satisfies Array<CollectibleName>
+
+export const START_PAWNS = 1
 
 export const chessRun: ChessRun = {
   hasSwitchedPiece: false,
   hasPlacedPawn: false,
   hasLeftBoard: false,
-  collectedPawns: 0,
+  collectedPawns: START_PAWNS,
   collected: [...START_COLLECTED],
   completedLevels: [],
 }

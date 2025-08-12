@@ -17,8 +17,6 @@ import type { SweepSegment } from './imp/flat-transition-segments'
 import type { FlatTransition } from './imp/flat-transition'
 import type { Step } from 'gfx/3d/tile-render-pipeline/pipeline'
 
-const totalDuration = 1500 // ms
-
 export function randomTransition(context: SeaBlock): Transition {
   // const name = randChoice(TRANSITION.NAMES)
 
@@ -36,6 +34,7 @@ export abstract class Transition {
   public getExtraPipelineStep(): Step | null { return null }
   public doesAllowMidTransitionReset = true
 
+  protected totalDuration = 1500 // ms
   private elapsed = 0 // ms
   public didFinishCover = false
   public didFinishUncover = false
@@ -64,7 +63,7 @@ export abstract class Transition {
 
   update(dt: number) {
     // describe elapsed time range as fraction of animation
-    const start = this.elapsed / totalDuration
+    const start = this.elapsed / this.totalDuration
 
     // if (this.didFinishCover && isFirstUncover) {
     if (Transition.isFirstUncover) {
@@ -74,11 +73,11 @@ export abstract class Transition {
       this.elapsed += dt
     }
 
-    const end = this.elapsed / totalDuration
+    const end = this.elapsed / this.totalDuration
 
     if (!this.didFinishCover && end >= 0.5) {
       // will just finish covering this update
-      this.elapsed = totalDuration / 2
+      this.elapsed = this.totalDuration / 2
       this.cleanupHide()
       this.didFinishCover = true
       return

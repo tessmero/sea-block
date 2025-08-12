@@ -87,7 +87,7 @@ export class Gui {
   public reversedIds!: ReadonlyArray<ElementId> // assigned in init
 
   // subset of elements that are currently held down by a mouse/touch/key
-  private held: Record<ElementId, InputId> = {}
+  public held: Record<ElementId, InputId> = {}
 
   // pickable element ID -> layout key
   private readonly pickable: Record<ElementId, string> = {} // subset that interact with mouse

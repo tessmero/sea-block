@@ -12,6 +12,7 @@
  * visual elements, used to preload assets on startup.
  */
 
+import type { Material } from 'three'
 import { type Object3D, type Vector3 } from 'three'
 import type { GameName, GuiName } from '../imp-names'
 import type { SeaBlock } from '../sea-block'
@@ -29,6 +30,8 @@ export type GameElement = {
   layoutKey?: string // only for camera-locked mesh
 
   mesh?: Object3D // set after loading
+  defaultMat?: Material
+  hoverMat?: Material
 }
 
 // parameters for update each frame
@@ -52,7 +55,7 @@ export abstract class Game {
   public meshes: Array<Object3D> = [] // all loaded game-specific meshes
   public pickableMeshes: Array<Object3D> = [] // subset that can be hovered/clicked
 
-  protected getCamOffset(context: SeaBlock): Vector3 {
+  public getCamOffset(context: SeaBlock): Vector3 {
     const { w, h } = context.layeredViewport
     return h > w ? PORTRAIT_CAMERA : CAMERA
   }
@@ -105,9 +108,11 @@ export abstract class Game {
       elem.mesh = mesh
       instance.meshes.push(mesh)
       if (elem.clickAction) {
+        console.log(`setting gameElement property for ${mesh.constructor.name}`);
+        (mesh as any).gameElement = elem
         mesh.traverse((child) => {
           // checked in moust-touch-input.ts
-          (child as any).clickAction = elem.clickAction
+          (child as any).gameElement = elem
         })
         instance.pickableMeshes.push(mesh)
       }

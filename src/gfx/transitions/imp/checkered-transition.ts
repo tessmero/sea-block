@@ -42,14 +42,18 @@ export class ChessTransition extends SsdTransition {
 
 // unregistered square tiling that technically has two alternating tile shapes
 class CheckeredTiling extends SquareTiling {
+  // eslint-disable-next-line sb/no-constructor
   public constructor() {
     super()
   }
 
   getShapeIndex(x: number, z: number) {
-    return Math.abs((x + z) % 2)
+    const sx = Math.floor(x / scale)
+    const sz = Math.floor(z / scale)
+    return Math.abs((sx + sz) % 2)
   }
 
   shapes = [SQUARE_TILING_SHAPES[0], SQUARE_TILING_SHAPES[0]]
 }
 const checkeredTiling = new CheckeredTiling()
+const scale = 4

@@ -194,7 +194,7 @@ function collideWithTerrain(
         self.velocity.y += BUOYANT_FORCE
 
         // apply downward pressure to the tile
-        terrain.sim.accelTile(idx, PRESSURE_FORCE)
+        terrain.sim.accelTile(idx, PRESSURE_FORCE * self.scalePressure)
       }
       else if (!self.isFish) {
         // non-fish, non-ghost sphere colliding with solid terrain

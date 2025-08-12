@@ -1,7 +1,7 @@
 /**
  * @file pipeline.ts
  *
- * Steps to compute the live height and color of a terrain tile.
+ * Steps to compute the target height and color of a terrain tile.
  */
 
 import type { TileIndex } from 'core/grid-logic/indexed-grid'

@@ -4,46 +4,37 @@
  * Chess logic functions referenced in chess-game and chess-gui.
  */
 
-import { Color, Vector3 } from 'three'
-import { MeshLambertMaterial } from 'three'
+import { Vector3 } from 'three'
 import { type GameUpdateContext } from '../game'
-import type { SeaBlock } from 'sea-block'
+import { emptyScene, type SeaBlock } from 'sea-block'
 import type { TileIndex } from 'core/grid-logic/indexed-grid'
 import { setTilePickY, type ProcessedSubEvent } from 'mouse-touch-input'
-import { chessPieceMeshes, treasureChestElement, treasureChestMesh } from './chess-meshes'
+import type { RenderablePiece } from './chess-3d-gfx-helper'
+import { chessPieceMeshes, resetMeshes, treasureChestElement, updateMeshes } from './chess-3d-gfx-helper'
 import { ChessHlTiles } from './chess-hl-tiles'
 import { ChessMoveAnim } from './chess-move-anim'
 import type { ChessGui } from 'guis/imp/chess-gui'
 import { PIECE_NAMES, type ChessPhase, type PieceName } from './chess-enums'
-import { loadChessLevel, markLevelCompleted } from './levels/chess-level-parser'
+import { loadChessLevel } from './levels/chess-level-parser'
 import { playSound } from 'audio/sound-effects'
-import type { ColoredInstancedMesh } from 'gfx/3d/colored-instanced-mesh'
-import { buildGoalDiagram, buildMovesDiagram, buildRewardChoiceDiagram, renderFlatView } from './chess-diagrams'
+import { buildGoalDiagram, buildMovesDiagram, flatChessBackground, renderFlatView, updatePawnButtonLabel } from './chess-2d-gfx-helper'
 import { Gui } from 'guis/gui'
 import { COLLECTIBLES, randomCollectible } from './chess-rewards'
 import type { CollectibleName } from './levels/chess-levels.json.d'
 import type { TilePosition } from 'core/grid-logic/tiled-grid'
 import { buildPawnMoves, buildEnemyMoves, nextPhasePickers } from './chess-sequences'
 import { Transition } from 'gfx/transitions/transition'
-import { freeCamPipeline } from 'gfx/3d/tile-render-pipeline/free-cam-pipeline'
-import type { Pipeline } from 'gfx/3d/tile-render-pipeline/pipeline'
 import { chessBoardPipeline } from 'gfx/3d/tile-render-pipeline/chess-board-pipeline'
-import type { Sphere } from 'core/sphere'
-import type { SphereGroup } from 'core/groups/sphere-group'
-import { chessRun, START_COLLECTED } from './chess-run'
+import { chessRun, START_COLLECTED, START_PAWNS } from './chess-run'
 import { SeamlessTransition } from 'gfx/transitions/imp/seamless-transition'
 import { CAMERA } from 'settings'
-import { flatViewport, goalDisplays, showCurrentPiece } from './gui/chess-hud-elements'
+import { cancelPawnBtn, flatViewport, goalDisplays, pawnBtn, showCurrentPiece } from './gui/chess-hud-elements'
 import { toggleGameOverMenu, togglePauseMenu } from './gui/chess-dialog-elements'
 import { showPhaseLabel } from './gui/chess-debug-elements'
-import { leftRewardDisplay, rightRewardDisplay } from './gui/chess-reward-elements'
-
-const enemyColor = new Color(0xff0000)
-
-// clicking chest mesh counts as clicking its tile
-treasureChestElement.clickAction = () => {
-  instance.clickTile(instance.goalTile)
-}
+import { updateChessPhase } from './chess-update-helper'
+import { FREECAM_PLAYLIST, playNextTrack } from 'audio/song-playlist'
+import { flatViewPortClick, flatViewPortUnclick, fullClickTile, updateHeldChessInputs } from './chess-input-helper'
+import { ChessWaveMaker } from './chess-wave-maker'
 
 // no 3D terrrain in background when selecting reward
 export function chessAllow3DRender(): boolean {
@@ -58,11 +49,12 @@ export function chessAllow3DRender(): boolean {
 
 export function clearChessRun(): void {
   isResetQueued = true
+  chessRun.collectedPawns = START_PAWNS
   chessRun.collected = [...START_COLLECTED]
 }
 
 let isResetQueued = true
-export function resetChess(context: SeaBlock): void {
+export function resetChess(context: SeaBlock): Chess {
   // // get freecam game just to call reset
   // const freeCam = Game.create('free-cam', context) as FreeCamGame
   // freeCam.reset(context)
@@ -72,9 +64,11 @@ export function resetChess(context: SeaBlock): void {
     instance = new Chess(context)
   }
   chessBoardPipeline.setHlTiles(instance.hlTiles)
+
+  return instance
 }
 
-export function quitChess(seaBlock: SeaBlock): void {
+export function quitChess(chess: Chess, seaBlock: SeaBlock): void {
   // reset ui to default state
   togglePauseMenu(seaBlock, false)
   toggleGameOverMenu(seaBlock, false)
@@ -85,17 +79,16 @@ export function quitChess(seaBlock: SeaBlock): void {
   item.value = 'free-cam'
   SeamlessTransition.desiredCameraOffset.copy(CAMERA)
   SeamlessTransition.snapshotTerrain(seaBlock)
+  for (const i of chess.boardTiles) {
+    seaBlock.terrain.generatedTiles[i] = null
+  }
   seaBlock.startTransition({
     transition: Transition.create('seamless', seaBlock),
+    callback: () => {
+      playNextTrack(FREECAM_PLAYLIST)
+    },
   })
   seaBlock.onCtrlChange(item)
-}
-
-export function getChessPipeline(tile: TileIndex): Pipeline {
-  if (instance && instance.boardTiles.includes(tile.i)) {
-    return chessBoardPipeline
-  }
-  return freeCamPipeline
 }
 
 export function getChessPhase() {
@@ -104,35 +97,20 @@ export function getChessPhase() {
   return result
 }
 
+// used to implement chess-game
 export function updateChess(context: GameUpdateContext): void {
+  updateHeldChessInputs()
   instance.update(context)
 }
 
-export function clickChess(inputEvent: ProcessedSubEvent): boolean {
-  return instance.click(inputEvent)
-}
-
-export function moveChess(inputEvent: ProcessedSubEvent): boolean {
-  return instance.move(inputEvent)
-}
-
 let instance: Chess
-
-export type RenderablePiece = {
-  readonly instancedMesh: ColoredInstancedMesh
-  readonly index: number
-  type: PieceName
-  tile: TileIndex
-  isEnemy: boolean
-}
 
 const positionDummy = new Vector3()
 
 // state of current level in run, (one specific 5x5 puzzle board)
 export class Chess {
-  protected waveMaker!: Sphere
+  protected waveMaker!: ChessWaveMaker
 
-  public lastHoveredTile?: TileIndex
   public readonly hlTiles: ChessHlTiles
 
   public readonly centerTile: TileIndex
@@ -148,8 +126,8 @@ export class Chess {
   public currentPhase: ChessPhase = 'player-choice'
   public currentMove?: ChessMoveAnim
 
-  private pawnMoves: Array<ChessMoveAnim | null> = [] // set at start of pawn-anim
-  private enemyMoves: Array<ChessMoveAnim | null> = [] // set at start of enemy-anim
+  public pawnMoves: Array<ChessMoveAnim | null> = [] // set at start of pawn-anim
+  public enemyMoves: Array<ChessMoveAnim | null> = [] // set at start of enemy-anim
 
   public leftReward: CollectibleName = randomCollectible(this)
   public rightReward: CollectibleName = randomCollectible(this)
@@ -157,11 +135,17 @@ export class Chess {
   constructor(
     public readonly context: SeaBlock,
   ) {
+    updatePawnButtonLabel()
+    pawnBtn.display.isVisible = true
+    cancelPawnBtn.display.isVisible = false
+    pawnBtn.display.needsUpdate = true
+    cancelPawnBtn.display.needsUpdate = true
+
     // this.currentPieceType = context.config.flatConfig.chessPieceType
     const { orbitControls, terrain } = context
 
     const chessGui = Gui.create('chess') as ChessGui
-    chessGui.setChessInstance(this)
+    chessGui.chess = this
 
     this.hlTiles = new ChessHlTiles(terrain)
 
@@ -186,10 +170,10 @@ export class Chess {
     this.goalTile = goalTile
 
     // reset instance counts and setup current piece mesh
-    this.resetMeshes(playerPiece.type, playerPiece.tile, enemyPieces)
+    resetMeshes(this, playerPiece, [], enemyPieces)
 
     // place player and goal based on parsed level
-    treasureChestMesh.position.copy(this.getPosOnTile(goalTile))
+    // treasureChestMesh.position.copy(this.getPosOnTile(goalTile))
     this.hlTiles.updateAllowedMoves(this)
 
     // build help diagrams
@@ -197,57 +181,19 @@ export class Chess {
     buildMovesDiagram(playerPiece.type)
     this.updateFlatView()
     flatViewport.clickAction = ({ inputEvent }) => {
-      if ('lvPos' in inputEvent && chessRun.collected.includes('dual-vector-foil')) {
-        const tile = this.pickTileInFlatView(inputEvent)
-        if (tile) {
-          this.clickTile(tile)
-        }
-      }
+      flatViewPortClick(this, inputEvent as ProcessedSubEvent)
+    }
+    flatViewport.unclickAction = ({ inputEvent }) => {
+      flatViewPortUnclick(this, inputEvent as ProcessedSubEvent)
+    }
+
+    // clicking chest mesh counts as clicking its tile
+    treasureChestElement.clickAction = () => {
+      fullClickTile(this, this.goalTile)
     }
 
     // sphere to interact with water and make waves
-    this.initWaveMaker(context.sphereGroup, exact)
-  }
-
-  private wmAngle = 0 // radians
-  private wmSpeed = 3e-4 // change in angle per ms
-  private wmRadius = 7 // distance from center of chess board
-  private readonly wmTarget = new Vector3() // point at angle/radius
-  private wmForce = 1e-5 // push sphere towards target
-
-  private initWaveMaker(sphereGroup: SphereGroup, exact: TilePosition) {
-    this.waveMaker = sphereGroup.members[1]
-    this.waveMaker.isGhost = false
-    // this.waveMaker.isFish = true
-    // this.waveMaker.isVisible = false
-    this.waveMaker.position = new Vector3(exact.x, 20, exact.z)
-    sphereGroup.setInstanceColor(1, new Color(0xff0000))
-  }
-
-  private updateWaveMaker(dt: number) {
-    // update target
-    this.wmAngle += this.wmSpeed * dt
-    this.wmTarget.set(
-      this.wmRadius * Math.cos(this.wmAngle),
-      this.waveMaker.position.y,
-      this.wmRadius * Math.sin(this.wmAngle),
-    )
-
-    // push towards target
-    this.accelSphere(this.waveMaker, this.wmTarget, this.wmForce * dt)
-  }
-
-  private readonly force = new Vector3()
-  protected accelSphere(sphere: Sphere, target: Vector3, magnitude: number) {
-    this.force.set(
-      target.x - sphere.position.x,
-      0,
-      target.z - sphere.position.z,
-    ).normalize()
-
-    this.force.multiplyScalar(magnitude)
-    sphere.velocity.x += this.force.x
-    sphere.velocity.z += this.force.z
+    this.waveMaker = new ChessWaveMaker(context.sphereGroup.members[1])
   }
 
   private centerCameraOnChessBoard(_dt: number) {
@@ -267,45 +213,34 @@ export class Chess {
     orbitControls.update()
   }
 
-  private resetMeshes(playerPieceType: PieceName, playerTile: TileIndex,
-    enemies: Array<{ type: PieceName, tile: TileIndex }>,
-  ) {
-    this.enemies.length = 0 // clear existing registered enemy meshes
-    const mat = new MeshLambertMaterial({ color: 0x333333 })
-    for (const pieceType in chessPieceMeshes) {
-      const mesh = chessPieceMeshes[pieceType] as ColoredInstancedMesh
-      mesh.count = 0
-      mesh.visible = true
-      mesh.material = mat
-      if (pieceType === playerPieceType) {
-        // register player
-        this.player = this.registerPiece(pieceType as PieceName, playerTile, false)
-        showCurrentPiece(pieceType as PieceName)
-      }
-      // register enemies for this type of chess piece
-      this.enemies.push(...enemies
-        .filter(nme => nme.type === pieceType)
-        .map(({ type, tile }) => this.registerPiece(type, tile, true)),
-      )
-    }
-    if (!this.player) {
-      throw new Error('no player piece mesh')
-    }
-
-    // set positions for visible mesh instances
-    this.setPiecePosition(this.player, this.getPosOnTile(this.player.tile))
-    for (const nme of this.enemies) {
-      this.setPiecePosition(nme, this.getPosOnTile(nme.tile))
-      nme.instancedMesh.setInstanceColor(nme.index, enemyColor)
-    }
-  }
-
   public startPlacePawn() {
+    if (chessRun.collectedPawns <= 0) {
+      playSound('chessCancel')
+      return
+    }
+
+    buildGoalDiagram('pawn')
     this.currentPhase = 'place-pawn'
     this.hlTiles.updateAllowedMoves(this)
+    pawnBtn.display.isVisible = false
+    cancelPawnBtn.display.isVisible = true
+    pawnBtn.display.needsUpdate = true
+    cancelPawnBtn.display.needsUpdate = true
+    this.context.layeredViewport.handleResize(this.context)
   }
 
-  private registerPiece(type: PieceName, tile: TileIndex, isEnemy: boolean): RenderablePiece {
+  public cancelPlacePawn() {
+    buildGoalDiagram(this.player.type)
+    this.currentPhase = 'player-choice'
+    this.hlTiles.updateAllowedMoves(this)
+    pawnBtn.display.isVisible = true
+    cancelPawnBtn.display.isVisible = false
+    pawnBtn.display.needsUpdate = true
+    cancelPawnBtn.display.needsUpdate = true
+    this.context.layeredViewport.handleResize(this.context)
+  }
+
+  public registerPiece(type: PieceName, tile: TileIndex, isEnemy: boolean): RenderablePiece {
     const instancedMesh = chessPieceMeshes[type]
     if (!instancedMesh) {
       throw new Error(`missing mesh for ches piece ${type}`)
@@ -316,7 +251,7 @@ export class Chess {
     return { instancedMesh, index, tile, type, isEnemy }
   }
 
-  private pickNextPhase(): ChessPhase {
+  public gotoNextPhase(): ChessPhase {
     const result = nextPhasePickers[this.currentPhase](this)
 
     if (result === 'pawn-anim') {
@@ -326,11 +261,11 @@ export class Chess {
       this.enemyMoves = buildEnemyMoves(this)
     }
 
+    this.currentPhase = result
     return result
   }
 
   public update(context: GameUpdateContext) {
-    const { hlTiles, player: currentPiece } = this
     const { seaBlock, dt } = context
     const { terrain } = seaBlock
 
@@ -342,93 +277,37 @@ export class Chess {
       display.needsUpdate = true
     }
 
-    this.updateWaveMaker(dt)
+    // update world
+    this.waveMaker.updateWaveMaker(dt)
     this.centerCameraOnChessBoard(dt)
 
     //
     const centerHeight = terrain.gfxHelper.getLiveHeight(this.centerTile)
     if (typeof centerHeight === 'number') setTilePickY(centerHeight)
 
-    hlTiles.update()
+    // update color-coding of valid move tiles
+    // hlTiles.update()
+
+    // show text for debugging
     showPhaseLabel(this.currentPhase)
 
-    if (this.currentPhase === 'player-anim') {
-      if (this.currentMove) {
-        const isFinished = this.currentMove.update(dt)
-        if (isFinished) {
-          this.currentMove = undefined
-          this.currentPhase = this.pickNextPhase()
-          this.setPiecePosition(currentPiece, this.getPosOnTile(currentPiece.tile))
+    // place meshes on logical tiles
+    updateMeshes(this)
 
-          // check if landed on treasure chest
-          if (currentPiece.tile.i === this.goalTile.i) {
-            markLevelCompleted() // prevent level from loading again
-            playSound('chessCelebrate')
-
-            this.context.startTransition({
-              transition: Transition.create('checkered', this.context),
-              callback: () => {
-                this.currentPhase = 'reward-choice'
-                this.context.game.gui.refreshLayout(this.context)
-                buildRewardChoiceDiagram(leftRewardDisplay, this.leftReward)
-                buildRewardChoiceDiagram(rightRewardDisplay, this.rightReward)
-              },
-            })
-          }
-          else {
-          // playSound('chessPlonk')
-          }
-        }
-        else {
-          const pos = this.currentMove.getLivePosition()
-          this.setPiecePosition(this.player, pos)
-        }
-      }
-      else {
-        // somehow in player-anim phase but no currentMove
-        this.currentPhase = this.pickNextPhase()
-      }
-    }
-    else if (this.currentPhase === 'pawn-anim') {
-      // find first non-null unfinished move
-      const i = this.pawnMoves.findIndex(move => move && !move.isFinished)
-      if (i >= 0) {
-        const piece = this.pawns[i]
-        const move = this.pawnMoves[i] as ChessMoveAnim
-        const isFinished = move.update(context.dt)
-        this.setPiecePosition(piece, move.getLivePosition())
-        if (isFinished) {
-          piece.tile = move.endTile // update logical tile
-        }
-      }
-      else {
-        // no pawn moves remaining
-        this.currentPhase = this.pickNextPhase()
-      }
-    }
-    else if (this.currentPhase === 'enemy-anim') {
-      // find first non-null unfinished move
-      const i = this.enemyMoves.findIndex(move => move && !move.isFinished)
-      if (i >= 0) {
-        const piece = this.enemies[i]
-        const move = this.enemyMoves[i] as ChessMoveAnim
-        const isFinished = move.update(context.dt)
-        this.setPiecePosition(piece, move.getLivePosition())
-        if (isFinished) {
-          piece.tile = move.endTile // update logical tile
-
-          // any enemy move means player was captured
-          this.currentPhase = 'game-over'
-          toggleGameOverMenu(this.context, true)
-        }
-      }
-      else {
-        // no enemy moves remaining
-        this.currentPhase = this.pickNextPhase()
-      }
-    }
+    // advance phase-specific animation (may override mesh positions)
+    updateChessPhase({ ...context, chess: this })
 
     this.updateFlatView()
+  }
+
+  // used to support picking instanced meshes in chess-3d-gfx-helper
+  public identifyPiece(type: PieceName, index: number): RenderablePiece | undefined {
+    const candidates = [this.player, ...this.pawns, ...this.enemies]
+    for (const piece of candidates) {
+      if (piece.type === type && piece.index === index) {
+        return piece
+      }
+    }
   }
 
   private updateFlatView() {
@@ -454,6 +333,7 @@ export class Chess {
     this.context.startTransition({
       transition: Transition.create('checkered', this.context),
       callback: () => {
+        emptyScene.background = flatChessBackground
         resetChess(this.context)
         this.context.onGameChange()
       },
@@ -480,61 +360,12 @@ export class Chess {
       }
     }
 
-    this.resetMeshes(this.player.type, this.player.tile, this.enemies)
+    resetMeshes(this, this.player, [...this.pawns], [...this.enemies])
     this.hlTiles.updateAllowedMoves(this)
     showCurrentPiece(this.player.type)
   }
 
-  public click(inputEvent: ProcessedSubEvent): boolean {
-    // if (inputEvent.seaBlock.config.flatConfig.chessViewMode === '2D') {
-    if (chessRun.collected.includes('dual-vector-foil')) {
-      const flatTile = this.pickTileInFlatView(inputEvent)
-
-      if (flatTile) {
-        // click 2d tile
-        this.clickTile(flatTile)
-        return true // consume event
-      }
-    }
-
-    // check picked 3D terrain tile from event
-    const { pickedTile: pickedTileIndex } = inputEvent
-    // const clickedTile = this.getNearestValidMove(pickedTileIndex)
-    // if (!clickedTile) {
-    //   return false // do not consume event
-    // }
-    const clickedTile = pickedTileIndex
-    if (!clickedTile || !this.hlTiles.allowedMoves.has(clickedTile.i)) {
-      return false // do not consume event
-    }
-
-    this.clickTile(clickedTile)
-    return true // consume event
-  }
-
-  public clickTile(clickedTile: TileIndex) {
-    // check if can move to clicked tile
-    if (this.hlTiles.allowedMoves.has(clickedTile.i)) {
-      if (this.currentPhase === 'player-choice') {
-        this.movePlayerToTile(clickedTile)
-      }
-      else if (this.currentPhase === 'place-pawn') {
-        // spawn pawn
-        chessRun.hasPlacedPawn = true
-        const mesh = chessPieceMeshes.pawn
-        if (!mesh) {
-          throw new Error('missing pawn mesh')
-        }
-        const spawned = this.registerPiece('pawn', clickedTile, false)
-        this.pawns.push(spawned)
-        this.setPiecePosition(spawned, this.getPosOnTile(clickedTile))
-        this.currentPhase = this.pickNextPhase()
-        this.hlTiles.updateAllowedMoves(this)
-      }
-    }
-  }
-
-  private movePlayerToTile(clickedTile: TileIndex) {
+  public movePlayerToTile(clickedTile: TileIndex) {
     // start move phase
     const oldTile = this.player.tile
     const startPos = this.getPosOnTile(oldTile).clone()
@@ -544,103 +375,9 @@ export class Chess {
 
     playSound('chessPlonk')
 
-    // highlight new tile already
-    this.player.tile = clickedTile
-    this.hlTiles.updateAllowedMoves(this)
-  }
-
-  private pickTileInFlatView(inputEvent: ProcessedSubEvent): TileIndex | undefined {
-    const { lvPos } = inputEvent
-    const { gui } = inputEvent.seaBlock.game
-
-    // check if hovering flat view
-    if (lvPos) {
-      const layoutKey = 'flatViewport'
-      const rectangle = gui.overrideLayoutRectangles[layoutKey] || gui.layoutRectangles[layoutKey]
-      if (rectangle) {
-        // compute point in units of flat view tiles
-        const { x, y } = rectangle
-        const col = (lvPos.x - x) / 16
-        const row = (lvPos.y - y) / 16
-        if (col > 0 && col < 5 && row > 0 && row < 5) {
-          // point is inside flat view
-          const tile = this.context.terrain.grid.xzToIndex(
-            Math.floor(this.centerTile.x + col - 2),
-            Math.floor(this.centerTile.z + row - 2),
-          )
-          return tile
-        }
-      }
-    }
-  }
-
-  public move(inputEvent: ProcessedSubEvent) {
-    // if (inputEvent.seaBlock.config.flatConfig.chessViewMode === '2D') {
-    if (chessRun.collected.includes('dual-vector-foil')) {
-      const flatTile = this.pickTileInFlatView(inputEvent)
-
-      if (flatTile) {
-      // hover 2d tile
-        return this._hoverTile(flatTile)
-      }
-    }
-
-    // hover 3d tile
-    return this._hoverTile(inputEvent.pickedTile)
-  }
-
-  private _hoverTile(tile?: TileIndex) {
-    // tile = this.getNearestValidMove(tile)
-    if (!tile || !this.hlTiles.allowedMoves.has(tile.i)) {
-      tile = undefined
-    }
-
-    if (this.lastHoveredTile) {
-      // this.context.terrain.gfxHelper.restoreColorsForTile(this.lastHoveredTile)
-      this.hlTiles.clear(this.lastHoveredTile)
-      this.lastHoveredTile = undefined
-    }
-    if (tile) {
-      // this.context.terrain.gfxHelper.setTempColorsForTile(hoverColors, tile)
-      this.hlTiles.set(tile, 'hover')
-      this.lastHoveredTile = tile
-      document.documentElement.style.cursor = 'pointer'
-      // return true // consume event
-    }
-    return false // do not consume event
-  }
-
-  private setPiecePosition(mesh: RenderablePiece, position: Vector3): void {
-    // console.log(`setpiecepos ${position.x.toFixed(2)}, ${position.z.toFixed(2)}`)
-
-    const { instancedMesh, index } = mesh
-    const posArray = instancedMesh.instanceMatrix.array
-
-    // start of position in meshes arrays
-    let offset = index * 16 + 12
-
-    const { x, y, z } = position
-    posArray[offset++] = x
-    posArray[offset++] = y
-    posArray[offset++] = z
-    instancedMesh.instanceMatrix.needsUpdate = true
-    instancedMesh.frustumCulled = false
-  }
-
-  public getPiecePosition(mesh: RenderablePiece, target?: Vector3): Vector3 {
-    const { instancedMesh, index } = mesh
-    const posArray = instancedMesh.instanceMatrix.array
-
-    const writeTo = target || positionDummy
-
-    // start of position in meshes arrays
-    let offset = index * 16 + 12
-    writeTo.set(
-      posArray[offset++],
-      posArray[offset++],
-      posArray[offset++],
-    )
-    return writeTo
+    // // highlight new tile already
+    // this.player.tile = clickedTile
+    // this.hlTiles.updateAllowedMoves(this)
   }
 
   public getPieceOnTile(tile: TileIndex): RenderablePiece | undefined {
@@ -666,7 +403,7 @@ export class Chess {
     const height = this.context.terrain.generatedTiles[tile.i]?.liveHeight
 
     const writeTo = target || positionDummy
-    writeTo.set(x, (height || 13) + 1, z)
+    writeTo.set(x, (height || 13), z)
 
     return writeTo
   }

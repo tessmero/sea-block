@@ -57,7 +57,7 @@ export default tseslint.config(
       // 'max-depth': ['warn', { max: 5 }],
 
       // limit imports per file
-      'import/max-dependencies': ['warn', { max: 20,
+      'import/max-dependencies': ['warn', { max: 30,
         // "ignoreTypeImports": false,
       }],
 

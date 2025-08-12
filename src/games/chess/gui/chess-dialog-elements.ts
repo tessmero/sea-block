@@ -8,6 +8,7 @@
 import type { GuiElement } from 'guis/gui'
 import { quitChess } from '../chess-helper'
 import type { SeaBlock } from 'sea-block'
+import type { ChessButton } from './chess-button'
 
 export const gameOverLabel: GuiElement = {
   layoutKey: 'gameOverLabel',
@@ -33,31 +34,41 @@ const resetBtn: GuiElement = {
     isVisible: false,
   },
 }
-const resumeBtn: GuiElement = {
+const resumeBtn: ChessButton = {
   layoutKey: 'resumeBtn',
   display: {
     type: 'button',
     label: 'resume',
     isVisible: false,
   },
-  clickAction: ({ seaBlock }) => {
-    togglePauseMenu(seaBlock, false)
+  chessAction: ({ chess, seaBlock }) => {
+    quitChess(chess, seaBlock)
+    // togglePauseMenu(seaBlock, false)
   },
 }
-const quitBtn: GuiElement = {
+const gameOverPanel: GuiElement = {
+  layoutKey: 'gameOverPanel',
+  display: {
+    type: 'panel',
+    isVisible: false,
+  },
+}
+const quitBtn: ChessButton = {
   layoutKey: 'quitBtn',
   display: {
     type: 'button',
     label: 'quit chess',
     isVisible: false,
   },
-  clickAction: ({ seaBlock }) => {
-    quitChess(seaBlock)
+  chessAction: ({ chess, seaBlock }) => {
+    quitChess(chess, seaBlock)
   },
 }
 
 const pauseMenuElements = [
-  pauseMenuPanel, resetBtn, resumeBtn, quitBtn,
+  pauseMenuPanel,
+  // resetBtn,
+  resumeBtn, quitBtn,
 ]
 
 let isPauseMenuVisible = false
@@ -76,13 +87,14 @@ export function togglePauseMenu(seaBlock: SeaBlock, state?: boolean) {
   seaBlock.layeredViewport.handleResize(seaBlock)
 }
 
-export const CHESS_DIALOG_ELEMENTS = [
-  gameOverLabel, // after aptured by red chess piece
-  ...pauseMenuElements,
+const gameOverElements = [
+  gameOverPanel,
+  gameOverLabel, quitBtn,
 ]
 
-const gameOverElements = [
-  pauseMenuPanel, gameOverLabel, quitBtn,
+export const CHESS_DIALOG_ELEMENTS = [
+  ...gameOverElements,
+  ...pauseMenuElements,
 ]
 
 let isGameOverMenuVisible = false

@@ -10,7 +10,6 @@
 import { Object3D } from 'three'
 import type { GeneratedTile } from '../../generators/terrain-generator'
 import type { TileGroup } from '../../core/groups/tile-group'
-import type { TileColors } from '../styles/style'
 import type { TileIndex } from 'core/grid-logic/indexed-grid'
 import type { TileMesh } from './tile-mesh'
 import { freeCamPipeline } from './tile-render-pipeline/free-cam-pipeline'
@@ -19,13 +18,12 @@ import { gfxConfig } from 'configs/gfx-config'
 import { chessBoardPipeline } from './tile-render-pipeline/chess-board-pipeline'
 import type { SeaBlock } from 'sea-block'
 import type { StyleParser } from 'util/style-parser'
+import { getLiveTileColors, lerpTileColors, setTargetTileColors } from './tile-group-color-buffer'
 
 const dummy = new Object3D()
 
 export interface RenderableTile {
   gTile: GeneratedTile // includes base color
-  originalColors?: TileColors // computed colors, set on first render
-  liveColors?: TileColors // potentially animated copy of original colors
   liveHeight?: number // precise y-value of top surface rendered in world
 }
 
@@ -37,7 +35,7 @@ export class TileGroupGfxHelper {
 
   updateTileMeshes(seaBlock: SeaBlock, dt: number) {
     const { group } = this
-    const lerpAlpha = 0.005 * dt
+    lerpTileColors(Math.min(1, 0.008 * dt))
 
     const pipelineFactory = seaBlock.game.getTerrainRenderPipeline
     const { style } = seaBlock
@@ -54,7 +52,7 @@ export class TileGroupGfxHelper {
     for (const tileIndex of group.grid.tileIndices) {
       const pipeline = pipelineFactory(tileIndex)
       const stepsToRun = this.getFullStepsToRun(pipeline, seaBlock)
-      if (!this._updateRenderInstance(stepsToRun, style, tileIndex, lerpAlpha)) {
+      if (!this._updateRenderInstance(stepsToRun, style, tileIndex)) {
         // break // reached count limit
       }
     }
@@ -75,18 +73,8 @@ export class TileGroupGfxHelper {
     return result
   }
 
-  // public setColorsForTile(colors: TileColors, tile: TileIndex): void {
-  //   let rTile = this.group.generatedTiles[tile.i]
-  //   if (!rTile) {
-  //     rTile = this.group.generateTile(tile)
-  //   }
-
-  //   rTile.originalColors = colors
-  //   rTile.liveColors = deepCopy(colors)
-  // }
-
   private _updateRenderInstance(
-    stepsToRun: Array<Step>, style: StyleParser, tileIndex: TileIndex, lerpAlpha: number,
+    stepsToRun: Array<Step>, style: StyleParser, tileIndex: TileIndex,
   ): boolean {
     const { group } = this
     const { x, z, i: memberIndex } = tileIndex
@@ -120,15 +108,20 @@ export class TileGroupGfxHelper {
       }
       current = result
     }
+    const { height, yOffset, targetColors } = current // result of pipeline
+    if (targetColors) {
+      setTargetTileColors(tileIndex, targetColors)
+    }
+    else {
+      // restoreTileColors(tileIndex)
+    }
 
     // check pipeline result
     const rTile = group.generatedTiles[memberIndex]
     if (!rTile) {
       return true
     }
-    const { originalColors, liveColors } = rTile
 
-    const { height, yOffset } = current // result of pipeline
     group.members[memberIndex].height = height // height for sphere collision
 
     // compute tile animation (global drop-transition)
@@ -148,13 +141,9 @@ export class TileGroupGfxHelper {
     const newIndexInSubgroup = subgroup.setMemberMatrix(memberIndex, dummy.matrix)
     group.subgroupsByFlatIndex[memberIndex] = [subgroup, newIndexInSubgroup]
 
-    if (originalColors && liveColors) {
-      const tileMesh = subgroup.mesh as TileMesh
-      const targetColors = current.targetColors || originalColors
-      liveColors.sides.lerp(targetColors.sides, lerpAlpha)
-      liveColors.top.lerp(targetColors.top, lerpAlpha)
-      tileMesh.setColorsForInstance(newIndexInSubgroup, liveColors)
-    }
+    const tileMesh = subgroup.mesh as TileMesh
+    tileMesh.setColorsForInstance(newIndexInSubgroup, getLiveTileColors(tileIndex))
+
     return true // yes successful
   }
 
@@ -192,10 +181,3 @@ export class TileGroupGfxHelper {
     return tileHeight * this.amplitude / 255 + 1 + wavePos
   }
 }
-
-// function deepCopy(colors: TileColors): TileColors {
-//   return {
-//     top: colors.top.clone(),
-//     sides: colors.sides.clone(),
-//   }
-// }

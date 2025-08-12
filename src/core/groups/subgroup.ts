@@ -7,7 +7,6 @@
 import * as THREE from 'three'
 import type { TileGeom } from '../../gfx/3d/tile-mesh'
 import { TileMesh } from '../../gfx/3d/tile-mesh'
-import { ColoredInstancedMesh } from '../../gfx/3d/colored-instanced-mesh'
 
 export interface SubgroupParams {
   n: number // number of members
@@ -16,7 +15,7 @@ export interface SubgroupParams {
 
 export class Subgroup {
   private readonly n: number
-  public readonly mesh: ColoredInstancedMesh | TileMesh
+  public readonly mesh: THREE.InstancedMesh | TileMesh
   public readonly memberIds: Array<number> = []
 
   constructor(
@@ -26,7 +25,7 @@ export class Subgroup {
     this.n = params.n
 
     if (params.geometry instanceof THREE.BufferGeometry) {
-      this.mesh = new ColoredInstancedMesh(
+      this.mesh = new THREE.InstancedMesh(
         params.geometry,
         new THREE.MeshLambertMaterial({
           color: 0xffffff,
@@ -50,8 +49,8 @@ export class Subgroup {
   }
 
   setInstanceColor(index: number, color: THREE.Color) {
-    if (this.mesh instanceof ColoredInstancedMesh) {
-      this.mesh.setInstanceColor(index, color)
+    if (this.mesh instanceof THREE.InstancedMesh) {
+      this.mesh.setColorAt(index, color)
     }
     else {
       throw new Error('subgroups with tile mesh should use setColorsForTile')

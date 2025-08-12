@@ -9,7 +9,6 @@ import { CAMERA_LOOK_AT } from 'settings'
 import type { SeaBlock } from 'sea-block'
 import { freeCamGameConfig } from 'configs/free-cam-game-config'
 import type { Sphere } from 'core/sphere'
-import type { TileIndex } from 'core/grid-logic/indexed-grid'
 import { wasdInputState } from 'guis/elements/wasd-buttons'
 import { getLeftJoystickInput, leftDead, orbitWithRightJoystick } from 'guis/elements/joysticks'
 import { Game } from '../game'
@@ -17,7 +16,9 @@ import type { GameElement, GameUpdateContext } from '../game'
 import type { PieceName } from 'games/chess/chess-enums'
 import { randChoice } from 'util/rng'
 import { getMesh } from 'gfx/3d/mesh-asset-loader'
-import { startGameElements } from 'guis/elements/misc-buttons'
+import { grabbedMeshDiagram, grabbedMeshElements } from 'guis/elements/misc-buttons'
+import { buildGrabbedMeshDiagram } from 'games/chess/chess-2d-gfx-helper'
+import { setMaterial } from 'gfx/3d/gui-3d-gfx-helper'
 
 export const MOUSE_DEADZONE = 50 // (px) center of screen with zero force
 export const MOUSE_MAX_RAD = 200 // (px) radius with max force
@@ -33,25 +34,70 @@ const forward = new Vector3()
 const right = new Vector3()
 const moveVec = new Vector3()
 
-const _lastPickedTileIndex: TileIndex | undefined = undefined
+const pickableMat = new MeshLambertMaterial({ color: 0x333333 })
+const hoveredMat = new MeshLambertMaterial({ color: 0xffffff })
 
-const startPiece = randChoice(['rook', 'bishop']) as PieceName
+// always-in-front material when locked to gui
+const grabbedMat = new MeshLambertMaterial({
+  color: 0xffffff,
+  depthTest: false,
+})
+
+const startPiece = randChoice(['rook']) as PieceName
 let pickablePieceMesh: Group
 const pickablePieceElement: GameElement = {
   meshLoader: async () => {
-    pickablePieceMesh = getMesh(`chess/${startPiece}.obj`)
+    pickablePieceMesh = getMesh(`chess/${startPiece}.obj`).clone()
+    pickablePieceMesh.traverse((child) => {
+      if (child instanceof Mesh) {
+        child.geometry = child.geometry.clone().center()
+        child.material = pickableMat
+      }
+    })
     return pickablePieceMesh
   },
-  clickAction: () => {
-    // lock mesh to camera
-    targetElement.layoutKey = 'testLockedMesh'
+  defaultMat: pickableMat,
+  hoverMat: hoveredMat,
+  clickAction: ({ seaBlock }) => {
+    if (targetElement.layoutKey === 'grabbedMesh') {
+      ungrabChessPiece(seaBlock)
+      return
+    }
+    targetElement.layoutKey = 'grabbedMesh' // lock mesh to camera
+    pickablePieceElement.defaultMat = grabbedMat
+    pickablePieceElement.hoverMat = grabbedMat
+    setMaterial(pickablePieceElement, grabbedMat)
+    FreeCamGame.hasGrabbedMeshReachedTarget = false // start smooth lerp
+
+    buildGrabbedMeshDiagram(grabbedMeshDiagram)
 
     // show chess game launch prompt
-    startGameElements.forEach(({ display }) => {
+    grabbedMeshElements.forEach(({ display }) => {
       display.isVisible = true
       display.needsUpdate = true
     })
   },
+}
+
+export function ungrabChessPiece(seaBlock: SeaBlock) {
+  // if (targetElement.layoutKey === undefined) {
+  //   return
+  // }
+
+  targetElement.layoutKey = undefined
+  targetMesh.position.copy(originalTargetMeshPosition)
+
+  // restore default materials
+  pickablePieceElement.defaultMat = pickableMat
+  pickablePieceElement.hoverMat = hoveredMat
+  setMaterial(pickablePieceElement, pickableMat)
+
+  FreeCamGame.hasGrabbedMeshReachedTarget = false // start smooth lerp
+
+  for (const { display } of grabbedMeshElements) {
+    display.isVisible = false
+  }
+  seaBlock.layeredViewport.handleResize(seaBlock)
 }
 
 export const originalTargetMeshPosition = new Vector3()
@@ -124,14 +170,8 @@ export class FreeCamGame extends Game {
   }
 
   private initPickableChessPiece(context: SeaBlock) {
-    //
-    const mat = new MeshLambertMaterial({ color: 0x333333 })
-    pickablePieceMesh.traverse((child) => {
-      if (child instanceof Mesh) {
-        child.material = mat
-      }
-    })
-    const scale = 10
+    pickablePieceMesh.renderOrder = 99 // always on top
+    const scale = 3
     pickablePieceMesh.scale.set(scale, scale, scale)
     const { x, y, z } = context.orbitControls.target
     originalTargetMeshPosition.set(x, y + 3, z)
@@ -161,13 +201,26 @@ export class FreeCamGame extends Game {
     }
   }
 
+  static hasGrabbedMeshReachedTarget = true
+
   public update(context: GameUpdateContext): void {
     const { seaBlock, dt } = context
 
     targetMesh.getWorldPosition(posDummy)
     targetMesh.getWorldQuaternion(quatDummy)
-    pickablePieceMesh.position.lerp(posDummy, 0.01 * dt)
-    pickablePieceMesh.quaternion.slerp(quatDummy, 0.01 * dt)
+    if (FreeCamGame.hasGrabbedMeshReachedTarget) {
+      // fixed at point on screen
+      pickablePieceMesh.position.copy(posDummy)
+      pickablePieceMesh.quaternion.copy(quatDummy)
+    }
+    else {
+      // move towards point on screen
+      pickablePieceMesh.position.lerp(posDummy, 0.01 * dt)
+      pickablePieceMesh.quaternion.slerp(quatDummy, 0.01 * dt)
+      if (posDummy.subVectors(posDummy, pickablePieceMesh.position).lengthSq() < 1e-2) {
+        FreeCamGame.hasGrabbedMeshReachedTarget = true // reached target point on screen
+      }
+    }
 
     // pan grid if necessary
     this.centerOnAnchor(seaBlock)

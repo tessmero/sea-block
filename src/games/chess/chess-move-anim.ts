@@ -4,6 +4,7 @@
  * Animation of a chess piece moving between two tiles.
  */
 
+import { playSound } from 'audio/sound-effects'
 import type { TileIndex } from 'core/grid-logic/indexed-grid'
 import { Vector3 } from 'three'
 
@@ -20,15 +21,17 @@ export class ChessMoveAnim {
     private readonly endPos: Vector3,
     public readonly endTile: TileIndex,
   ) {
-    console.log(
-      `build chess move: start=(${startPos.x.toFixed(2)}, ${startPos.z.toFixed(2)}), end=(${endPos.x.toFixed(2)}, ${endPos.z.toFixed(2)})`,
-    )
   }
 
   public update(dt: number): boolean {
     this.t += dt
 
     this.isFinished = this.t > duration
+
+    if (this.isFinished) {
+      playSound('chessLand')
+    }
+
     return this.isFinished
   }
 

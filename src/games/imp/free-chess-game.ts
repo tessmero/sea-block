@@ -10,12 +10,13 @@ import type { GameElement, GameUpdateContext } from 'games/game'
 import { Game } from 'games/game'
 import { getMesh } from 'gfx/3d/mesh-asset-loader'
 import type { SeaBlock } from 'sea-block'
-import { Mesh, MeshLambertMaterial, Vector3, type Group } from 'three'
+import { MeshLambertMaterial, Vector3, type Group } from 'three'
 import { randChoice } from 'util/rng'
 import type { FreeCamGame } from './free-cam-game'
 import { ChessMoveAnim } from 'games/chess/chess-move-anim'
 import type { TileIndex } from 'core/grid-logic/indexed-grid'
 import { getAllowedMoves } from 'games/chess/chess-rules'
+import { setMaterial } from 'gfx/3d/gui-3d-gfx-helper'
 
 const chessPieceMaterial = new MeshLambertMaterial({ color: 'orange' })
 
@@ -24,11 +25,7 @@ let chessPieceMesh: Group
 const chessPieceElement: GameElement = {
   meshLoader: async () => {
     chessPieceMesh = getMesh(`chess/${startPiece}.obj`).clone()
-    chessPieceMesh.traverse((child) => {
-      if (child instanceof Mesh) {
-        child.material = chessPieceMaterial
-      }
-    })
+    setMaterial(chessPieceMesh, chessPieceMaterial)
     return chessPieceMesh
   },
 }
@@ -87,13 +84,12 @@ export class FreeChessGame extends Game {
           this.currentTile,
           ...getAllowedMoves({
             terrain: seaBlock.terrain,
-            boardTiles: seaBlock.terrain.grid.tileIndices.map(({ i }) => i),
             type: 'knight',
             tile: this.currentTile,
           }),
         ]
 
-        console.log(`${candidates.length} candidates`)
+        // console.log(`${candidates.length} candidates`)
 
         if (candidates.length === 0) {
           return // no valid moves
@@ -104,7 +100,7 @@ export class FreeChessGame extends Game {
         }
 
         // start best move towards center
-        console.log(`startign mvoe with delta ${best.x - this.currentTile.x},${best.z - this.currentTile.z}`)
+        // console.log(`startign mvoe with delta ${best.x - this.currentTile.x},${best.z - this.currentTile.z}`)
         this.currentMove = new ChessMoveAnim(
           chessPieceMesh.position.clone(), // this.getPosOnTile(seaBlock, this.currentTile).clone(),
           this.getPosOnTile(seaBlock, best).clone(),

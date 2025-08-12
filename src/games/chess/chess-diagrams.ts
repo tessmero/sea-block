@@ -13,6 +13,33 @@ import { COLLECTIBLES } from './chess-rewards'
 import type { StaticElement } from 'guis/gui'
 import type { CollectibleName } from './levels/chess-levels.json.d'
 import { flatViewportDisplay, goalDisplays } from './gui/chess-hud-elements'
+import { getPiecePosition } from './chess-gfx-helper'
+import { getLiveTileColors } from 'gfx/3d/tile-group-color-buffer'
+import { drawText } from 'gfx/2d/pixel-text-gfx-helper'
+
+// dialog after clicking chess piece in free-cam
+export function buildGrabbedMeshDiagram(elem: StaticElement) {
+  const buffer = elem.display.imageset?.default
+  if (!buffer) {
+    throw new Error(`grabbed mesh diagram element with layout key ${elem.layoutKey} has no buffer`)
+  }
+
+  const { width, height } = buffer
+  const ctx = buffer.getContext('2d') as OffscreenCanvasRenderingContext2D
+  ctx.clearRect(0, 0, width, height)
+  ctx.strokeStyle = 'black'
+  ctx.strokeRect(0.5, 0.5, width - 1, height - 1)
+
+  // draw chess piece icon
+  const iconImage = getImage('icons/chess/16x16-rook.png')
+  ctx.drawImage(iconImage, 5, 5, iconImage.width, iconImage.height)
+
+  // draw text
+  drawText(ctx, { width, height, label: 'ROOK', offset: [0, -8] })
+
+  // draw text
+  drawText(ctx, { width, height, label: 'CHESS PIECE', font: 'mini', offset: [0, 10] })
+}
 
 export function buildRewardChoiceDiagram(elem: StaticElement, reward: CollectibleName) {
   const buffer = elem.display.imageset?.default
@@ -171,16 +198,16 @@ export function renderFlatView(
       }
 
       // pick highlight mode
-      let hl: ChessTileHighlight | undefined = undefined
-      if (hlTiles.allowedMoves.has(tileIndex.i)) {
-        hl = 'allowedMove'
-      }
-      if (tileIndex === chess.lastHoveredTile) {
-        hl = 'hover'
-      }
-      const tileColors
-      = chess.context.terrain.generatedTiles[tileIndex.i]?.liveColors
-        || pickColorsForChessTile(tileIndex, hl)
+      // let hl: ChessTileHighlight | undefined = undefined
+      // if (hlTiles.allowedMoves.has(tileIndex.i)) {
+      //   hl = 'allowedMove'
+      // }
+      // if (tileIndex === chess.lastHoveredTile) {
+      //   hl = 'hover'
+      // }
+      const tileColors = getLiveTileColors(tileIndex)
+      // = chess.context.terrain.generatedTiles[tileIndex.i]?.liveColors
+      //   || pickColorsForChessTile(tileIndex, hl)
       ctx.fillStyle = tileColors.top.getStyle()
 
       const x = cx + col * TILE_SIZE
@@ -193,7 +220,7 @@ export function renderFlatView(
   }
 
   // draw player
-  const player = chess.getPiecePosition(currentPiece).clone()
+  const player = getPiecePosition(currentPiece)// .clone()
   const centerPos = chess.getPosOnTile(centerTile)
   const rookCol = centerCol + (player.x - centerPos.x)
   const rookRow = centerRow + (player.z - centerPos.z)

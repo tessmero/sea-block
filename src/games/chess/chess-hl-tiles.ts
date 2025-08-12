@@ -8,21 +8,16 @@
 import type { TileIndex } from 'core/grid-logic/indexed-grid'
 import type { TileGroup } from 'core/groups/tile-group'
 import { getAllowedMoves } from './chess-rules'
-import { pickColorsForChessTile } from './chess-colors'
 import type { Chess } from './chess-helper'
-import type { TileColors } from 'gfx/styles/style'
 
 const _HIGHLIGHTS = [
-  'hover', 'allowedMove',
+  'hover', 'hold', 'allowedMove',
 ] as const
 export type ChessTileHighlight = (typeof _HIGHLIGHTS)[number]
 
 export class ChessHlTiles {
-  private readonly tileHighlights: Record<number, ChessTileHighlight> = {}
-  private changed: Set<number> = new Set()
   public allowedMoves: Set<number> = new Set()
-
-  public colorOverrides: Record<number, TileColors> = {}
+  public hovered: TileIndex | undefined = undefined
 
   constructor(
     private readonly terrain: TileGroup,
@@ -33,14 +28,10 @@ export class ChessHlTiles {
       currentPhase: phase,
       centerTile: center,
       player: piece,
-      boardTiles,
     } = chess
-    const { terrain, allowedMoves, changed } = this
+    const { terrain, allowedMoves } = this
 
     // clear old highlights
-    for (const i of allowedMoves) {
-      changed.add(i)
-    }
     allowedMoves.clear()
 
     if (phase === 'place-pawn') {
@@ -48,79 +39,20 @@ export class ChessHlTiles {
       const { x, z } = center
       for (let dx = -2; dx <= 2; dx++) {
         const tile = terrain.grid.xzToIndex(x + dx, z + 2)
-        if (tile) {
+        if (tile && !chess.getPieceOnTile(tile)) {
           allowedMoves.add(tile.i)
-          changed.add(tile.i)
         }
       }
     }
     else {
       // highlight allowed moves
-      const targets = getAllowedMoves({ type: piece.type, tile: piece.tile, terrain, boardTiles })
-      for (const { i } of targets) {
-        allowedMoves.add(i)
-        changed.add(i)
+      const targets = getAllowedMoves({ type: piece.type, tile: piece.tile, terrain, chess })
+      for (const tile of targets) {
+        const occupant = chess.getPieceOnTile(tile)
+        if (!occupant || occupant.isEnemy) {
+          allowedMoves.add(tile.i)
+        }
       }
     }
-  }
-
-  set(tile: TileIndex, hl: ChessTileHighlight) {
-    const { i } = tile
-    if (this.tileHighlights[i] !== hl) {
-      this.tileHighlights[i] = hl
-      this.changed.add(i)
-    }
-  }
-
-  clear(tile: TileIndex | number) {
-    const i = (typeof tile === 'number') ? tile : tile.i
-    if (i in this.tileHighlights) {
-      delete this.tileHighlights[i]
-      this.changed.add(i)
-    }
-  }
-
-  private pickHlToDisplay(i: number): ChessTileHighlight | undefined {
-    if (i in this.tileHighlights) {
-      return this.tileHighlights[i]
-    }
-    if (this.allowedMoves.has(i)) {
-      return 'allowedMove'
-    }
-  }
-
-  update() {
-    const { terrain } = this
-    const { grid } = terrain
-    const { tileIndices } = grid
-
-    for (const i of this.changed) {
-      const tile = tileIndices[i]
-      const hl = this.pickHlToDisplay(i)
-      if (hl) {
-        const colors = pickColorsForChessTile(tile, hl)
-
-        // start lerping to highlight colors
-        this.setTempColorsForTile(colors, tile)
-      }
-      else {
-        // start lerping to original colors
-        this.restoreColorsForTile(tile)
-      }
-    }
-
-    this.changed.clear()
-  }
-
-  public setTempColorsForTile(colors: TileColors, tile: TileIndex) {
-    this.colorOverrides[tile.i] = colors
-  }
-
-  public restoreColorsForTile(tile: TileIndex) {
-    delete this.colorOverrides[tile.i]
-  }
-
-  public restoreTileColors() {
-    this.colorOverrides = {}
   }
 }

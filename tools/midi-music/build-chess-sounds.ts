@@ -25,53 +25,53 @@ const sampleRate = 44100
 // Celebration sound effect configs
 const CELEBRATIONS = [
   { name: 'celebrate1', length: 1, noteSeq: [
-    'A3', 'C#4', 'E4', 'A4', 'C#5', 'E5', 'A5', 'A5', 'A5',
-    'C#6', 'C#6', 'A5', 'A5', 'C#6', 'C#6', 'A5', 'A5', 'C#6',
-    'E6', 'E6', 'C#6', 'C#6', 'A5', 'A5', 'C#6', 'E6', 'E6',
-    'A6', 'A6', 'C#7', 'C#7', 'E7', 'E7', 'A7', 'A7', 'C#8',
-    'C#8', 'E8', 'E8', 'A8',
+    'Eb4', 'G4', 'Bb4', 'Eb5', 'G5', 'Bb5', 'Eb6', 'Eb6', 'Eb6',
+    'G6', 'G6', 'Eb6', 'Eb6', 'G6', 'G6', 'Eb6', 'Eb6', 'G6',
+    'Bb6', 'Bb6', 'G6', 'G6', 'Eb6', 'Eb6', 'G6', 'Bb6', 'Bb6',
+    'Eb7', 'Eb7', 'G7', 'G7', 'Bb7', 'Bb7', 'Eb8', 'Eb8', 'G8',
+    'G8', 'Bb8', 'Bb8', 'Eb9',
   ] },
   { name: 'celebrate2', length: 1.5, noteSeq: [
-    'A4', 'C#5', 'E5', 'A5', 'E5', 'C#5', 'A4',
-    'B4', 'D5', 'F#5', 'B5', 'F#5', 'D5', 'B4',
-    'C#5', 'E5', 'A5', 'C#6', 'A5', 'E5', 'C#5',
-    'D5', 'F#5', 'B5', 'D6', 'B5', 'F#5', 'D5',
-    'E5', 'A5', 'C#6', 'E6', 'C#6', 'A5', 'E5',
-    'A5', 'C#6', 'E6', 'A6',
+    'Eb5', 'G5', 'Bb5', 'Eb6', 'Bb5', 'G5', 'Eb5',
+    'F5', 'Ab5', 'C6', 'F6', 'C6', 'Ab5', 'F5',
+    'G5', 'Bb5', 'Eb6', 'G6', 'Eb6', 'Bb5', 'G5',
+    'Ab5', 'C6', 'F6', 'Ab6', 'F6', 'C6', 'Ab5',
+    'Bb5', 'Eb6', 'G6', 'Bb6', 'G6', 'Eb6', 'Bb5',
+    'Eb6', 'G6', 'Bb6', 'Eb7',
   ] },
   { name: 'celebrate3', length: 1.5, noteSeq: [
-    'A3', 'E4', 'A4', 'C#5', 'E5', 'A5', 'C#6', 'E6',
-    'A6', 'E6', 'C#6', 'A5', 'E5', 'C#5', 'A4', 'E4',
-    'A4', 'C#5', 'E5', 'A5', 'C#6', 'E6', 'A6', 'C#7',
-    'E7', 'A7', 'C#8', 'E8', 'A8',
+    'Eb4', 'Bb4', 'Eb5', 'G5', 'Bb5', 'Eb6', 'G6', 'Bb6',
+    'Eb7', 'Bb6', 'G6', 'Eb6', 'Bb5', 'G5', 'Eb5', 'Bb4',
+    'Eb5', 'G5', 'Bb5', 'Eb6', 'G6', 'Bb6', 'Eb7', 'G7',
+    'Bb7', 'Eb8', 'G8', 'Bb8', 'Eb9',
   ] },
   { name: 'celebrate4', length: 1.1, noteSeq: [
-    'A4', 'B4', 'C#5', 'D5', 'E5', 'F#5', 'A5', 'B5',
-    'C#6', 'D6', 'E6', 'F#6', 'A6', 'B6', 'C#7', 'D7',
-    'E7', 'F#7', 'A7', 'B7', 'C#8', 'D8', 'E8',
+    'Eb5', 'F5', 'G5', 'Ab5', 'Bb5', 'C6', 'Eb6', 'F6',
+    'G6', 'Ab6', 'Bb6', 'C7', 'Eb7', 'F7', 'G7', 'Ab7',
+    'Bb7', 'C8', 'Eb8', 'F8', 'G8', 'Ab8', 'Bb8',
   ] },
   { name: 'celebrate5', length: 1.3, noteSeq: [
-    'A5', 'C#6', 'E6', 'A6', 'E6', 'C#6', 'A5',
-    'A5', 'B5', 'C#6', 'D6', 'E6', 'F#6', 'A6',
-    'A6', 'C#7', 'E7', 'A7', 'E7', 'C#7', 'A6',
-    'A6', 'B6', 'C#7', 'D7', 'E7', 'F#7', 'A7',
-    'A7', 'C#8', 'E8', 'A8',
+    'Eb6', 'G6', 'Bb6', 'Eb7', 'Bb6', 'G6', 'Eb6',
+    'Eb6', 'F6', 'G6', 'Ab6', 'Bb6', 'C7', 'Eb7',
+    'Eb7', 'G7', 'Bb7', 'Eb8', 'Bb7', 'G7', 'Eb7',
+    'Eb7', 'F7', 'G7', 'Ab7', 'Bb7', 'C8', 'Eb8',
+    'Eb8', 'G8', 'Bb8', 'Eb9',
   ] },
 ]
 
 // Plonk sound effect configs
 const PLONKS = [
-  { name: 'plonk1', length: 0.18, noteSeq: ['A4', 'C#5', 'E5'] },
-  { name: 'plonk2', length: 0.22, noteSeq: ['E4', 'A4', 'C#5'] },
-  { name: 'plonk3', length: 0.15, noteSeq: ['C#5', 'E5', 'A5'] },
-  { name: 'plonk4', length: 0.19, noteSeq: ['A4', 'E5'] },
-  { name: 'plonk5', length: 0.21, noteSeq: ['C#5', 'A5'] },
-  { name: 'plonk6', length: 0.17, noteSeq: ['E4', 'A4'] },
-  { name: 'plonk7', length: 0.16, noteSeq: ['A4', 'C#5'] },
-  { name: 'plonk8', length: 0.23, noteSeq: ['E5', 'A5', 'C#6'] },
-  { name: 'plonk9', length: 0.14, noteSeq: ['A5'] },
-  { name: 'plonk9b', length: 0.22, noteSeq: ['A5', 'A6'] },
-  { name: 'plonk10', length: 0.20, noteSeq: ['C#5', 'E5'] },
+  { name: 'plonk1', length: 0.18, noteSeq: ['Eb5', 'G5', 'Bb5'] },
+  { name: 'plonk2', length: 0.22, noteSeq: ['Bb4', 'Eb5', 'G5'] },
+  { name: 'plonk3', length: 0.15, noteSeq: ['G5', 'Bb5', 'Eb6'] },
+  { name: 'plonk4', length: 0.19, noteSeq: ['Eb5', 'Bb5'] },
+  { name: 'plonk5', length: 0.21, noteSeq: ['G5', 'Eb6'] },
+  { name: 'plonk6', length: 0.17, noteSeq: ['Bb4', 'Eb5'] },
+  { name: 'plonk7', length: 0.16, noteSeq: ['Eb5', 'G5'] },
+  { name: 'plonk8', length: 0.23, noteSeq: ['Bb5', 'Eb6', 'G6'] },
+  { name: 'plonk9', length: 0.14, noteSeq: ['Eb6'] },
+  { name: 'plonk9b', length: 0.22, noteSeq: ['Eb6', 'Eb7'] },
+  { name: 'plonk10', length: 0.20, noteSeq: ['G5', 'Bb5'] },
 ]
 
 function generateCelebrationMidi(
@@ -113,7 +113,7 @@ function generatePlonkMidi(
   const noteDuration = lengthSec / totalNotes
   const track = midi.addTrack()
   // track.instrument.number = 10 // music box
-  track.instrument.number = 13
+  track.instrument.number = 12
   let time = 0
   for (const midiNum of midiNotes) {
     track.addNote({

@@ -19,6 +19,7 @@ export type DrawTextParams = {
   height: number
   font?: FontVariant
   textAlign?: TextAlign
+  offset?: [number, number]
 }
 
 export function drawText(ctx, params: DrawTextParams) {
@@ -26,6 +27,7 @@ export function drawText(ctx, params: DrawTextParams) {
     label, width, height,
     font = 'default',
     textAlign = 'center',
+    offset = [0, 0],
   } = params
   const textPixels = renderPixels(label, font)
 
@@ -38,6 +40,9 @@ export function drawText(ctx, params: DrawTextParams) {
   else if (textAlign === 'left') {
     y0 = Math.floor(height / 2 - textPixels.length / 2 + basement / 2)
   }
+
+  x0 += offset[0]
+  y0 += offset[1]
 
   ctx.fillStyle = 'black'// font === 'mini' ? 'gray' : 'black'
   for (const [y, row] of textPixels.entries()) {

@@ -15,12 +15,10 @@ import type { TileGroupGfxHelper } from './gfx/3d/tile-group-gfx-helper'
 import { getStyle, STYLES } from './gfx/styles/styles-list'
 import type { ProcessedSubEvent } from './mouse-touch-input'
 import { initMouseListeners } from './mouse-touch-input'
-import { CAMERA, GRID_DETAIL, PORTRAIT_CAMERA, STEP_DURATION } from './settings'
+import { GRID_DETAIL, STEP_DURATION } from './settings'
 import { GAME, GUI, type GameName, type GeneratorName } from './imp-names'
 import { Game } from './games/game'
 import type { LayeredViewport } from './gfx/layered-viewport'
-import { StartSequenceGame } from './games/imp/start-sequence-game'
-import { freeCamGameConfig } from './configs/free-cam-game-config'
 import { seaBlockConfig } from './configs/sea-block-config'
 import type { SeablockScene } from './gfx/3d/scene'
 import { buildScene } from './gfx/3d/scene'
@@ -31,11 +29,10 @@ import type { StyleParser } from './util/style-parser'
 import { FloraGroup } from './core/groups/flora-group'
 import { Tiling } from './core/grid-logic/tilings/tiling'
 import { TiledGrid } from './core/grid-logic/tiled-grid'
-import { gfxConfig } from './configs/gfx-config'
-import { physicsConfig } from './configs/physics-config'
 import { updateFrontLayer } from './gfx/2d/flat-gui-gfx-helper'
-import { alignGuiGroup, alignMeshInGuiGroup } from 'gfx/3d/camera-locked-gfx-helper'
+import { alignGuiGroup, alignMeshInGuiGroup } from 'gfx/3d/gui-3d-gfx-helper'
 import { randomTransition, Transition } from 'gfx/transitions/transition'
+import { preloadChessSprites } from 'games/chess/chess-2d-gfx-helper'
 
 // can only be constructed once
 let didConstruct = false
@@ -44,7 +41,7 @@ let didInit = false
 // container for some meshes, locked to screen instead of world
 const cameraLockedGroup = new THREE.Group()
 
-const emptyScene = new THREE.Scene()
+export const emptyScene = new THREE.Scene()
 
 export class SeaBlock {
   public didLoadAssets = false
@@ -119,6 +116,7 @@ export class SeaBlock {
 
     const loadPromises: Array<Promise<void | Array<void>>> = []
     loadPromises.push(preloadPixelTiles(Tiling.getAllShapes()))
+    loadPromises.push(preloadChessSprites())
 
     // start generating images/meshes for all guis
     for (const guiName of GUI.NAMES) {
@@ -154,6 +152,11 @@ export class SeaBlock {
         if (transition.doesAllowMidTransitionReset) {
           await this.onMidTransition()
         }
+
+        if (this.midTransitionCallback) {
+          this.midTransitionCallback()
+          this.midTransitionCallback = undefined
+        }
         // resetFrontLayer()
         transition.cleanupHide()
         // this.rebuildControls()
@@ -175,13 +178,14 @@ export class SeaBlock {
     //   this.orbitControls.update()
     // }
 
+    // update game's camera-locked meshes
+    alignGuiGroup(cameraLockedGroup,
+      this.camera, this.layeredViewport.screenRectangle)
+
     // update game
     game.update({ seaBlock: this, dt })
 
     scene.update(this.orbitControls.target)
-
-    // update game's camera-locked meshes
-    alignGuiGroup(cameraLockedGroup, this.camera, this.layeredViewport.screenRectangle)
 
     // update physics
     const nSteps = Math.round(dt / STEP_DURATION)
@@ -222,12 +226,13 @@ export class SeaBlock {
     camera.aspect = window.innerWidth / window.innerHeight
     camera.updateProjectionMatrix()
 
-    if (this.currentGameName === 'free-cam') {
-      // reset camera distance (keep scene in view for portrait phone)
-      const { w, h } = this.layeredViewport
-      const preset = h > w ? PORTRAIT_CAMERA : CAMERA
-      this.setCameraDistance(preset.length())
-    }
+    this.setCameraDistance(this.game.getCamOffset(this).length())
+    // if (this.currentGameName === 'free-cam') {
+    //   // reset camera distance (keep scene in view for portrait phone)
+    //   const { w, h } = this.layeredViewport
+    //   const preset = h > w ? PORTRAIT_CAMERA : CAMERA
+    //   this.setCameraDistance(preset.length())
+    // }
 
     // recompute visible layouts
     // this.game.gui.refreshLayout(this)
@@ -310,7 +315,7 @@ export class SeaBlock {
     this.tileGfx = this.terrain.gfxHelper
 
     // this.game.refreshConfig()
-    freeCamGameConfig.refreshConfig()
+    // freeCamGameConfig.refreshConfig()
     // this.game.reset(this)
     this.game.resetCamera(this)
     if (this.game.doesAllowOrbitControls(this)) {
@@ -350,7 +355,7 @@ export class SeaBlock {
 
     this.config.refreshConfig()
     // debugElems.refresh(this.config.flatConfig.debug)
-    gfxConfig.refreshConfig()
+    // gfxConfig.refreshConfig()
     generator.refreshConfig()
 
     for (const gui of this.getLayeredGuis()) {
@@ -366,7 +371,7 @@ export class SeaBlock {
     }
     else {
       // this.game.refreshConfig() // refresh existing game
-      freeCamGameConfig.refreshConfig()
+      // freeCamGameConfig.refreshConfig()
       this.orbitControls.enabled = this.game.doesAllowOrbitControls(this)
     }
 
@@ -386,11 +391,11 @@ export class SeaBlock {
     }
     else if (item.resetOnChange === 'physics') {
       // soft reset (physics)
-      physicsConfig.refreshConfig()
+      // physicsConfig.refreshConfig()
     }
     else {
       // soft reset (graphics)
-      StartSequenceGame.isColorTransformEnabled = false
+      // StartSequenceGame.isColorTransformEnabled = false
       this.style = getStyle(this.config.flatConfig.style)
       scene.setBackground(this.style.getBackgroundColor())
       terrain.resetColors()
@@ -398,7 +403,7 @@ export class SeaBlock {
     }
 
     // allow any config change to escape from special start seq colors
-    StartSequenceGame.isColorTransformEnabled = this.currentGameName === 'start-sequence'
+    // StartSequenceGame.isColorTransformEnabled = this.currentGameName === 'start-sequence'
   }
 
   private async onMidTransition() {
@@ -441,11 +446,11 @@ export class SeaBlock {
     //   this.rebuildControls() // build for first time after user skipped start
     // }
 
-    StartSequenceGame.isColorTransformEnabled = false
+    // StartSequenceGame.isColorTransformEnabled = false
     this.config.refreshConfig()
     generator.refreshConfig()
-    gfxConfig.refreshConfig()
-    freeCamGameConfig.refreshConfig()
+    // gfxConfig.refreshConfig()
+    // freeCamGameConfig.refreshConfig()
     // console.log(`mid transition refreshed game: ${this.config.flatConfig.game}`)
 
     // act as though generator changed
@@ -457,7 +462,7 @@ export class SeaBlock {
     // act as though game changed
     this.currentGameName = this.config.flatConfig.game
     // this.game = Game.create(this.currentGameName, this)
-    StartSequenceGame.isColorTransformEnabled = this.currentGameName === 'start-sequence'
+    // StartSequenceGame.isColorTransformEnabled = this.currentGameName === 'start-sequence'
     // this.showHideGameSpecificElems()
     // soft reset (graphics)
     this.style = getStyle(this.config.flatConfig.style)
@@ -469,11 +474,6 @@ export class SeaBlock {
     // camera.position.set(x + CAMERA.x, CAMERA.y, z + CAMERA.z)
 
     this.reset()
-
-    if (this.midTransitionCallback) {
-      this.midTransitionCallback()
-      this.midTransitionCallback = undefined
-    }
   }
 
   public didBuildControls = false // set to true after first build

@@ -11,7 +11,7 @@ const src = piece => path.join(__dirname, `raw-chess-models/${piece}/scene.gltf`
 const out = piece => path.join(__dirname, `../../public/obj/chess/${piece}.obj`)
 
 import { writeFileSync } from 'fs'
-import { BufferGeometry, Group, Mesh, MeshBasicMaterial, Box3, Vector3 } from 'three'
+import { BufferGeometry, Group, Mesh, MeshBasicMaterial, Vector3 } from 'three'
 import { GLTFLoader } from 'node-three-gltf'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { OBJExporter } from 'three/examples/jsm/exporters/OBJExporter.js'
@@ -138,12 +138,7 @@ function mergeObjectGeometries(object3D) {
   const mergedGeometry = mergeGeometries(geometries)
   console.log(`merged ${geometries.length} geometries`)
 
-  // mergedGeometry.center()
-
-  mergedGeometry.computeBoundingBox()
-  const center = (mergedGeometry.boundingBox as Box3).getCenter(new Vector3())
-  const min = (mergedGeometry.boundingBox as Box3).min
-  mergedGeometry.translate(-center.x, -min.y, -center.z)
+  mergedGeometry.center()
 
   return mergedGeometry
 }

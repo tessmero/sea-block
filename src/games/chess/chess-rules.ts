@@ -9,7 +9,7 @@
 import type { PieceName } from './chess-enums'
 import type { TileIndex } from 'core/grid-logic/indexed-grid'
 import type { TileGroup } from 'core/groups/tile-group'
-import type { RenderablePiece } from './chess-helper'
+import type { Chess } from './chess-helper'
 
 // decsription of possible moves for a piece
 type Moveset = {
@@ -93,11 +93,11 @@ export const CHESS_MOVES = {
 
 // Get Allowed Moves Parameters
 type GamPars = {
-  //piece: RenderablePiece
+  // piece: RenderablePiece
   tile: TileIndex
   type: PieceName
   terrain: TileGroup
-  boardTiles: Array<number>
+  chess?: Chess
 }
 
 export function getAllowedMoves(params: GamPars): Array<TileIndex> {
@@ -136,13 +136,16 @@ export function getAllowedMoves(params: GamPars): Array<TileIndex> {
 }
 
 export function canLandOn(targetTile: TileIndex, params: GamPars): boolean {
-  const { boardTiles, terrain } = params
+  const { chess, terrain } = params
   const { i } = targetTile
-  return boardTiles.includes(i) || (terrain.generatedTiles[i]?.gTile.isWater === false)
+  return (chess && chess.boardTiles.includes(i)) || (terrain.generatedTiles[i]?.gTile.isWater === false)
 }
 
 function canMoveThrough(targetTile: TileIndex, params: GamPars): boolean {
-  const { boardTiles, terrain } = params
+  const { chess, terrain } = params
   const { i } = targetTile
-  return boardTiles.includes(i) || (terrain.generatedTiles[i]?.gTile.isWater === false)
+  if (chess && chess.getPieceOnTile(targetTile)) {
+    return false // tile is occupied
+  }
+  return (chess && chess.boardTiles.includes(i)) || (terrain.generatedTiles[i]?.gTile.isWater === false)
 }

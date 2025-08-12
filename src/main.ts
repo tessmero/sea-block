@@ -10,7 +10,6 @@ import.meta.glob('./**/*.ts', { eager: true })
 import { randChoice } from 'util/rng'
 import { loadAllImages } from 'gfx/2d/image-asset-loader'
 import { TILING } from 'imp-names'
-import { isDevMode } from 'configs/top-config'
 import { gfxConfig } from './configs/gfx-config'
 import { LayeredViewport } from './gfx/layered-viewport'
 import { SeaBlock } from './sea-block'
@@ -49,9 +48,9 @@ async function main() {
   seaBlock.init()
   seaBlock.reset()
 
-  if (false && isDevMode) {
-    seaBlock.rebuildControls() // show controls gui on startup
-  }
+  // if (isDevMode) {
+  //   seaBlock.rebuildControls() // show controls gui on startup
+  // }
 
   // Animation loop
   let lastTime = performance.now()

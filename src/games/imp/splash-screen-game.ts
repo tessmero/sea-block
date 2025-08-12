@@ -22,7 +22,7 @@ export class SplashScreenGame extends FreeCamGame {
     })
   }
 
-  protected getCamOffset(): Vector3 { return nearCam }
+  public getCamOffset(): Vector3 { return nearCam }
   protected getCamTargetOffset(): Vector3 {
     return nearTarget
   }
@@ -50,6 +50,7 @@ export class SplashScreenGame extends FreeCamGame {
     // // set camera closer than normal
     const { x, z } = terrain.centerXZ
     this.waveMaker.position.set(x + 7, 13, z + 7)
+    this.waveMaker.scalePressure = 0.2
 
     const cto = this.getCamTargetOffset()
     orbitControls.target.set(x + cto.x, cto.y, z + cto.z)

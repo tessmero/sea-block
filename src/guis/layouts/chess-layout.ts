@@ -79,6 +79,12 @@ export const CHESS_LAYOUT = {
   },
 
   // game over dialog
+  gameOverPanel: {
+    width: 5 * 16,
+    height: 5 * 16,
+    left: 'auto',
+    top: 'auto',
+  },
   gameOverLabel: {
     parent: 'pauseMenuInner',
     height: 20,
@@ -138,7 +144,14 @@ export const CHESS_LAYOUT = {
 
   // spawn pawn button bottom right
   pawnBtn: {
-    width: 20,
+    width: 40,
+    height: 20,
+    bottom: 0,
+    right: 0,
+  },
+
+  cancelPawnBtn: {
+    width: 60,
     height: 20,
     bottom: 0,
     right: 0,

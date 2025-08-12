@@ -8,6 +8,16 @@ import type { GuiElement } from 'guis/gui'
 import type { ChessPhase } from '../chess-enums'
 import { CHESS_PHASES } from '../chess-enums'
 
+const userFriendlyLabels = {
+  'player-anim': '...',
+  'pawn-anim': '...',
+  'enemy-anim': '...',
+  'game-over': 'Game Over',
+  'place-pawn': 'Place Pawn',
+  'reward-choice': 'Select Reward',
+  'player-choice': 'Reach Treasure',
+} as const satisfies Record<ChessPhase, string>
+
 // debug labels
 const defaultPhase: ChessPhase = 'player-choice'
 const phaseLabels = Object.fromEntries(
@@ -17,7 +27,8 @@ const phaseLabels = Object.fromEntries(
       layoutKey: 'phaseLabel',
       display: {
         type: 'panel',
-        label: phase,
+        // label: phase,
+        label: userFriendlyLabels[phase],
         // font: 'mini',
         isVisible: phase === defaultPhase,
       },

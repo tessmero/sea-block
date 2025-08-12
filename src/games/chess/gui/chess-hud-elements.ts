@@ -8,7 +8,7 @@ import type { GuiElement } from 'guis/gui'
 import type { PieceName } from '../chess-enums'
 import { PIECE_NAMES } from '../chess-enums'
 import { getImage } from 'gfx/2d/image-asset-loader'
-import { buildGoalDiagram } from '../chess-diagrams'
+import { buildGoalDiagram } from '../chess-2d-gfx-helper'
 import { togglePauseMenu } from './chess-dialog-elements'
 import type { ChessButton } from './chess-button'
 
@@ -34,6 +34,7 @@ const switchPieceHint: GuiElement = {
     type: 'label',
     label: 'Switch Piece',
     shouldClearBehind: true,
+    isVisible: false,
   },
 }
 
@@ -43,6 +44,7 @@ const pawnHint: GuiElement = {
     type: 'label',
     label: 'Place Pawn',
     shouldClearBehind: true,
+    isVisible: false,
   },
 }
 
@@ -122,6 +124,8 @@ const currentPiece: ChessButton = {
 }
 
 export function showCurrentPiece(piece: PieceName) {
+  console.log('show current piece', piece)
+
   // hide labels
   for (const label of pieceLabels) {
     label.display.isVisible = false
@@ -134,7 +138,8 @@ export function showCurrentPiece(piece: PieceName) {
   // draw icon
   const buffer = pieceIcon.display.imageset?.default
   if (!buffer) {
-    throw new Error('flat viewport diagram element has no buffer')
+    // throw new Error('current piece diagram element has no buffer')
+    return
   }
   const img = getImage(`icons/chess/16x16-${piece}.png`)
   const ctx = buffer.getContext('2d') as OffscreenCanvasRenderingContext2D
@@ -171,14 +176,35 @@ const pieceIcon: GuiElement = {
   },
 }
 
-const pawnBtn: ChessButton = {
+export const pawnBtn: ChessButton = {
   layoutKey: 'pawnBtn',
   display: {
     type: 'button',
-    icon: 'icons/chess/8x8-pawn.png',
+    // icon: 'icons/chess/8x8-pawn.png',
   },
   chessAction: ({ chess }) => {
     chess.startPlacePawn()
+  },
+}
+
+// label on pawn button
+export const pawnLabel: GuiElement = {
+  layoutKey: 'pawnBtn',
+  isPickable: false,
+  display: {
+    type: 'diagram',
+    label: 'pawn-button-label', // give imageset unique hash
+  },
+}
+
+export const cancelPawnBtn: ChessButton = {
+  layoutKey: 'cancelPawnBtn',
+  display: {
+    type: 'button',
+    label: 'CANCEL',
+  },
+  chessAction: ({ chess }) => {
+    chess.cancelPlacePawn()
   },
 }
 
@@ -189,10 +215,10 @@ export const flatViewportDisplay = flatViewport.display
 export const CHESS_HUD_ELEMENTS = [
   topLeftA, topLeftB, // top left HUD
   topRightBtn, // top right HUD
-  switchPieceHint, // bottom left hint
-  currentPiece, ...pieceLabels, pieceIcon, // bottom left HUD
+  // switchPieceHint, // bottom left hint
+  // currentPiece, ...pieceLabels, pieceIcon, // bottom left HUD
   pawnHint, // bottom right hint
-  pawnBtn, // bottom right HUD
+  pawnBtn, pawnLabel, cancelPawnBtn, // bottom right HUD
   // helpPanel, helpElement, // bottom left dialog
   flatViewport, // after collecting dual-vector-foil
 ]

@@ -6,7 +6,8 @@
  */
 
 import type { ChessPhase } from './chess-enums'
-import type { Chess, RenderablePiece } from './chess-helper'
+import type { Chess } from './chess-helper'
+import type { RenderablePiece } from './chess-3d-gfx-helper'
 import { ChessMoveAnim } from './chess-move-anim'
 import { canLandOn, getAllowedMoves } from './chess-rules'
 
@@ -35,25 +36,26 @@ export const nextPhasePickers: Record<ChessPhase, (chess: Chess) => ChessPhase> 
   'game-over': () => 'game-over',
 }
 
-export function buildPawnMoves(chess: Chess): Array<ChessMoveAnim | null> {
-  return chess.pawns.map(p => pickPawnMove(p, chess))
-}
-
+// prep moves for enemy-anim phase
 export function buildEnemyMoves(chess: Chess): Array<ChessMoveAnim | null> {
-  return chess.enemies.map(p => pickEnemyMove(p, chess))
+  const reserved: Set<number> = new Set()
+  return chess.enemies.map(p => pickEnemyMove(p, chess, reserved))
 }
-
-function pickEnemyMove(enemy: RenderablePiece, chess: Chess): ChessMoveAnim | null {
+function pickEnemyMove(enemy: RenderablePiece, chess: Chess, reserved: Set<number>): ChessMoveAnim | null {
   const { boardTiles } = chess
   const { terrain } = chess.context
 
   // get all allowed moves for this enemy
-  const allowedMoves = getAllowedMoves({ type: enemy.type, tile: enemy.tile, terrain, boardTiles })
+  const allowedMoves = getAllowedMoves({ type: enemy.type, tile: enemy.tile, terrain, chess })
 
   for (const targetTile of allowedMoves) {
+    if (reserved.has(targetTile.i)) {
+      continue
+    }
     const target = chess.getPieceOnTile(targetTile)
     if (target && !target.isEnemy) {
       // enemy will attack friendly piece
+      reserved.add(targetTile.i)
       return new ChessMoveAnim(
         chess.getPosOnTile(enemy.tile).clone(),
         chess.getPosOnTile(targetTile).clone(),
@@ -65,6 +67,10 @@ function pickEnemyMove(enemy: RenderablePiece, chess: Chess): ChessMoveAnim | nu
   return null // enemy will not move
 }
 
+// prep moves for pawn-anim phase
+export function buildPawnMoves(chess: Chess): Array<ChessMoveAnim | null> {
+  return chess.pawns.map(p => pickPawnMove(p, chess))
+}
 function pickPawnMove(pawn: RenderablePiece, chess: Chess): ChessMoveAnim | null {
   const { terrain } = chess.context
   const { boardTiles } = chess
@@ -93,7 +99,7 @@ function pickPawnMove(pawn: RenderablePiece, chess: Chess): ChessMoveAnim | null
   // check forward move
   const forwardTile = grid.xzToIndex(x, z - 1)
   if (forwardTile
-    && canLandOn(forwardTile, { type: pawn.type, tile: pawn.tile, terrain, boardTiles })
+    && canLandOn(forwardTile, { type: pawn.type, tile: pawn.tile, terrain, chess })
     && !chess.getPieceOnTile(forwardTile) // tile must not be occupied
   ) {
     // pawn will move forward

@@ -35,6 +35,29 @@ export const baseChessBoardColors: readonly [TileColors, TileColors] = [
 ]
 
 const hlColors: Record<ChessTileHighlight, [TileColors, TileColors]> = {
+  hold: [
+    // hold colors same as hover
+    {
+      // White tile hover: blue highlight
+      top: new Color('#B3CFFF'),
+      sides: new Color('#7FA7E0'),
+    },
+    {
+      // Black tile hover: orange highlight
+      top: new Color('#8aabe3'),
+      sides: new Color('#4f6584'),
+    },
+    // {
+    //   // White tile hover: blue highlight
+    //   top: new Color('#000000'),
+    //   sides: new Color('#000000'),
+    // },
+    // {
+    //   // Black tile hover: orange highlight
+    //   top: new Color('#000000'),
+    //   sides: new Color('#000000'),
+    // },
+  ],
   hover: [
     {
       // White tile hover: blue highlight

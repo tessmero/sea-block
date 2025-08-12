@@ -35,7 +35,8 @@ export class SeamlessTransition extends Transition {
   public getExtraPipelineStep(): Step {
     return ({ current, tileIndex }) => {
       const startHeight = SeamlessTransition.snapshot[tileIndex.i] || current.height
-      current.height = avg(startHeight, current.height, this.fractionDone)
+      const alpha = Math.min(1, this.fractionDone + 0.5)
+      current.height = avg(startHeight, current.height, alpha)
       return current
     }
   }
@@ -65,6 +66,7 @@ export class SeamlessTransition extends Transition {
   public _hide(t0: number, t1: number): void {
     this.lerpCamera(t1 - t0)
     this.fractionDone = t1 / 2
+    // scaleSongVolume(t1)
   }
 
   public _show(t0: number, t1: number): void {

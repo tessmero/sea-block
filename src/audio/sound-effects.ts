@@ -8,7 +8,6 @@ import { Howler } from 'howler'
 import { typedEntries } from '../util/typed-entries'
 import type { SoundAssetUrl } from './sound-asset-loader'
 import { getSound } from './sound-asset-loader'
-import { isDevMode } from 'configs/top-config'
 
 type SoundParams = {
   src: Array<SoundAssetUrl>
@@ -22,8 +21,21 @@ const SOUND_EFFECTS = {
   unclick: { src: ['kenney/select_001.ogg'], volume: 0.08 },
   collapse: { src: ['kenney/minimize_006.ogg'], volume: 0.1 },
 
-  chessPlonk: { src: ['chess/plonk9b.ogg'], volume: 0.1 },
-  chessCelebrate: { src: ['chess/celebrate3.ogg'], volume: 0.2 },
+  chessClick: { src: ['kenney/glass_002.ogg'], volume: 0.1 },
+  chessCancel: { src: ['kenney/error_004.ogg'], volume: 0.1 },
+  chessLand: { src: ['kenney/glass_002.ogg'], volume: 0.1 },
+  // chessConfirm: { src: ['kenney/glass_005.ogg'], volume: 0.1 },
+
+  chessPlonk: { src: [
+    'kenney/glass_002.ogg',
+  ], volume: 0.04 },
+  chessCelebrate: { src: [
+    'chess/celebrate1.ogg',
+    'chess/celebrate2.ogg',
+    'chess/celebrate3.ogg',
+    'chess/celebrate4.ogg',
+    'chess/celebrate5.ogg',
+  ], volume: 0.08 },
 
 } as const satisfies Record<string, SoundParams>
 
@@ -45,9 +57,9 @@ const soundEffects: Record<SoundEffectName, Array<Howl>> = {} as Record<SoundEff
 
 // play sound only if audio actually working
 export function playSound(key: SoundEffectName) {
-  if (isDevMode) {
-    return
-  }
+  // if (isDevMode) {
+  //   return
+  // }
   if (Howler.ctx.state === 'running') {
     const sounds = soundEffects[key]
     if (!sounds || sounds.length === 0) return

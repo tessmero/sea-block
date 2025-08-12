@@ -11,6 +11,7 @@ import type { GeneratedTile } from './terrain-generator'
 import { TerrainGenerator } from './terrain-generator'
 
 type RGB = [number, number, number]
+const colorDummy = new Color()
 
 export class MichaelTG extends TerrainGenerator {
   static { TerrainGenerator.register('Michael2-3B', () => new MichaelTG()) }
@@ -196,7 +197,10 @@ export class MichaelTG extends TerrainGenerator {
         ),
       )
     }
-    return new Color(...rgb.map(v => v / 255))
+
+    // return new Color(...rgb.map(v => v / 255))
+    colorDummy.set(rgb[0] / 255, rgb[1] / 255, rgb[2] / 255)
+    return colorDummy
   }
 
   private terrainColorLookup(
@@ -277,7 +281,10 @@ export class MichaelTG extends TerrainGenerator {
         rgb[i] + worldLight - 255,
       ))
     }
-    return new Color(...rgb.map(v => v / 255))
+
+    // return new Color(...rgb.map(v => v / 255))
+    colorDummy.set(rgb[0] / 255, rgb[1] / 255, rgb[2] / 255)
+    return colorDummy
   }
 
   private addShading(

@@ -36,6 +36,11 @@ export const standards = {
   joySize, joy, joySlider,
 } as const
 
+const point = {
+  width: 0,
+  height: 0,
+} as const
+
 // common buttons at top of screen
 export const commonLayout = {
 
@@ -57,40 +62,54 @@ export const commonLayout = {
     right: btn.width + 2 * pad,
   },
 
-  // test
-  testLockedMesh: {
-    width: 0,
-    height: 0,
-    left: 'auto',
-    top: 'auto',
+  // anchor mesh on screen after fiding mesh in free-cam world
+  grabbedMesh: {
+    ...point,
+
+    'left@landscape': '33%',
+    'top@landscape': 'auto',
+
+    'left@portrait': 'auto',
+    'top@portrait': '33%',
   },
 
   // dialog to start mini-game
-  startGamePanel: {
-    width: 100,
-    height: 100,
+  sgpAnchor: { // center of panel
+    ...point,
+
+    'left@landscape': '67%',
+    'top@landscape': 'auto',
+
+    'left@portrait': 'auto',
+    'top@portrait': '67%',
+  },
+  grabbedMeshPanel: {
+    parent: 'sgpAnchor',
+    width: 16 * 5,
+    height: 16 * 5,
     left: 'auto',
     top: 'auto',
   },
-  startGameLabel: {
-    parent: 'startGamePanel',
-    top: 16,
-    height: 20,
+  grabbedMeshDiagram: {
+    parent: 'grabbedMeshPanel',
+    top: 8,
+    width: -16,
+    left: 'auto',
+    height: 40,
   },
-  startGameButton: {
-    parent: 'startGamePanel',
+  grabbedMeshPlayButton: {
+    parent: 'grabbedMeshPanel',
     width: 64,
     height: 20,
     left: 'auto',
-    bottom: 20,
+    bottom: 28,
   },
-  cancelGameButton: {
-
-    parent: 'startGamePanel',
+  grabbedMeshCancelButton: {
+    parent: 'grabbedMeshPanel',
     width: 64,
     height: 20,
     left: 'auto',
-    bottom: 0,
+    bottom: 8,
   },
 
 } as const satisfies CssLayout

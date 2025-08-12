@@ -10,7 +10,6 @@ import { FloraSim } from '../physics/flora-sim'
 import type { Tile } from '../tile'
 import { FloraGroupGfxHelper } from '../../gfx/3d/flora-group-gfx-helper'
 import type { TiledGrid } from '../grid-logic/tiled-grid'
-import type { ColoredInstancedMesh } from '../../gfx/3d/colored-instanced-mesh'
 import { Group } from './group'
 import type { TileGroup } from './tile-group'
 
@@ -39,10 +38,10 @@ export class FloraGroup extends Group<Tile, FloraSim> {
       })),
     })
 
-    const cim = this.subgroups[0].mesh as ColoredInstancedMesh
+    const im = this.subgroups[0].mesh as THREE.InstancedMesh
     const colorAll = new THREE.Color(0x55ff77)
     for (let i = 0; i < n; i++) {
-      cim.setInstanceColor(i, colorAll)
+      im.setColorAt(i, colorAll)
     }
 
     this.grid = terrain.grid
