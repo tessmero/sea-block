@@ -16,6 +16,10 @@ export function setMaterial(elem: GameElement | Object3D, mat: Material) {
 
   mesh.traverse((child) => {
     if (child instanceof Mesh) {
+      if ((child as any).isOutline) {
+        return // don't change material for outline mesh
+      }
+
       child.material = mat
     }
   })

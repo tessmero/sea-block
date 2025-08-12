@@ -2,8 +2,8 @@
  * @file three-ctor-tracker.ts
  *
  * Keep track of how many times THREE objects like
- * Vector3 are constructed. These should not be constructed
- * in the animaton loop.
+ * Vector3 are constructed. They should not be constructed
+ * in the animation loop.
  *
  * Requires local patch to be applied to three (npx patch-package).
  */

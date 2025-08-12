@@ -28,15 +28,15 @@ export const flatViewport: GuiElement = {
 //   display: { type: 'panel', isVisible: false },
 // }
 
-const switchPieceHint: GuiElement = {
-  layoutKey: 'switchPieceHint',
-  display: {
-    type: 'label',
-    label: 'Switch Piece',
-    shouldClearBehind: true,
-    isVisible: false,
-  },
-}
+// const switchPieceHint: GuiElement = {
+//   layoutKey: 'switchPieceHint',
+//   display: {
+//     type: 'label',
+//     label: 'Switch Piece',
+//     shouldClearBehind: true,
+//     isVisible: false,
+//   },
+// }
 
 const pawnHint: GuiElement = {
   layoutKey: 'pawnHint',
@@ -124,7 +124,7 @@ const currentPiece: ChessButton = {
 }
 
 export function showCurrentPiece(piece: PieceName) {
-  console.log('show current piece', piece)
+  // console.log('show current piece', piece)
 
   // hide labels
   for (const label of pieceLabels) {

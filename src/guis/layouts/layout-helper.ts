@@ -31,88 +31,15 @@ const joySlider = {
   height: 24,
 } satisfies CssRuleset
 
-export const standards = {
-  btnSize, pad, btn,
-  joySize, joy, joySlider,
-} as const
-
 const point = {
   width: 0,
   height: 0,
 } as const
 
-// common buttons at top of screen
-export const commonLayout = {
-
-  // config on top left
-  configBtn: { ...btn,
-    top: pad,
-    left: pad,
-  },
-
-  // play/stop on top right
-  musicBtn: { ...btn,
-    top: pad,
-    right: pad,
-  },
-
-  // 2027-08-03 start chess game
-  chessBtn: { ...btn,
-    top: pad,
-    right: btn.width + 2 * pad,
-  },
-
-  // anchor mesh on screen after fiding mesh in free-cam world
-  grabbedMesh: {
-    ...point,
-
-    'left@landscape': '33%',
-    'top@landscape': 'auto',
-
-    'left@portrait': 'auto',
-    'top@portrait': '33%',
-  },
-
-  // dialog to start mini-game
-  sgpAnchor: { // center of panel
-    ...point,
-
-    'left@landscape': '67%',
-    'top@landscape': 'auto',
-
-    'left@portrait': 'auto',
-    'top@portrait': '67%',
-  },
-  grabbedMeshPanel: {
-    parent: 'sgpAnchor',
-    width: 16 * 5,
-    height: 16 * 5,
-    left: 'auto',
-    top: 'auto',
-  },
-  grabbedMeshDiagram: {
-    parent: 'grabbedMeshPanel',
-    top: 8,
-    width: -16,
-    left: 'auto',
-    height: 40,
-  },
-  grabbedMeshPlayButton: {
-    parent: 'grabbedMeshPanel',
-    width: 64,
-    height: 20,
-    left: 'auto',
-    bottom: 28,
-  },
-  grabbedMeshCancelButton: {
-    parent: 'grabbedMeshPanel',
-    width: 64,
-    height: 20,
-    left: 'auto',
-    bottom: 8,
-  },
-
-} as const satisfies CssLayout
+export const standards = {
+  btnSize, pad, btn, point,
+  joySize, joy, joySlider,
+} as const
 
 // used to preload elements for guis that may switch layout modes
 export function getElementDims(

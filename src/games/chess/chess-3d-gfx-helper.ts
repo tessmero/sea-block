@@ -1,5 +1,5 @@
 /**
- * @file chess-gfx-helper.ts
+ * @file chess-3d-gfx-helper.ts
  *
  * Helpers for rendering 3D chess pieces and
  * terrain tiles beings used as chess board.
@@ -95,7 +95,7 @@ export const chessPieceElements: Array<GameElement>
     clickAction: ({ inputEvent, seaBlock }) => {
       const { instanceId } = (inputEvent as ProcessedSubEvent).rawPick as Intersection
 
-      console.log(`clicked chess piece ${pieceType}, index ${instanceId}`)
+      // console.log(`clicked chess piece ${pieceType}, index ${instanceId}`)
 
       if (typeof instanceId !== 'number') {
         return

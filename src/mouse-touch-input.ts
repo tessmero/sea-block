@@ -100,9 +100,12 @@ const handlers: ReadonlyArray<EventHandler> = [
         hasConsumed = context.mouseMoveGuiLayers(event)
 
         if (!hasConsumed && event.pickedMesh) {
-          console.log(`hovered mesh ${event.pickedMesh.constructor.name}`)
+          // console.log(`hovered mesh ${event.pickedMesh.constructor.name}`)
           if (!isTouchDevice) {
           // highlight hovered mesh in back layer
+
+            // check for added property set in game.ts
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             hoveredGameElem = (event.pickedMesh as any).gameElement as GameElement // set in game.ts
             const { hoverMat } = hoveredGameElem
             if (hoverMat) {
@@ -174,8 +177,8 @@ const handlers: ReadonlyArray<EventHandler> = [
       let hasConsumed = context.clickGuiLayers(event)
 
       if (!hasConsumed && event.pickedMesh) {
-        console.log(`clicked mesh ${event.pickedMesh.constructor.name}`)
-
+        // check for added property set in game.ts
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { clickAction } = (event.pickedMesh as any).gameElement as GameElement // set in game.ts
         if (clickAction) clickAction({ seaBlock: context, inputEvent: event })
         hasConsumed = true

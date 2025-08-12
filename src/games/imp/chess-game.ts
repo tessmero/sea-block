@@ -6,7 +6,9 @@
 import { Game } from 'games/game'
 import type { Chess } from 'games/chess/chess-helper'
 import { chessAllow3DRender, resetChess, updateChess } from 'games/chess/chess-helper'
-import { treasureChestElement, chessPieceElements, getChessPipeline, getChessCamOffset } from 'games/chess/chess-3d-gfx-helper'
+import {
+  treasureChestElement, chessPieceElements, getChessPipeline, getChessCamOffset,
+} from 'games/chess/chess-3d-gfx-helper'
 
 export class ChessGame extends Game {
   static {

@@ -42,7 +42,7 @@ export function buildEnemyMoves(chess: Chess): Array<ChessMoveAnim | null> {
   return chess.enemies.map(p => pickEnemyMove(p, chess, reserved))
 }
 function pickEnemyMove(enemy: RenderablePiece, chess: Chess, reserved: Set<number>): ChessMoveAnim | null {
-  const { boardTiles } = chess
+  // const { boardTiles } = chess
   const { terrain } = chess.context
 
   // get all allowed moves for this enemy
@@ -73,7 +73,7 @@ export function buildPawnMoves(chess: Chess): Array<ChessMoveAnim | null> {
 }
 function pickPawnMove(pawn: RenderablePiece, chess: Chess): ChessMoveAnim | null {
   const { terrain } = chess.context
-  const { boardTiles } = chess
+  // const { boardTiles } = chess
   const { grid } = terrain
   const { x, z } = pawn.tile
 

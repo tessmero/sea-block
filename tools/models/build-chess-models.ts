@@ -16,6 +16,7 @@ import { GLTFLoader } from 'node-three-gltf'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { OBJExporter } from 'three/examples/jsm/exporters/OBJExporter.js'
 import { PIECE_NAMES } from '../../src/games/chess/chess-enums'
+import { BufferGeometryUtils } from 'three/examples/jsm/Addons.js'
 
 const loader = new GLTFLoader()
 const exporter = new OBJExporter()
@@ -115,10 +116,13 @@ function mergeObjectGeometries(object3D) {
   const geometries: Array<BufferGeometry> = []
   object3D.traverse((child) => {
     if (child instanceof Mesh) {
-      const clonedGeometry = child.geometry.clone()
+      let geo = child.geometry.clone()
+      // console.log( 'before', geo.getAttribute("position").count )
+      // geo = BufferGeometryUtils.mergeVertices(geo, 1)
+      // console.log( 'after', geo.getAttribute("position").count )
       child.updateMatrixWorld()
-      clonedGeometry.applyMatrix4(child.matrixWorld)
-      geometries.push(clonedGeometry)
+      geo.applyMatrix4(child.matrixWorld)
+      geometries.push(geo)
     }
   })
 

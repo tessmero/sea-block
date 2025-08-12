@@ -3,8 +3,8 @@
  *
  * Like sphere-test, but without the sphere.
  */
-import type { Group } from 'three'
-import { BoxGeometry, Color, Mesh, MeshBasicMaterial, MeshLambertMaterial, Quaternion, Vector3 } from 'three'
+import type { Group, BufferGeometry } from 'three'
+import { BackSide, BoxGeometry, BufferAttribute, Color, Mesh, MeshBasicMaterial, MeshLambertMaterial, Quaternion, Vector3 } from 'three'
 import { CAMERA_LOOK_AT } from 'settings'
 import type { SeaBlock } from 'sea-block'
 import { freeCamGameConfig } from 'configs/free-cam-game-config'
@@ -13,12 +13,13 @@ import { wasdInputState } from 'guis/elements/wasd-buttons'
 import { getLeftJoystickInput, leftDead, orbitWithRightJoystick } from 'guis/elements/joysticks'
 import { Game } from '../game'
 import type { GameElement, GameUpdateContext } from '../game'
-import type { PieceName } from 'games/chess/chess-enums'
+import { PIECE_NAMES, type PieceName } from 'games/chess/chess-enums'
 import { randChoice } from 'util/rng'
 import { getMesh } from 'gfx/3d/mesh-asset-loader'
 import { grabbedMeshDiagram, grabbedMeshElements } from 'guis/elements/misc-buttons'
 import { buildGrabbedMeshDiagram } from 'games/chess/chess-2d-gfx-helper'
 import { setMaterial } from 'gfx/3d/gui-3d-gfx-helper'
+import { BufferGeometryUtils } from 'three/examples/jsm/Addons.js'
 
 export const MOUSE_DEADZONE = 50 // (px) center of screen with zero force
 export const MOUSE_MAX_RAD = 200 // (px) radius with max force
@@ -42,9 +43,15 @@ const grabbedMat = new MeshLambertMaterial({
   color: 0xffffff,
   depthTest: false,
 })
+const outlineMat = new MeshBasicMaterial({
+  color: 0x000000,
+  side: BackSide,
+  depthTest: false,
+})
 
-const startPiece = randChoice(['rook']) as PieceName
+const startPiece = randChoice(PIECE_NAMES) as PieceName
 let pickablePieceMesh: Group
+//let outlineMesh: Mesh
 const pickablePieceElement: GameElement = {
   meshLoader: async () => {
     pickablePieceMesh = getMesh(`chess/${startPiece}.obj`).clone()
@@ -52,8 +59,34 @@ const pickablePieceElement: GameElement = {
       if (child instanceof Mesh) {
         child.geometry = child.geometry.clone().center()
         child.material = pickableMat
+        child.renderOrder = 99 // on top
+
+        // add scaled black copy as outline
+        console.log('build outline mesh')
+        const scaledOutlineMesh = child.clone();// new Mesh(child.geometry, outlineMat)
+        (scaledOutlineMesh as any).isOutline = true
+        scaledOutlineMesh.material = outlineMat
+        scaledOutlineMesh.scale.multiplyScalar(1.05)
+        pickablePieceMesh.add(scaledOutlineMesh)
+        scaledOutlineMesh.renderOrder = 98 // just behind
+
+        // add dilated black copy as outline
+        console.log('build outline mesh')
+        const outlineMesh = child.clone();// new Mesh(child.geometry, outlineMat)
+        (outlineMesh as any).isOutline = true
+        outlineMesh.material = outlineMat
+        // outlineMesh.scale.multiplyScalar(1.1)
+        //outlineMesh.geometry = dilateGeometry(outlineMesh.geometry.clone(), 0.1)
+        child.geometry = dilateGeometry(child.geometry.clone(), -0.1)
+        pickablePieceMesh.add(outlineMesh)
+        outlineMesh.renderOrder = 98 // just behind
       }
     })
+
+    const scale = 3
+    pickablePieceMesh.scale.set(scale, scale, scale)
+
+    // pickablePieceMesh = new Group().add(outlineMesh) // debug
     return pickablePieceMesh
   },
   defaultMat: pickableMat,
@@ -64,9 +97,13 @@ const pickablePieceElement: GameElement = {
       return
     }
     targetElement.layoutKey = 'grabbedMesh' // lock mesh to camera
+
+    // set materials
     pickablePieceElement.defaultMat = grabbedMat
     pickablePieceElement.hoverMat = grabbedMat
     setMaterial(pickablePieceElement, grabbedMat)
+    // outlineMesh.material = outlineMat
+
     FreeCamGame.hasGrabbedMeshReachedTarget = false // start smooth lerp
 
     buildGrabbedMeshDiagram(grabbedMeshDiagram)
@@ -78,6 +115,36 @@ const pickablePieceElement: GameElement = {
     })
   },
 }
+
+function dilateGeometry(geometry, dilationAmount = 0.1) {
+  const geo = geometry.index ? geometry.toNonIndexed() : geometry.clone();
+
+  // Merge vertices to weld shared vertices
+  //geo = BufferGeometryUtils.mergeVertices(geo, 1)
+
+  // Compute vertex normals if missing
+  if (!geo.attributes.normal) {
+    geo.computeVertexNormals()
+  }
+
+  const position = geo.attributes.position
+  const normal = geo.attributes.normal
+  const newPos = position.array.slice()
+
+  for (let i = 0; i < position.count; i++) {
+    newPos[i * 3 + 0] += normal.getX(i) * dilationAmount
+    newPos[i * 3 + 1] += normal.getY(i) * dilationAmount
+    newPos[i * 3 + 2] += normal.getZ(i) * dilationAmount
+  }
+
+  geo.setAttribute('position', new BufferAttribute(new Float32Array(newPos), 3))
+  geo.attributes.position.needsUpdate = true
+  geo.computeVertexNormals() // Recompute after dilation
+
+  return geo
+}
+
+
 
 export function ungrabChessPiece(seaBlock: SeaBlock) {
   // if (targetElement.layoutKey === undefined) {
@@ -91,6 +158,7 @@ export function ungrabChessPiece(seaBlock: SeaBlock) {
   pickablePieceElement.defaultMat = pickableMat
   pickablePieceElement.hoverMat = hoveredMat
   setMaterial(pickablePieceElement, pickableMat)
+  // outlineMesh.material = outlineMat
 
   FreeCamGame.hasGrabbedMeshReachedTarget = false // start smooth lerp
 
@@ -170,9 +238,6 @@ export class FreeCamGame extends Game {
   }
 
   private initPickableChessPiece(context: SeaBlock) {
-    pickablePieceMesh.renderOrder = 99 // always on top
-    const scale = 3
-    pickablePieceMesh.scale.set(scale, scale, scale)
     const { x, y, z } = context.orbitControls.target
     originalTargetMeshPosition.set(x, y + 3, z)
     targetMesh.position.copy(originalTargetMeshPosition)

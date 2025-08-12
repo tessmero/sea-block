@@ -17,7 +17,10 @@ import type { ChessGui } from 'guis/imp/chess-gui'
 import { PIECE_NAMES, type ChessPhase, type PieceName } from './chess-enums'
 import { loadChessLevel } from './levels/chess-level-parser'
 import { playSound } from 'audio/sound-effects'
-import { buildGoalDiagram, buildMovesDiagram, flatChessBackground, renderFlatView, updatePawnButtonLabel } from './chess-2d-gfx-helper'
+import {
+  buildGoalDiagram, buildMovesDiagram, flatChessBackground,
+  renderFlatView, updatePawnButtonLabel,
+} from './chess-2d-gfx-helper'
 import { Gui } from 'guis/gui'
 import { COLLECTIBLES, randomCollectible } from './chess-rewards'
 import type { CollectibleName } from './levels/chess-levels.json.d'

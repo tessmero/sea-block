@@ -93,7 +93,7 @@ export function buildRewardChoiceDiagram(elem: StaticElement, reward: Collectibl
 }
 
 export function buildGoalDiagram(piece: PieceName) {
-  console.log('build goal diagram', piece)
+  // console.log('build goal diagram', piece)
   let frameIndex = 0
   for (const goalDisplay of goalDisplays) {
     const buffer = goalDisplay?.imageset?.default

@@ -26,14 +26,14 @@ const pauseMenuPanel: GuiElement = {
   },
 }
 
-const resetBtn: GuiElement = {
-  layoutKey: 'resetBtn',
-  display: {
-    type: 'button',
-    label: 'reset level',
-    isVisible: false,
-  },
-}
+// const resetBtn: GuiElement = {
+//   layoutKey: 'resetBtn',
+//   display: {
+//     type: 'button',
+//     label: 'reset level',
+//     isVisible: false,
+//   },
+// }
 const resumeBtn: ChessButton = {
   layoutKey: 'resumeBtn',
   display: {
