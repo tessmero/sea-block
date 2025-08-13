@@ -32,6 +32,9 @@ export default tseslint.config(
   {
     rules: {
 
+      // must use performance.now() instead of Date.now()
+      'sb/prefer-performance-now': ['warn'],
+
       // must use === and !== instead of == and !=
       'eqeqeq': ['warn'],
 
@@ -54,7 +57,7 @@ export default tseslint.config(
       // 'max-depth': ['warn', { max: 5 }],
 
       // limit imports per file
-      'import/max-dependencies': ['warn', { max: 20,
+      'import/max-dependencies': ['warn', { max: 30,
         // "ignoreTypeImports": false,
       }],
 
@@ -131,11 +134,9 @@ export default tseslint.config(
       'src/generators/**/*.ts',
       'src/games/imp/**/*.ts',
       'src/guis/imp/**/*.ts',
+      'src/gfx/transitions/imp/**/*.ts',
       'src/configs/**/*.ts',
       'src/gfx/grid-anims/**/*.ts',
-      'src/gfx/2d/flat-transition.ts',
-      'src/gfx/3d/drop-transition.ts',
-      'src/gfx/ssd-transition.ts',
     ],
     ignores: [
       // base classes are exempt (they define protected constructor)
@@ -210,8 +211,8 @@ export default tseslint.config(
 
   // require valid gui layout css
   {
-    files: ['src/gui/layouts/**/*.ts'],
-    ignores: ['src/gui/layouts/layout-helper.ts'],
+    files: ['src/guis/layouts/**/*.ts'],
+    ignores: ['src/guis/layouts/layout-helper.ts'],
     plugins: { '@typescript-eslint': tseslint.plugin },
     languageOptions: {
       parserOptions: {

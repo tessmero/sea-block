@@ -12,12 +12,28 @@
  * visual elements, used to preload assets on startup.
  */
 
-import type { Vector3 } from 'three'
+import type { Material } from 'three'
+import { type Object3D, type Vector3 } from 'three'
 import type { GameName, GuiName } from '../imp-names'
 import type { SeaBlock } from '../sea-block'
 
 import { CAMERA, CAMERA_LOOK_AT, PORTRAIT_CAMERA } from '../settings'
+import type { ElementEvent } from '../guis/gui'
 import { Gui } from '../guis/gui'
+import { freeCamPipeline } from 'gfx/3d/pipelines/free-cam-pipeline'
+import type { Pipeline } from 'gfx/3d/pipelines/pipeline'
+import type { TileIndex } from 'core/grid-logic/indexed-grid'
+
+export type GameElement = {
+  readonly meshLoader: () => Promise<Object3D>
+  isPickable?: boolean // used to enable picking even if no click action
+  clickAction?: (event: ElementEvent) => void
+  layoutKey?: string // only for camera-locked mesh
+
+  mesh?: Object3D // set after loading
+  defaultMat?: Material
+  hoverMat?: Material
+}
 
 // parameters for update each frame
 export interface GameUpdateContext {
@@ -28,16 +44,29 @@ export interface GameUpdateContext {
 export abstract class Game {
   public gui!: Gui // assigned in create
 
+  public getTerrainRenderPipeline(_tile: TileIndex): Pipeline {
+    return freeCamPipeline
+  }
+
   public abstract reset(context: SeaBlock): void
   public resetCamera(_context: SeaBlock): void {}
 
-  protected getCamOffset(context: SeaBlock): Vector3 {
+  public elements: Array<GameElement> = [] // mesh specifications
+
+  public meshes: Array<Object3D> = [] // all loaded game-specific meshes
+  public pickableMeshes: Array<Object3D> = [] // subset that can be hovered/clicked
+
+  public getCamOffset(context: SeaBlock): Vector3 {
     const { w, h } = context.layeredViewport
     return h > w ? PORTRAIT_CAMERA : CAMERA
   }
 
   protected getCamTargetOffset(): Vector3 { return CAMERA_LOOK_AT }
   public doesAllowOrbitControls(_context: SeaBlock): boolean {
+    return true
+  }
+
+  public doesAllow3DRender(): boolean {
     return true
   }
 
@@ -48,6 +77,7 @@ export abstract class Game {
   // static registry pattern
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   static _registry: Record <GameName, RegisteredGame> = {} as any
+  static _preloaded: Partial<Record <GameName, Game>> = {}
 
   protected constructor() {}
 
@@ -58,17 +88,45 @@ export abstract class Game {
     this._registry[name] = rg
   }
 
-  static create(name: GameName, context: SeaBlock): Game {
-    const { factory, guiName } = this._registry[name]
+  static preload(name: GameName, context: SeaBlock): Promise<Array<void>> {
+    const { factory, guiName, elements = [] } = this._registry[name]
+
+    // Games are singletons
+    // one-time construction
     const instance = factory()
+    this._preloaded[name] = instance
 
     // Game
     // post-construction setup
+    instance.elements = elements
     if (context) {
       instance.gui = Gui.create(guiName)
-      instance.reset(context)
-      instance.gui.refreshLayout(context)
     }
+
+    // // preload all meshes
+    return Promise.all(elements.map(async (elem) => {
+      const mesh = await elem.meshLoader()
+      elem.mesh = mesh
+      instance.meshes.push(mesh)
+      if (elem.clickAction || elem.isPickable) {
+        // add property to element and descendants to check when picked (moust-touch-input.ts)
+        (mesh as any).gameElement = elem // eslint-disable-line @typescript-eslint/no-explicit-any
+        mesh.traverse((child) => {
+          (child as any).gameElement = elem // eslint-disable-line @typescript-eslint/no-explicit-any
+        })
+        instance.pickableMeshes.push(mesh)
+      }
+    }))
+  }
+
+  static create(name: GameName, context: SeaBlock): Game {
+    const instance = this._preloaded[name]
+    if (!instance) {
+      throw new Error(`game '${name}' was not preloaded`)
+    }
+
+    instance.reset(context)
+    instance.gui.refreshLayout(context)
 
     return instance
   }
@@ -78,4 +136,5 @@ export abstract class Game {
 interface RegisteredGame {
   readonly factory: () => Game
   readonly guiName: GuiName
+  readonly elements?: Array<GameElement>
 }

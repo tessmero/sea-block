@@ -64,8 +64,10 @@ export class TileGroup extends Group<Tile, WaterSim> {
     gfxConfig.refreshConfig()
   }
 
-  protected updateMeshes(seaBlock: SeaBlock): void {
-    this.gfxHelper.updateTileMeshes(seaBlock.style)
+  protected updateMeshes(seaBlock: SeaBlock, dt: number): void {
+    this.gfxHelper.updateTileMeshes(
+      seaBlock, dt,
+    )
   }
 
   private buildTileMember(idx: TileIndex): Tile {
@@ -86,6 +88,24 @@ export class TileGroup extends Group<Tile, WaterSim> {
 
     return tile
   }
+
+  // public overrideTile(idx: TileIndex, values: TileValues) {
+  //   const { i } = idx
+  //   const member = this.members[i]
+  //   const gTile = this.generatedTiles[i] || this.generateTile(idx)
+  //   for (const prop in values) {
+  //     member[prop] = values[prop]
+  //     gTile.gTile[prop] = values[prop]
+  //   }
+  // }
+
+  // public generateAllTiles() {
+  //   for (const idx of this.grid.tileIndices) {
+  //     if (!this.generatedTiles[idx.i]) {
+  //       this.generateTile(idx)
+  //     }
+  //   }
+  // }
 
   public generateTile(idx: TileIndex): RenderableTile {
     // console.log(`generate tile ${this.generator.constructor.name} ${this.generator.flatConfig.peaks}`)
@@ -201,9 +221,13 @@ export class TileGroup extends Group<Tile, WaterSim> {
   }
 
   public resetColors() {
-    // this.generator.refreshConfig()
+    // console.log('reset colors')
     this.generatedTiles.fill(null)
-    this.gfxHelper.liveRenderHeights.fill(NaN)
+
+    // this.generator.refreshConfig()
+
+    // this.gfxHelper.liveRenderHeights.fill(NaN)
+    // chessHlTiles.restoreTileColors()
     // for (const gTile of this.generatedTiles) {
     //   if (gTile) {
     //     gTile.style = undefined

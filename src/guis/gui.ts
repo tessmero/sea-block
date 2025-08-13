@@ -27,6 +27,7 @@ export type StaticElement = {
   dragAction?: (event: ElementEvent) => void
   unclickAction?: (event: ElementEvent) => void
   isSticky?: boolean
+  isPickable?: boolean
   hotkeys?: ReadonlyArray<KeyCode> // bound keyboard keys
 }
 
@@ -60,6 +61,7 @@ export type ElementDisplayParams = {
   readonly font?: FontVariant
   readonly textAlign?: TextAlign
 
+  shouldClearBehind?: boolean
   isVisible?: boolean
   needsUpdate?: boolean // request repaint
   forcedState?: ButtonState
@@ -85,7 +87,7 @@ export class Gui {
   public reversedIds!: ReadonlyArray<ElementId> // assigned in init
 
   // subset of elements that are currently held down by a mouse/touch/key
-  private held: Record<ElementId, InputId> = {}
+  public held: Record<ElementId, InputId> = {}
 
   // pickable element ID -> layout key
   private readonly pickable: Record<ElementId, string> = {} // subset that interact with mouse
@@ -144,7 +146,7 @@ export class Gui {
     for (const id of this.reversedIds) {
       const elem = this.elements[id]
       if (elem.layoutKey
-      // && (['panel', 'button', 'joyRegion']).includes(elem.display.type)
+      // && (['panel', 'button', 'joy-region']).includes(elem.display.type)
       ) {
         this.pickable[id] = (elem as Slider).slideIn || elem.layoutKey
       }
@@ -170,9 +172,17 @@ export class Gui {
     for (const id in this.pickable) {
       // console.log(`gui ${this.constructor.name} try picking ${id} at ${this.pickable[id]}}`)
       const layoutKey = this.pickable[id]
+      const elem = this.elements[id as ElementId]
+      if (elem.display.isVisible === false) {
+        // console.log(`skip picking invisible element with layout key ${this.elements[id as ElementId].layoutKey}`)
+        continue // element is not visible (display property)
+      }
+      if (elem.isPickable === false) {
+        continue // explicitely set isPickable = false
+      }
       const rectangle = this.overrideLayoutRectangles[layoutKey] || this.layoutRectangles[layoutKey]
       if (!rectangle) {
-        continue // element is not pickable
+        continue // element is not visible (not in current layout)
       }
       const { x, y, w, h } = rectangle
       if ((p.x > x) && (p.x < (x + w)) && (p.y > y) && (p.y < (y + h))) {
@@ -192,24 +202,28 @@ export class Gui {
 
     // console.log(`gui move ${this.constructor.name}`)
 
-    if (inputEvent.event.type.startsWith('mouse')) {
-      this.hovered = this.pickElementAtPoint(inputEvent.lvPos)
-      if (this.hovered && (['button', 'sprite-atlas']).includes(this.elements[this.hovered].display.type)) {
-        document.documentElement.style.cursor = 'pointer'
-      }
-    }
-
     // check if this event id is ongoing drag of gui element
     const held = Object.entries(this.held).find(([_key, val]) => val === inputEvent.inputId)
     if (held) {
+      // this is ongoign drag
       const [elementId, _inputId] = held
       const elem = this.elements[elementId] as GuiElement
 
       let sliderState: SliderState | undefined = undefined
 
+      const { lvPos } = inputEvent
       if ('slideIn' in elem) {
-        sliderState = this._slide(elem, inputEvent.lvPos) // dragging slider
+        sliderState = this._slide(elem, lvPos) // dragging slider
       }
+      // else {
+      //   const { layoutKey } = elem
+      //   const rectangle = this.overrideLayoutRectangles[layoutKey] || this.layoutRectangles[layoutKey]
+      //   if (rectangle) {
+      //     // compute point in rectangle
+      //     const { x, y, w, h } = rectangle
+      //     sliderState = { x: (lvPos.x - x) / w, y: (lvPos.y - y) / h }
+      //   }
+      // }
 
       if (elem.dragAction) {
         elem.dragAction({
@@ -219,6 +233,18 @@ export class Gui {
         })
       }
       return true // consume event
+    }
+    else {
+      // not ongoing drag
+      if (inputEvent.event.type.startsWith('mouse')) {
+        this.hovered = this.pickElementAtPoint(inputEvent.lvPos)
+        if (this.hovered) {
+          if ((['button', 'sprite-atlas']).includes(this.elements[this.hovered].display.type)) {
+            document.documentElement.style.cursor = 'pointer'
+          }
+          return true // consume event
+        }
+      }
     }
 
     return false // pass through to next gui layer or orbit controls
@@ -270,15 +296,29 @@ export class Gui {
     this.held[elementId] = inputId
 
     const elem = this.elements[elementId]
-    const { isSticky, clickAction } = elem
+    const { isSticky } = elem
 
     if (lvPos && 'slideIn' in elem) {
       event.sliderState = this._slide(elem, lvPos)
     }
+    // else if (lvPos) {
+    //   const { layoutKey } = elem
+    //   const rectangle = this.overrideLayoutRectangles[layoutKey] || this.layoutRectangles[layoutKey]
+    //   if (rectangle) {
+    //     // compute point in rectangle
+    //     const { x, y, w, h } = rectangle
+    //     event.sliderState = { x: (lvPos.x - x) / w, y: (lvPos.y - y) / h }
+    //   }
+    // }
 
     if (isSticky) {
       this.stuckDown.add(elementId)
     }
+    this.clickElem(elem, event)
+  }
+
+  protected clickElem(elem: GuiElement, event: ElementEvent) {
+    const { clickAction } = elem
     if (clickAction) {
       clickAction(event)
     }
@@ -406,15 +446,13 @@ export class Gui {
     return Promise.all(Object.entries(instance.elements).map(async ([_id, elem]) => {
       const { w, h } = elementDims[elem.layoutKey]
       elem.display.imageset = getElementImageset({ ...elem.display, w, h })
-      // const imageset = getElementImageset({ ...elem.display, w, h })
-      // loadedImagesets[elem] = imageset // flat-gui-gfx-helper.ts
       return
     }))
   }
 
   static create(name: GuiName): Gui {
-    if (name in Gui._preloaded) {
-      return Gui._preloaded[name] as Gui
+    if (name in this._preloaded) {
+      return this._preloaded[name] as Gui
     }
     throw new Error(`gui '${name}' was not preloaded`)
   }

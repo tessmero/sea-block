@@ -8,7 +8,7 @@ import type { Rectangle } from 'util/layout-parser'
 import { drawAtlasEntries, getAtlasHeight } from 'gfx/2d/sprite-atlas'
 import type { GuiElement, SliderState } from 'guis/gui'
 import { Gui } from 'guis/gui'
-import { SPRITE_ATLAS_GUI_LAYOUT } from 'guis/layouts/sprite-atlas-gui-layout'
+import { SPRITE_ATLAS_LAYOUT } from 'guis/layouts/sprite-atlas-layout'
 import type { SeaBlock } from 'sea-block'
 import type { Vector2 } from 'three'
 
@@ -115,7 +115,7 @@ export class SpriteAtlasGui extends Gui {
   static {
     Gui.register('sprite-atlas', {
       factory: () => new SpriteAtlasGui(),
-      layoutFactory: () => (SPRITE_ATLAS_GUI_LAYOUT),
+      layoutFactory: () => (SPRITE_ATLAS_LAYOUT),
       elements: [
         {
           layoutKey: 'backPanel',

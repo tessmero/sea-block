@@ -10,13 +10,23 @@ import.meta.glob('./**/*.ts', { eager: true })
 import { randChoice } from 'util/rng'
 import { loadAllImages } from 'gfx/2d/image-asset-loader'
 import { TILING } from 'imp-names'
-import { isDevMode } from 'configs/top-config'
 import { gfxConfig } from './configs/gfx-config'
 import { LayeredViewport } from './gfx/layered-viewport'
 import { SeaBlock } from './sea-block'
+import { loadAllMeshes } from 'gfx/3d/mesh-asset-loader'
+import { initAllSoundEffects } from 'audio/sound-effects'
+import { loadAllSounds } from 'audio/sound-asset-loader'
 
 async function main() {
-  await loadAllImages()
+  // preload all assets (except music)
+  // console.log('start preload assets')
+  await Promise.all([
+    loadAllImages(),
+    loadAllMeshes(),
+    loadAllSounds(),
+  ])
+  initAllSoundEffects()
+  // console.log('finish preload assets')
 
   const layeredViewport = new LayeredViewport()
   gfxConfig.refreshConfig()
@@ -36,7 +46,8 @@ async function main() {
     },
 
     getCameraPos: () => {
-      return window.camPosForTestSupport()
+      const { x, y, z } = seaBlock.camera.position
+      return [x, y, z]
     },
 
     getCursorState: () => {
@@ -55,29 +66,30 @@ async function main() {
       const ps = seaBlock.config.flatConfig.pixelScale
       return [x * ps, y * ps, w * ps, h * ps]
 
-      // const elem = global.gui.findElements({ titleKey }).next().value;
-      // const screenRect = elem._rect;
-      // return this._computeCanvasRect(screenRect);
+    // const elem = global.gui.findElements({ titleKey }).next().value;
+    // const screenRect = elem._rect;
+    // return this._computeCanvasRect(screenRect);
     },
   }
 
   // load default config
   seaBlock.config.refreshConfig()
 
-  if (!isDevMode) {
-    // set temporary config values until user clicks launch
-    seaBlock.config.flatConfig.generator = 'all-ocean'
-    seaBlock.config.flatConfig.style = 'black-and-white'
-    seaBlock.config.flatConfig.game = 'splash-screen'
-    seaBlock.config.flatConfig.tiling = randChoice(TILING.NAMES)
-  }
+  // if (!isDevMode) { // apply splash config
+  // set temporary config values until user clicks launch
+  seaBlock.config.flatConfig.generator = 'all-ocean'
+  seaBlock.config.flatConfig.style = 'black-and-white'
+  seaBlock.config.flatConfig.game = 'splash-screen'
+  seaBlock.config.flatConfig.tiling = randChoice(TILING.NAMES)
+  // }
 
   // init game and 3D scene
   seaBlock.init()
   seaBlock.reset()
 
-  // show controls gui on startup
-  // seaBlock.rebuildControls()
+  // if (isDevMode) {
+  //   seaBlock.rebuildControls() // show controls gui on startup
+  // }
 
   // Animation loop
   let lastTime = performance.now()

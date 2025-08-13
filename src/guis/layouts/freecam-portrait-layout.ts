@@ -6,11 +6,12 @@
  */
 
 import type { CssLayout } from 'util/layout-parser'
-import { commonLayout, standards } from './layout-helper'
+import { standards } from './layout-helper'
+import { COMMON_LAYOUT } from './common-layout'
 const { joy, pad, joySlider } = standards
 
 export const FREECAM_PORTRAIT_LAYOUT = {
-  ...commonLayout,
+  ...COMMON_LAYOUT,
 
   leftJoy: { ...joy,
     bottom: pad,

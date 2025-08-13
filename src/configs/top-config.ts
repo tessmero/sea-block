@@ -5,18 +5,22 @@
  */
 
 import type { GameName, GeneratorName, TilingName } from '../imp-names'
-import { GAME, GENERATOR, TILING } from '../imp-names'
-import { randChoice } from '../util/rng'
+import { GENERATOR, TILING } from '../imp-names'
 import { Configurable } from './configurable'
 import type { ConfigTree, OptionItem } from './config-tree'
 
 export const isDevMode = false
 function applyDevMode(cfg: typeof topConfigTree.children) {
   cfg.game.value = 'free-cam'
-  // cfg.game.isHidden = false
+  cfg.game.isHidden = false
 
-  cfg.testGui.value = 'sprite-atlas'
-  cfg.testGui.isHidden = false
+  cfg.generator.value = 'Michael2-3B'
+  cfg.tiling.value = 'square'
+
+  // cfg.transitionMode.value = 'skip'
+
+  // cfg.testGui.value = 'sprite-atlas'
+  // cfg.testGui.isHidden = false
 }
 
 const topConfigTree = {
@@ -29,15 +33,15 @@ const topConfigTree = {
     } as OptionItem<GeneratorName>,
 
     tiling: {
-      value: randChoice(['square', 'octagon'] as const),
+      value: 'square', // randChoice(['square', 'octagon'] as const),
       options: TILING.NAMES,
       resetOnChange: 'full',
     } as OptionItem<TilingName>,
 
     game: {
       value: 'start-sequence',
-      options: GAME.NAMES,
-      isHidden: true,
+      options: ['chess', 'tile-inspector', 'free-cam', 'start-sequence'],
+      // isHidden: true,
     } as OptionItem<GameName>,
 
     freeCamLayout: {
@@ -56,11 +60,12 @@ const topConfigTree = {
       label: 'Transitions',
       value: 'enabled',
       options: ['enabled', 'skip'],
+      isHidden: true,
     } as OptionItem<'enabled' | 'skip'>,
   },
 } satisfies ConfigTree
 
-if (isDevMode) {
+if (isDevMode) { // apply dev config
   applyDevMode(topConfigTree.children)
 }
 

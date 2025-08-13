@@ -55,7 +55,7 @@ export abstract class Group<TMember, TSim extends Simulation<TMember>> {
   protected abstract buildMembers(): Array<TMember>
 
   // update gfx meshes, called just before render
-  protected abstract updateMeshes(seaBlock: SeaBlock): void
+  protected abstract updateMeshes(seaBlock: SeaBlock, dt: number): void
 
   setInstanceColor(index: number, color: THREE.Color) {
     // pick subgroup based on index
@@ -75,11 +75,11 @@ export abstract class Group<TMember, TSim extends Simulation<TMember>> {
     return this
   }
 
-  update(seaBlock: SeaBlock, nSteps: number) {
+  update(seaBlock: SeaBlock, dt: number, nSteps: number) {
     for (let i = 0; i < nSteps; i++) {
       this.sim.step(this.members)
     }
-    this.updateMeshes(seaBlock)
+    this.updateMeshes(seaBlock, dt)
     this._needsUpdate()
   }
 

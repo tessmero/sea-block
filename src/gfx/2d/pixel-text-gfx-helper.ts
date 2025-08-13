@@ -9,7 +9,7 @@ import * as miniFont from './mini-font.json'
 import type { PixelFontData, Glyph } from './font.json.d.ts'
 
 export type FontVariant = 'default' | 'mini'
-export type TextAlign = 'top-left' | 'center'
+export type TextAlign = 'top-left' | 'center' | 'left'
 
 const basement = 2 // distance below baseline for lowercase q and g
 
@@ -19,6 +19,7 @@ export type DrawTextParams = {
   height: number
   font?: FontVariant
   textAlign?: TextAlign
+  offset?: [number, number]
 }
 
 export function drawText(ctx, params: DrawTextParams) {
@@ -26,6 +27,7 @@ export function drawText(ctx, params: DrawTextParams) {
     label, width, height,
     font = 'default',
     textAlign = 'center',
+    offset = [0, 0],
   } = params
   const textPixels = renderPixels(label, font)
 
@@ -35,6 +37,12 @@ export function drawText(ctx, params: DrawTextParams) {
     x0 = Math.floor(width / 2 - textPixels[0].length / 2)
     y0 = Math.floor(height / 2 - textPixels.length / 2 + basement / 2)
   }
+  else if (textAlign === 'left') {
+    y0 = Math.floor(height / 2 - textPixels.length / 2 + basement / 2)
+  }
+
+  x0 += offset[0]
+  y0 += offset[1]
 
   ctx.fillStyle = 'black'// font === 'mini' ? 'gray' : 'black'
   for (const [y, row] of textPixels.entries()) {

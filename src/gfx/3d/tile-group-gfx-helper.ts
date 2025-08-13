@@ -8,44 +8,41 @@
  */
 
 import { Object3D } from 'three'
-import { gfxConfig } from '../../configs/gfx-config'
 import type { GeneratedTile } from '../../generators/terrain-generator'
-import type { StyleParser } from '../../util/style-parser'
 import type { TileGroup } from '../../core/groups/tile-group'
-import type { TileColors } from '../styles/style'
-import type { TileIndex } from '../../core/grid-logic/indexed-grid'
-import { GridAnimation } from '../grid-anims/grid-animation'
-import { DropTransition } from './drop-transition'
+import type { TileIndex } from 'core/grid-logic/indexed-grid'
 import type { TileMesh } from './tile-mesh'
+import { freeCamPipeline } from './pipelines/free-cam-pipeline'
+import type { Pipeline, Step, TileValues } from './pipelines/pipeline'
+import { gfxConfig } from 'configs/gfx-config'
+import { chessBoardPipeline } from './pipelines/chess-board-pipeline'
+import type { SeaBlock } from 'sea-block'
+import type { StyleParser } from 'util/style-parser'
+import { getLiveTileColors, lerpTileColors, setTargetTileColors } from './tile-group-color-buffer'
 
 const dummy = new Object3D()
 
-// (ms) duration of tile entrance and exit animation
-const ENTR_DURATION = 300
-const EXIT_DURATION = 300
-
 export interface RenderableTile {
   gTile: GeneratedTile // includes base color
-  entranceStartTime?: number // time when entered visible radius
-  exitStartTime?: number // time when exited visible radius
-  colors?: TileColors // computed colors, assigned on first render
+  liveHeight?: number // precise y-value of top surface rendered in world
 }
 
 export class TileGroupGfxHelper {
   public readonly amplitude: number = 20
-  public readonly liveRenderHeights: Array<number> // used for flora gfx
-
-  private readonly warpAnim: GridAnimation
 
   constructor(private readonly group: TileGroup) {
-    this.liveRenderHeights = new Array(group.n).fill(NaN)
-
-    this.warpAnim = GridAnimation.create('radial-height-warp', group.grid)
   }
 
-  updateTileMeshes(style: StyleParser) {
+  updateTileMeshes(seaBlock: SeaBlock, dt: number) {
     const { group } = this
-    const maxD2 = Math.pow(gfxConfig.flatConfig.visibleRadius, 2)
+    lerpTileColors(Math.min(1, 0.008 * dt))
+
+    const pipelineFactory = seaBlock.game.getTerrainRenderPipeline
+    const { style } = seaBlock
+
+    freeCamPipeline.update(dt)
+    chessBoardPipeline.update(dt)
+    // const maxD2 = Math.pow(gfxConfig.flatConfig.visibleRadius, 2)
 
     // reset index of mesh instances for rendering
     for (const subgroup of group.subgroups) {
@@ -53,73 +50,10 @@ export class TileGroupGfxHelper {
     }
 
     for (const tileIndex of group.grid.tileIndices) {
-      const { x, z, i: memberIndex } = tileIndex
-      const box = group.tilePositions[memberIndex]
-      const dx = box.x - group.centerXZ.x
-      const dz = box.z - group.centerXZ.z
-      const dSquared = dx * dx + dz * dz
-
-      let rTile = group.generatedTiles[memberIndex]
-      if (dSquared < maxD2) {
-        // tile is inside visible radius
-        group.members[memberIndex].isVisible = true
-
-        if (rTile && !rTile.entranceStartTime) {
-          // tile just entered radius
-          rTile.entranceStartTime = Date.now()
-          delete rTile.exitStartTime
-        }
-        if (!rTile) {
-          rTile = group.generateTile(tileIndex)
-        }
-
-        // compute new colors if necessary
-        if (!rTile.colors) {
-          const { gTile } = rTile
-
-          // compute styled colors only on first render
-          rTile.colors = style.getTileColors({
-            x, z, generatedTile: gTile,
-
-            // support @land and @sea conditions in styles
-            land: !gTile.isWater, sea: gTile.isWater,
-          })
-        }
-
-        // have group member rendered
-        // always re-apply mesh instance colors
-        if (!this._updateRenderInstance(tileIndex, rTile)) {
-          // break // reached count limit
-        }
-      }
-      else {
-        // tile is outside visible radius
-        group.members[memberIndex].isVisible = false
-
-        if (rTile?.colors) {
-          // tile was generated and previously rendered
-
-          if (!rTile.exitStartTime) {
-            // tile just left visible radius
-            rTile.entranceStartTime = undefined
-            rTile.exitStartTime = Date.now()
-          }
-
-          const elapsed = Date.now() - rTile.exitStartTime
-          if (elapsed < EXIT_DURATION) {
-            // special case, tile recently left visible radius
-            // render even though outside of visible radius
-            if (!this._updateRenderInstance(tileIndex, rTile)) {
-              // break // reached count limit (subgroup.ts)
-            }
-          }
-          else {
-            // tile out of radius an will not be rendered
-            // rTile.exitStartTime = null
-            // rTile.style = null
-            this.liveRenderHeights[memberIndex] = NaN
-          }
-        }
+      const pipeline = pipelineFactory(tileIndex)
+      const stepsToRun = this.getFullStepsToRun(pipeline, seaBlock)
+      if (!this._updateRenderInstance(stepsToRun, style, tileIndex)) {
+        // break // reached count limit
       }
     }
 
@@ -130,9 +64,21 @@ export class TileGroupGfxHelper {
     }
   }
 
-  private _updateRenderInstance(tileIndex: TileIndex, rTile: RenderableTile): boolean {
+  private getFullStepsToRun(pipeline: Pipeline, seaBlock: SeaBlock) {
+    const result = [...pipeline.steps]
+    const extraStep = seaBlock.transition?.getExtraPipelineStep()
+    if (extraStep) {
+      result.push(extraStep)
+    }
+    return result
+  }
+
+  private _updateRenderInstance(
+    stepsToRun: Array<Step>, style: StyleParser, tileIndex: TileIndex,
+  ): boolean {
     const { group } = this
     const { x, z, i: memberIndex } = tileIndex
+
     if (typeof x === 'undefined') {
       throw new Error(`grid has no xz for memberIndex ${memberIndex}`)
     }
@@ -153,61 +99,51 @@ export class TileGroupGfxHelper {
       throw new Error('subgroup changed')
     }
 
-    const { gTile, colors } = rTile
-
-    const box = group.tilePositions[memberIndex]
-
-    // distance to truncate from bottom of tile
-    const cutoff = -gfxConfig.flatConfig.extendBottom / this.amplitude
-
-    let renderHeight: number
-    if (gTile.isWater) {
-      renderHeight = this.getAnimatedRenderHeight(
-        gTile.height,
-        group.sim.getWavePos(memberIndex),
-      )
+    // run pipeline
+    let current: TileValues = { height: 0, yOffset: 0 }
+    for (const step of stepsToRun) {
+      const result = step({ group: this.group, current, tileIndex, style })
+      if (!result) {
+        return true
+      }
+      current = result
+    }
+    const { height, yOffset, targetColors } = current // result of pipeline
+    if (targetColors) {
+      setTargetTileColors(tileIndex, targetColors)
     }
     else {
-      renderHeight = this.getNewRenderHeight(gTile, memberIndex)
+      // restoreTileColors(tileIndex)
     }
-    group.members[memberIndex].height = renderHeight // height for sphere collision
 
-    // compute tile animation (enter/exit at visible radius)
-    let anim = 1
-    const { entranceStartTime, exitStartTime } = rTile
-    if (exitStartTime) {
-      const elapsed = EXIT_DURATION - (Date.now() - exitStartTime)
-      anim = this._dampedAnim(elapsed, EXIT_DURATION)
+    // check pipeline result
+    const rTile = group.generatedTiles[memberIndex]
+    if (!rTile) {
+      return true
     }
-    else if (entranceStartTime) {
-      const elapsed = Date.now() - entranceStartTime
-      anim = this._dampedAnim(elapsed, ENTR_DURATION)
-    }
-    const entranceOffset = -Math.min(renderHeight - cutoff, anim)
+
+    group.members[memberIndex].height = height // height for sphere collision
 
     // compute tile animation (global drop-transition)
-    let transitionOffset = 0
-    if (DropTransition.gridAnim) {
-      const tileAnim = DropTransition.gridAnim.getTileValue(tileIndex, DropTransition.t)
-      transitionOffset = 500 * this._dampedAnim(1 - tileAnim, 1)
-    }
 
+    const cutoff = -gfxConfig.flatConfig.extendBottom / this.amplitude
+    const box = group.tilePositions[memberIndex]
     dummy.position.set(
       box.x,
-      Math.max(cutoff, renderHeight / 2 + cutoff / 2 + entranceOffset) + transitionOffset,
+      Math.max(cutoff, height / 2 + cutoff / 2) + yOffset,
       box.z,
     )
-    dummy.scale.set(1, Math.max(0, renderHeight + entranceOffset - cutoff), 1)
+    dummy.scale.set(1, Math.max(0, height - cutoff), 1)
 
-    this.liveRenderHeights[memberIndex] = dummy.position.y + dummy.scale.y / 2
+    rTile.liveHeight = dummy.position.y + dummy.scale.y / 2
 
     dummy.updateMatrix()
     const newIndexInSubgroup = subgroup.setMemberMatrix(memberIndex, dummy.matrix)
     group.subgroupsByFlatIndex[memberIndex] = [subgroup, newIndexInSubgroup]
-    if (colors) {
-      const tileMesh = subgroup.mesh as TileMesh
-      tileMesh.setColorsForInstance(newIndexInSubgroup, colors)
-    }
+
+    const tileMesh = subgroup.mesh as TileMesh
+    tileMesh.setColorsForInstance(newIndexInSubgroup, getLiveTileColors(tileIndex))
+
     return true // yes successful
   }
 
@@ -235,6 +171,10 @@ export class TileGroupGfxHelper {
     const progress = 1 - Math.pow(1 - t, 4)
     const axisVal = (1 - progress)
     return axisVal
+  }
+
+  getLiveHeight(tile: TileIndex): number | undefined {
+    return this.group.generatedTiles[tile.i]?.liveHeight
   }
 
   getAnimatedRenderHeight(tileHeight: number, wavePos: number) {

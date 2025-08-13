@@ -2,16 +2,9 @@
  * @file tiled-grid.ts
  *
  * Extended indexed-grid where square grid cells are
- * mapped 1-to-1 with tile shapes and positions.
+ * mapped to tile shapes and positions based on a tiling pattern.
  *
  * The tiling also defines adjacency between neighboring tiles.
- *
- * When a tile swaps to the opposite edge during panning,
- * it's shape and (torroidally-wrapped) adjacent neighbors
- * are assumed to be unchanged.
- *
- * Basically, tilings should be simple alternating patterns
- * and width/depth should always be even numbers.
  */
 import type { Spring } from '../physics/tile-sim'
 import type { TileIndex } from './indexed-grid'
@@ -24,11 +17,14 @@ export class TiledGrid extends IndexedGrid {
   private readonly _midX = this.width / 2
   private readonly _midZ = this.depth / 2
 
-  // set when used for water of flora simulation (tile-sim.ts)
+  // set when used for water or flora simulation (tile-sim.ts)
   public springsForTileSim?: ReadonlyArray<Spring>
 
-  constructor(width: number, depth: number,
-    public readonly tiling: Tiling) {
+  constructor(
+    width: number,
+    depth: number,
+    public readonly tiling: Tiling,
+  ) {
     super(width, depth)
   }
 

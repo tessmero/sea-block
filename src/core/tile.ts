@@ -10,7 +10,7 @@ export interface Tile {
   height: number
   normal: Vector3
 
-  isVisible: boolean
+  // isVisible: boolean
   isWater: boolean
   isFlora: boolean
 }

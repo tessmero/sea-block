@@ -6,29 +6,44 @@
  */
 
 import { Color } from 'three'
-import type { TilePart } from 'gfx/3d/tile-mesh'
+import { TILE_PARTS, type TilePart } from 'gfx/3d/tile-mesh'
 import type { TileColoringParams, TileColors } from 'gfx/styles/style'
-import { StartSequenceGame } from 'games/imp/start-sequence-game'
 import { typedEntries } from './typed-entries'
 
 export type CssStyle = Partial<Record<Selector, CssRuleset>>
 
 const defaultBackground = new Color(0xaaccff) // base background color
 
+const bgDummy = new Color()
+const dummy: TileColors = newTileColors()
+
+function newTileColors(): TileColors {
+  return TILE_PARTS.reduce((acc, partName) => {
+    acc[partName] = new Color()
+    return acc
+  }, {} as TileColors)
+}
+
 export class StyleParser {
   constructor(public readonly css: CssStyle) {}
 
   // overrid backgrond (no @conditions allowed)
   public getBackgroundColor(): Color {
-    return applyRuleset(defaultBackground, this.css.background)
+    bgDummy.copy(defaultBackground)
+    applyRuleset(bgDummy, this.css.background)
+    return bgDummy
   }
 
   // override non-background colors
   public getTileColors(params: TileColoringParams): TileColors {
     // get base color from generator
-    const result = {
-      top: params.generatedTile.color.clone(),
-      sides: params.generatedTile.color.clone(),
+    // const result = {
+    //   top: params.generatedTile.color.clone(),
+    //   sides: params.generatedTile.color.clone(),
+    // }
+    const result = dummy
+    for (const partName of TILE_PARTS) {
+      result[partName].copy(params.generatedTile.color)
     }
 
     // apply transformations
@@ -41,27 +56,27 @@ export class StyleParser {
           shouldParse = checkIfShouldParse(selector.atCondition, params)
         }
         if (shouldParse) {
-          result[key] = applyRuleset(result[key], ruleset, params)
+          applyRuleset(result[key], ruleset, params)
         }
       }
     }
 
-    // check for special case
-    if (StartSequenceGame.isColorTransformEnabled) {
-      // apply start sequence transformation
-      const anim = StartSequenceGame.colorTransformAnim
-      const lMult = Math.pow(0.2 + 0.8 * anim, -1) // lightness multiplier
-      for (const key in result) {
-      // result[key] = ruleHandlers['saturation'](result[key], StartSequenceGame.saturationPct)
-        const color = result[key] as Color
-        color.getHSL(hsl)
-        if (key === 'top') {
-          hsl.l *= lMult
-        }
-        hsl.h -= 0.95 * (1 - anim) // rotate hues
-        color.setHSL(hsl.h, hsl.s, hsl.l)
-      }
-    }
+    // // check for special case
+    // if (StartSequenceGame.isColorTransformEnabled) {
+    //   // apply start sequence transformation
+    //   const anim = StartSequenceGame.colorTransformAnim
+    //   const lMult = Math.pow(0.2 + 0.8 * anim, -1) // lightness multiplier
+    //   for (const key in result) {
+    //   // result[key] = ruleHandlers['saturation'](result[key], StartSequenceGame.saturationPct)
+    //     const color = result[key] as Color
+    //     color.getHSL(hsl)
+    //     if (key === 'top') {
+    //       hsl.l *= lMult
+    //     }
+    //     hsl.h -= 0.95 * (1 - anim) // rotate hues
+    //     color.setHSL(hsl.h, hsl.s, hsl.l)
+    //   }
+    // }
 
     return result
   }
@@ -94,22 +109,21 @@ interface ParsedRuleKey {
   atCondition?: AtCondition
 }
 
-// transform given color based on rules and tile-specific params
+// modify color based on rules and tile-specific params
 export function applyRuleset(
   color: Color,
   ruleset: CssRuleset | undefined,
   params?: TileColoringParams,
-): Color {
+): void {
   if (!ruleset) {
-    return color
+    return
   }
   for (const [rawKey, value] of Object.entries(ruleset)) {
     const { key, atCondition } = parseRuleKey(rawKey)
     if (checkIfShouldParse(atCondition, params)) {
-      color = ruleHandlers[key](color, value)
+      ruleHandlers[key](color, value)
     }
   }
-  return color
 }
 
 function parseSelector(selector: Selector): ParsedSelector {
@@ -163,7 +177,7 @@ function checkIfShouldParse(
 }
 
 // function that parses one css value and updates color
-type RuleHandler = (color: Color, val: CssValue) => Color
+type RuleHandler = (color: Color, val: CssValue) => void
 
 // functions for each css key
 const ruleHandlers: Record<CssKey, RuleHandler> = {
@@ -176,16 +190,16 @@ const ruleHandlers: Record<CssKey, RuleHandler> = {
   value: (color, val) => {
     const offset = getAsOffset(val)
     if (typeof offset === 'number') {
-      return color.addScalar(offset)
+      color.addScalar(offset)
     }
     const pct = getAsPercentage(val)
     if (typeof pct === 'number') {
-      return color.multiplyScalar(pct)
+      color.multiplyScalar(pct)
     }
     if (typeof val === 'number') {
-      return color.setRGB(val, val, val)
+      color.setRGB(val, val, val)
     }
-    return new Color(val)
+    color.set(val)
   },
 }
 

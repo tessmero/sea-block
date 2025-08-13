@@ -13,4 +13,5 @@ export interface Sphere {
   isVisible: boolean
   isGhost: boolean // ghosts don't collide with anything
   isFish: boolean // like ghost, but still effects water
+  scalePressure: number // multiply force pushing down on water
 }

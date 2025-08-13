@@ -6,10 +6,10 @@
 
 import type { GuiElement } from 'guis/gui'
 import { StartSequenceGame } from 'games/imp/start-sequence-game'
-import { DropTransition } from 'gfx/3d/drop-transition'
-import { Transition } from 'gfx/transition'
 import { Gui } from 'guis/gui'
 import { START_SEQUENCE_LAYOUT } from 'guis/layouts/start-sequence-layout'
+import { Transition } from 'gfx/transitions/transition'
+import { DropTransition } from 'gfx/transitions/imp/drop-transition'
 
 const skipBtn: GuiElement = {
   display: { type: 'button', label: 'SKIP' },

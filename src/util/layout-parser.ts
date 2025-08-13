@@ -15,7 +15,7 @@ export type ComputedRects = Readonly<Record<string, Rectangle>>
 
 // A ruleset describing one rectangle
 export type CssRuleset = Readonly<Partial<
-  { [K in CssKey]: CssValue }
+  { [K in CssKey | CssKeyAtCond]: CssValue }
   & { parent: string }
   & { children: CssLayout }
 >>
@@ -31,6 +31,8 @@ export type Rectangle = Readonly<{
 type BasicKey = 'left' | 'top' | 'right' | 'bottom' | 'width' | 'height'
 type ConditionalKey = `min-${BasicKey}` | `max-${BasicKey}`
 export type CssKey = BasicKey | ConditionalKey | 'margin'
+export type CssKeyAtCond = `${CssKey}@${AtCond}`
+export type AtCond = 'portrait' | 'landscape'
 export type CssValue = number | `${number}%` | 'auto'
 
 export function parseLayoutRectangles(screenRect: Rectangle, css: CssLayout): ComputedRects {
@@ -41,12 +43,20 @@ export function parseLayoutRectangles(screenRect: Rectangle, css: CssLayout): Co
 class GuiLayoutParser {
   public readonly _computedRects: Record<string, Rectangle> = {}
 
+  private isPortrait = false
+  private isLandscape = false
   private parent: Rectangle
 
   private _currentLayoutKey: string = ''
   private _childrenToParse: Record<string, CssLayout> = {}
 
   constructor(screenRect: Rectangle, css: CssLayout) {
+    if (screenRect.w > screenRect.h) {
+      this.isLandscape = true
+    }
+    else {
+      this.isPortrait = true
+    }
     this.parent = screenRect
     for (const [key, rules] of Object.entries(css)) {
       this.parent = screenRect
@@ -94,7 +104,26 @@ class GuiLayoutParser {
       }
       else {
       // Standard CSS rule application
-        rect = this.applyRule(rect, cssKey as CssKey, cssVal)
+        if (cssKey.includes('@')) {
+          const [prefix, suffix] = cssKey.split('@')
+          if (suffix === 'portrait') {
+            if (this.isPortrait) {
+              rect = this.applyRule(rect, prefix as CssKey, cssVal)
+            }
+          }
+          else if (suffix === 'landscape') {
+            if (this.isLandscape) {
+              rect = this.applyRule(rect, prefix as CssKey, cssVal)
+            }
+          }
+          else {
+            throw new Error(`invalid @ condition suffix: '${suffix}'. expected portait or landscape.`)
+          }
+        }
+        else {
+          // csskey has no @ condition
+          rect = this.applyRule(rect, cssKey as CssKey, cssVal)
+        }
       }
     }
 
