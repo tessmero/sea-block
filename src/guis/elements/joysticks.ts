@@ -27,8 +27,9 @@ const rightXDead = 0.05 // usually do want to rotate left or right
 // left touch region
 export const leftJoy: GuiElement = {
   display: {
-    type: 'joyRegion',
+    type: 'joy-region',
     border: '16x16-btn-square',
+    shouldClearBehind: true,
   },
   layoutKey: 'leftJoy',
   hotkeys: [],
@@ -57,8 +58,9 @@ export const leftJoySlider: Slider = {
 // right touch region
 export const rightJoy: GuiElement = {
   display: {
-    type: 'joyRegion',
+    type: 'joy-region',
     border: '16x16-btn-square',
+    shouldClearBehind: true,
   },
   layoutKey: 'rightJoy',
   hotkeys: [],

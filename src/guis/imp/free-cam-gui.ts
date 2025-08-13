@@ -5,7 +5,7 @@
  */
 
 import { leftJoy, leftJoySlider, rightJoy, rightJoySlider } from 'guis/elements/joysticks'
-import { configBtn, musicBtn } from 'guis/elements/misc-buttons'
+import { configBtn, musicBtn, grabbedMeshElements } from 'guis/elements/misc-buttons'
 import { wasdButtons } from 'guis/elements/wasd-buttons'
 import { Gui } from 'guis/gui'
 import { FREECAM_DESKTOP_LAYOUT } from 'guis/layouts/freecam-desktop-layout'
@@ -15,16 +15,29 @@ import { isTouchDevice } from 'mouse-touch-input'
 import type { SeaBlock } from 'sea-block'
 
 export class FreeCamGui extends Gui {
+  // public clickElem(elem: GuiElement, event: ElementEvent): void {
+  //   super.clickElem(elem, event)
+  //   if (targetElement.layoutKey === 'grabbedMesh') {
+  //     // // mesh is currently grabbed
+  //     // if (!grabbedMeshElements.includes(elem)) {
+
+  //     ungrabChessPiece(event.seaBlock)
+  //     // }
+  //   }
+  // }
+
   static {
     Gui.register('free-cam', {
       factory: () => new FreeCamGui(),
       elements: [
         // spritAtlasBtn,
         musicBtn,
+        // chessBtn,
         configBtn,
         leftJoy, leftJoySlider,
         rightJoy, rightJoySlider,
         ...wasdButtons,
+        ...grabbedMeshElements,
       ],
       allLayouts: [
         FREECAM_DESKTOP_LAYOUT,

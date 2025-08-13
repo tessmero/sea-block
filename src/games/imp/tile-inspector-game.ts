@@ -7,9 +7,9 @@
 import * as THREE from 'three'
 import type { SeaBlock } from 'sea-block'
 import type { Tile } from 'core/tile'
-import type { ProcessedSubEvent } from 'mouse-touch-input'
 import type { GameUpdateContext } from '../game'
 import { Game } from '../game'
+import type { TileInspectorGui } from 'guis/imp/tile-inspector-gui'
 
 // extra meshes to show when debugging is enabled
 function createDebugElems() {
@@ -52,15 +52,14 @@ export class TileInspectorGame extends Game {
   static {
     Game.register('tile-inspector', {
       factory: () => new TileInspectorGame(),
-      guiName: 'empty',
-      // elements: [
-      //   { meshLoader: async () => debugElems.center },
-      //   ...debugElems.adjacent.map(mesh => ({ meshLoader: async () => mesh })),
-      //   ...debugElems.diagonal.map(mesh => ({ meshLoader: async () => mesh })),
-      //   { meshLoader: async () => debugElems.normalArrow },
-      //   // { meshLoader: async () => debugElems.directionPoint },
-      // ],
-      // layout: () => ({}),
+      guiName: 'tile-inspector',
+      elements: [
+        { meshLoader: async () => debugElems.center },
+        ...debugElems.adjacent.map(mesh => ({ meshLoader: async () => mesh })),
+        ...debugElems.diagonal.map(mesh => ({ meshLoader: async () => mesh })),
+        { meshLoader: async () => debugElems.normalArrow },
+        // { meshLoader: async () => debugElems.directionPoint },
+      ],
     })
   }
 
@@ -84,17 +83,8 @@ export class TileInspectorGame extends Game {
   public update(context: GameUpdateContext): void {
     super.update(context)
     const { seaBlock } = context
-    // const { mouseState } = seaBlock
-    const mouseState: ProcessedSubEvent | undefined = undefined
     const { terrain } = seaBlock
-
-    // let intersection
-    let pickedTile
-
-    if (mouseState) {
-
-      // pickedTile = mouseState.pickedTileIndex
-    }
+    const { pickedTile } = this.gui as TileInspectorGui
 
     if (pickedTile) {
       const { x, z, i: pickedMemberId } = pickedTile

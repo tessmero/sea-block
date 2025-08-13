@@ -4,7 +4,7 @@
  * The sea-block three.js scene which may be re-built after startup.
  */
 import type { Color, Vector3 } from 'three'
-import { AmbientLight, Scene } from 'three'
+import { AmbientLight, DirectionalLight, Scene } from 'three'
 import type { SeaBlock } from 'sea-block'
 
 export type SeablockScene = {
@@ -20,9 +20,9 @@ export function buildScene(seaBlock: SeaBlock): SeablockScene {
 
   // Lights
   scene.add(new AmbientLight(0xffffff, 1))
-  // const directionalLight = new DirectionalLight(0xffffff, 1)
-  // directionalLight.position.set(5, 10, 5)
-  // scene.add(directionalLight)
+  const directionalLight = new DirectionalLight(0xffffff, 1)
+  directionalLight.position.set(5, 10, 5)
+  scene.add(directionalLight)
 
   // const skyScale = 1000
   // const skyGeo = new BoxGeometry(skyScale,skyScale,skyScale)
@@ -50,10 +50,16 @@ export function buildScene(seaBlock: SeaBlock): SeablockScene {
   // spheres
   seaBlock.sphereGroup.subgroups.forEach(subgroup => subgroup.addToScene(scene))
 
+  // game-specific elements
+  const currentGame = seaBlock.game
+  if (currentGame.meshes.length > 0) {
+    scene.add(...currentGame.meshes)
+  }
+
   return {
     threeScene: scene,
     update: (_target) => {}, // sky.position.copy(target),
-    add: obj => scene.add(obj),
+    add: (...obj) => scene.add(...obj),
     setBackground: color => scene.background = color, // sky.material.color = color,
   }
 }

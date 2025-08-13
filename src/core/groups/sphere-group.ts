@@ -17,6 +17,7 @@ class SphereIm extends InstancedMember implements Sphere {
   public isGhost = true
   public isVisible = false
   public isFish = false
+  public scalePressure = 1
 }
 
 export class SphereGroup extends Group<Sphere, SphereSim> {
@@ -85,8 +86,6 @@ export class SphereGroup extends Group<Sphere, SphereSim> {
   }
 
   updateMeshes() {
-    const dummy = new THREE.Object3D()
-
     for (let i = 0; i < this.n; i++) {
       const sphere = this.members[i]
       if (sphere) {
@@ -111,3 +110,5 @@ export class SphereGroup extends Group<Sphere, SphereSim> {
     }
   }
 }
+
+const dummy = new THREE.Object3D()

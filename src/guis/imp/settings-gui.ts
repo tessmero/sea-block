@@ -5,7 +5,7 @@
  */
 
 import { Gui } from 'guis/gui'
-import { SETTINGS_GUI_LAYOUT } from 'guis/layouts/settings-gui-layout'
+import { SETTINGS_LAYOUT } from 'guis/layouts/settings-layout'
 import type { GuiElement } from 'guis/gui'
 import { optionSelectorElements } from 'guis/elements/option-selector'
 import { gfxConfig } from 'configs/gfx-config'
@@ -85,7 +85,7 @@ export class SettingsGui extends Gui {
   static {
     Gui.register('settings-menu', {
       factory: () => new SettingsGui(),
-      layoutFactory: () => SETTINGS_GUI_LAYOUT,
+      layoutFactory: () => SETTINGS_LAYOUT,
       elements,
     })
   }

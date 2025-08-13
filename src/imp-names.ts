@@ -15,14 +15,17 @@ export type ImpManifest = {
 
 // configurables
 export const CONFIGURABLE = {
-  NAMES: ['sea-block', 'top', 'gfx', 'michael', 'physics', 'free-cam', 'flora'],
+  NAMES: ['sea-block', 'top', 'gfx', 'michael', 'physics', 'free-cam', 'flora', 'chess'],
   SOURCES: ['src/configs/**/*.ts'],
 } as const satisfies ImpManifest
 export type ConfigurableName = (typeof CONFIGURABLE.NAMES)[number]
 
 // games
 export const GAME = {
-  NAMES: ['start-sequence', 'free-cam', 'sphere-test', 'tile-inspector', 'splash-screen'],
+  NAMES: ['splash-screen', 'start-sequence', 'free-cam',
+    'sphere-test', 'tile-inspector',
+    'chess', 'free-chess',
+  ],
   SOURCES: ['src/games/imp/**/*.ts'],
 } as const satisfies ImpManifest
 export type GameName = (typeof GAME.NAMES)[number]
@@ -50,19 +53,15 @@ export type GridAnimName = (typeof GRID_ANIM.NAMES)[number]
 
 // transition animation sequences
 export const TRANSITION = {
-  NAMES: ['flat', 'drop', 'ssd'],
-  SOURCES: [
-    'src/gfx/2d/flat-transition.ts',
-    'src/gfx/3d/drop-transition.ts',
-    'src/gfx/ssd-transition.ts',
-  ],
+  NAMES: ['flat', 'drop', 'ssd', 'checkered', 'seamless'],
+  SOURCES: ['src/gfx/transitions/imp/**/*.ts'],
 } as const satisfies ImpManifest
 export type TransitionName = (typeof TRANSITION.NAMES)[number]
 
 // user interfaces
 export const GUI = {
   NAMES: [
-    'free-cam', 'splash-screen', 'start-sequence',
+    'free-cam', 'splash-screen', 'start-sequence', 'tile-inspector', 'chess',
     'empty', // placeholder used for games without gui
     'settings-menu', 'sprite-atlas', // test guis 2025-07-28
   ],

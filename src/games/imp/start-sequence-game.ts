@@ -5,7 +5,6 @@
  * Changes are lost on refreshing configurables.
  */
 
-import { typedEntries } from 'util/typed-entries'
 import { Vector3 } from 'three'
 import { gfxConfig } from 'configs/gfx-config'
 import type { SeaBlock } from 'sea-block'
@@ -14,6 +13,9 @@ import { michaelConfig } from 'configs/michael-config'
 import type { GameUpdateContext } from '../game'
 import { Game } from '../game'
 import { FreeCamGame } from './free-cam-game'
+import type { TileIndex } from 'core/grid-logic/indexed-grid'
+import type { Pipeline } from 'gfx/3d/pipelines/pipeline'
+import { startSequencePipeline } from 'gfx/3d/pipelines/start-sequence-pipeline'
 
 export class StartSequenceGame extends FreeCamGame {
   static {
@@ -23,28 +25,32 @@ export class StartSequenceGame extends FreeCamGame {
     })
   }
 
-  public static isColorTransformEnabled = false
+  // public static isColorTransformEnabled = false
   public static colorTransformAnim = 0// '0%'
 
-  public readonly distForFreeCam = 300 // distance to travel before switch to user-controlled accel
+  public readonly distForFreeCam = 120 // distance to travel before switch to user-controlled accel
   public traveled = 0 // distance
   public static wasSkipped = false
+
+  public getTerrainRenderPipeline(_tile: TileIndex): Pipeline {
+    return startSequencePipeline
+  }
 
   reset(context: SeaBlock) {
     super.reset(context)
 
-    StartSequenceGame.isColorTransformEnabled = true
+    // StartSequenceGame.isColorTransformEnabled = true
     StartSequenceGame.wasSkipped = false
 
     this.traveled = 0
-    for (const [_name, seg] of typedEntries(allSegments)) {
+    for (const [_name, seg] of allSegments) {
       seg.isFinished = false
     }
 
     const initial = getInitialParams()
     for (const param in initial) {
       try {
-        allSegments[param].apply(initial[param], context)
+        applyFunctions[param](initial[param], context)
       }
       catch (_e) {
         // console.log(e)
@@ -73,12 +79,14 @@ export class StartSequenceGame extends FreeCamGame {
       return
     }
 
+    this.waveMaker.wmRadius = 0// stay in center
+
     const changed = getChangedParams(this.traveled)
 
     for (const param in changed) {
       const newVal = changed[param]
       if (typeof newVal === 'number') {
-        allSegments[param].apply(newVal, seaBlock)
+        applyFunctions[param](newVal, seaBlock)
       }
     }
 
@@ -86,7 +94,9 @@ export class StartSequenceGame extends FreeCamGame {
       // if (!seaBlock.didBuildControls) {
       //   seaBlock.rebuildControls()
       // }
-      StartSequenceGame.isColorTransformEnabled = false
+      // StartSequenceGame.isColorTransformEnabled = false
+
+      // // working normal switch to free-cam
       seaBlock.setGame('free-cam')
       seaBlock.onGameChange()
       return
@@ -94,7 +104,7 @@ export class StartSequenceGame extends FreeCamGame {
     else {
       // start seuqnce is ongoing
       // set var checked in css-style to enable extra color transform
-      StartSequenceGame.isColorTransformEnabled = true
+      // StartSequenceGame.isColorTransformEnabled = true
     }
 
     // prepare to measure distance traveled this update
@@ -105,7 +115,7 @@ export class StartSequenceGame extends FreeCamGame {
 
     // accel wave maker towards center
     // this.updateWaveMaker(dt, seaBlock.mouseState, false)
-    this.updateWaveMaker(dt)
+    this.waveMaker.updateWaveMaker(context)
 
     // accel camera anchor towards fixed direction
     const { CAM_ACCEL } = freeCamGameConfig.flatConfig
@@ -120,7 +130,7 @@ export class StartSequenceGame extends FreeCamGame {
 
 function getInitialParams(): Record<keyof typeof allSegments, number> {
   const result = {}
-  for (const [param, seg] of typedEntries(allSegments)) {
+  for (const [param, seg] of allSegments) {
     result[param] = seg.multipliers[0]
   }
   return result as Record<keyof typeof allSegments, number>
@@ -131,7 +141,7 @@ function getChangedParams(
 ): Partial<Record<keyof typeof allSegments, number>> {
   const result = {}
 
-  for (const [param, seg] of typedEntries(allSegments)) {
+  for (const [param, seg] of allSegments) {
     if (seg.isFinished) {
       continue
     }
@@ -161,28 +171,46 @@ function getChangedParams(
 
 const target = new Vector3(1.95e9, 30, -1.618e9)
 
+type Segment = {
+  readonly distances: [number, number]
+  readonly multipliers: [number, number]
+  isFinished: boolean // set to true when final value is parsed
+}
+
 // parameters to adjust based on distance traveled
-const allSegments: Record<string, Segment> = {
+const allSegments: Array<[string, Segment]> = [
 
-  'accel': {
-    distances: [0, 20],
+  ['accel', {
+    distances: [0, 40],
     multipliers: [0.3, 1],
-    apply: (value, _seaBlock) => {
-      freeCamGameConfig.flatConfig.CAM_ACCEL = freeCamGameConfig.tree.children.CAM_ACCEL.value * value
-    },
     isFinished: false,
-  },
+  }],
+  ['visible-radius', {
+    distances: [0, 80],
+    multipliers: [0.1, 0.2],
+    isFinished: false,
+  }],
+  ['visible-radius', {
+    distances: [80, 90],
+    multipliers: [0.2, 1],
+    isFinished: false,
+  }],
+  ['peaks', {
+    distances: [0, 100],
+    multipliers: [0, 1],
+    isFinished: false,
+  }],
 
-  // saturation increases
-  'saturation': {
-    distances: [0, 180],
-    multipliers: [0.3, 1],
-    apply: (value) => {
-      // checked in css-style
-      StartSequenceGame.colorTransformAnim = value
-    },
-    isFinished: false,
-  },
+  // // saturation increases
+  // 'saturation': {
+  //   distances: [0, 180],
+  //   multipliers: [0.3, 1],
+  //   apply: (value) => {
+  //     // checked in start-sequence-pipeline
+  //     StartSequenceGame.colorTransformAnim = value
+  //   },
+  //   isFinished: false,
+  // },
 
   // // view zooms in beginning
   // 'fov': {
@@ -195,32 +223,16 @@ const allSegments: Record<string, Segment> = {
   //   isFinished: false,
   // },
 
-  // fraction of visible radius increases in beginning
-  'visible-radius': {
-    distances: [0, 180],
-    multipliers: [0.15, 1],
-    apply: (value) => {
-      gfxConfig.flatConfig.visibleRadius = gfxConfig.tree.children.visibleRadius.value * value
-    },
-    isFinished: false,
+]
+
+const applyFunctions: Record<string, (value: number, seaBlock: SeaBlock) => void> = {
+  'accel': (value) => {
+    freeCamGameConfig.flatConfig.CAM_ACCEL = freeCamGameConfig.tree.children.CAM_ACCEL.value * value
   },
-
-  // transition from all-ocean to full terrain
-  'peaks': {
-    distances: [200, 280],
-    multipliers: [0, 1],
-    apply: (value, _seaBlock) => {
-      michaelConfig.flatConfig.peaks = michaelConfig.tree.children
-        .terrainCustomization.children.peaks.value * value
-    },
-    isFinished: false,
+  'visible-radius': (value) => {
+    gfxConfig.flatConfig.visibleRadius = gfxConfig.tree.children.visibleRadius.value * value
   },
-
-}
-
-type Segment = {
-  readonly distances: [number, number]
-  readonly multipliers: [number, number]
-  readonly apply: (value: number, seaBlock: SeaBlock) => void
-  isFinished: boolean // set to true when final value is parsed
+  'peaks': (value) => {
+    michaelConfig.flatConfig.peaks = michaelConfig.tree.children.terrainCustomization.children.peaks.value * value
+  },
 }

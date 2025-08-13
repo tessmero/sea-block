@@ -25,6 +25,7 @@ const seaBlockConfigTree = {
     physics: physicsConfig.tree,
     freeCamGame: freeCamGameConfig.tree,
     michael: michaelConfig.tree,
+    // chess: chessGameConfig.tree,
 
     // musicTest: { // test built song
     //   label: 'Play/Stop Music',

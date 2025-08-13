@@ -14,7 +14,8 @@ import { addToSpriteAtlas } from './sprite-atlas'
 
 export type ElementType
   = 'button' | 'panel' | 'label'
-    | 'joyRegion' // special case, clear region behind element
+    | 'diagram' // buffer to draw on
+    | 'joy-region' // special button, clear region behind element
     | 'sprite-atlas' // special case, atlas buffer excluded from atlas
 
 export type BorderVariant
@@ -49,7 +50,9 @@ function getHash(params: ElementImagesetParams): string {
 
 const cache: Record<string, ElementImageset> = {}
 
-export type ElementImageset = Partial<Record<ButtonState, OffscreenCanvas>>
+export type ElementImageset
+  = Partial<Record<ButtonState, OffscreenCanvas>>
+  // & { default: OffscreenCanvas }
 
 export function getElementImageset(rawParams: ElementImagesetParams): ElementImageset {
   const params: ElementImagesetParams = {
@@ -71,7 +74,8 @@ const imagesetBuilders: Record<
     'button': _buildButtonImageset,
     'label': _buildLabelImageset,
     'panel': _buildPanelImageset,
-    'joyRegion': _buildJoyRegionImageset,
+    'joy-region': _buildJoyRegionImageset,
+    'diagram': _buildDiagramImageset,
     'sprite-atlas': _buildAtlasImageset,
   }
 
@@ -91,9 +95,15 @@ function buildImageset(params: ElementImagesetParams): ElementImageset {
   return result
 }
 
-function _buildAtlasImageset(_params: ElementImagesetParams): ElementImageset {
-  // console.log(`build atlas imageset ${JSON.stringify(params)}`)
+function _buildDiagramImageset(params: ElementImagesetParams): ElementImageset {
+  const { w, h } = params
+  const image = new OffscreenCanvas(w, h)
+  return {
+    default: image,
+  }
+}
 
+function _buildAtlasImageset(_params: ElementImagesetParams): ElementImageset {
   const image = new OffscreenCanvas(500, 500)
   return {
     default: image,

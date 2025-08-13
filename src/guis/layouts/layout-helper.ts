@@ -31,34 +31,15 @@ const joySlider = {
   height: 24,
 } satisfies CssRuleset
 
-export const standards = {
-  btnSize, pad, btn,
-  joySize, joy, joySlider,
+const point = {
+  width: 0,
+  height: 0,
 } as const
 
-// common buttons at top of screen
-export const commonLayout = {
-
-  // 2027-08-01 show sprite atlas test gui
-  spritAtlasBtn: {
-    ...btn,
-    width: 5 * btn.width,
-    left: 'auto',
-  },
-
-  // config on top left
-  configBtn: { ...btn,
-    top: pad,
-    left: pad,
-  },
-
-  // play/stop on top right
-  musicBtn: { ...btn,
-    top: pad,
-    right: pad,
-  },
-
-} as const satisfies CssLayout
+export const standards = {
+  btnSize, pad, btn, point,
+  joySize, joy, joySlider,
+} as const
 
 // used to preload elements for guis that may switch layout modes
 export function getElementDims(

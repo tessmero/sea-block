@@ -15,7 +15,7 @@ import {
 import { Game } from '../../src/games/game'
 import { Tiling } from '../../src/core/grid-logic/tilings/tiling'
 import { TerrainGenerator } from '../../src/generators/terrain-generator'
-import { Transition } from '../../src/gfx/transition'
+import { Transition } from '../../src/gfx/transitions/transition'
 import { GridAnimation } from '../../src/gfx/grid-anims/grid-animation'
 import { Configurable } from '../../src/configs/configurable'
 import { Gui } from '../../src/guis/gui'
@@ -57,6 +57,7 @@ describe('Implementation Registration', async function () {
 
           assert(factory,
             `"${name}" ${baseClassName} should have factory registered`)
+
           assert(typeof factory === 'function',
             `"${name}" ${baseClassName} registered factory should be a function, 
             but it is a ${typeof factory}: ${JSON.stringify(factory)}`)

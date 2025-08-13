@@ -16,34 +16,58 @@ function sng(name) {
   return { src: `music/${name}.ogg`, volume: 0.1 }
 }
 
-// for f in public/music/*.ogg; do b=${f##*/}; echo "'${b%.ogg}':sng('${b%.ogg}'),"; done
-const SONGS = {
-  debussy: sng('debussy'),
-  couperin: sng('couperin'),
-  satie: sng('satie'),
-  mozart: sng('mozart'),
-} as const satisfies Record<string, SongParams>
+const SONG_NAMES = ['debussy', 'satie', 'mozart', 'chopin'] as const
+export type SongName = (typeof SONG_NAMES)[number]
 
-const SONG_NAMES = [...Object.keys(SONGS)]
-export type SongName = keyof typeof SONGS
+const SONGS = Object.fromEntries(
+  SONG_NAMES.map(name => [name, sng(name)]),
+) as Record<SongName, SongParams>
+
+export const FREECAM_PLAYLIST = [
+  'satie', 'debussy', 'mozart',
+] as const satisfies Array<SongName>
+export const CHESS_PLAYLIST = ['chopin'] as const satisfies Array<SongName>
+
+let currentPlaylist: Array<SongName> = FREECAM_PLAYLIST
+
+let currentSong: SongParams = SONGS[0]
 
 let currentHowl: Howl | null = null
 let isPlaying = false
 let lastPlayedIndex = -1
 
-function playNextTrack(): void {
+// set live volume, used to fade out during transition
+export function scaleSongVolume(scale: number) {
+  if (!currentHowl) {
+    return
+  }
+  currentHowl.volume(currentSong.volume * scale)
+}
+
+export function playNextTrack(playlist?: Array<SongName>): void {
+  if (playlist) {
+    currentPlaylist = playlist
+  }
+  isPlaying = true
+  _playNextTrack()
+}
+
+function _playNextTrack(): void {
   if (!isPlaying) return
 
+  // console.log('play next track', JSON.stringify(currentPlaylist))
+
   // const i = Math.floor(Math.random() * SONG.NAMES.length)
-  const i = (lastPlayedIndex + 1) % SONG_NAMES.length
-  const { src, volume } = SONGS[SONG_NAMES[i]]
+  const i = (lastPlayedIndex + 1) % currentPlaylist.length
+  currentSong = SONGS[currentPlaylist[i]]
+  const { src, volume } = currentSong
   lastPlayedIndex = i
 
-  // Stop previous audio if needed
   if (currentHowl) {
+    currentHowl.stop()
     currentHowl.unload()
+    currentHowl = null
   }
-
   currentHowl = new Howl({
     src: [src],
     format: ['ogg'],
@@ -51,10 +75,11 @@ function playNextTrack(): void {
     html5: true, // Recommended for streaming-like behavior
     onend: () => {
       // console.log('Track ended, playing next…')
-      playNextTrack()
+      _playNextTrack()
     },
   })
 
+  // console.log('play song howl')
   currentHowl.play()
 }
 
@@ -62,7 +87,7 @@ function playNextTrack(): void {
 export function toggleRadio(): void {
   if (!isPlaying) {
     isPlaying = true
-    playNextTrack()
+    _playNextTrack()
   }
   else {
     isPlaying = false
