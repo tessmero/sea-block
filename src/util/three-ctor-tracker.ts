@@ -21,7 +21,7 @@ function getCount(ctorName) {
   return THREE[ctorName].constructedCount || 0
 }
 
-function snapshot() {
+function _snapshot() {
   const counts = {}
   for (const ctorName of TRACKED_CTORS) {
     counts[ctorName] = getCount(ctorName)
@@ -29,17 +29,17 @@ function snapshot() {
   return counts as Record<TrackedCtor, number>
 }
 
-export function startThreeCtorCheck() {
-  const startCounts = snapshot()
-  setTimeout(() => {
-    for (const ctorName of TRACKED_CTORS) {
-      const delta = getCount(ctorName) - startCounts[ctorName]
-      if (delta > 0) {
-        console.log(`constructed ${delta} ${ctorName} in one second`)
-      }
-    }
-  }, 1000)
-}
+// export function startThreeCtorCheck() {
+//   const startCounts = _snapshot()
+//   setTimeout(() => {
+//     for (const ctorName of TRACKED_CTORS) {
+//       const delta = getCount(ctorName) - startCounts[ctorName]
+//       if (delta > 0) {
+//         console.log(`constructed ${delta} ${ctorName} in one second`)
+//       }
+//     }
+//   }, 1000)
+// }
 
-// Sample every second
-window.setInterval(startThreeCtorCheck, 1000)
+// // Sample every second
+// window.setInterval(startThreeCtorCheck, 1000)

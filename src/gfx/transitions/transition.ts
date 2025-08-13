@@ -15,7 +15,7 @@ import type { SeaBlock } from 'sea-block'
 import { Color } from 'three'
 import type { SweepSegment } from './imp/flat-transition-segments'
 import type { FlatTransition } from './imp/flat-transition'
-import type { Step } from 'gfx/3d/tile-render-pipeline/pipeline'
+import type { Step } from 'gfx/3d/pipelines/pipeline'
 
 export function randomTransition(context: SeaBlock): Transition {
   // const name = randChoice(TRANSITION.NAMES)
@@ -34,7 +34,7 @@ export abstract class Transition {
   public getExtraPipelineStep(): Step | null { return null }
   public doesAllowMidTransitionReset = true
 
-  protected totalDuration = 1500 // ms
+  public totalDuration = 1500 // ms
   private elapsed = 0 // ms
   public didFinishCover = false
   public didFinishUncover = false

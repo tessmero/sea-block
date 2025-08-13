@@ -5,12 +5,13 @@
  */
 
 import { Vector3 } from 'three'
-import { GameElement, type GameUpdateContext } from '../game'
+import type { GameElement } from '../game'
+import { type GameUpdateContext } from '../game'
 import { emptyScene, type SeaBlock } from 'sea-block'
 import type { TileIndex } from 'core/grid-logic/indexed-grid'
 import { setTilePickY, type ProcessedSubEvent } from 'mouse-touch-input'
 import type { RenderablePiece, UniquePiece } from './chess-3d-gfx-helper'
-import { instancedPieceMeshes, resetMeshes, treasureChestElement, updateMeshes } from './chess-3d-gfx-helper'
+import { resetMeshes, updateMeshes } from './chess-3d-gfx-helper'
 import { ChessHlTiles } from './chess-hl-tiles'
 import { ChessMoveAnim } from './chess-move-anim'
 import type { ChessGui } from 'guis/imp/chess-gui'
@@ -27,7 +28,7 @@ import type { CollectibleName } from './levels/chess-levels.json.d'
 import type { TilePosition } from 'core/grid-logic/tiled-grid'
 import { buildPawnMoves, buildEnemyMoves, nextPhasePickers } from './chess-sequences'
 import { Transition } from 'gfx/transitions/transition'
-import { chessBoardPipeline } from 'gfx/3d/tile-render-pipeline/chess-board-pipeline'
+import { chessBoardPipeline } from 'gfx/3d/pipelines/chess-board-pipeline'
 import { chessRun, START_COLLECTED, START_PAWNS } from './chess-run'
 import { SeamlessTransition } from 'gfx/transitions/imp/seamless-transition'
 import { CAMERA } from 'settings'
@@ -54,6 +55,7 @@ export function clearChessRun(): void {
   isResetQueued = true
   chessRun.collectedPawns = START_PAWNS
   chessRun.collected = [...START_COLLECTED]
+  chessRun.completedLevels = []
 }
 
 let isResetQueued = true
@@ -67,13 +69,16 @@ export function resetChess(context: SeaBlock): Chess {
     instance = new Chess(context)
   }
   chessBoardPipeline.setHlTiles(instance.hlTiles)
+  togglePauseMenu(instance, false)
 
   return instance
 }
 
-export function quitChess(chess: Chess, seaBlock: SeaBlock): void {
+export function quitChess(chess: Chess): void {
+  const seaBlock = chess.context
+
   // reset ui to default state
-  togglePauseMenu(seaBlock, false)
+  togglePauseMenu(chess, false)
   toggleGameOverMenu(seaBlock, false)
   clearChessRun()
 
@@ -146,7 +151,7 @@ export class Chess {
     cancelPawnBtn.display.needsUpdate = true
 
     // this.currentPieceType = context.config.flatConfig.chessPieceType
-    const { orbitControls, terrain } = context
+    const { terrain } = context
 
     const chessGui = Gui.create('chess') as ChessGui
     chessGui.chess = this
@@ -154,8 +159,9 @@ export class Chess {
     this.hlTiles = new ChessHlTiles(terrain)
 
     // find center tile based on camera target
-    const { target } = orbitControls
-    const { x, z } = target
+    const { x, z } = terrain.centerXZ
+    // const { target } = orbitControls
+    // const { x, z } = target
     const coord = terrain.grid.positionToCoord(x, z)
     const center = terrain.grid.xzToIndex(coord.x, coord.z)
     if (!center) {
@@ -192,7 +198,7 @@ export class Chess {
     }
 
     // sphere to interact with water and make waves
-    this.waveMaker = new ChessWaveMaker(context.sphereGroup.members[1])
+    this.waveMaker = new ChessWaveMaker(context.sphereGroup.members[1], context)
   }
 
   private centerCameraOnChessBoard(_dt: number) {
@@ -266,7 +272,7 @@ export class Chess {
     }
 
     // update world
-    this.waveMaker.updateWaveMaker(dt)
+    this.waveMaker.updateWaveMaker(context)
     this.centerCameraOnChessBoard(dt)
 
     // use goal tile as representative (should always be part of chess board)
@@ -292,7 +298,7 @@ export class Chess {
   public identifyPiece(type: PieceName, index: number): RenderablePiece | undefined {
     const candidates = [this.player, ...this.pawns, ...this.enemies]
     for (const piece of candidates) {
-      if ( piece.type === type && 'index' in piece && piece.index === index) {
+      if (piece.type === type && 'index' in piece && piece.index === index) {
         return piece
       }
     }
@@ -324,6 +330,7 @@ export class Chess {
         emptyScene.background = flatChessBackground
         resetChess(this.context)
         this.context.onGameChange()
+        this.context.game.resetCamera(this.context)
       },
     })
   }
@@ -361,7 +368,7 @@ export class Chess {
     this.currentMove = new ChessMoveAnim(startPos, endPos, clickedTile)
     this.currentPhase = 'player-anim'
 
-    playSound('chessPlonk')
+    playSound('chessJump')
 
     // // highlight new tile already
     // this.player.tile = clickedTile

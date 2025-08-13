@@ -16,7 +16,7 @@ function sng(name) {
   return { src: `music/${name}.ogg`, volume: 0.1 }
 }
 
-const SONG_NAMES = ['debussy', 'couperin', 'satie', 'mozart', 'chopin'] as const
+const SONG_NAMES = ['debussy', 'satie', 'mozart', 'chopin'] as const
 export type SongName = (typeof SONG_NAMES)[number]
 
 const SONGS = Object.fromEntries(
@@ -24,7 +24,7 @@ const SONGS = Object.fromEntries(
 ) as Record<SongName, SongParams>
 
 export const FREECAM_PLAYLIST = [
-  'debussy', 'couperin', 'satie', 'mozart',
+  'satie', 'debussy', 'mozart',
 ] as const satisfies Array<SongName>
 export const CHESS_PLAYLIST = ['chopin'] as const satisfies Array<SongName>
 

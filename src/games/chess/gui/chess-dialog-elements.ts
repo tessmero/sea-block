@@ -6,19 +6,20 @@
  */
 
 import type { GuiElement } from 'guis/gui'
+import type { Chess } from '../chess-helper'
 import { quitChess } from '../chess-helper'
 import type { SeaBlock } from 'sea-block'
 import type { ChessButton } from './chess-button'
 import { playSound } from 'audio/sound-effects'
 
-export const gameOverLabel: GuiElement = {
-  layoutKey: 'gameOverLabel',
-  display: {
-    type: 'label',
-    label: 'GAME OVER',
-    isVisible: false,
-  },
-}
+// export const gameOverLabel: GuiElement = {
+//   layoutKey: 'gameOverLabel',
+//   display: {
+//     type: 'label',
+//     label: 'GAME OVER',
+//     isVisible: false,
+//   },
+// }
 const pauseMenuPanel: GuiElement = {
   layoutKey: 'pauseMenuPanel',
   display: {
@@ -42,19 +43,19 @@ const resumeBtn: ChessButton = {
     label: 'resume',
     isVisible: false,
   },
-  chessAction: ({ chess, seaBlock }) => {
+  chessAction: ({ chess }) => {
     playSound('click')
     // quitChess(chess, seaBlock)
-    togglePauseMenu(seaBlock, false)
+    togglePauseMenu(chess, false)
   },
 }
-const gameOverPanel: GuiElement = {
-  layoutKey: 'gameOverPanel',
-  display: {
-    type: 'panel',
-    isVisible: false,
-  },
-}
+// const gameOverPanel: GuiElement = {
+//   layoutKey: 'gameOverPanel',
+//   display: {
+//     type: 'panel',
+//     isVisible: false,
+//   },
+// }
 const quitBtn: ChessButton = {
   layoutKey: 'quitBtn',
   display: {
@@ -62,9 +63,9 @@ const quitBtn: ChessButton = {
     label: 'quit chess',
     isVisible: false,
   },
-  chessAction: ({ chess, seaBlock }) => {
+  chessAction: ({ chess }) => {
     playSound('click')
-    quitChess(chess, seaBlock)
+    quitChess(chess)
   },
 }
 
@@ -75,7 +76,7 @@ const pauseMenuElements = [
 ]
 
 let isPauseMenuVisible = false
-export function togglePauseMenu(seaBlock: SeaBlock, state?: boolean) {
+export function togglePauseMenu(chess: Chess, state?: boolean) {
   if (typeof state === 'boolean') {
     isPauseMenuVisible = state
   }
@@ -87,12 +88,18 @@ export function togglePauseMenu(seaBlock: SeaBlock, state?: boolean) {
     display.isVisible = isPauseMenuVisible
     display.needsUpdate = true
   }
-  seaBlock.layeredViewport.handleResize(seaBlock)
+
+  if (chess.currentPhase === 'game-over') {
+    quitBtn.display.isVisible = true
+  }
+
+  chess.context.layeredViewport.handleResize(chess.context)
 }
 
 const gameOverElements = [
-  gameOverPanel,
-  gameOverLabel, quitBtn,
+  // gameOverPanel,
+  // gameOverLabel,
+  quitBtn,
 ]
 
 export const CHESS_DIALOG_ELEMENTS = [

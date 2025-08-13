@@ -26,6 +26,8 @@ interface ChessUpdateContext extends GameUpdateContext {
   chess: Chess
 }
 
+let ongoingMove: ChessMoveAnim | undefined = undefined
+
 const PHASE_UPDATERS = {
 
   // phases with no passive chess-related animation
@@ -48,7 +50,8 @@ const PHASE_UPDATERS = {
         if (capturedPiece) {
           const enemyIndex = chess.enemies.indexOf(capturedPiece)
           if (enemyIndex >= 0) {
-            // pawn was captured
+            // enemy was captured
+            playSound('chessGoodCapture')
             chess.enemies.splice(enemyIndex, 1) // delete captured enemy
             resetMeshes(chess, chess.player, [...chess.pawns], [...chess.enemies])
           }
@@ -93,6 +96,13 @@ const PHASE_UPDATERS = {
     if (i >= 0) {
       const piece = chess.pawns[i]
       const move = chess.pawnMoves[i] as ChessMoveAnim
+
+      if (move !== ongoingMove) {
+        // just started move
+        ongoingMove = move
+        playSound('chessJump')
+      }
+
       const isFinished = move.update(dt)
       setPiecePosition(piece, move.getLivePosition())
       if (isFinished) {
@@ -109,7 +119,8 @@ const PHASE_UPDATERS = {
         if (capturedPiece) {
           const enemyIndex = chess.enemies.indexOf(capturedPiece)
           if (enemyIndex >= 0) {
-            // pawn was captured
+            // enemy was captured
+            playSound('chessGoodCapture')
             chess.enemies.splice(enemyIndex, 1) // delete captured enemy
             resetMeshes(chess, chess.player, [...chess.pawns], [...chess.enemies])
           }
@@ -130,6 +141,17 @@ const PHASE_UPDATERS = {
     if (i >= 0) {
       const piece = chess.enemies[i]
       const move = chess.enemyMoves[i] as ChessMoveAnim
+
+      if (move.endTile === chess.player.tile) {
+        dt /= 2 // slow down last move before game over
+      }
+
+      if (move !== ongoingMove) {
+        // just started move
+        ongoingMove = move
+        playSound('chessJump')
+      }
+
       const isFinished = move.update(dt)
       setPiecePosition(piece, move.getLivePosition())
       if (isFinished) {
@@ -140,11 +162,13 @@ const PHASE_UPDATERS = {
           const pawnIndex = chess.pawns.indexOf(capturedPiece)
           if (pawnIndex >= 0) {
             // pawn was captured
+            playSound('chessBadCapture')
             chess.pawns.splice(pawnIndex, 1) // delete captured pawn
             resetMeshes(chess, chess.player, [...chess.pawns], [...chess.enemies])
           }
           else if (capturedPiece === chess.player) {
             // player was captured
+            playSound('chessBadCapture')
             chess.currentPhase = 'game-over'
             toggleGameOverMenu(chess.context, true)
           }

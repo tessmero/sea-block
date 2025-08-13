@@ -11,6 +11,8 @@ import { getImage } from 'gfx/2d/image-asset-loader'
 import { buildGoalDiagram } from '../chess-2d-gfx-helper'
 import { togglePauseMenu } from './chess-dialog-elements'
 import type { ChessButton } from './chess-button'
+import { playSound } from 'audio/sound-effects'
+import { quitChess } from '../chess-helper'
 
 // 2D chess game view
 export const flatViewport: GuiElement = {
@@ -67,25 +69,19 @@ const topLeftB: GuiElement = {
   },
 }
 
-const topRightBtn: GuiElement = {
+const topRightBtn: ChessButton = {
   layoutKey: 'topRightBtn',
   display: {
     type: 'button',
     icon: 'icons/16x16-x.png',
   },
-  clickAction: (event) => {
-    // clearChessRun()
-    // const { seaBlock } = event
-    // const item = seaBlock.config.tree.children.game
-    // item.value = 'free-cam'
-    // SeamlessTransition.desiredCameraOffset.copy(CAMERA)
-    // SeamlessTransition.snapshotTerrain(seaBlock)
-    // seaBlock.startTransition({
-    //   transition: Transition.create('seamless', seaBlock),
-    // })
-    // seaBlock.onCtrlChange(item)
+  chessAction: ({ chess }) => {
+    if (chess.currentPhase === 'game-over') {
+      playSound('click')
+      quitChess(chess)
+    }
 
-    togglePauseMenu(event.seaBlock)
+    togglePauseMenu(chess)
   },
 }
 
@@ -183,6 +179,7 @@ export const pawnBtn: ChessButton = {
     // icon: 'icons/chess/8x8-pawn.png',
   },
   chessAction: ({ chess }) => {
+    playSound('click')
     chess.startPlacePawn()
   },
 }
@@ -204,6 +201,7 @@ export const cancelPawnBtn: ChessButton = {
     label: 'CANCEL',
   },
   chessAction: ({ chess }) => {
+    playSound('click')
     chess.cancelPlacePawn()
   },
 }

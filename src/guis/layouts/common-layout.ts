@@ -57,7 +57,6 @@ export const COMMON_LAYOUT = {
   },
   grabbedMeshDiagram: {
     parent: 'grabbedMeshPanel',
-    top: 8,
     width: -16,
     left: 'auto',
     height: 40,

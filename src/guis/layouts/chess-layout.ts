@@ -56,7 +56,7 @@ export const CHESS_LAYOUT = {
   // pause menu
   pauseMenuPanel: {
     width: 5 * 16,
-    height: 5 * 16,
+    height: 3 * 16,
     left: 'auto',
     top: 'auto',
   },
@@ -71,7 +71,6 @@ export const CHESS_LAYOUT = {
   resumeBtn: {
     parent: 'pauseMenuInner',
     height: 16,
-    top: 'auto',
   },
   quitBtn: {
     parent: 'pauseMenuInner',
@@ -80,16 +79,16 @@ export const CHESS_LAYOUT = {
   },
 
   // game over dialog
-  gameOverPanel: {
-    width: 5 * 16,
-    height: 5 * 16,
-    left: 'auto',
-    top: 'auto',
-  },
-  gameOverLabel: {
-    parent: 'pauseMenuInner',
-    height: 20,
-  },
+  // gameOverPanel: {
+  //   width: 5 * 16,
+  //   height: 3 * 16,
+  //   left: 'auto',
+  //   bottom: 20,
+  // },
+  // gameOverLabel: {
+  //   parent: 'gameOverPanel',
+  //   height: 20,
+  // },
 
   // change piece hint
   switchPieceHint: {

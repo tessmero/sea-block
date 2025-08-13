@@ -5,13 +5,13 @@
  */
 
 import type { GameName, GeneratorName, TilingName } from '../imp-names'
-import { GAME, GENERATOR, TILING } from '../imp-names'
+import { GENERATOR, TILING } from '../imp-names'
 import { Configurable } from './configurable'
 import type { ConfigTree, OptionItem } from './config-tree'
 
-export const isDevMode = true
+export const isDevMode = false
 function applyDevMode(cfg: typeof topConfigTree.children) {
-  cfg.game.value = 'chess'
+  cfg.game.value = 'free-cam'
   cfg.game.isHidden = false
 
   cfg.generator.value = 'Michael2-3B'
@@ -40,7 +40,7 @@ const topConfigTree = {
 
     game: {
       value: 'start-sequence',
-      options: GAME.NAMES,
+      options: ['chess', 'tile-inspector', 'free-cam', 'start-sequence'],
       // isHidden: true,
     } as OptionItem<GameName>,
 
@@ -60,6 +60,7 @@ const topConfigTree = {
       label: 'Transitions',
       value: 'enabled',
       options: ['enabled', 'skip'],
+      isHidden: true,
     } as OptionItem<'enabled' | 'skip'>,
   },
 } satisfies ConfigTree

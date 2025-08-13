@@ -67,7 +67,7 @@ const michaelConfigTree = {
         max: 10,
         step: 0.05,
         resetOnChange: 'full' },
-      peaks: { value: 0.25,
+      peaks: { value: 0.2,
         min: 0,
         max: 0.25,
         step: 0.01,

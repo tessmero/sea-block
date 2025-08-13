@@ -36,17 +36,17 @@ export function buildGrabbedMeshDiagram(elem: StaticElement) {
   const ctx = buffer.getContext('2d') as OffscreenCanvasRenderingContext2D
   ctx.clearRect(0, 0, width, height)
   ctx.strokeStyle = 'black'
-  ctx.strokeRect(0.5, 0.5, width - 1, height - 1)
+  // ctx.strokeRect(0.5, 0.5, width - 1, height - 1)
 
   // draw chess piece icon
   const iconImage = getImage('icons/chess/16x16-rook.png')
-  ctx.drawImage(iconImage, 5, 5, iconImage.width, iconImage.height)
+  ctx.drawImage(iconImage, 9, 14, iconImage.width, iconImage.height)
 
   // draw text
-  drawText(ctx, { width, height, label: 'ROOK', offset: [0, -8] })
+  drawText(ctx, { width, height, label: 'ROOK', offset: [6, 3] })
 
   // draw text
-  drawText(ctx, { width, height, label: 'CHESS PIECE', font: 'mini', offset: [0, 10] })
+  drawText(ctx, { width, height, label: 'CHESS PIECE', font: 'mini', offset: [0, -12] })
 }
 
 export function updatePawnButtonLabel() {
@@ -303,6 +303,7 @@ function drawTile(ctx, x: number, y: number, tileColors: TileColors) {
 
 // red copies of piece images
 const enemyImages: Partial<Record<PieceName, CanvasImageSource>> = {}
+const enemyRgba = [200, 0, 0, 255]
 
 // called in startup
 export async function preloadChessSprites(): Promise<void> {
@@ -323,7 +324,7 @@ export async function preloadChessSprites(): Promise<void> {
       const data = imageData.data
       for (let p = 0; p < data.length; p += 4) {
         if (data[p + 3] > 0) {
-          const [r, g, b, a] = [255, 0, 0, 255]
+          const [r, g, b, a] = enemyRgba
           data[p] = r
           data[p + 1] = g
           data[p + 2] = b

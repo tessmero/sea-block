@@ -20,6 +20,8 @@ import { grabbedMeshDiagram, grabbedMeshElements } from 'guis/elements/misc-butt
 import { buildGrabbedMeshDiagram } from 'games/chess/chess-2d-gfx-helper'
 import { setMaterial } from 'gfx/3d/gui-3d-gfx-helper'
 import { getOutlinedMesh } from 'games/chess/chess-outline-gfx'
+import { playSound } from 'audio/sound-effects'
+import { ChessWaveMaker } from 'games/chess/chess-wave-maker'
 
 export const MOUSE_DEADZONE = 50 // (px) center of screen with zero force
 export const MOUSE_MAX_RAD = 200 // (px) radius with max force
@@ -59,7 +61,7 @@ const pickablePieceElement: GameElement = {
       }
     })
 
-    const scale = 3
+    const scale = 1
     pickablePieceMesh.scale.set(scale, scale, scale)
 
     // add black outline effect
@@ -72,6 +74,7 @@ const pickablePieceElement: GameElement = {
   defaultMat: pickableMat,
   hoverMat: hoveredMat,
   clickAction: ({ seaBlock }) => {
+    playSound('click')
     if (targetElement.layoutKey === 'grabbedMesh') {
       ungrabChessPiece(seaBlock)
       return
@@ -119,6 +122,7 @@ export function ungrabChessPiece(seaBlock: SeaBlock) {
 }
 
 export const originalTargetMeshPosition = new Vector3()
+let hasSetOriginalPickablePos = false
 export let targetMesh: Mesh
 export const targetElement: GameElement = {
 
@@ -156,7 +160,7 @@ export class FreeCamGame extends Game {
 
   // assigned post-construction in reset()
   protected cameraAnchor!: Sphere
-  protected waveMaker!: Sphere
+  protected waveMaker!: ChessWaveMaker
 
   protected _lastAnchorPosition = new Vector3()
 
@@ -172,13 +176,8 @@ export class FreeCamGame extends Game {
     this.cameraAnchor.position.set(x, 30, z)
     this._lastAnchorPosition.copy(this.cameraAnchor.position)
 
-    // init sphere to interact with water and make waves
-    this.waveMaker = sphereGroup.members[1]
-    this.waveMaker.isGhost = false
-    // this.waveMaker.isFish = true
-    // this.waveMaker.isVisible = false
-    this.waveMaker.position.set(x, 20, z)
-    sphereGroup.setInstanceColor(1, new Color(0xff0000))
+    // sphere to interact with water and make waves
+    this.waveMaker = new ChessWaveMaker(sphereGroup.members[1], context)
 
     // pan terrain,camera,target based on anchor x/z
     this.centerOnAnchor(context)
@@ -189,7 +188,10 @@ export class FreeCamGame extends Game {
 
   private initPickableChessPiece(context: SeaBlock) {
     const { x, y, z } = context.orbitControls.target
-    originalTargetMeshPosition.set(x, y + 2, z)
+    if (!hasSetOriginalPickablePos) {
+      hasSetOriginalPickablePos = true
+      originalTargetMeshPosition.set(x, y + 2, z)
+    }
     targetMesh.position.copy(originalTargetMeshPosition)
     pickablePieceMesh.position.copy(targetMesh.position)
   }
@@ -201,25 +203,18 @@ export class FreeCamGame extends Game {
     context.camera.position.set(x + cam.x, cam.y, z + cam.z)
   }
 
-  protected updateWaveMaker(dt: number): void {
-    const { x, z } = this.cameraAnchor.position
-    // move towards picked point
-    // this.accelSphere(this.waveMaker, mouseState.intersection, 1e-4 * dt)
-
-    // move towards center
-    posDummy.set(x, 0, z)
-    this.accelSphere(this.waveMaker, posDummy, 1e-4 * dt)
-
-    // respawn if fell under terrain
-    if (this.waveMaker.position.y < 10) {
-      this.waveMaker.position.set(x, 10, z)
-    }
-  }
-
   static hasGrabbedMeshReachedTarget = true
 
   public update(context: GameUpdateContext): void {
     const { seaBlock, dt } = context
+
+    // if (targetElement.layoutKey) {
+    //   // mesh is grabbed and in gui
+    //   pickablePieceMesh.rotateY(0.005 * dt) // add spinning animation
+    // }
+
+    this.waveMaker.wmRadius = seaBlock.config.flatConfig.visibleRadius / 2
+    this.waveMaker.sphere.scalePressure = 0.5
 
     // flashing animation
     pickableMat.color.lerpColors(...pickableFlashColors,
@@ -245,7 +240,8 @@ export class FreeCamGame extends Game {
     this.centerOnAnchor(seaBlock)
 
     // accel wave maker towards center
-    this.updateWaveMaker(dt)
+    this.waveMaker.updateWaveMaker(context)
+    // this.updateWaveMaker(dt)
 
     // accel cam anchor towards picked intersection point
     const { CAM_ACCEL } = this.config.flatConfig

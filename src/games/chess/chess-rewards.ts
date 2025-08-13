@@ -58,6 +58,12 @@ export const COLLECTIBLES: Record<CollectibleName, Collectible> = {
     },
   },
 
+  'rook': {
+    description: 'Unlock Rook',
+    icon: 'icons/chess/16x16-rook.png',
+    isValid: () => !chessRun.collected.includes('rook'),
+  },
+
   'bishop': {
     description: 'Unlock Bishop',
     icon: 'icons/chess/16x16-bishop.png',
@@ -67,25 +73,22 @@ export const COLLECTIBLES: Record<CollectibleName, Collectible> = {
   'knight': {
     description: 'Unlock Knight',
     icon: 'icons/chess/16x16-knight.png',
-    isValid: () => !chessRun.collected.includes('knight'),
-  },
-
-  'rook': {
-    description: 'Unlock Rook',
-    icon: 'icons/chess/16x16-rook.png',
-    isValid: () => !chessRun.collected.includes('rook'),
+    isValid: () => !chessRun.collected.includes('knight')
+      && chessRun.collected.includes('bishop'),
   },
 
   'queen': {
     description: 'Unlock Queen',
     icon: 'icons/chess/16x16-queen.png',
-    isValid: () => !chessRun.collected.includes('queen'),
+    isValid: () => !chessRun.collected.includes('queen')
+      && chessRun.collected.includes('knight'),
   },
 
   'king': {
     description: 'Unlock King',
     icon: 'icons/chess/16x16-king.png',
-    isValid: () => !chessRun.collected.includes('king'),
+    isValid: () => !chessRun.collected.includes('king')
+      && chessRun.collected.includes('queen'),
   },
 
 }

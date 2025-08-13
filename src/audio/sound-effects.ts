@@ -21,14 +21,23 @@ const SOUND_EFFECTS = {
   unclick: { src: ['kenney/select_001.ogg'], volume: 0.08 },
   collapse: { src: ['kenney/minimize_006.ogg'], volume: 0.1 },
 
-  chessClick: { src: ['kenney/glass_002.ogg'], volume: 0.1 },
-  chessCancel: { src: ['kenney/error_004.ogg'], volume: 0.1 },
-  chessLand: { src: ['kenney/glass_002.ogg'], volume: 0.1 },
+  chessClick: { src: ['kenney/click_002.ogg'], volume: 0.2 },
+  chessCancel: { src: ['kenney/error_004.ogg'], volume: 0.08 },
+  chessLand: { src: [
+    'kenney/impactWood_medium_000.ogg',
+    'kenney/impactWood_medium_001.ogg',
+    'kenney/impactWood_medium_002.ogg',
+    'kenney/impactWood_medium_003.ogg',
+    'kenney/impactWood_medium_004.ogg',
+  ], volume: 0.2 },
+  chessGoodCapture: { src: ['kenney/select_006.ogg'], volume: 0.2 },
+  chessBadCapture: { src: ['kenney/error_005.ogg'], volume: 0.5 },
   // chessConfirm: { src: ['kenney/glass_005.ogg'], volume: 0.1 },
 
-  chessPlonk: { src: [
-    'kenney/glass_002.ogg',
-  ], volume: 0.04 },
+  chessJump: { src: [
+    'kenney/drop_001.ogg',
+  ], volume: 0.07 },
+
   chessCelebrate: { src: [
     'chess/celebrate1.ogg',
     'chess/celebrate2.ogg',

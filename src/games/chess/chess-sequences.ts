@@ -34,6 +34,7 @@ export const nextPhasePickers: Record<ChessPhase, (chess: Chess) => ChessPhase> 
   'place-pawn': () => 'player-choice',
   'reward-choice': () => 'player-choice',
   'game-over': () => 'game-over',
+  'reached-chest': () => 'reward-choice',
 }
 
 // prep moves for enemy-anim phase

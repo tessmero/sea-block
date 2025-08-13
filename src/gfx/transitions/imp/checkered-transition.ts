@@ -9,10 +9,13 @@ import { SsdTransition } from 'gfx/transitions/imp/ssd-transition'
 import { Transition } from 'gfx/transitions/transition'
 import type { SweepSegment } from './flat-transition-segments'
 import type { SeaBlock } from 'sea-block'
+import type { ColorRepresentation } from 'three'
 // type RGB = [number, number, number]
 
 export class ChessTransition extends SsdTransition {
   static { Transition.register('checkered', () => new ChessTransition() as unknown as Transition) }
+
+  public totalDuration: number = 3000
 
   protected reset(context: SeaBlock): void {
     super.reset(context)
@@ -29,7 +32,7 @@ export class ChessTransition extends SsdTransition {
         t0: 0.4,
         t1: 0.6,
         tiling: checkeredTiling,
-        colors: ['#D1BB9E', '#E1E2EF'],
+        colors: pickTransitionColors(),
       } satisfies SweepSegment,
       {
         ...result.at(-1) as SweepSegment,
@@ -38,6 +41,16 @@ export class ChessTransition extends SsdTransition {
       } satisfies SweepSegment,
     ]
   }
+}
+
+const allColors = [
+  ['#D1BB9E', '#E1E2EF'],
+  ['#81E28F', '#E1E2EF'],
+  ['#B3CFFF', '#E1E2EF'],
+]
+function pickTransitionColors() {
+  const pair = allColors[Math.floor(Math.random() * allColors.length)]
+  return pair as [ColorRepresentation, ColorRepresentation]
 }
 
 // unregistered square tiling that technically has two alternating tile shapes

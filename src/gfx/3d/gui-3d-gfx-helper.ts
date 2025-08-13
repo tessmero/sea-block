@@ -16,7 +16,8 @@ export function setMaterial(elem: GameElement | Object3D, mat: Material) {
 
   mesh.traverse((child) => {
     if (child instanceof Mesh) {
-      if ((child as any).isOutline) {
+      // check extra property added in chess-outline-gfx.ts
+      if ((child as any).isOutline) { // eslint-disable-line @typescript-eslint/no-explicit-any
         return // don't change material for outline mesh
       }
 
@@ -38,7 +39,10 @@ export function alignGuiGroup(
   screenRect: Rectangle,
 ) {
   const { w, h } = screenRect
-  const depth = w > h ? -20 : -40
+  let depth = -7
+  if (w < h) {
+    depth *= 2 // scale down gui mesh in portrait mode
+  }
 
   const fov = camera.fov * (Math.PI / 180)
   const height = 2 * Math.abs(depth) * Math.tan(fov / 2)

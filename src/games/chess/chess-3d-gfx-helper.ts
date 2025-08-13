@@ -17,18 +17,35 @@ import { getImage } from 'gfx/2d/image-asset-loader'
 import type { TileIndex } from 'core/grid-logic/indexed-grid'
 import type { Chess } from './chess-helper'
 import { showCurrentPiece } from './gui/chess-hud-elements'
-import type { Pipeline } from 'gfx/3d/tile-render-pipeline/pipeline'
-import { chessBoardPipeline } from 'gfx/3d/tile-render-pipeline/chess-board-pipeline'
-import { freeCamPipeline } from 'gfx/3d/tile-render-pipeline/free-cam-pipeline'
+import type { Pipeline } from 'gfx/3d/pipelines/pipeline'
+import { chessBoardPipeline } from 'gfx/3d/pipelines/chess-board-pipeline'
+import { freeCamPipeline } from 'gfx/3d/pipelines/free-cam-pipeline'
 import type { SeaBlock } from 'sea-block'
 import { getOutlinedMesh } from './chess-outline-gfx'
 import { setMaterial } from 'gfx/3d/gui-3d-gfx-helper'
 
-const LANDSCAPE_CAMERA = new Vector3(0, 5, 4)
-const PORTRAIT_CAMERA = LANDSCAPE_CAMERA.clone().multiplyScalar(1.5)
+// default camera angles
+const LANDSCAPE_CAMERAS = [
+  new Vector3(0, 5, 4),
+  new Vector3(1, 5, 4),
+  new Vector3(4, 6, 4),
+]
+
+// portrait view is zoomed out extra
+const PORTRAIT_CAMERAS = LANDSCAPE_CAMERAS.map(v => v.clone().multiplyScalar(1.6))
+
 export function getChessCamOffset(seaBlock: SeaBlock) {
   const { w, h } = seaBlock.layeredViewport
-  return h > w ? PORTRAIT_CAMERA : LANDSCAPE_CAMERA
+  const arr = h > w ? PORTRAIT_CAMERAS : LANDSCAPE_CAMERAS
+  return arr[Math.floor(Math.random() * arr.length)]
+}
+
+export function resetChessCamera(context: SeaBlock): void {
+  // console.log('reset chess camera')
+  const { x, z } = context.terrain.centerXZ
+  const cam = getChessCamOffset(context)
+  const { y } = context.orbitControls.target
+  context.camera.position.set(x + cam.x, y + cam.y, z + cam.z)
 }
 
 // replace pipeline for certain tiles
@@ -55,7 +72,7 @@ export type InstancedPiece = {
 }
 export type RenderablePiece = UniquePiece | InstancedPiece
 const enemyColor = new Color(0xff0000)
-const friendColor = new Color(0x00ff00)
+const friendColor = new Color(0x333333)
 
 // loaded meshes
 export const instancedPieceMeshes: Partial<Record<PieceName, InstancedMesh>> = {}
@@ -109,14 +126,18 @@ export const outlinedPieceElements: Array<GameElement>
     // center and sit on y=0
     geom.center()
     geom.computeBoundingBox()
-    const { min, max } = geom.boundingBox as Box3
-    geom.translate(0, -min.y, 0)
+    const { min } = geom.boundingBox as Box3
+    // geom.translate(0, -min.y, 0)
 
     const scale = 0.3
     geom.scale(scale, scale, scale)
     let result = new Group().add(new Mesh(geom, child.material))
 
     result = getOutlinedMesh(result, { scale: 1.1, dilate: -0.04 })
+    result.children.forEach((child) => {
+      child.position.y -= min.y
+    })
+
     result.visible = false
     outlinedPieceMeshes[pieceType] = result
     // (im as any).gameElement = chessPieceElements[pieceType] // checked in mouse-touch-input.ts
@@ -177,7 +198,6 @@ export const instancedPieceElements: Array<InstancedPieceElement>
       im.setColorAt(0, new Color()) // init color buffer
       im.count = 0
       instancedPieceMeshes[pieceType] = im
-      // (im as any).gameElement = chessPieceElements[pieceType] // checked in mouse-touch-input.ts
 
       return im
     },
@@ -262,7 +282,7 @@ export function registerInstancedPiece(type: PieceName, tile: TileIndex, isEnemy
   const color = isEnemy ? enemyColor : friendColor
   instancedMesh.setColorAt(index, color)
   instancedMesh.instanceColor!.needsUpdate = true
-  console.log(`registered ${type} piece at index ${index}, isEnemy = ${isEnemy}, color ${color.getStyle()}`)
+  // console.log(`registered ${type} piece at index ${index}, isEnemy = ${isEnemy}, color ${color.getStyle()}`)
   return { instancedMesh, index, tile, type, isEnemy }
 }
 

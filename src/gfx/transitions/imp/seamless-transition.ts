@@ -8,10 +8,14 @@ import type { SeaBlock } from 'sea-block'
 import { Transition } from '../transition'
 import { Vector3 } from 'three'
 import { lerpCameraSpherical } from 'gfx/3d/lerp-camera'
-import type { Step } from 'gfx/3d/tile-render-pipeline/pipeline'
+import type { Step } from 'gfx/3d/pipelines/pipeline'
+
+const cameraLerpSpeed = 4e2
 
 export class SeamlessTransition extends Transition {
   static { Transition.register('seamless', () => new SeamlessTransition()) }
+
+  public totalDuration = 800
 
   // game/terrain changes should be applied when starting this transition
   public doesAllowMidTransitionReset = false // not halfway through
@@ -36,7 +40,20 @@ export class SeamlessTransition extends Transition {
     return ({ current, tileIndex }) => {
       const startHeight = SeamlessTransition.snapshot[tileIndex.i] || current.height
       const alpha = Math.min(1, this.fractionDone + 0.5)
+
+      // // debug
+      // const delta = Math.abs(startHeight - current.height)
+      // if (delta > 10) {
+      //   console.log('seamless lerp terrain big delta')
+      // }
+
       current.height = avg(startHeight, current.height, alpha)
+
+      // // debug
+      // if (current.height > 20) {
+      //   console.log('seamless lerp terrain big height')
+      // }
+
       return current
     }
   }
@@ -60,7 +77,7 @@ export class SeamlessTransition extends Transition {
     const { camera, orbitControls } = this.context
     const { target } = orbitControls
     lerpCameraSpherical(camera, target,
-      SeamlessTransition.desiredCameraOffset, dt * 1e3)
+      SeamlessTransition.desiredCameraOffset, dt * cameraLerpSpeed)
   }
 
   public _hide(t0: number, t1: number): void {

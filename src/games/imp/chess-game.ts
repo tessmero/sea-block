@@ -9,6 +9,7 @@ import { chessAllow3DRender, resetChess, updateChess } from 'games/chess/chess-h
 import {
   treasureChestElement, instancedPieceElements, getChessPipeline, getChessCamOffset,
   outlinedPieceElements,
+  resetChessCamera,
 } from 'games/chess/chess-3d-gfx-helper'
 
 export class ChessGame extends Game {
@@ -38,6 +39,8 @@ export class ChessGame extends Game {
     //   }
     // }
   }
+
+  resetCamera = resetChessCamera
 
   getTerrainRenderPipeline = tile => getChessPipeline(this.chess, tile)
   update = updateChess

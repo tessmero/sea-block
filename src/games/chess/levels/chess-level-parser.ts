@@ -38,7 +38,7 @@ function pickValidLevel(): number {
   }
 
   if (candidates.length === 0) {
-    console.log('no valid chess levels')
+    // console.log('no valid chess levels')
     return 0
   }
 

@@ -31,8 +31,12 @@ import { Tiling } from './core/grid-logic/tilings/tiling'
 import { TiledGrid } from './core/grid-logic/tiled-grid'
 import { updateFrontLayer } from './gfx/2d/flat-gui-gfx-helper'
 import { alignGuiGroup, alignMeshInGuiGroup } from 'gfx/3d/gui-3d-gfx-helper'
-import { randomTransition, Transition } from 'gfx/transitions/transition'
+import type { Transition } from 'gfx/transitions/transition'
+import { randomTransition } from 'gfx/transitions/transition'
 import { preloadChessSprites } from 'games/chess/chess-2d-gfx-helper'
+import { gfxConfig } from 'configs/gfx-config'
+import { physicsConfig } from 'configs/physics-config'
+import { freeCamGameConfig } from 'configs/free-cam-game-config'
 
 // can only be constructed once
 let didConstruct = false
@@ -358,7 +362,7 @@ export class SeaBlock {
 
     this.config.refreshConfig()
     // debugElems.refresh(this.config.flatConfig.debug)
-    // gfxConfig.refreshConfig()
+    gfxConfig.refreshConfig()
     generator.refreshConfig()
 
     for (const gui of this.getLayeredGuis()) {
@@ -374,27 +378,27 @@ export class SeaBlock {
     }
     else {
       // this.game.refreshConfig() // refresh existing game
-      // freeCamGameConfig.refreshConfig()
+      freeCamGameConfig.refreshConfig()
       this.orbitControls.enabled = this.game.doesAllowOrbitControls(this)
     }
 
     // check for regular setting change
     if (item.resetOnChange === 'full') {
-      if (this.config.flatConfig.transitionMode === 'skip') {
-        // skip transition
-        this.onMidTransition()
-        return // update done with midtransition
-      }
-      else {
-        // start transition
-        this.transition = Transition.create('flat', this)
-        this.isCovering = true
-        return // wait for mid transition to actually update
-      }
+      // if (this.config.flatConfig.transitionMode === 'skip') {
+      // skip transition
+      this.onMidTransition()
+      return // update done with midtransition
+      // }
+      // else {
+      //   // start transition
+      //   this.transition = Transition.create('flat', this)
+      //   this.isCovering = true
+      //   return // wait for mid transition to actually update
+      // }
     }
     else if (item.resetOnChange === 'physics') {
       // soft reset (physics)
-      // physicsConfig.refreshConfig()
+      physicsConfig.refreshConfig()
     }
     else {
       // soft reset (graphics)

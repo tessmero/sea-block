@@ -20,10 +20,14 @@ export function getOutlinedMesh(group: Group, params?: { scale: number, dilate: 
       child.renderOrder = 99 // on top
 
       // add scaled black copy as outline
-      if (scale < 1) { throw new Error('scale should not be less than one') }
+      if (scale < 1) {
+        throw new Error('scale should not be less than one')
+      }
       if (scale > 1) {
         const scaledOutlineMesh = child.clone();// new Mesh(child.geometry, outlineMat)
-        (scaledOutlineMesh as any).isOutline = true
+
+        // add extra property checked in (gui-3d-gfx-helper.ts)
+        (scaledOutlineMesh as any).isOutline = true // eslint-disable-line @typescript-eslint/no-explicit-any
         scaledOutlineMesh.material = outlineMat
         scaledOutlineMesh.scale.multiplyScalar(scale)
         group.add(scaledOutlineMesh)
@@ -32,7 +36,10 @@ export function getOutlinedMesh(group: Group, params?: { scale: number, dilate: 
 
       // add dilated black copy as outline
       const outlineMesh = child.clone();// new Mesh(child.geometry, outlineMat)
-      (outlineMesh as any).isOutline = true
+
+      // add extra property checked in (gui-3d-gfx-helper.ts)
+      (outlineMesh as any).isOutline = true// eslint-disable-line @typescript-eslint/no-explicit-any
+
       outlineMesh.material = outlineMat
       // outlineMesh.scale.multiplyScalar(1.1)
       if (dilate > 0) {

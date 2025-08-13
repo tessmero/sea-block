@@ -5,6 +5,7 @@
  */
 
 import { CHESS_PLAYLIST, playNextTrack, toggleRadio } from 'audio/song-playlist'
+import { playSound } from 'audio/sound-effects'
 import { getChessCamOffset } from 'games/chess/chess-3d-gfx-helper'
 import { ungrabChessPiece } from 'games/imp/free-cam-game'
 import { SeamlessTransition } from 'gfx/transitions/imp/seamless-transition'
@@ -34,6 +35,7 @@ export const grabbedMeshPlayButton: GuiElement = {
     isVisible: false,
   },
   clickAction: ({ seaBlock }) => {
+    playSound('click')
     // restore original mesh position
     ungrabChessPiece(seaBlock)
     // targetElement.layoutKey = undefined
@@ -69,6 +71,8 @@ export const grabbedMeshCancelButton: GuiElement = {
   },
   clickAction: ({ seaBlock }) => {
     // restore original mesh position
+
+    playSound('click')
     ungrabChessPiece(seaBlock)
   },
 }

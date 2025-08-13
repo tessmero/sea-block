@@ -20,8 +20,8 @@ import type { SeaBlock } from '../sea-block'
 import { CAMERA, CAMERA_LOOK_AT, PORTRAIT_CAMERA } from '../settings'
 import type { ElementEvent } from '../guis/gui'
 import { Gui } from '../guis/gui'
-import { freeCamPipeline } from 'gfx/3d/tile-render-pipeline/free-cam-pipeline'
-import type { Pipeline } from 'gfx/3d/tile-render-pipeline/pipeline'
+import { freeCamPipeline } from 'gfx/3d/pipelines/free-cam-pipeline'
+import type { Pipeline } from 'gfx/3d/pipelines/pipeline'
 import type { TileIndex } from 'core/grid-logic/indexed-grid'
 
 export type GameElement = {
