@@ -1,16 +1,14 @@
-# sea-block
+
+
+<h1>
+<img src="https://github.com/tessmero/sea-block/raw/main/tests/gfx/test-images/octagon-tiling.png"/>Sea Block</h1>
+
+[![Node.js CI](https://github.com/tessmero/sea-block/actions/workflows/node.js.yml/badge.svg)](https://github.com/tessmero/sea-block/actions/workflows/node.js.yml)
 
 [Live Demo](https://tessmero.github.io/sea-block)
 
+
 Explore infinite blocky oceans and terrain. 
-
-Features:
-
-- A TypeScript adaptation of [Michael2-3B's Terrain Generator](https://github.com/Michael2-3B/Procedural-Perlin-Terrain)
-- Three.js / WebGL graphics
-- Camera and player movement control based on three.js OrbitCamera
-- Water physics animation
-
 
 ### Usage
 
@@ -48,17 +46,22 @@ Run unit tests defined in `tests`
 npm run test
 ```
 
-
-
 Output minified product in `dist`
 
 ```
 npm run build:prod
 ```
 
-Generate music assets in `public/music`.
+### Resources
 
-```
-npx ts-node tools/midi-music/build-songs.ts
-```
+[Michael2-3B](https://github.com/Michael2-3B/Procedural-Perlin-Terrain) - terrain generator
 
+[Kenney](https://kenney.nl/assets/ui-audio) - sound effect assets
+
+[kunstderfuge.com](https://www.kunstderfuge.com) - classical music midis (.mid)
+
+[Falcosoft](https://falcosoft.hu/softwares.html#midiplayer) - sound font (.sf2) and tools
+
+[SpessaSynth](https://spessasus.github.io/SpessaSynth/) - play midi with sound font in javascript
+
+[Sketchfab](https://sketchfab.com/robie1/collections/low-poly-chess-set) - chess pieces (.obj)

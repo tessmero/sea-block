@@ -77,12 +77,14 @@ function _getTempImage(shape: TileShape, color: [number, number, number]): Offsc
 }
 
 // Load all tile images for a set of shapes and scales
-export async function preloadPixelTiles(shapes: Array<TileShape>): Promise<void> {
+export async function preloadPixelTiles(shapes: Array<TileShape>, urlPrefix = ''): Promise<void> {
   const promises: Array<Promise<void>> = []
 
   for (const shape of shapes) {
     const fname = getTileImageFilename(shape)
-    const src = `images/tile-shapes/${fname}`
+    // const src = `public/images/tile-shapes/${fname}`
+    const src = `${urlPrefix}images/tile-shapes/${fname}`
+    // throw new Error(src)
     promises.push(new Promise<void>((resolve, reject) => {
       const img = new Image()
       img.onload = () => {
@@ -108,7 +110,7 @@ export async function preloadPixelTiles(shapes: Array<TileShape>): Promise<void>
           }
           ctx.putImageData(imageData, 0, h * i)
         }
-        const outImg = new window.Image()
+        const outImg = new Image()
         outImg.onload = () => {
           tileImageCache.set(fname, outImg)
           addToSpriteAtlas(outImg)

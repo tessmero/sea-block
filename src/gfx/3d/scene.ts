@@ -45,15 +45,21 @@ export function buildScene(seaBlock: SeaBlock): SeablockScene {
   seaBlock.terrain.subgroups.forEach(subgroup => subgroup.addToScene(scene))
 
   // flora
-  seaBlock.floraGroup.subgroups.forEach(subgroup => subgroup.addToScene(scene))
+  if (seaBlock.floraGroup) {
+    seaBlock.floraGroup.subgroups.forEach(subgroup => subgroup.addToScene(scene))
+  }
 
   // spheres
-  seaBlock.sphereGroup.subgroups.forEach(subgroup => subgroup.addToScene(scene))
+  if (seaBlock.sphereGroup) {
+    seaBlock.sphereGroup.subgroups.forEach(subgroup => subgroup.addToScene(scene))
+  }
 
   // game-specific elements
-  const currentGame = seaBlock.game
-  if (currentGame.meshes.length > 0) {
-    scene.add(...currentGame.meshes)
+  if (seaBlock.game) {
+    const currentGame = seaBlock.game
+    if (currentGame.meshes.length > 0) {
+      scene.add(...currentGame.meshes)
+    }
   }
 
   return {

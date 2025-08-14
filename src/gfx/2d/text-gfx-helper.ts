@@ -1,5 +1,5 @@
 /**
- * @file pixel-text-gfx-helper.ts
+ * @file text-gfx-helper.ts
  *
  * Used to draw text labels for gui elements on front layer.
  */

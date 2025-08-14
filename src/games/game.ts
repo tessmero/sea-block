@@ -109,11 +109,7 @@ export abstract class Game {
       elem.mesh = mesh
       instance.meshes.push(mesh)
       if (elem.clickAction || elem.isPickable) {
-        // add property to element and descendants to check when picked (moust-touch-input.ts)
-        (mesh as any).gameElement = elem // eslint-disable-line @typescript-eslint/no-explicit-any
-        mesh.traverse((child) => {
-          (child as any).gameElement = elem // eslint-disable-line @typescript-eslint/no-explicit-any
-        })
+        linkGamElement(mesh, elem)
         instance.pickableMeshes.push(mesh)
       }
     }))
@@ -130,6 +126,22 @@ export abstract class Game {
 
     return instance
   }
+}
+
+function linkGamElement(mesh: Object3D, elem: GameElement) {
+  // add property to element and descendants to check when picked (moust-touch-input.ts)
+  (mesh as any).gameElement = elem // eslint-disable-line @typescript-eslint/no-explicit-any
+  mesh.traverse((child) => {
+    (child as any).gameElement = elem // eslint-disable-line @typescript-eslint/no-explicit-any
+  })
+}
+
+export function unlinkGameElement(mesh: Object3D) {
+  // remove property to element and descendants to check when picked (moust-touch-input.ts)
+  (mesh as any).gameElement = undefined // eslint-disable-line @typescript-eslint/no-explicit-any
+  mesh.traverse((child) => {
+    (child as any).gameElement = undefined // eslint-disable-line @typescript-eslint/no-explicit-any
+  })
 }
 
 // object that subclassese should pass to Game.register()

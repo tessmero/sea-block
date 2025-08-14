@@ -9,7 +9,7 @@ import { Group } from 'three'
 import { InstancedMesh } from 'three'
 import { Color, Vector3 } from 'three'
 import { CanvasTexture, Mesh, MeshLambertMaterial } from 'three'
-import type { GameElement } from 'games/game'
+import { unlinkGameElement, type GameElement } from 'games/game'
 import { getMesh } from 'gfx/3d/mesh-asset-loader'
 import type { PieceName } from './chess-enums'
 import { PIECE_NAMES } from './chess-enums'
@@ -319,6 +319,7 @@ export function resetMeshes(chess: Chess,
   // only player's unique mesh is visible
   for (const mesh of Object.values(outlinedPieceMeshes)) {
     mesh.visible = false
+    unlinkGameElement(mesh)
   }
   chess.player.mesh.visible = true
 

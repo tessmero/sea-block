@@ -56,6 +56,19 @@ export function flushSourceModules() {
   // console.log(`flushed ${srcModules.length} source modules`)
 }
 
+// // load all source for integration tests
+// export function loadAllSourceModules() {
+//   const absPattern = path.join(__dirname, '../src/**/*.ts')
+//   const mainPath = path.resolve(path.join(__dirname, '../src/main.ts'))
+//   for (const file of glob.sync(absPattern)) {
+//     const modulePath = path.resolve(file)
+//     if( modulePath === mainPath ){
+//       continue // exclude main.ts
+//     }
+//     const _reqResult = require(modulePath)
+//   }
+// }
+
 type Snapshot = {
   srcModules: Array<string>
   allModules: Array<string>

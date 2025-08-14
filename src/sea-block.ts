@@ -74,8 +74,6 @@ export class SeaBlock {
       throw new Error('SeaBlock constructed multiple times')
     }
     didConstruct = true
-
-    layeredViewport.init(this)
   }
 
   // used at natural start sequence end, to switch to free cam without transition

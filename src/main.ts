@@ -32,6 +32,7 @@ async function main() {
   gfxConfig.refreshConfig()
 
   const seaBlock = new SeaBlock(layeredViewport)
+  layeredViewport.init(seaBlock)
 
   // load default config
   seaBlock.config.refreshConfig()

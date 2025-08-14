@@ -31,6 +31,7 @@
     "jiti": "^2.4.2",
     "mocha": "^11.7.0",
     "node-three-gltf": "^2.0.2",
+    "patch-package": "^8.0.0",
     "serve": "^14.2.4",
     "spessasynth_core": "^3.27.6",
     "tonal": "^6.4.2",
@@ -41,8 +42,7 @@
     "typescript-eslint": "^8.34.0",
     "vite": "^6.3.5",
     "vite-plugin-json5": "^1.1.9",
-    "vite-tsconfig-paths": "^5.1.4",
-    "patch-package": "^8.0.0"
+    "vite-tsconfig-paths": "^5.1.4"
   },
   "dependencies": {
     "howler": "^2.2.4",
