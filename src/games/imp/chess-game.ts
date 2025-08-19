@@ -10,7 +10,7 @@ import {
   treasureChestElement, instancedPieceElements, getChessPipeline, getChessCamOffset,
   outlinedPieceElements,
   resetChessCamera,
-} from 'games/chess/chess-3d-gfx-helper'
+} from 'games/chess/gfx/chess-3d-gfx-helper'
 
 export class ChessGame extends Game {
   static {
@@ -29,6 +29,9 @@ export class ChessGame extends Game {
 
   // private static hasMadeChessPiecesPickable = false
   reset = (context) => {
+    // if (this.chess?.currentPhase === 'reward-choice') {
+    //   return
+    // }
     this.chess = resetChess(context)
 
     // if (!ChessGame.hasMadeChessPiecesPickable) {

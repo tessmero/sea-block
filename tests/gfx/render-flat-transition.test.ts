@@ -4,12 +4,11 @@
  * Render 2d transition effect and assert that pixels are not antialiased.
  */
 
-import path from 'path'
-import fs from 'fs'
+import { assertNotAntialiased, saveTestImage } from './gfx-test-util'
 
 import { TILING, TRANSITION, GRID_ANIM } from '../../src/imp-names'
-import { flushSourceModules, populateRegistry } from '../../tools/util'
-flushSourceModules()
+import { populateRegistry } from '../../tools/util'
+// flushSourceModules()
 populateRegistry(TILING)
 populateRegistry(GRID_ANIM)
 populateRegistry(TRANSITION)
@@ -18,8 +17,8 @@ import { Transition } from '../../src/gfx/transitions/transition'
 import { SeaBlock } from '../../src/sea-block'
 
 import { Tiling } from '../../src/core/grid-logic/tilings/tiling'
-import { preloadPixelTiles } from '../../src/gfx/2d/pixel-tiles-gfx-helper'
 import { createCanvas } from 'canvas'
+import { FlatTransition } from '../../src/gfx/transitions/imp/flat-transition'
 
 // import * as THREE from 'three'
 // import { randChoice } from '../../src/util/rng'
@@ -31,19 +30,20 @@ import { createCanvas } from 'canvas'
 
 const { width, height } = window.screen // tests/fixtures.ts
 const canvas = createCanvas(width, height)
-const ctx = canvas.getContext('2d') as any // eslint-disable-line @typescript-eslint/no-explicit-any
+const frontCtx = canvas.getContext('2d') as any // eslint-disable-line @typescript-eslint/no-explicit-any
 
+// mock seablock
 const seaBlock = {
   layeredViewport: {
     pixelRatio: 1,
-    ctx,
+    frontCtx,
   },
 } as SeaBlock
 
 describe('Flat Transition', function () {
   for (const tiling of TILING.NAMES) {
-    it(`generates non-antialiased ${tiling} tiling image`, async function () {
-      await preloadPixelTiles(Tiling.getAllShapes(), 'public/')
+    it(`generates non-antialiased ${tiling} tiling image`, function () {
+      FlatTransition.forceFlatSweep = true
       const transition = Transition.create('flat', seaBlock, {
         t0: 0,
         t1: 1,
@@ -51,8 +51,8 @@ describe('Flat Transition', function () {
         tiling: Tiling.create(tiling),
       })
 
-      ctx.fillStyle = 'white'
-      ctx.fillRect(0, 0, width, height)
+      frontCtx.fillStyle = 'white'
+      frontCtx.fillRect(0, 0, width, height)
 
       // cover screen partway
       transition.update(0.4 * transition.totalDuration)
@@ -62,27 +62,11 @@ describe('Flat Transition', function () {
       // ctx.fillRect(width / 2, height / 2, 1, 1)
 
       // save image file for debugging
-      const outFile = path.resolve(__dirname, `test-images/${tiling}-tiling.png`)
-      fs.writeFileSync(outFile, canvas.toBuffer('image/png'))
+      saveTestImage(canvas, `${tiling}-transition`)
 
-      // assert that pixels are not anti aliased
-      const imgData = ctx.getImageData(0, 0, width, height).data
-      for (let i = 0; i < imgData.length; i += 4) {
-        const r = imgData[i]
-        const g = imgData[i + 1]
-        const b = imgData[i + 2]
-        const a = imgData[i + 3]
+      // assert that pixels are black and white
 
-        const isWhite = r === 255 && g === 255 && b === 255 && a === 255
-        const isBlack = r === 0 && g === 0 && b === 0 && a === 255
-
-        if (!isWhite && !isBlack) {
-          throw new Error(`pixel should black or white (not anti-aliased):
-            position: ${(i / 4) % width}, ${Math.floor(i / 4 / width)}: 
-            color: rgba(${r},${g},${b},${a})`,
-          )
-        }
-      }
+      assertNotAntialiased(canvas, { expectedPallette: ['black', 'white'] })
     })
   }
 })

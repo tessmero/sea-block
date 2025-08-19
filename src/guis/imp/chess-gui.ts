@@ -6,21 +6,23 @@
  * so user can click terrain tiles used as chess board.
  */
 
-import type { ElementEvent, GuiElement } from '../gui'
+import type { ElementEvent, GuiElement, RegisteredGui } from '../gui'
 import { Gui } from '../gui'
 import type { ProcessedSubEvent } from 'mouse-touch-input'
 import type { Chess } from 'games/chess/chess-helper'
 import { getChessPhase } from 'games/chess/chess-helper'
-import { CHESS_LAYOUT } from 'guis/layouts/chess-layout'
-import { CHESS_REWARDS_LAYOUT } from 'guis/layouts/chess-rewards-layout'
 import { CHESS_HUD_ELEMENTS } from 'games/chess/gui/chess-hud-elements'
-import { CHESS_DIALOG_ELEMENTS } from 'games/chess/gui/chess-dialog-elements'
-import { CHESS_REWARD_ELEMENTS } from 'games/chess/gui/chess-reward-elements'
+import { CHESS_HUD_DIALOG_ELEMENTS } from 'games/chess/gui/chess-hud-dialog-elements'
+import { CHESS_REWARD_ELEMENTS } from 'games/chess/gui/chess-rewards-elements'
 import type { ChessButton } from 'games/chess/gui/chess-button'
 import { clickChessWorld, hoverChessWorld, unclickChessWorld } from 'games/chess/chess-input-helper'
 import { CHESS_DEBUG_ELEMENTS } from 'games/chess/gui/chess-debug-elements'
+import type { ChessLayoutKey } from 'guis/keys/chess-layout-keys'
+import { CHESS_LAYOUT } from 'guis/layouts/chess/chess-layout'
+import { CHESS_REWARDS_LAYOUT } from 'guis/layouts/chess/chess-rewards-layout'
+import { CHESS_REWARD_HELP_ELEMENTS } from 'games/chess/gui/chess-reward-help-elements'
 
-export class ChessGui extends Gui {
+export class ChessGui extends Gui<ChessLayoutKey> {
   static {
     Gui.register('chess', {
       factory: () => new ChessGui(),
@@ -32,12 +34,15 @@ export class ChessGui extends Gui {
         return CHESS_LAYOUT
       },
       elements: [
-        ...CHESS_REWARD_ELEMENTS,
         ...CHESS_DEBUG_ELEMENTS,
         ...CHESS_HUD_ELEMENTS,
-        ...CHESS_DIALOG_ELEMENTS,
+        ...CHESS_HUD_DIALOG_ELEMENTS,
+
+        // separate layout
+        ...CHESS_REWARD_ELEMENTS,
+        ...CHESS_REWARD_HELP_ELEMENTS,
       ],
-    })
+    } satisfies RegisteredGui<ChessLayoutKey>)
   }
 
   // assigned in chess helper
@@ -56,7 +61,7 @@ export class ChessGui extends Gui {
     unclickChessWorld(this.chess, event)
   }
 
-  protected clickElem(elem: GuiElement, event: ElementEvent): void {
+  protected clickElem(elem: GuiElement<ChessLayoutKey>, event: ElementEvent): void {
     const { chess } = this
     if (chess && 'chessAction' in elem) {
       const btn = elem as ChessButton

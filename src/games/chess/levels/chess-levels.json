@@ -3,6 +3,7 @@
     
 
     {
+      "id": "rook-first",
       "description": "rook first level",
       "requires": [
         "rook"
@@ -16,6 +17,7 @@
       ]
     },
     {
+      "id": "rook-enemies",
       "description": "rook intro to enemies",
       "requires": [
         "rook"
@@ -29,6 +31,7 @@
       ]
     },
     {
+      "id": "rook-bishop-capture",
       "description": "rook intro to bishop and capturing",
       "requires": [
         "rook", "bishop"
@@ -43,6 +46,7 @@
     },
     
     {
+      "id": "bishop-first",
       "description": "bishop level",
       "requires": ["bishop"],
       "layout": [
@@ -54,6 +58,7 @@
       ]
     },
     {
+      "id": "knight-first",
       "description": "knight level",
       "requires": [
         "knight"
@@ -67,6 +72,7 @@
       ]
     },
     {
+      "id": "queen-first",
       "description": "queen level",
       "requires": [
         "queen"
@@ -80,6 +86,7 @@
       ]
     },
     {
+      "id": "king-first",
       "requires": [
         "king"
       ],

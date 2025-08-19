@@ -1,12 +1,13 @@
 /**
  * @file chess-rewards-layout.ts
  *
- * Chess reward selection screen, visible after reaching
- * a stage's chest.
+ * Chess reward selection screen after clearing stage.
  */
 
 import type { CssLayout } from 'util/layout-parser'
-import { standards } from './layout-helper'
+import { standards } from '../layout-helper'
+import type { ChessLayoutKey } from 'guis/keys/chess-layout-keys'
+import { CHESS_REWARD_HELP_LAYOUT } from './chess-reward-help-layout'
 const { btn } = standards
 
 export const CHESS_REWARDS_LAYOUT = {
@@ -36,6 +37,14 @@ export const CHESS_REWARDS_LAYOUT = {
     parent: 'leftReward',
     ...btn, left: 'auto', top: 'auto',
   },
+  leftRewardHelpBtn: {
+    parent: 'rewardsPanel', // 'leftReward',
+    ...btn,
+    right: 0,
+    // left: 'auto',
+    // bottom: 0,
+  },
+
   rightReward: {
     parent: 'rewardsInner',
     width: 32,
@@ -47,6 +56,13 @@ export const CHESS_REWARDS_LAYOUT = {
     parent: 'rightReward',
     ...btn, left: 'auto', top: 'auto',
   },
+  rightRewardHelpBtn: {
+    parent: 'rewardsPanel', // 'rightReward',
+    ...btn,
+    right: 0,
+    // left: 'auto',
+    // bottom: 0,
+  },
 
   confirmBtn: {
     parent: 'rewardsInner',
@@ -54,4 +70,6 @@ export const CHESS_REWARDS_LAYOUT = {
     bottom: 0,
   },
 
-} as const satisfies CssLayout
+  ...CHESS_REWARD_HELP_LAYOUT,
+
+} as const satisfies CssLayout<ChessLayoutKey>

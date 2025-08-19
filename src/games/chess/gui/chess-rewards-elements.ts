@@ -1,5 +1,5 @@
 /**
- * @file chess-reward-elements.ts
+ * @file chess-rewards-elements.ts
  *
  * Gui elements for the reward selection screen.
  * This screen has a separate layout from hud/dialogs.
@@ -9,11 +9,15 @@ import type { GuiElement } from 'guis/gui'
 import type { ChessButton } from './chess-button'
 import { COLLECTIBLES } from '../chess-rewards'
 import type { Chess } from '../chess-helper'
-import { buildRewardChoiceDiagram } from '../chess-2d-gfx-helper'
+import { buildRewardChoiceDiagram } from '../gfx/chess-2d-gfx-helper'
+import type { ChessLayoutKey } from 'guis/keys/chess-layout-keys'
+import { toggleRewardHelp } from './chess-reward-help-elements'
 
 let selectedReward: 'left' | 'right' | undefined = undefined
 
-const rewardsPanel: GuiElement = {
+type ChessElem = GuiElement<ChessLayoutKey>
+
+const rewardsPanel: ChessElem = {
   layoutKey: 'rewardsPanel',
   display: {
     type: 'panel',
@@ -38,7 +42,7 @@ export const leftRewardBtn: ChessButton = {
     // chess.collectReward(chess.leftReward)
   },
 }
-export const leftRewardDisplay: GuiElement = {
+export const leftRewardDisplay: ChessElem = {
   layoutKey: 'leftRewardDisplay',
   isPickable: false,
   display: {
@@ -65,7 +69,7 @@ export const rightRewardBtn: ChessButton = {
     // chess.collectReward(chess.rightReward)
   },
 }
-export const rightRewardDisplay: GuiElement = {
+export const rightRewardDisplay: ChessElem = {
   layoutKey: 'rightRewardDisplay',
   isPickable: false,
   display: {
@@ -74,9 +78,27 @@ export const rightRewardDisplay: GuiElement = {
     // isVisible: false,
   },
 }
+export const leftRewardHelpBtn: ChessButton = {
+  layoutKey: 'leftRewardHelpBtn',
+  display: {
+    type: 'button',
+    label: '?',
+    isVisible: false,
+  },
+  chessAction: ({ chess }) => toggleRewardHelp(chess, 'left'),
+}
+export const rightRewardHelpBtn: ChessButton = {
+  layoutKey: 'rightRewardHelpBtn',
+  display: {
+    type: 'button',
+    label: '?',
+    isVisible: false,
+  },
+  chessAction: ({ chess }) => toggleRewardHelp(chess, 'right'),
+}
 
 // covered when confirm button is visible
-const bottomTitle: GuiElement = {
+const bottomTitle: ChessElem = {
   layoutKey: 'confirmBtn',
   display: {
     type: 'label',
@@ -84,7 +106,7 @@ const bottomTitle: GuiElement = {
   },
 }
 
-const confirmBtn: ChessButton = {
+export const acceptBtn: ChessButton = {
   layoutKey: 'confirmBtn',
   display: {
     type: 'button',
@@ -92,6 +114,7 @@ const confirmBtn: ChessButton = {
     isVisible: false,
   },
   chessAction: ({ chess }) => {
+    toggleRewardHelp(chess)
     if (selectedReward === 'left') {
       chess.collectReward(chess.leftReward)
     }
@@ -101,7 +124,7 @@ const confirmBtn: ChessButton = {
   },
 }
 
-const defaultTitle: GuiElement = {
+const defaultTitle: ChessElem = {
   layoutKey: 'rewardsTitle',
   display: {
     type: 'label',
@@ -111,13 +134,13 @@ const defaultTitle: GuiElement = {
   },
 }
 
-const collectibleTitles: Array<GuiElement>
+const collectibleTitles: Array<ChessElem>
   = Object.values(COLLECTIBLES).map(collectible =>
     ({
       layoutKey: 'rewardsTitle',
       display: {
         type: 'label',
-        label: collectible.description,
+        label: collectible.title,
         isVisible: false,
       },
     }))
@@ -129,21 +152,26 @@ export function resetRewardsDisplay(chess: Chess) {
   updateRewardsDisplay(chess)
 }
 
+function updateHelpBtnVisibility() {
+  // leftRewardHelpBtn.display.isVisible = leftRewardBtn.display.forcedState === 'pressed'
+  // rightRewardHelpBtn.display.isVisible = rightRewardBtn.display.forcedState === 'pressed'
+}
+
 function updateRewardsDisplay(chess: Chess) {
   let cltIndex = -1
   leftRewardBtn.display.forcedState = undefined
   rightRewardBtn.display.forcedState = undefined
-  confirmBtn.display.isVisible = false
+  acceptBtn.display.isVisible = false
 
   if (selectedReward === 'left') {
     cltIndex = Object.keys(COLLECTIBLES).indexOf(chess.leftReward)
     leftRewardBtn.display.forcedState = 'pressed'
-    confirmBtn.display.isVisible = true
+    acceptBtn.display.isVisible = true
   }
   else if (selectedReward === 'right') {
     cltIndex = Object.keys(COLLECTIBLES).indexOf(chess.rightReward)
     rightRewardBtn.display.forcedState = 'pressed'
-    confirmBtn.display.isVisible = true
+    acceptBtn.display.isVisible = true
   }
   for (const [i, elem] of collectibleTitles.entries()) {
     elem.display.isVisible = (i === cltIndex)
@@ -151,6 +179,7 @@ function updateRewardsDisplay(chess: Chess) {
   defaultTitle.display.isVisible = (cltIndex === -1)
   rewardsPanel.display.needsUpdate = true
 
+  updateHelpBtnVisibility()
   // for( const {display} of CHESS_REWARD_ELEMENTS ){
   //   display.needsUpdate = true
   // }
@@ -159,7 +188,7 @@ function updateRewardsDisplay(chess: Chess) {
 export const CHESS_REWARD_ELEMENTS = [
   rewardsPanel,
   defaultTitle, ...collectibleTitles,
-  leftRewardBtn, leftRewardDisplay,
-  rightRewardBtn, rightRewardDisplay,
-  bottomTitle, confirmBtn,
-] satisfies Array<GuiElement>
+  leftRewardBtn, leftRewardDisplay, leftRewardHelpBtn,
+  rightRewardBtn, rightRewardDisplay, rightRewardHelpBtn,
+  bottomTitle, acceptBtn,
+] satisfies Array<ChessElem>

@@ -7,7 +7,7 @@
 import { STYLES } from '../gfx/styles/styles-list'
 import type { SeaBlock } from '../sea-block'
 import { Configurable } from './configurable'
-import type { ConfigTree } from './config-tree'
+import type { ConfigTree, OptionItem } from './config-tree'
 
 // performance details
 const gfxConfigTree = {
@@ -35,7 +35,7 @@ const gfxConfigTree = {
     style: {
       value: 'default', // randChoice(['default', 'tron', 'pastel', '???']),
       options: Object.keys(STYLES),
-    },
+    } as OptionItem<keyof typeof STYLES>,
 
     copyStyle: {
       label: 'Copy Style',

@@ -2,29 +2,31 @@
  * @file chess-board-pipeline.ts
  *
  * Pipeline for checkered tiles in chess game.
- * 1. Set base checkered height and color.
+ * 0. ...freecam pipeline
+ * 1. If part of board, replace height and colors.
  * 2. If valid move, replace colors.
  * 3. If hovered, replace colors.
  * 4. If pressed, replace colors and decrease height.
  */
 
-import type { ChessHlTiles } from 'games/chess/chess-hl-tiles'
 import type { Pipeline } from './pipeline'
-import { baseChessBoardColors, pickColorsForChessTile } from 'games/chess/chess-colors'
-import { setOriginalTileColors } from '../tile-group-color-buffer'
+import { baseChessBoardColors, pickColorsForChessTile } from 'games/chess/gfx/chess-colors'
+import { restoreTileColors, setOriginalTileColors } from '../tile-group-color-buffer'
 import { isTileHeld } from 'games/chess/chess-input-helper'
+import { freeCamPipeline } from './free-cam-pipeline'
+import { Chess } from 'games/chess/chess-helper'
 
 // pipeline with chess-specific method
 interface CPL extends Pipeline {
-  setHlTiles: (ChessHlTiles) => void
+  setChess: (Chess) => void
 }
 
-let hlTiles: ChessHlTiles
+let chess: Chess
 
 export const chessBoardPipeline = {
 
-  setHlTiles: (hlt: ChessHlTiles) => {
-    hlTiles = hlt
+  setChess: (ch: Chess) => {
+    chess = ch
   },
 
   update: (_dt) => {
@@ -33,13 +35,24 @@ export const chessBoardPipeline = {
 
   steps: [
 
+    // 0. inherit freecam pipeline
+    ...freeCamPipeline.steps,
+
     // 1. Set base checkered height and color.
-    ({ group, tileIndex }) => {
+    ({ group, tileIndex, current }) => {
       const { x, z, i } = tileIndex
+
+      if (!chess.boardTiles.includes(i)) {
+        // tile is not on board
+        restoreTileColors(tileIndex) // may have been previously highlighted
+        return current
+      }
       const checkeredIndex = Math.abs((x + z) % 2)
 
       let rTile = group.generatedTiles[i]
       if (!rTile) {
+        Chess.queueHltUpdate()
+
         // tile not yet generated
         rTile = {
           gTile: {
@@ -66,18 +79,27 @@ export const chessBoardPipeline = {
 
     // 2. If valid move, replace colors.
     ({ current, tileIndex }) => {
-      const { allowedMoves } = hlTiles
+      const { allowedMoves } = chess.hlTiles
       const { i } = tileIndex
+
       if (allowedMoves.has(i)) {
-        current.targetColors = pickColorsForChessTile(tileIndex, 'allowedMove')
+        if (current.isWater) {
+          // console.log('water tile in allowed moves')
+          Chess.queueHltUpdate()
+        }
+        else {
+          current.targetColors = pickColorsForChessTile(tileIndex, 'allowedMove')
+        }
       }
       return current
     },
     // 3. If hovered, replace colors.
     ({ current, tileIndex }) => {
-      const { hovered } = hlTiles
+      const { hovered } = chess.hlTiles
       if (hovered && hovered.i === tileIndex.i) {
         current.targetColors = pickColorsForChessTile(tileIndex, 'hover')
+
+        // console.log('cbp hover tile', chess.context.terrain.grid.indexToPosition(tileIndex))
       }
       return current
     },

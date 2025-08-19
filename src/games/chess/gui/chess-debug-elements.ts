@@ -7,6 +7,7 @@
 import type { GuiElement } from 'guis/gui'
 import type { ChessPhase } from '../chess-enums'
 import { CHESS_PHASES } from '../chess-enums'
+import type { ChessLayoutKey } from 'guis/keys/chess-layout-keys'
 
 const userFriendlyLabels = {
   'player-anim': '...',
@@ -36,11 +37,11 @@ const phaseLabels = Object.fromEntries(
       },
     } as GuiElement,
   ]),
-) as Record<ChessPhase, GuiElement>
+) as Record<ChessPhase, GuiElement<ChessLayoutKey>>
 
 export const CHESS_DEBUG_ELEMENTS = [
   ...Object.values(phaseLabels), // top center HUD
-]
+] as const
 
 export function showPhaseLabel(phase: ChessPhase) {
   for (const key of CHESS_PHASES) {

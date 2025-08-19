@@ -5,7 +5,7 @@
  */
 
 import type { TileIndex } from 'core/grid-logic/indexed-grid'
-import type { ChessTileHighlight } from './chess-hl-tiles'
+import type { ChessTileHighlight } from '../chess-hl-tiles'
 import type { TileColors } from 'gfx/styles/style'
 import { Color } from 'three'
 
@@ -80,6 +80,18 @@ const hlColors: Record<ChessTileHighlight, [TileColors, TileColors]> = {
       // Black tile allowed move: greenish
       top: new Color('#41BB6E'),
       sides: new Color('#379247'),
+    },
+  ],
+  enemyMove: [
+    {
+      // White tile enemy move: reddish
+      top: new Color('#FF8A8A'),
+      sides: new Color('#E05A5A'),
+    },
+    {
+      // Black tile enemy move: reddish
+      top: new Color('#D14A4A'),
+      sides: new Color('#A72A2A'),
     },
   ],
 }

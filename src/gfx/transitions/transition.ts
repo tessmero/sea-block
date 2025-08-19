@@ -13,15 +13,18 @@ import type { LayeredViewport } from 'gfx/layered-viewport'
 import type { TransitionName } from 'imp-names'
 import type { SeaBlock } from 'sea-block'
 import { Color } from 'three'
-import type { SweepSegment } from './imp/flat-transition-segments'
+import type { SweepSegment } from './flat-transition-segments'
 import type { FlatTransition } from './imp/flat-transition'
 import type { Step } from 'gfx/3d/pipelines/pipeline'
+import { randChoice } from 'util/rng'
 
 export function randomTransition(context: SeaBlock): Transition {
   // const name = randChoice(TRANSITION.NAMES)
 
   // do sweep-sweep-drop combo transition just for launch
-  const name = Transition.isFirstUncover ? 'ssd' : 'flat'
+  const name = Transition.isFirstUncover
+    ? randChoice(['zoom'] as const)
+    : randChoice(['flat', 'ss'] as const)
 
   // const name = 'flat'
   return Transition.create(name, context)
@@ -50,15 +53,15 @@ export abstract class Transition {
   // completely clear/fill front layer
   public cleanupHide(): void {
     // console.log('base cleanup hide black')
-    const { ctx, w, h } = this.layeredViewport
-    ctx.fillStyle = 'black'
-    ctx.fillRect(0, 0, w, h)
+    const { frontCtx, w, h } = this.layeredViewport
+    frontCtx.fillStyle = 'black'
+    frontCtx.fillRect(0, 0, w, h)
   }
 
   public cleanupShow(): void {
-    // console.log('base cleanup show')
-    const { ctx, w, h } = this.layeredViewport
-    ctx.clearRect(0, 0, w, h)
+    // console.log('base transition cleanup show')
+    const { frontCtx, w, h } = this.layeredViewport
+    frontCtx.clearRect(0, 0, w, h)
   }
 
   update(dt: number) {

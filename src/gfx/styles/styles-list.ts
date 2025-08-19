@@ -7,11 +7,6 @@
 import { StyleParser, type CssStyle } from '../../util/style-parser'
 import { getRandomHueStyle } from './hue-style'
 
-// placeholder for style pasted by user.
-export const customStyle = {
-  css: {}, // set when user clicks paste style
-}
-
 export const STYLES = {
   'default': {}, // replaced when terrain generator is selected
   'black-and-white': {

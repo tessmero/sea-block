@@ -29,14 +29,16 @@ import type { StyleParser } from './util/style-parser'
 import { FloraGroup } from './core/groups/flora-group'
 import { Tiling } from './core/grid-logic/tilings/tiling'
 import { TiledGrid } from './core/grid-logic/tiled-grid'
-import { updateFrontLayer } from './gfx/2d/flat-gui-gfx-helper'
+import { resetFrontLayer, updateFrontLayer } from './gfx/2d/flat-gui-gfx-helper'
 import { alignGuiGroup, alignMeshInGuiGroup } from 'gfx/3d/gui-3d-gfx-helper'
 import type { Transition } from 'gfx/transitions/transition'
 import { randomTransition } from 'gfx/transitions/transition'
-import { preloadChessSprites } from 'games/chess/chess-2d-gfx-helper'
+import { preloadChessSprites } from 'games/chess/gfx/chess-2d-gfx-helper'
 import { gfxConfig } from 'configs/gfx-config'
 import { physicsConfig } from 'configs/physics-config'
 import { freeCamGameConfig } from 'configs/free-cam-game-config'
+import { preloadChessRewardHelpDiagrams } from 'games/chess/gui/chess-reward-help-elements'
+import { Chess } from 'games/chess/chess-helper'
 
 // can only be constructed once
 let didConstruct = false
@@ -122,6 +124,7 @@ export class SeaBlock {
     const loadPromises: Array<Promise<void | Array<void>>> = []
     loadPromises.push(preloadPixelTiles(Tiling.getAllShapes()))
     loadPromises.push(preloadChessSprites())
+    loadPromises.push(preloadChessRewardHelpDiagrams())
 
     // start generating images/meshes for all guis
     for (const guiName of GUI.NAMES) {
@@ -154,13 +157,13 @@ export class SeaBlock {
         // just hit mid-transition, old scene hidden
         // console.log('mid transition')
         this.isCovering = false
-        if (transition.doesAllowMidTransitionReset) {
-          await this.onMidTransition()
-        }
 
         if (this.midTransitionCallback) {
           this.midTransitionCallback()
           this.midTransitionCallback = undefined
+        }
+        if (transition.doesAllowMidTransitionReset) {
+          await this.onMidTransition()
         }
         // resetFrontLayer()
         transition.cleanupHide()
@@ -169,7 +172,6 @@ export class SeaBlock {
       if (transition.didFinishUncover) {
         // console.log('finish transition')
         this.transition = undefined // transition just finished
-        // this.onResize()
         // resetFrontLayer()
       }
     }
@@ -289,7 +291,9 @@ export class SeaBlock {
           this.scene.threeScene.remove(mesh)
           cameraLockedGroup.add(mesh)
           const rect = this.game.gui.layoutRectangles[layoutKey]
-          alignMeshInGuiGroup(mesh, cameraLockedGroup, this.layeredViewport.screenRectangle, rect)
+          if (rect) {
+            alignMeshInGuiGroup(mesh, cameraLockedGroup, this.layeredViewport.screenRectangle, rect)
+          }
         }
         else {
           this.scene.threeScene.add(mesh)
@@ -439,6 +443,7 @@ export class SeaBlock {
       await new Promise<void>((resolve) => {
         requestAnimationFrame(() => {
           requestAnimationFrame(() => {
+            this.onResize()
             resolve()
           })
         })
@@ -479,6 +484,21 @@ export class SeaBlock {
     // camera.position.set(x + CAMERA.x, CAMERA.y, z + CAMERA.z)
 
     this.reset()
+
+    // this.game.gui.refreshLayout(this)
+
+    const { x, y, w, h } = this.layeredViewport.screenRectangle
+    this.layeredViewport.ctx.clearRect(x, y, w, h)
+    // console.log('clear mid layer')
+    // this.layeredViewport.ctx.fillStyle = 'red'
+    // this.layeredViewport.ctx.fillRect( 20,20,20,20 )
+    this.onResize()
+
+    resetFrontLayer()
+    updateFrontLayer(this)
+    // this.onResize()
+
+    Chess.queueHltUpdate()
   }
 
   public didBuildControls = false // set to true after first build

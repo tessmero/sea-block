@@ -22,9 +22,12 @@ let didInit = false
 export class LayeredViewport {
   // members assigned in init(), called in main.ts
   public backCanvas!: HTMLCanvasElement
+  public midCanvas!: HTMLCanvasElement
   public frontCanvas!: HTMLCanvasElement
-  public backRenderer!: WebGLRenderer
-  public ctx!: CanvasRenderingContext2D
+
+  public backRenderer!: WebGLRenderer // main 2d context
+  public ctx!: CanvasRenderingContext2D // main 2d context
+  public frontCtx!: CanvasRenderingContext2D // transition effect overlay
   public pixelRatio!: number // convert pixels to big pixels
   public w!: number // width in big pixels
   public h!: number // height in big pixels
@@ -57,6 +60,8 @@ export class LayeredViewport {
       this.backRenderer.setPixelRatio(this.pixelRatio) // normal pixel size
     }
 
+    this.midCanvas.width = this.w
+    this.midCanvas.height = this.h
     this.frontCanvas.width = this.w
     this.frontCanvas.height = this.h
     resetFrontLayer()
@@ -73,6 +78,7 @@ export class LayeredViewport {
     didInit = true
 
     this.backCanvas = document.getElementById('backCanvas') as HTMLCanvasElement
+    this.midCanvas = document.getElementById('midCanvas') as HTMLCanvasElement
     this.frontCanvas = document.getElementById('frontCanvas') as HTMLCanvasElement
 
     // three.js Renderer for back canvas
@@ -82,7 +88,8 @@ export class LayeredViewport {
     })
 
     // 2D graphics context for front canvas
-    this.ctx = this.frontCanvas.getContext('2d') as CanvasRenderingContext2D
+    this.ctx = this.midCanvas.getContext('2d') as CanvasRenderingContext2D
+    this.frontCtx = this.frontCanvas.getContext('2d') as CanvasRenderingContext2D
 
     this.handleResize(context)
   }

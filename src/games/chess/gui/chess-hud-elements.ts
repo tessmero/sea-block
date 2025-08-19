@@ -8,20 +8,24 @@ import type { GuiElement } from 'guis/gui'
 import type { PieceName } from '../chess-enums'
 import { PIECE_NAMES } from '../chess-enums'
 import { getImage } from 'gfx/2d/image-asset-loader'
-import { buildGoalDiagram } from '../chess-2d-gfx-helper'
-import { togglePauseMenu } from './chess-dialog-elements'
+import { buildGoalDiagram } from '../gfx/chess-2d-gfx-helper'
+import { togglePauseMenu } from './chess-hud-dialog-elements'
 import type { ChessButton } from './chess-button'
 import { playSound } from 'audio/sound-effects'
 import { quitChess } from '../chess-helper'
+import type { ChessLayoutKey } from 'guis/keys/chess-layout-keys'
+
+type ChessElem = GuiElement<ChessLayoutKey>
 
 // 2D chess game view
-export const flatViewport: GuiElement = {
+export const flatViewport: ChessElem = {
   layoutKey: 'flatViewport',
   isPickable: false,
   display: {
     type: 'diagram',
     label: 'chess-flat-viewport', // give imageset unique hash
     isVisible: false,
+    shouldClearBehind: true,
   },
 }
 
@@ -40,7 +44,7 @@ export const flatViewport: GuiElement = {
 //   },
 // }
 
-const pawnHint: GuiElement = {
+const pawnHint: ChessElem = {
   layoutKey: 'pawnHint',
   display: {
     type: 'label',
@@ -51,7 +55,7 @@ const pawnHint: GuiElement = {
 }
 
 // top left display with two frames
-const topLeftA: GuiElement = {
+const topLeftA: ChessElem = {
   layoutKey: 'topLeftDisplay',
   display: {
     type: 'diagram',
@@ -59,7 +63,7 @@ const topLeftA: GuiElement = {
     shouldClearBehind: true,
   },
 }
-const topLeftB: GuiElement = {
+const topLeftB: ChessElem = {
   layoutKey: 'topLeftDisplay',
   display: {
     type: 'diagram',
@@ -151,7 +155,7 @@ export function showCurrentPiece(piece: PieceName) {
 }
 
 const defaultPiece: PieceName = 'rook'
-const pieceLabels: Array<GuiElement> = PIECE_NAMES.map(piece => ({
+const pieceLabels: Array<ChessElem> = PIECE_NAMES.map(piece => ({
   layoutKey: 'currentPieceLabel',
   isPickable: false,
   display: {
@@ -163,7 +167,7 @@ const pieceLabels: Array<GuiElement> = PIECE_NAMES.map(piece => ({
   },
 }))
 
-const pieceIcon: GuiElement = {
+const pieceIcon: ChessElem = {
   layoutKey: 'currentPieceIcon',
   isPickable: false,
   display: {
@@ -185,7 +189,7 @@ export const pawnBtn: ChessButton = {
 }
 
 // label on pawn button
-export const pawnLabel: GuiElement = {
+export const pawnLabel: ChessElem = {
   layoutKey: 'pawnBtn',
   isPickable: false,
   display: {
@@ -219,4 +223,4 @@ export const CHESS_HUD_ELEMENTS = [
   pawnBtn, pawnLabel, cancelPawnBtn, // bottom right HUD
   // helpPanel, helpElement, // bottom left dialog
   flatViewport, // after collecting dual-vector-foil
-]
+] as const satisfies Array<ChessElem>

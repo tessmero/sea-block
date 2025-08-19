@@ -5,6 +5,7 @@
  */
 import type { CssLayout } from 'util/layout-parser'
 import { standards } from './layout-helper'
+import type { FreecamLayoutKey } from 'guis/keys/freecam-layout-keys'
 const { btn, pad, point } = standards
 
 export const COMMON_LAYOUT = {
@@ -76,4 +77,4 @@ export const COMMON_LAYOUT = {
     bottom: 8,
   },
 
-} as const satisfies CssLayout
+} as const satisfies CssLayout<FreecamLayoutKey>

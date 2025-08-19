@@ -29,26 +29,43 @@ export function drawText(ctx, params: DrawTextParams) {
     textAlign = 'center',
     offset = [0, 0],
   } = params
-  const textPixels = renderPixels(label, font)
+  // Trim raw string and each line for formatted multiline support
+  let processedLabel = label
+  if (font === 'mini') {
+    processedLabel = processedLabel.toUpperCase()
+  }
+  const lines = processedLabel.trim().split('\n').map(line => line.trim())
+
+  const fontData = getFontData(font)
+  const extHeight = fontData.lineHeight + basement
+  const numLines = lines.length
+
+  // Render each line to pixel arrays
+  const linePixels = lines.map(line => renderPixels(line, font))
+  // Find max width among all lines
+  const maxLineWidth = Math.max(...linePixels.map(pixels => pixels[0]?.length || 0))
 
   let x0 = 0
   let y0 = 0
   if (textAlign === 'center') {
-    x0 = Math.floor(width / 2 - textPixels[0].length / 2)
-    y0 = Math.floor(height / 2 - textPixels.length / 2 + basement / 2)
+    x0 = Math.floor(width / 2 - maxLineWidth / 2)
+    y0 = Math.floor(height / 2 - (numLines * extHeight) / 2 + basement / 2)
   }
   else if (textAlign === 'left') {
-    y0 = Math.floor(height / 2 - textPixels.length / 2 + basement / 2)
+    y0 = Math.floor(height / 2 - (numLines * extHeight) / 2 + basement / 2)
   }
 
   x0 += offset[0]
   y0 += offset[1]
 
   ctx.fillStyle = 'black'// font === 'mini' ? 'gray' : 'black'
-  for (const [y, row] of textPixels.entries()) {
-    for (const [x, value] of row.entries()) {
-      if (value === 1) {
-        ctx.fillRect(x0 + x, y0 + y, 1, 1)
+  for (let i = 0; i < numLines; i++) {
+    const pixels = linePixels[i]
+    for (const [y, row] of pixels.entries()) {
+      for (const [x, value] of row.entries()) {
+        if (value === 1) {
+          ctx.fillRect(x0 + x, y0 + y + i * extHeight, 1, 1)
+        }
       }
     }
   }

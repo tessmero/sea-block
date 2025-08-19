@@ -6,12 +6,11 @@
  */
 
 import type { TileIndex } from 'core/grid-logic/indexed-grid'
-import type { TileGroup } from 'core/groups/tile-group'
 import { getAllowedMoves } from './chess-rules'
 import type { Chess } from './chess-helper'
 
 const _HIGHLIGHTS = [
-  'hover', 'hold', 'allowedMove',
+  'hover', 'hold', 'allowedMove', 'enemyMove',
 ] as const
 export type ChessTileHighlight = (typeof _HIGHLIGHTS)[number]
 
@@ -19,17 +18,14 @@ export class ChessHlTiles {
   public allowedMoves: Set<number> = new Set()
   public hovered: TileIndex | undefined = undefined
 
-  constructor(
-    private readonly terrain: TileGroup,
-  ) {}
-
   updateAllowedMoves(chess: Chess) {
     const {
       currentPhase: phase,
       centerTile: center,
       player: piece,
     } = chess
-    const { terrain, allowedMoves } = this
+    const { allowedMoves } = this
+    const { terrain } = chess.context
 
     // clear old highlights
     allowedMoves.clear()

@@ -45,14 +45,20 @@ export function updateFrontLayer(seaBlock: SeaBlock) {
     for (const id in gui.elements) {
       const elem: GuiElement = gui.elements[id]
       const { display, layoutKey } = elem
+
       if ('isVisible' in display && !display.isVisible) {
         continue // isVisible set to false
+      }
+
+      const rect = overrideLayout[layoutKey] || layout[layoutKey]
+      if (!rect) {
+        continue // not in current layout
       }
 
       if (display.forcedSliderState && 'slideIn' in elem) {
         const { slideIn } = elem
         const { x, y } = display.forcedSliderState
-        const { w, h } = layout[layoutKey]
+        const { w, h } = rect // layout[layoutKey]
         const container = overrideLayout[slideIn] || layout[slideIn]
         overrideLayout[layoutKey] = {
           x: container.x + x * (container.w - w),
@@ -60,10 +66,6 @@ export function updateFrontLayer(seaBlock: SeaBlock) {
           w, h,
         }
         display.forcedSliderState = undefined
-      }
-      const rect = overrideLayout[layoutKey] || layout[layoutKey]
-      if (!rect) {
-        continue // not in current layout
       }
 
       let stateToDraw = gui.getElementState(id as ElementId)

@@ -9,26 +9,12 @@
 
 import type { SeaBlock } from 'sea-block'
 import { Transition } from '../transition'
-import type { SweepSegment } from './flat-transition-segments'
-import { buildHideSegments, buildShowSegments } from './flat-transition-segments'
+import type { BufferedSegment } from '../flat-transition-segments'
+import { buildHideSegments, buildSsdShowSegments, buildSweepTransition } from '../flat-transition-segments'
 
 // planned sweeps (halfway screen is fully black)
 const hideSegments = buildHideSegments() // overlapping during first half
-const showSegments = buildShowSegments() // overlapping during second half
-
-interface BufferedSegment extends SweepSegment {
-  transition: Transition
-  isFinished: boolean
-}
-
-// type RGB = [number, number, number]
-
-function buildSweepTransition(context: SeaBlock, seg: SweepSegment): BufferedSegment {
-  const transition = Transition.create(
-    'flat', context, seg,
-  )
-  return { ...seg, transition, isFinished: false }
-}
+const showSegments = buildSsdShowSegments() // overlapping during second half
 
 export class SsdTransition extends Transition {
   static { Transition.register('ssd', () => new SsdTransition()) }
@@ -45,7 +31,6 @@ export class SsdTransition extends Transition {
   protected reset(context: SeaBlock): void {
     this.context = context
     this.ssdHide = this.buildSsdHideSegments().map(seg => buildSweepTransition(context, seg))
-
     this.ssdFinalShow = Transition.create('drop', this.context)
   }
 
@@ -80,9 +65,9 @@ export class SsdTransition extends Transition {
   public cleanupHide(): void {
     // console.log('ssd cleanup hide black')
 
-    const { ctx, w, h } = this.layeredViewport
-    ctx.fillStyle = 'black' // last hide segment color
-    ctx.fillRect(0, 0, w, h)
+    const { frontCtx, w, h } = this.layeredViewport
+    frontCtx.fillStyle = 'black' // last hide segment color
+    frontCtx.fillRect(0, 0, w, h)
 
     // make sure terrain is offscreen
     this._initSsdShow()

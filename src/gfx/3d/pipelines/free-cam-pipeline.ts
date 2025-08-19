@@ -96,6 +96,7 @@ export const freeCamPipeline = {
       }
 
       // current.colors = rTile.liveColors as TileColors
+      current.isWater = rTile.gTile.isWater
       return current
     },
 

@@ -76,8 +76,15 @@ function _getTempImage(shape: TileShape, color: [number, number, number]): Offsc
   return result
 }
 
+let didPreloadPixelTiles = false
+
 // Load all tile images for a set of shapes and scales
 export async function preloadPixelTiles(shapes: Array<TileShape>, urlPrefix = ''): Promise<void> {
+  if (didPreloadPixelTiles) {
+    throw new Error('preloadPixeltiles called multiple times')
+  }
+  didPreloadPixelTiles = true
+
   const promises: Array<Promise<void>> = []
 
   for (const shape of shapes) {

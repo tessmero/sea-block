@@ -10,30 +10,28 @@ import { type GameUpdateContext } from '../game'
 import { emptyScene, type SeaBlock } from 'sea-block'
 import type { TileIndex } from 'core/grid-logic/indexed-grid'
 import { setTilePickY, type ProcessedSubEvent } from 'mouse-touch-input'
-import type { RenderablePiece, UniquePiece } from './chess-3d-gfx-helper'
-import { resetMeshes, updateMeshes } from './chess-3d-gfx-helper'
+import type { RenderablePiece, UniquePiece } from './gfx/chess-3d-gfx-helper'
+import { resetMeshes, updateMeshes } from './gfx/chess-3d-gfx-helper'
 import { ChessHlTiles } from './chess-hl-tiles'
 import { ChessMoveAnim } from './chess-move-anim'
 import type { ChessGui } from 'guis/imp/chess-gui'
 import { PIECE_NAMES, type ChessPhase, type PieceName } from './chess-enums'
-import { loadChessLevel } from './levels/chess-level-parser'
+import { currentLevelId, loadChessLevel } from './levels/chess-level-parser'
 import { playSound } from 'audio/sound-effects'
 import {
-  buildGoalDiagram, buildMovesDiagram, flatChessBackground,
-  renderFlatView, updatePawnButtonLabel,
-} from './chess-2d-gfx-helper'
+  buildGoalDiagram, flatChessBackground,
+  updateFlatView, updatePawnButtonLabel,
+} from './gfx/chess-2d-gfx-helper'
 import { Gui } from 'guis/gui'
 import { COLLECTIBLES, randomCollectible } from './chess-rewards'
 import type { CollectibleName } from './levels/chess-levels.json.d'
 import type { TilePosition } from 'core/grid-logic/tiled-grid'
 import { buildPawnMoves, buildEnemyMoves, nextPhasePickers } from './chess-sequences'
-import { Transition } from 'gfx/transitions/transition'
+import { randomTransition, Transition } from 'gfx/transitions/transition'
 import { chessBoardPipeline } from 'gfx/3d/pipelines/chess-board-pipeline'
 import { chessRun, START_COLLECTED, START_PAWNS } from './chess-run'
-import { SeamlessTransition } from 'gfx/transitions/imp/seamless-transition'
-import { CAMERA } from 'settings'
 import { cancelPawnBtn, flatViewport, goalDisplays, pawnBtn, showCurrentPiece } from './gui/chess-hud-elements'
-import { toggleGameOverMenu, togglePauseMenu } from './gui/chess-dialog-elements'
+import { toggleGameOverMenu, togglePauseMenu } from './gui/chess-hud-dialog-elements'
 import { showPhaseLabel } from './gui/chess-debug-elements'
 import { updateChessPhase } from './chess-update-helper'
 import { FREECAM_PLAYLIST, playNextTrack } from 'audio/song-playlist'
@@ -42,6 +40,11 @@ import {
   resetHeldChessInputs, updateHeldChessInputs,
 } from './chess-input-helper'
 import { ChessWaveMaker } from './chess-wave-maker'
+import { ZoomTransition } from 'gfx/transitions/imp/zoom-transition'
+import { acceptBtn } from './gui/chess-rewards-elements'
+import { updateRepaintEffect } from './gfx/chess-repaint-effect'
+import { rewardHelpDiagram, rewardHelpState } from './gui/chess-reward-help-elements'
+import { ChessScenery } from './levels/chess-scenery'
 
 // no 3D terrrain in background when selecting reward
 export function chessAllow3DRender(): boolean {
@@ -63,15 +66,13 @@ export function clearChessRun(): void {
 
 let isResetQueued = true
 export function resetChess(context: SeaBlock): Chess {
-  // // get freecam game just to call reset
-  // const freeCam = Game.create('free-cam', context) as FreeCamGame
-  // freeCam.reset(context)
+  // console.log('reset chess')
 
   if (isResetQueued) {
     isResetQueued = false
     instance = new Chess(context)
+    chessBoardPipeline.setChess(instance)
   }
-  chessBoardPipeline.setHlTiles(instance.hlTiles)
   resetHeldChessInputs()
   togglePauseMenu(instance, false)
 
@@ -84,23 +85,32 @@ export function quitChess(chess: Chess): void {
   // reset ui to default state
   togglePauseMenu(chess, false)
   toggleGameOverMenu(seaBlock, false)
-  clearChessRun()
 
-  // start transition
-  const item = seaBlock.config.tree.children.game
-  item.value = 'free-cam'
-  SeamlessTransition.desiredCameraOffset.copy(CAMERA)
-  SeamlessTransition.snapshotTerrain(seaBlock)
-  for (const i of chess.boardTiles) {
-    seaBlock.terrain.generatedTiles[i] = null
-  }
+  // start transition back to original scenery
+
   seaBlock.startTransition({
-    transition: Transition.create('seamless', seaBlock),
     callback: () => {
+      clearChessRun()
+      ChessScenery.restoreOriginalSnapshot(seaBlock)
       playNextTrack(FREECAM_PLAYLIST)
     },
   })
-  seaBlock.onCtrlChange(item)
+
+  // // start transition
+  // const item = seaBlock.config.tree.children.game
+  // item.value = 'free-cam'
+  // SeamlessTransition.desiredCameraOffset.copy(CAMERA)
+  // SeamlessTransition.snapshotTerrain(seaBlock)
+  // for (const i of chess.boardTiles) {
+  //   seaBlock.terrain.generatedTiles[i] = null
+  // }
+  // seaBlock.startTransition({
+  //   transition: Transition.create('seamless', seaBlock),
+  //   callback: () => {
+  //     playNextTrack(FREECAM_PLAYLIST)
+  //   },
+  // })
+  // seaBlock.onCtrlChange(item)
 }
 
 export function getChessPhase() {
@@ -111,7 +121,14 @@ export function getChessPhase() {
 
 // used to implement chess-game
 export function updateChess(context: GameUpdateContext): void {
+  // if (context.seaBlock.transition) {
+  //   return // do not update chess during transition
+  // }
   updateHeldChessInputs()
+  if (rewardHelpState) {
+    updateRepaintEffect(context.dt)
+    rewardHelpDiagram.display.needsUpdate = true
+  }
   instance.update(context)
 }
 
@@ -160,7 +177,7 @@ export class Chess {
     const chessGui = Gui.create('chess') as ChessGui
     chessGui.chess = this
 
-    this.hlTiles = new ChessHlTiles(terrain)
+    this.hlTiles = new ChessHlTiles()
 
     // find center tile based on camera target
     const { x, z } = terrain.centerXZ
@@ -180,19 +197,21 @@ export class Chess {
     // terrain.gfxHelper.setColorsForTile(centerColors, center)
     this.centerTile = center
     const { playerPiece, enemyPieces, boardTiles, goalTile } = loadChessLevel(this)
+    // console.log('set board tiles', boardTiles.length)
     this.boardTiles = boardTiles
     this.goalTile = goalTile
+    Chess.queueHltUpdate()
 
     // reset instance counts and setup current piece mesh
     resetMeshes(this, playerPiece, [], enemyPieces)
 
     // place player and goal based on parsed level
     // treasureChestMesh.position.copy(this.getPosOnTile(goalTile))
-    this.hlTiles.updateAllowedMoves(this)
+    // this.hlTiles.updateAllowedMoves(this)
+    // Chess.isHltUpdateQueued = true
 
     // build help diagrams
     buildGoalDiagram(playerPiece.type)
-    buildMovesDiagram(playerPiece.type)
     this.updateFlatView()
     flatViewport.clickAction = ({ inputEvent }) => {
       flatViewPortClick(this, inputEvent as ProcessedSubEvent)
@@ -263,9 +282,28 @@ export class Chess {
     return result
   }
 
+  public static getHltUpdateQueued() {
+    return this.isHltUpdateQueued
+  }
+
+  public static queueHltUpdate() {
+    if (this.isHltUpdateQueued) {
+      return
+    }
+    // console.log('queue new hlt update')
+    if (instance?.hlTiles) instance.hlTiles.allowedMoves.clear()
+    this.isHltUpdateQueued = true
+  }
+
+  private static isHltUpdateQueued = false
   public update(context: GameUpdateContext) {
     const { seaBlock, dt } = context
     const { terrain } = seaBlock
+
+    if (Chess.isHltUpdateQueued) {
+      Chess.isHltUpdateQueued = false
+      this.hlTiles.updateAllowedMoves(this)
+    }
 
     // update gui animation
     const frameIndex = Math.floor(performance.now() / 500) % 2
@@ -273,6 +311,12 @@ export class Chess {
     for (const [i, display] of goalDisplays.entries()) {
       display.isVisible = (i === frameIndex)
       display.needsUpdate = true
+    }
+
+    if (!seaBlock.sphereGroup.members.includes(this.waveMaker.sphere)) {
+      // throw new Error('wave maker sphere not in sphere group')
+      // reconnect with active sphere
+      this.waveMaker = new ChessWaveMaker(seaBlock.sphereGroup.members[1], seaBlock)
     }
 
     // update world
@@ -311,7 +355,7 @@ export class Chess {
   private updateFlatView() {
     // if( this.context.config.flatConfig.chessViewMode === '2D' ){
     if (chessRun.collected.includes('dual-vector-foil')) {
-      renderFlatView(this)
+      updateFlatView(this)
     }
     else {
       flatViewport.display.isVisible = false
@@ -328,12 +372,23 @@ export class Chess {
     }
 
     isResetQueued = true
+
+    let transition
+    const rnd = Math.random()
+    if (rnd < 0.5) {
+      ZoomTransition.target = acceptBtn
+      transition = Transition.create('zoom', this.context) as ZoomTransition
+    }
+    else {
+      transition = randomTransition(this.context)
+    }
+
     this.context.startTransition({
-      transition: Transition.create('checkered', this.context),
+      transition,
       callback: () => {
         emptyScene.background = flatChessBackground
-        resetChess(this.context)
         this.context.onGameChange()
+        ChessScenery.applyLevelScenery(this.context, currentLevelId)
         this.context.game.resetCamera(this.context)
       },
     })

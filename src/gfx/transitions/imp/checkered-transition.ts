@@ -5,39 +5,27 @@
  */
 
 import { SQUARE_TILING_SHAPES, SquareTiling } from 'core/grid-logic/tilings/square-tiling'
-import { SsdTransition } from 'gfx/transitions/imp/ssd-transition'
 import { Transition } from 'gfx/transitions/transition'
-import type { SweepSegment } from './flat-transition-segments'
-import type { SeaBlock } from 'sea-block'
+import type { SweepSegment } from '../flat-transition-segments'
 import type { ColorRepresentation } from 'three'
+import { SsTransition } from './ss-transition'
 // type RGB = [number, number, number]
 
-export class ChessTransition extends SsdTransition {
+export class ChessTransition extends SsTransition {
   static { Transition.register('checkered', () => new ChessTransition() as unknown as Transition) }
 
-  public totalDuration: number = 3000
-
-  protected reset(context: SeaBlock): void {
-    super.reset(context)
-    this.ssdShow = []
-    this.ssdFinalShow = Transition.create('flat', context)
-  }
-
-  protected buildSsdHideSegments() {
-    const result = super.buildSsdHideSegments()
-
+  protected buildSsHideSegments() {
     return [
       {
-        ...result[0],
-        t0: 0.4,
+        t0: 0,
         t1: 0.6,
         tiling: checkeredTiling,
         colors: pickTransitionColors(),
       } satisfies SweepSegment,
       {
-        ...result.at(-1) as SweepSegment,
-        t0: 0.6,
+        t0: 0.4,
         t1: 1,
+        colors: ['black', 'black'],
       } satisfies SweepSegment,
     ]
   }

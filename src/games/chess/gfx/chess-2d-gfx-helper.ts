@@ -3,24 +3,22 @@
  *
  * Helpers to draw chess help panel and 2d view mode.
  */
-import { PIECE_NAMES, type PieceName } from './chess-enums'
+import { PIECE_NAMES, type PieceName } from '../chess-enums'
 import { getImage } from 'gfx/2d/image-asset-loader'
-import { pickColorsForChessTile } from './chess-colors'
-import type { Chess } from './chess-helper'
-import type { ChessTileHighlight } from './chess-hl-tiles'
-import { CHESS_MOVES } from './chess-rules'
-import { COLLECTIBLES } from './chess-rewards'
+import type { Chess } from '../chess-helper'
+import { COLLECTIBLES } from '../chess-rewards'
 import type { StaticElement } from 'guis/gui'
-import type { CollectibleName } from './levels/chess-levels.json.d'
-import { flatViewportDisplay, goalDisplays, pawnLabel } from './gui/chess-hud-elements'
+import type { CollectibleName } from '../levels/chess-levels.json.d'
+import { flatViewportDisplay, goalDisplays, pawnLabel } from '../gui/chess-hud-elements'
 import { getPiecePosition } from './chess-3d-gfx-helper'
 import { getLiveTileColors } from 'gfx/3d/tile-group-color-buffer'
 import { drawText } from 'gfx/2d/text-gfx-helper'
-import type { TileColors } from 'gfx/styles/style'
-import { isTileHeld } from './chess-input-helper'
+import { isTileHeld } from '../chess-input-helper'
 import { addToSpriteAtlas } from 'gfx/2d/sprite-atlas'
-import { chessRun } from './chess-run'
-import { Color } from 'three'
+import { chessRun } from '../chess-run'
+import { Color, Vector3 } from 'three'
+import type { TileIndex } from 'core/grid-logic/indexed-grid'
+import type { Tiling } from 'core/grid-logic/tilings/tiling'
 
 export const rewardChoiceBackground = new Color(0x000000)
 export const flatChessBackground = new Color(0xaaccff) // sky color
@@ -133,70 +131,11 @@ function buildGoalFrame(buffer: OffscreenCanvas, piece: PieceName, arrowOffset =
   ctx.drawImage(chestImage, startX + 2 * (ICON_SIZE + ICON_DIST), centerY, ICON_SIZE, ICON_SIZE)
 }
 
-export function buildMovesDiagram(piece: PieceName) {
-  const buffer = undefined as OffscreenCanvas | undefined // movesDisplay?.imageset?.default
-  if (!buffer) {
-    return
-    throw new Error('chess moves diagram element has no buffer')
-  }
-  const ctx = buffer.getContext('2d') as OffscreenCanvasRenderingContext2D
-  ctx.clearRect(0, 0, buffer.width, buffer.height)
-
-  // Board and piece constants
-  const BOARD_SIZE = 5
-  const TILE_SIZE = 10
-  const pieceImage = getImage(`icons/chess/8x8-${piece}.png`)
-
-  // check allowed moves for piece
-  const hash = (x, y) => 100 * x + y
-  const allowedHashes: Array<number> = []
-  const { range, deltas } = CHESS_MOVES[piece]
-  for (const [x, y] of deltas) {
-    allowedHashes.push(hash(x, y))
-    if (range === 'long') {
-      allowedHashes.push(hash(2 * x, 2 * y))
-    }
-  }
-
-  // Calculate board position (centered)
-  const boardPx = BOARD_SIZE * TILE_SIZE
-  const startX = (buffer.width - boardPx) / 2
-  const startY = (buffer.height - boardPx) / 2
-
-  // Draw 5x5 board
-  for (let row = 0; row < BOARD_SIZE; row++) {
-    for (let col = 0; col < BOARD_SIZE; col++) {
-      const x = startX + col * TILE_SIZE
-      const y = startY + row * TILE_SIZE
-      let hl: ChessTileHighlight | undefined = undefined
-      if (allowedHashes.includes(hash(col - 2, row - 2))) {
-        hl = 'allowedMove'
-      }
-      const tileColors = pickColorsForChessTile({ x: col, z: row, i: 0 }, hl)
-      ctx.fillStyle = tileColors.top.getStyle()
-      ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE)
-      ctx.strokeStyle = tileColors.sides.getStyle()
-      ctx.lineWidth = 1
-      ctx.strokeRect(x + 0.5, y + 0.5, TILE_SIZE - 1, TILE_SIZE - 1)
-    }
-  }
-
-  // Draw the piece in the center tile
-  const centerCol = BOARD_SIZE / 2
-  const centerRow = BOARD_SIZE / 2
-  const pieceX = startX + centerCol * TILE_SIZE
-  const pieceY = startY + centerRow * TILE_SIZE
-  ctx.drawImage(pieceImage,
-    pieceX - pieceImage.width / 2,
-    pieceY - pieceImage.height / 2,
-  )
-}
-
 // Board constants
 const BOARD_SIZE = 5
 const TILE_SIZE = 16
 
-export function renderFlatView(
+export function updateFlatView(
   chess: Chess,
 ) {
   const buffer = flatViewportDisplay?.imageset?.default
@@ -206,11 +145,18 @@ export function renderFlatView(
 
   flatViewportDisplay.isVisible = true
   flatViewportDisplay.needsUpdate = true
-  const ctx = buffer.getContext('2d') as OffscreenCanvasRenderingContext2D
 
+  drawFlatView(buffer, chess)
+}
+
+export function drawFlatView(
+  buffer: OffscreenCanvas,
+  chess: Chess,
+) {
+  const ctx = buffer.getContext('2d') as OffscreenCanvasRenderingContext2D
   const { centerTile, goalTile, player, pawns, enemies } = chess
 
-  const goalImage = getImage('icons/chess/16x16-chest.png')
+  ctx.clearRect(0, 0, buffer.width, buffer.height)
 
   // Center tile grid position
   const centerCol = Math.floor(BOARD_SIZE / 2)
@@ -221,8 +167,9 @@ export function renderFlatView(
   const startX = (buffer.width - boardPx) / 2
   const startY = (buffer.height - boardPx) / 2
 
-  const cx = (buffer.width - TILE_SIZE) / 2
-  const cy = (buffer.height - TILE_SIZE) / 2
+  const centerPos = chess.getPosOnTile(centerTile, new Vector3())
+  // const cx = (buffer.width - TILE_SIZE) / 2
+  // const cy = (buffer.height - TILE_SIZE) / 2
 
   // Draw 5x5 board
   for (let row = -2; row <= 2; row++) {
@@ -232,27 +179,19 @@ export function renderFlatView(
         continue
       }
 
-      // pick highlight mode
-      // let hl: ChessTileHighlight | undefined = undefined
-      // if (hlTiles.allowedMoves.has(tileIndex.i)) {
-      //   hl = 'allowedMove'
-      // }
-      // if (tileIndex === chess.lastHoveredTile) {
-      //   hl = 'hover'
-      // }
-      const tileColors = getLiveTileColors(tileIndex)
-      const x = cx + col * TILE_SIZE
-      const y = cy + row * TILE_SIZE
+      const tilePos = chess.getPosOnTile(tileIndex)
+      const x = startX + (centerCol + (tilePos.x - centerPos.x)) * TILE_SIZE
+      const y = startY + (centerRow + (tilePos.z - centerPos.z)) * TILE_SIZE
 
-      drawTile(ctx, x, y, tileColors)
+      // draw tile
+      drawTile(ctx, x, y, chess.context.terrain.grid.tiling, tileIndex)
 
       if (isTileHeld(tileIndex)) {
-        drawTile(ctx, x, y + 1, tileColors)
+        // draw again on pixel lower
+        drawTile(ctx, x, y + 1, chess.context.terrain.grid.tiling, tileIndex)
       }
     }
   }
-
-  const centerPos = chess.getPosOnTile(centerTile)
 
   // draw player
   const playerPos = getPiecePosition(player)// .clone()
@@ -282,19 +221,21 @@ export function renderFlatView(
   }
 
   // draw goal
-  const goal = goalTile
-  const goalCol = centerCol + (goal.x - centerTile.x)
-  const goalRow = centerRow + (goal.z - centerTile.z)
-  const goalX = startX + goalCol * TILE_SIZE
-  const goalY = startY + goalRow * TILE_SIZE
+  // const goal = goalTile
+  // const goalCol = centerCol + (goal.x - centerTile.x)
+  // const goalRow = centerRow + (goal.z - centerTile.z)
+  // const goalX = startX + goalCol * TILE_SIZE
+  // const goalY = startY + goalRow * TILE_SIZE
+  const goalPos = chess.context.terrain.grid.indexToPosition(goalTile)
+  const goalX = startX + (centerCol + (goalPos.x - centerPos.x)) * TILE_SIZE
+  const goalY = startY + (centerRow + (goalPos.z - centerPos.z)) * TILE_SIZE
+  const goalImage = getImage('icons/chess/16x16-chest.png')
   ctx.drawImage(goalImage, goalX, goalY, TILE_SIZE, TILE_SIZE)
 }
 
-function drawTile(ctx, x: number, y: number, tileColors: TileColors) {
-  // = chess.context.terrain.generatedTiles[tileIndex.i]?.liveColors
-  //   || pickColorsForChessTile(tileIndex, hl)
+function drawTile(ctx, x: number, y: number, tiling: Tiling, tileIndex: TileIndex) {
+  const tileColors = getLiveTileColors(tileIndex)
   ctx.fillStyle = tileColors.top.getStyle()
-
   ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE)
   ctx.strokeStyle = tileColors.sides.getStyle()
   ctx.lineWidth = 1

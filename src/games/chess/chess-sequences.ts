@@ -7,7 +7,7 @@
 
 import type { ChessPhase } from './chess-enums'
 import type { Chess } from './chess-helper'
-import type { RenderablePiece } from './chess-3d-gfx-helper'
+import type { RenderablePiece } from './gfx/chess-3d-gfx-helper'
 import { ChessMoveAnim } from './chess-move-anim'
 import { canLandOn, getAllowedMoves } from './chess-rules'
 

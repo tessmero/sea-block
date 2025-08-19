@@ -4,16 +4,17 @@
  * WASD controls on bottom-left for free-cam game.
  */
 
-import type { CssLayout } from 'util/layout-parser'
+import type { CssLayout, CssRuleset } from 'util/layout-parser'
 import { standards } from './layout-helper'
 import { COMMON_LAYOUT } from './common-layout'
+import type { FreecamLayoutKey } from 'guis/keys/freecam-layout-keys'
 
 const { btn, btnSize, pad } = standards
 
 const wasdBtn = {
   parent: '_wasdBtnRegion',
   ...btn,
-}
+} as const satisfies CssRuleset<FreecamLayoutKey>
 
 export const FREECAM_DESKTOP_LAYOUT = {
 
@@ -45,4 +46,4 @@ export const FREECAM_DESKTOP_LAYOUT = {
     bottom: 0,
   },
 
-} as const satisfies CssLayout
+} as const satisfies CssLayout<FreecamLayoutKey>

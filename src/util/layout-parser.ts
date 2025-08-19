@@ -8,16 +8,19 @@
 import { typedEntries } from '../util/typed-entries'
 
 // input named rulesets
-export type CssLayout = Readonly<Record<string, CssRuleset>>
+export type CssLayout<TLayoutKey extends string = string>
+  = Readonly<Partial<Record<
+    TLayoutKey, CssRuleset<TLayoutKey>
+  >>>
 
 // output named rectangles
-export type ComputedRects = Readonly<Record<string, Rectangle>>
+export type ComputedRects = Readonly<Partial<Record<string, Rectangle>>>
 
 // A ruleset describing one rectangle
-export type CssRuleset = Readonly<Partial<
+export type CssRuleset<TLayoutKey extends string = string> = Readonly<Partial<
   { [K in CssKey | CssKeyAtCond]: CssValue }
-  & { parent: string }
-  & { children: CssLayout }
+  & { parent: TLayoutKey }
+  & { children: CssLayout<string> }
 >>
 
 // parsed output for one rectangle
@@ -40,8 +43,8 @@ export function parseLayoutRectangles(screenRect: Rectangle, css: CssLayout): Co
   return glp._computedRects
 }
 
-class GuiLayoutParser {
-  public readonly _computedRects: Record<string, Rectangle> = {}
+class GuiLayoutParser<TLayoutKey extends string> {
+  public readonly _computedRects: Partial<Record<TLayoutKey, Rectangle>> = {}
 
   private isPortrait = false
   private isLandscape = false
@@ -61,7 +64,7 @@ class GuiLayoutParser {
     for (const [key, rules] of Object.entries(css)) {
       this.parent = screenRect
       this._currentLayoutKey = key
-      this._computedRects[key] = this.floorRect(this.computeRect(rules))
+      this._computedRects[key] = this.floorRect(this.computeRect(rules as CssRuleset))
     }
 
     // parse any sub-layouts defined in 'children' properties

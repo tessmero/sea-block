@@ -19,7 +19,9 @@ const skipBtn: GuiElement = {
     seaBlock.config.tree.children.game.value = 'free-cam'
     Transition.isFirstUncover = false
     DropTransition.t = 0
-    seaBlock.startTransition()
+    seaBlock.startTransition({
+      transition: Transition.create('flat', seaBlock),
+    })
     StartSequenceGame.wasSkipped = true
   },
 }

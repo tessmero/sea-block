@@ -7,14 +7,16 @@
 import { leftJoy, leftJoySlider, rightJoy, rightJoySlider } from 'guis/elements/joysticks'
 import { configBtn, musicBtn, grabbedMeshElements } from 'guis/elements/misc-buttons'
 import { wasdButtons } from 'guis/elements/wasd-buttons'
+import type { RegisteredGui } from 'guis/gui'
 import { Gui } from 'guis/gui'
+import type { FreecamLayoutKey } from 'guis/keys/freecam-layout-keys'
 import { FREECAM_DESKTOP_LAYOUT } from 'guis/layouts/freecam-desktop-layout'
 import { FREECAM_LANDSCAPE_LAYOUT } from 'guis/layouts/freecam-landscape-layout'
 import { FREECAM_PORTRAIT_LAYOUT } from 'guis/layouts/freecam-portrait-layout'
 import { isTouchDevice } from 'mouse-touch-input'
 import type { SeaBlock } from 'sea-block'
 
-export class FreeCamGui extends Gui {
+export class FreeCamGui extends Gui<FreecamLayoutKey> {
   // public clickElem(elem: GuiElement, event: ElementEvent): void {
   //   super.clickElem(elem, event)
   //   if (targetElement.layoutKey === 'grabbedMesh') {
@@ -68,6 +70,6 @@ export class FreeCamGui extends Gui {
         }
         return FREECAM_DESKTOP_LAYOUT
       },
-    })
+    } satisfies RegisteredGui<FreecamLayoutKey>)
   }
 }

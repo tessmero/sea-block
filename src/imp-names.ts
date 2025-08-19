@@ -32,7 +32,7 @@ export type GameName = (typeof GAME.NAMES)[number]
 
 // terrain generators
 export const GENERATOR = {
-  NAMES: ['Michael2-3B', 'space-quest', 'all-ocean', 'flora-test', 'flat'],
+  NAMES: ['Michael2-3B', 'space-quest', 'all-ocean', 'flora-test', 'flat', 'chess'],
   SOURCES: ['src/generators/**/*.ts'],
 } as const satisfies ImpManifest
 export type GeneratorName = (typeof GENERATOR.NAMES)[number]
@@ -53,7 +53,7 @@ export type GridAnimName = (typeof GRID_ANIM.NAMES)[number]
 
 // transition animation sequences
 export const TRANSITION = {
-  NAMES: ['flat', 'drop', 'ssd', 'checkered', 'seamless'],
+  NAMES: ['flat', 'drop', 'ss', 'ssd', 'checkered', 'seamless', 'zoom'],
   SOURCES: ['src/gfx/transitions/imp/**/*.ts'],
 } as const satisfies ImpManifest
 export type TransitionName = (typeof TRANSITION.NAMES)[number]

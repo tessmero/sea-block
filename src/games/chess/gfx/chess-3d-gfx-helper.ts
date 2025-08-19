@@ -11,15 +11,14 @@ import { Color, Vector3 } from 'three'
 import { CanvasTexture, Mesh, MeshLambertMaterial } from 'three'
 import { unlinkGameElement, type GameElement } from 'games/game'
 import { getMesh } from 'gfx/3d/mesh-asset-loader'
-import type { PieceName } from './chess-enums'
-import { PIECE_NAMES } from './chess-enums'
+import type { PieceName } from '../chess-enums'
+import { PIECE_NAMES } from '../chess-enums'
 import { getImage } from 'gfx/2d/image-asset-loader'
 import type { TileIndex } from 'core/grid-logic/indexed-grid'
-import type { Chess } from './chess-helper'
-import { showCurrentPiece } from './gui/chess-hud-elements'
+import type { Chess } from '../chess-helper'
+import { showCurrentPiece } from '../gui/chess-hud-elements'
 import type { Pipeline } from 'gfx/3d/pipelines/pipeline'
 import { chessBoardPipeline } from 'gfx/3d/pipelines/chess-board-pipeline'
-import { freeCamPipeline } from 'gfx/3d/pipelines/free-cam-pipeline'
 import type { SeaBlock } from 'sea-block'
 import { getOutlinedMesh } from './chess-outline-gfx'
 import { setMaterial } from 'gfx/3d/gui-3d-gfx-helper'
@@ -49,11 +48,11 @@ export function resetChessCamera(context: SeaBlock): void {
 }
 
 // replace pipeline for certain tiles
-export function getChessPipeline(chess: Chess, tile: TileIndex): Pipeline {
-  if (chess && chess.boardTiles.includes(tile.i)) {
-    return chessBoardPipeline
-  }
-  return freeCamPipeline
+export function getChessPipeline(_chess: Chess, _tile: TileIndex): Pipeline {
+  // if (chess && chess.boardTiles.includes(tile.i)) {
+  return chessBoardPipeline
+  // }
+  // return freeCamPipeline
 }
 
 // visible chess piece in world

@@ -4,8 +4,26 @@
  * Used in ssd-transition to build series of sweeps with shifting colors.
  */
 
-import type { Tiling } from 'core/grid-logic/tilings/tiling'
+import { Tiling } from 'core/grid-logic/tilings/tiling'
 import { type ColorRepresentation } from 'three'
+import { Transition } from './transition'
+import { FlatTransition } from './imp/flat-transition'
+import type { SeaBlock } from 'sea-block'
+import { randChoice } from 'util/rng'
+
+export function buildSweepTransition(context: SeaBlock, seg: SweepSegment): BufferedSegment {
+  FlatTransition.forceFlatSweep = true
+  const transition = Transition.create(
+    'flat', context, seg,
+  )
+  FlatTransition.forceFlatSweep = false
+  return { ...seg, transition, isFinished: false }
+}
+
+export interface BufferedSegment extends SweepSegment {
+  transition: Transition
+  isFinished: boolean
+}
 
 export type SweepSegment = {
   t0: number
@@ -34,24 +52,56 @@ export function buildHideSegments(): Array<SweepSegment> {
   return segments
 }
 
-// going from black to sky color
-export function buildShowSegments(): Array<SweepSegment> {
+// going from black to sky color, ends early to show drop animation
+export function buildSsdShowSegments(): Array<SweepSegment> {
   return [
     {
       t0: 0,
       t1: 0.2,
       colors: ['black', 'black'],
     },
-    {
-      t0: 0.05,
-      t1: 0.25,
-      colors: ['0x5599aa', '0x5599aa'],
-    },
+    // {
+    //   t0: 0.05,
+    //   t1: 0.25,
+    //   colors: ['0x5599aa', '0x5599aa'],
+    // },
     {
       t0: 0.1,
       t1: 0.3,
       colors: ['0xaaccff', '0xaaccff'],
       // color: '0xaaccff', // sky background
+    },
+  ]
+}
+
+// going from black to sky color
+export function buildShowSegments(): Array<SweepSegment> {
+  // last two must have the same tiling
+  const tiling = Tiling.create(randChoice(['triangle', 'octagon', 'hex'] as const))
+
+  return [
+    {
+      t0: 0,
+      t1: 0.7,
+      colors: ['black', 'black'],
+    },
+    {
+      t0: 0.1,
+      t1: 0.8,
+      colors: ['white', 'white'],
+    },
+    {
+      t0: 0.2,
+      t1: 0.9,
+      colors: ['black', 'black'],
+      tiling,
+    },
+    {
+      // clearing
+      t0: 0.3,
+      t1: 1,
+      colors: ['black', 'black'], // doesn't matter
+      tiling,
     },
   ]
 }

@@ -113,6 +113,13 @@ export default tseslint.config(
             '**/main', // must not import main.ts entry point (circular import)
             '../../../*', // must not go up three levels with relative path
           ],
+
+          // // must use three.ez instanced-mesh
+          // paths: [{
+          //   name: 'three',
+          //   importNames: ['InstancedMesh'],
+          //   message: 'Should use "import { InstancedMesh2 } from \'@three.ez/instanced-mesh\'".',
+          // }],
         },
       ],
     },
@@ -124,6 +131,7 @@ export default tseslint.config(
 
       // disallow import * as THREE from 'three'
       'sb/no-three-namespace-import': 'warn',
+
     },
   },
   {
@@ -206,6 +214,21 @@ export default tseslint.config(
           custom: { regex: '^T[A-Z]', match: true },
         },
       ],
+    },
+  },
+
+  // require valid key enumeration files
+  {
+    files: ['src/guis/keys/**/*.ts'],
+    plugins: { '@typescript-eslint': tseslint.plugin },
+    languageOptions: {
+      parserOptions: {
+        project: './tsconfig.json',
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+    rules: {
+      'sb/valid-key-type': 'error',
     },
   },
 

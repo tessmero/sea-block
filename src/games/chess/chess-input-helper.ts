@@ -11,13 +11,13 @@ import type { TileIndex } from 'core/grid-logic/indexed-grid'
 import {
   instancedPieceMeshes, registerInstancedPiece,
   setPiecePosition, treasureChestElement,
-} from './chess-3d-gfx-helper'
+} from './gfx/chess-3d-gfx-helper'
 import type { InputId } from 'input-id'
 import { playSound } from 'audio/sound-effects'
-import { updatePawnButtonLabel } from './chess-2d-gfx-helper'
+import { updatePawnButtonLabel } from './gfx/chess-2d-gfx-helper'
 import type { PieceName } from './chess-enums'
 import type { Intersection } from 'three'
-import { togglePauseMenu } from './gui/chess-dialog-elements'
+import { togglePauseMenu } from './gui/chess-hud-dialog-elements'
 
 // click action for flat viewport gui element
 export function flatViewPortClick(chess: Chess, inputEvent: ProcessedSubEvent) {
@@ -286,14 +286,18 @@ export function pickTileInFlatView(chess: Chess, inputEvent: ProcessedSubEvent):
     const rectangle = gui.overrideLayoutRectangles[layoutKey] || gui.layoutRectangles[layoutKey]
     if (rectangle) {
       // compute point in units of flat view tiles
-      const { x, y } = rectangle
-      const col = (lvPos.x - x) / 16
-      const row = (lvPos.y - y) / 16
-      if (col > 0 && col < 5 && row > 0 && row < 5) {
+      const { x, y, w, h } = rectangle
+      // check if lvPos is inside rectangle
+      if (
+        lvPos.x >= x && lvPos.x < x + w
+        && lvPos.y >= y && lvPos.y < y + h
+      ) {
         // point is inside flat view
+        const col = (lvPos.x - x) / 16
+        const row = (lvPos.y - y) / 16
         const tile = chess.context.terrain.grid.xzToIndex(
-          Math.floor(chess.centerTile.x + col - 2),
-          Math.floor(chess.centerTile.z + row - 2),
+          Math.floor(chess.centerTile.x + col - 3),
+          Math.floor(chess.centerTile.z + row - 3),
         )
         return tile
       }

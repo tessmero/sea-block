@@ -138,7 +138,23 @@ export function getAllowedMoves(params: GamPars): Array<TileIndex> {
 export function canLandOn(targetTile: TileIndex, params: GamPars): boolean {
   const { chess, terrain } = params
   const { i } = targetTile
-  return (chess && chess.boardTiles.includes(i)) || (terrain.generatedTiles[i]?.gTile.isWater === false)
+  if (chess) {
+    if (chess.boardTiles.includes(i)) {
+      // console.debug('canLandOn: success on board tile')
+      return true
+    }
+    // else {
+    //   console.debug('canLandOn: not a board tile', i)
+    //   return false
+    // }
+  }
+  if (terrain.members[i].isWater) {
+    // console.debug('canLandOn: tile is water', i)
+    return false
+  }
+
+  // console.debug('canLandOn: success on solid tile')
+  return true
 }
 
 function canMoveThrough(targetTile: TileIndex, params: GamPars): boolean {
@@ -147,5 +163,20 @@ function canMoveThrough(targetTile: TileIndex, params: GamPars): boolean {
   if (chess && (chess.getPieceOnTile(targetTile) || chess.goalTile.i === i)) {
     return false // tile is occupied
   }
-  return (chess && chess.boardTiles.includes(i)) || (terrain.generatedTiles[i]?.gTile.isWater === false)
+
+  if (chess) {
+    if (chess.boardTiles.includes(i)) {
+      return true
+    }
+    // else {
+    //   console.debug('canLandOn: not a board tile', i)
+    //   return false
+    // }
+  }
+  if (terrain.members[i].isWater) {
+    // console.debug('canMoveThrough: tile is water', i)
+    return false
+  }
+
+  return true
 }

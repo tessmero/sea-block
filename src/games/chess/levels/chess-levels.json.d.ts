@@ -14,6 +14,7 @@ export interface ChessLevelsData {
 }
 
 export interface ChessLevel {
+  id: string
   description?: string
   requires?: Array<CollectibleName>
   layout: Array<Array<Cell>>

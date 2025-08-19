@@ -20,9 +20,9 @@ import type { ImageAssetUrl } from 'gfx/2d/image-asset-loader'
 import type { FontVariant, TextAlign } from 'gfx/2d/text-gfx-helper'
 import { getElementDims } from './layouts/layout-helper'
 
-export type StaticElement = {
+export type StaticElement<TLayoutKey extends string = string> = {
+  layoutKey: TLayoutKey // must have layout rectangle
   display: ElementDisplayParams
-  layoutKey: string // must have layout rectangle
   clickAction?: (event: ElementEvent) => void
   dragAction?: (event: ElementEvent) => void
   unclickAction?: (event: ElementEvent) => void
@@ -32,12 +32,12 @@ export type StaticElement = {
 }
 
 // sliders define "slideIn" property pointing to a layout key
-export type Slider = StaticElement & {
+export type Slider<TLayoutKey extends string = string> = StaticElement<TLayoutKey> & {
   slideIn: string // slide within outer rectangle
   slideRadius?: number // extra restriction if slideIn defined
 }
 
-export type GuiElement = StaticElement | Slider
+export type GuiElement<TLayoutKey extends string = string> = StaticElement<TLayoutKey> | Slider<TLayoutKey>
 
 // event passed to clickAction and other callbacks
 export type ElementEvent = {
@@ -77,13 +77,13 @@ export type ButtonState = (typeof BUTTON_STATES)[number]
 export type ElementId = `_${number}` // not parse-able as number
 let nextElementId = 0
 
-export class Gui {
+export class Gui<TLayoutKey extends string = string> {
   public guiLayout?: CssLayout // rules for computing rectangles
   public layoutRectangles: ComputedRects = {}
   public overrideLayoutRectangles: Record<string, Rectangle> = {}
   public elementOcclusions: Record<ElementId, Set<ElementId>> = {}
 
-  public elements: Record<ElementId, GuiElement> = {}
+  public elements: Record<ElementId, GuiElement<TLayoutKey>> = {}
   public reversedIds!: ReadonlyArray<ElementId> // assigned in init
 
   // subset of elements that are currently held down by a mouse/touch/key
@@ -125,7 +125,7 @@ export class Gui {
   // called in create
   init(
     layoutFactory: (context: SeaBlock) => CssLayout,
-    elements: ReadonlyArray<GuiElement>,
+    elements: ReadonlyArray<GuiElement<TLayoutKey>>,
   ) {
     this.layoutFactory = layoutFactory
     for (const elem of elements) {
@@ -148,7 +148,7 @@ export class Gui {
       if (elem.layoutKey
       // && (['panel', 'button', 'joy-region']).includes(elem.display.type)
       ) {
-        this.pickable[id] = (elem as Slider).slideIn || elem.layoutKey
+        this.pickable[id] = (elem as Slider<TLayoutKey>).slideIn || elem.layoutKey
       }
     }
   }
@@ -207,7 +207,7 @@ export class Gui {
     if (held) {
       // this is ongoign drag
       const [elementId, _inputId] = held
-      const elem = this.elements[elementId] as GuiElement
+      const elem = this.elements[elementId] as GuiElement<TLayoutKey>
 
       let sliderState: SliderState | undefined = undefined
 
@@ -317,16 +317,20 @@ export class Gui {
     this.clickElem(elem, event)
   }
 
-  protected clickElem(elem: GuiElement, event: ElementEvent) {
+  protected clickElem(elem: GuiElement<TLayoutKey>, event: ElementEvent) {
     const { clickAction } = elem
     if (clickAction) {
       clickAction(event)
     }
   }
 
-  private _slide(elem: Slider, lvPos: Vector2): SliderState | undefined {
+  private _slide(elem: Slider<TLayoutKey>, lvPos: Vector2): SliderState | undefined {
     const { layoutKey, slideIn, slideRadius } = elem
     const sliderRect = this.layoutRectangles[layoutKey]
+    const container = this.layoutRectangles[slideIn]
+    if (!sliderRect || !container) {
+      return
+    }
     const { w, h } = sliderRect // maintain original dimensions
     let desiredRect = { x: lvPos.x - w / 2, y: lvPos.y - h / 2, w, h } // centered at mouse
 
@@ -348,7 +352,6 @@ export class Gui {
       }
     }
 
-    const container = this.layoutRectangles[slideIn]
     const restrictedRect = fitRectangleInContainer(desiredRect, container)// restricted to container
     if (!restrictedRect) {
       return // doesn't fit in container
@@ -416,12 +419,12 @@ export class Gui {
 
   // static registry pattern
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  static _registry: Record <GuiName, RegisteredGui> = {} as any
-  static _preloaded: Partial<Record <GuiName, Gui>> = {}
+  static _registry: Record <GuiName, RegisteredGui<string>> = {} as any
+  static _preloaded: Partial<Record <GuiName, Gui<string>>> = {}
 
   protected constructor() {}
 
-  static register(name: GuiName, rg: RegisteredGui): void {
+  static register<TLayoutKey extends string>(name: GuiName, rg: RegisteredGui<TLayoutKey>): void {
     if (name in this._registry) {
       throw new Error(`Game already registered: '${name}'`)
     }
@@ -450,19 +453,19 @@ export class Gui {
     }))
   }
 
-  static create(name: GuiName): Gui {
+  static create(name: GuiName): Gui<string> {
     if (name in this._preloaded) {
-      return this._preloaded[name] as Gui
+      return this._preloaded[name] as Gui<string>
     }
     throw new Error(`gui '${name}' was not preloaded`)
   }
 }
 
-type RegisteredGui = {
-  factory: () => Gui
+export type RegisteredGui<TLayoutKey extends string> = {
+  factory: () => Gui<TLayoutKey>
   layoutFactory: (context: SeaBlock) => CssLayout
-  allLayouts?: Array<CssLayout> // only necessary if multiple layouts
-  elements: Array<GuiElement>
+  allLayouts?: Array<CssLayout<TLayoutKey>> // only necessary if multiple layouts
+  elements: Array<GuiElement<TLayoutKey>>
 }
 
 function fitRectangleInContainer(desired: Rectangle, container: Rectangle): Rectangle | undefined {

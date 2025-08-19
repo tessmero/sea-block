@@ -5,6 +5,7 @@
  */
 
 import type { ElementEvent, GuiElement, Slider, SliderState } from 'guis/gui'
+import type { FreecamLayoutKey } from 'guis/keys/freecam-layout-keys'
 import type { SeaBlock } from 'sea-block'
 
 // centered stick position
@@ -25,7 +26,7 @@ const rightYDead = 0.2 // usually don't want to pitch up or down
 const rightXDead = 0.05 // usually do want to rotate left or right
 
 // left touch region
-export const leftJoy: GuiElement = {
+export const leftJoy: GuiElement<FreecamLayoutKey> = {
   display: {
     type: 'joy-region',
     border: '16x16-btn-square',
@@ -36,7 +37,7 @@ export const leftJoy: GuiElement = {
 }
 
 // left draggable element
-export const leftJoySlider: Slider = {
+export const leftJoySlider: Slider<FreecamLayoutKey> = {
   display: {
     type: 'button',
     icon: 'icons/16x16-pan.png',
@@ -56,7 +57,7 @@ export const leftJoySlider: Slider = {
 }
 
 // right touch region
-export const rightJoy: GuiElement = {
+export const rightJoy: GuiElement<FreecamLayoutKey> = {
   display: {
     type: 'joy-region',
     border: '16x16-btn-square',
@@ -67,7 +68,7 @@ export const rightJoy: GuiElement = {
 }
 
 // right draggable element
-export const rightJoySlider: Slider = {
+export const rightJoySlider: Slider<FreecamLayoutKey> = {
   display: {
     type: 'button',
     icon: 'icons/16x16-rotate.png',

@@ -99,12 +99,15 @@ export class TileGroup extends Group<Tile, WaterSim> {
   //   }
   // }
 
-  // public generateAllTiles() {
+  // public regenerateAllTiles() {
+  //   let waterCount = 0
   //   for (const idx of this.grid.tileIndices) {
-  //     if (!this.generatedTiles[idx.i]) {
-  //       this.generateTile(idx)
+  //     const result = this.generateTile(idx)
+  //     if( result.gTile.isWater ){
+  //       waterCount++
   //     }
   //   }
+  //   console.log('regnerated tiles waterCount: ', waterCount)
   // }
 
   public generateTile(idx: TileIndex): RenderableTile {
@@ -114,6 +117,9 @@ export class TileGroup extends Group<Tile, WaterSim> {
     const result = {
       gTile: this.generator.getTile(x, z),
     }
+    // if (seaBlockConfig.tree.children.generator.value === 'space-quest') {
+    //   result.gTile.isWater = false
+    // }
     this.generatedTiles[i] = result
 
     // update water if called after members constructed
@@ -151,6 +157,7 @@ export class TileGroup extends Group<Tile, WaterSim> {
   public centerXZ = { x: 0, z: 0 }
 
   panToCenter(x: number, z: number) {
+    // console.log('pan to center',x,z,this.centerXZ)
     this.centerXZ = { x, z }
 
     const { x: tileX, z: tileZ } = this.grid.positionToCoord(x, z)
@@ -183,6 +190,7 @@ export class TileGroup extends Group<Tile, WaterSim> {
    * @param dz The number of z grid cells (-1, 0, or 1)
    */
   pan(dx: number, dz: number) {
+    // console.log('pan step', dx, dz)
     const width = this.grid.width
     const depth = this.grid.depth
 

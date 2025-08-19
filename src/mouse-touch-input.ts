@@ -30,6 +30,7 @@ import type { TileIndex } from './core/grid-logic/indexed-grid'
 import type { SeaBlock } from './sea-block'
 import type { GameElement } from 'games/game'
 import { setMaterial } from 'gfx/3d/gui-3d-gfx-helper'
+import { pickAabbTile } from 'util/aabb-raycaster'
 
 export let isTouchDevice = false // set to true on first touch event -> ignore mouse events
 
@@ -75,6 +76,12 @@ const handlers: ReadonlyArray<EventHandler> = [
       'touchmove',
     ],
     action: (event, context) => {
+      ///////////////////////////////////////////////////////////////////
+      // TestSupport // support automated report on tessmero.github.io //
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (context as any).mousePosForTestSupport = event.screenPos
+      ///////////////////////////////////////////////////////////////////
+
       if (hoveredGameElem) {
         // restore previously hovered mesh
         const { defaultMat } = hoveredGameElem
@@ -107,17 +114,19 @@ const handlers: ReadonlyArray<EventHandler> = [
             // check for added property set in game.ts
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             hoveredGameElem = (event.pickedMesh as any).gameElement as GameElement // set in game.ts
-            const { hoverMat } = hoveredGameElem
-            if (hoverMat) {
-              setMaterial(hoveredGameElem, hoverMat)
-            }
+            if (hoveredGameElem) {
+              const { hoverMat, clickAction } = hoveredGameElem
+              if (hoverMat) {
+                setMaterial(hoveredGameElem, hoverMat)
+              }
 
-            if (hoveredGameElem.clickAction) {
-              hasConsumed = true
-              document.documentElement.style.cursor = 'pointer'
-            }
-            else {
+              if (clickAction) {
+                hasConsumed = true
+                document.documentElement.style.cursor = 'pointer'
+              }
+              else {
               // element has isPickable = true
+              }
             }
           }
         }
@@ -184,13 +193,17 @@ const handlers: ReadonlyArray<EventHandler> = [
       if (!hasConsumed && event.pickedMesh) {
         // check for added property set in game.ts
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { clickAction } = (event.pickedMesh as any).gameElement as GameElement // set in game.ts
-        if (clickAction) {
-          clickAction({ seaBlock: context, inputEvent: event })
-          hasConsumed = true
-        }
-        else {
+        const clickedElem = (event.pickedMesh as any).gameElement as GameElement // set in game.ts
+        if (clickedElem) {
+          const { clickAction } = clickedElem
+
+          if (clickAction) {
+            clickAction({ seaBlock: context, inputEvent: event })
+            hasConsumed = true
+          }
+          else {
           // element has isPickable = true
+          }
         }
       }
 
@@ -322,12 +335,13 @@ export function handleEvent(
       pickedMesh = pickedMeshes[0].object
     }
 
-    // if (!pickedMesh) {
-    // pick tile on terrain
-    raycaster.ray.intersectPlane(planeY, intersection)
-    const { x, z } = terrain.grid.positionToCoord(intersection.x, intersection.z)
-    pickedTile = terrain.grid.xzToIndex(x, z)
-    // }
+    // // pick tile on terrain
+    // raycaster.ray.intersectPlane(planeY, intersection)
+    // const { x, z } = terrain.grid.positionToCoord(intersection.x, intersection.z)
+    // pickedTile = terrain.grid.xzToIndex(x, z)
+
+    // pick tile with AABB square tile raycasting
+    pickedTile = pickAabbTile(raycaster, terrain)
 
     // compute layered-viewport-position in terms of big pixels
     lvPos.x = screenPos.x * layeredViewport.pixelRatio

@@ -1,7 +1,7 @@
 
 
 <h1>
-<img src="https://github.com/tessmero/sea-block/raw/main/tests/gfx/test-images/octagon-tiling.png"/>Sea Block</h1>
+<img src="https://github.com/tessmero/sea-block/raw/main/tests/gfx/test-images/octagon-transition.png"/>Sea Block</h1>
 
 [![Node.js CI](https://github.com/tessmero/sea-block/actions/workflows/node.js.yml/badge.svg)](https://github.com/tessmero/sea-block/actions/workflows/node.js.yml)
 
@@ -26,8 +26,6 @@ Start local server and listen for changes in source.
 npm run dev
 ```
 
-Alternatively, run ```npx serve dist``` to start local server and ```npx vite build``` to rebuild assets in `dist` and listen for changes.
-
 Check for syntax errors and enforce strong typing.
 
 ```
@@ -43,13 +41,7 @@ npx eslint
 Run unit tests defined in `tests`
 
 ```
-npm run test
-```
-
-Output minified product in `dist`
-
-```
-npm run build:prod
+npx mocha
 ```
 
 ### Resources

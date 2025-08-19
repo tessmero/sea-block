@@ -66,8 +66,15 @@ export function getImage(url: ImageAssetUrl): HTMLImageElement {
   return cache.get(url) as HTMLImageElement
 }
 
+let didCallLoadAllImages = false
+
 // called on startup
-export async function loadAllImages(): Promise<void> {
+export async function loadAllImages(urlPrefix: string = ''): Promise<void> {
+  if (didCallLoadAllImages) {
+    throw new Error('called loadAllImages multiple times')
+  }
+  didCallLoadAllImages = true
+
   await Promise.all(
     IMAGE_ASSET_URLS.map(src =>
       new Promise<void>((resolve, reject) => {
@@ -78,7 +85,7 @@ export async function loadAllImages(): Promise<void> {
           resolve()
         }
         image.onerror = reject
-        image.src = `images/${src}` // queue load
+        image.src = `${urlPrefix}images/${src}` // queue load
         // console.log('loaded image asset: ', src)
       }),
     ),

@@ -12,8 +12,10 @@ type AtlasEntry = {
   y1: number
 }
 
+type AtlasImage = HTMLImageElement | OffscreenCanvas | HTMLCanvasElement
+
 // called by image loaders/generators
-export function addToSpriteAtlas(image: HTMLImageElement | OffscreenCanvas) {
+export function addToSpriteAtlas(image: AtlasImage) {
   const atlasHeight = getAtlasHeight()
   atlas.push({
     image,

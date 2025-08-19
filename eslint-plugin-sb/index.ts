@@ -25,6 +25,7 @@ import noThreeNamespaceImport from './rules/no-three-namespace-import'
 import noConstructor from './rules/no-constructor'
 import onlyProtectedCtor from './rules/only-protected-ctor'
 import validLayout from './rules/valid-layout'
+import validKeyType from './rules/valid-key-type'
 import preferPerformanceNow from './rules/prefer-performance-now'
 
 const rules = {
@@ -33,6 +34,7 @@ const rules = {
   'file-header': fileHeader,
   'no-three-namespace-import': noThreeNamespaceImport,
   'valid-layout': validLayout,
+  'valid-key-type': validKeyType,
   'prefer-performance-now': preferPerformanceNow,
 } as const
 

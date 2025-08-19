@@ -69,7 +69,12 @@ export class FlatTransition extends Transition {
 
   public tiling?: Tiling // override random tiling
 
+  public static forceFlatSweep = false
+  private forceFlatSweep!: boolean
+
   reset() {
+    this.forceFlatSweep = FlatTransition.forceFlatSweep
+
     // console.log('flat transition reset')
     this.pickChunkSize()
     this.chunkBuffer.fill(0)
@@ -123,9 +128,10 @@ export class FlatTransition extends Transition {
       this.widthInChunks, this.heightInChunks,
       this.pickTiling(),
     )
-    const hideAnimName = Transition.isFirstUncover
+    const hideAnimName = this.forceFlatSweep
       ? 'flat-sweep'
       : randChoice(['flat-sweep', 'radial-sweep', 'random-sweep'] as const)
+    // console.log('build hide anim', this.forceFlatSweep)
     this.hideAnim = GridAnimation.create(hideAnimName, this.hideGrid)
     this.hideImageset = getTempImageset(this.hideGrid.tiling, this.hideColors)
 
@@ -162,7 +168,7 @@ export class FlatTransition extends Transition {
   }
 
   public _show(t0: number, t1: number) {
-    const { ctx } = this.layeredViewport
+    const ctx = this.layeredViewport.frontCtx
 
     // start erasing with fill operations
     ctx.globalCompositeOperation = 'destination-out'
@@ -174,9 +180,10 @@ export class FlatTransition extends Transition {
         this.widthInChunks, this.heightInChunks,
         this.pickTiling(),
       )
-      const showAnimName = Transition.isFirstUncover
+      const showAnimName = this.forceFlatSweep // Transition.isFirstUncover
         ? 'flat-sweep'
         : randChoice(['flat-sweep', 'radial-sweep', 'random-sweep'] as const)
+
       this.showAnim = GridAnimation.create(showAnimName, this.showGrid)
       this.showImageset = getTempImageset(
         this.showGrid.tiling,
@@ -197,7 +204,7 @@ export class FlatTransition extends Transition {
 
   private fillChangedTiles(_t0: number, t1: number) {
     const chunkSize = this.pickChunkSize()
-    const { ctx } = this.layeredViewport
+    const ctx = this.layeredViewport.frontCtx
     let _count = 0
     for (const { tileIndex, value } of this.getChangedChunks(t1)) {
       const { x, z } = tileIndex

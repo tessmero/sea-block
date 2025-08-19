@@ -16,7 +16,7 @@ export class FlatTG extends MichaelTG {
 
   public getTile(x: number, z: number): GeneratedTile {
     return {
-      height: 132,
+      height: 133,
       color: ((Math.abs(x) + Math.abs(z)) % 2) === 0 ? colorA : colorB,
       isWater: false, isFlora: false,
     }

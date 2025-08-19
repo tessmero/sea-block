@@ -42,8 +42,16 @@ function pickValidLevel(): number {
     return 0
   }
 
-  return candidates[Math.floor(Math.random() * candidates.length)]
+  const selectedLevel = candidates[Math.floor(Math.random() * candidates.length)]
+
+  currentLevelIndex = selectedLevel
+  currentLevelId = chessLevels.levels[selectedLevel].id
+
+  return selectedLevel
 }
+
+export let currentLevelIndex = 0
+export let currentLevelId = chessLevels.levels[0].id
 
 function isLevelValid(level: ChessLevel, context: Array<CollectibleName>) {
   const { requires } = level
@@ -107,7 +115,9 @@ class ChessLevelParser {
     // console.log('load chess level')
 
     const { terrain } = this
-    // terrain.generateAllTiles()
+    // terrain.regenerateAllTiles()
+    // console.log('load level rengereated all tiles, member is water = ', terrain.members[0].isWater)
+
     // Get the first level's layout (assume 8x8)
     const layout = chessLevels.levels[this.levelIndex % chessLevels.levels.length].layout
     const nRows = layout.length // 8
@@ -151,6 +161,7 @@ class ChessLevelParser {
         }
       }
     }
+    // console.log('finish load level board tiles', this.boardTiles?.length)
   }
 }
 

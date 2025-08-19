@@ -5,8 +5,10 @@
  */
 
 import type { GuiElement } from 'guis/gui'
+import type { FreecamLayoutKey } from 'guis/keys/freecam-layout-keys'
 import type { KeyCode } from 'input-id'
 
+type FreecamElem = GuiElement<FreecamLayoutKey>
 export const wasdInputState = {
   upBtn: false,
   downBtn: false,
@@ -15,10 +17,10 @@ export const wasdInputState = {
 }
 
 function wasdButton(
-  layoutKey: string,
+  layoutKey: FreecamLayoutKey,
   direction: 'up' | 'down' | 'left' | 'right',
   hotkeys: ReadonlyArray<KeyCode>,
-): GuiElement {
+): FreecamElem {
   return {
     display: { type: 'button', icon: `icons/16x16-arrow-${direction}.png` },
     layoutKey: layoutKey,
@@ -33,7 +35,7 @@ function wasdButton(
   }
 }
 
-export const wasdButtons: ReadonlyArray<GuiElement> = [
+export const wasdButtons: ReadonlyArray<FreecamElem> = [
   wasdButton('upBtn', 'up', ['KeyW', 'ArrowUp']),
   wasdButton('downBtn', 'down', ['KeyS', 'ArrowDown']),
   wasdButton('leftBtn', 'left', ['KeyA', 'ArrowLeft']),

@@ -11,7 +11,7 @@ import type { ConfigTree, OptionItem } from './config-tree'
 
 export const isDevMode = false
 function applyDevMode(cfg: typeof topConfigTree.children) {
-  cfg.game.value = 'free-cam'
+  // cfg.game.value = 'free-cam'
   cfg.game.isHidden = false
 
   cfg.generator.value = 'Michael2-3B'
@@ -23,8 +23,47 @@ function applyDevMode(cfg: typeof topConfigTree.children) {
   // cfg.testGui.isHidden = false
 }
 
+// let original: Snapshot
+// let current: Snapshot
+
+// export function startupSnapshot(seaBlock) {
+//   if (original) return
+//   original = saveSnapshot(seaBlock)
+// }
+// const testSnapshot = {
+//   config: {
+//     visibleRadius: 11,
+//     offsetX: -94.57554124214874,
+//     offsetZ: 48.587894021613195,
+//     exponent: 3,
+//   },
+//   style: {},
+// }
+
 const topConfigTree = {
   children: {
+
+    // test: {
+    //   action: (seaBlock) => {
+    //     startupSnapshot(seaBlock)
+    //     restoreSnapshot(seaBlock, testSnapshot)
+    //     seaBlock.onGameChange()
+    //   },
+    // },
+
+    // snapshot: {
+    //   action: (seaBlock) => {
+    //     if (original) {
+    //       console.log('snapshot compare')
+    //       current = saveSnapshot(seaBlock)
+    //       debugSnapshotDelta(original, current)
+    //     }
+    //     else {
+    //       console.log('snapshot original')
+    //       original = saveSnapshot(seaBlock)
+    //     }
+    //   },
+    // } as ConfigButton,
 
     generator: {
       value: 'Michael2-3B', // randChoice(Object.keys(allGenerators)),
@@ -39,7 +78,7 @@ const topConfigTree = {
     } as OptionItem<TilingName>,
 
     game: {
-      value: 'start-sequence',
+      value: 'free-cam',
       options: ['chess', 'tile-inspector', 'free-cam', 'start-sequence'],
       // isHidden: true,
     } as OptionItem<GameName>,

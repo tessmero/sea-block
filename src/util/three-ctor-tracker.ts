@@ -9,13 +9,13 @@
  */
 import * as THREE from 'three'
 
-const TRACKED_CTORS = [
+export const TRACKED_CTORS = [
   'Vector2', 'Vector3', 'Vector4',
   'Matrix3', 'Matrix4',
   'Box3', 'Object3D',
   'Color', 'Spherical',
 ] as const
-type TrackedCtor = (typeof TRACKED_CTORS)[number]
+export type TrackedCtor = (typeof TRACKED_CTORS)[number]
 
 function getCount(ctorName) {
   return THREE[ctorName].constructedCount || 0

@@ -7,15 +7,15 @@
 import type { GameUpdateContext } from 'games/game'
 import type { ChessPhase } from './chess-enums'
 import type { Chess } from './chess-helper'
-import { resetMeshes, setPiecePosition } from './chess-3d-gfx-helper'
+import { resetMeshes, setPiecePosition } from './gfx/chess-3d-gfx-helper'
 import { playSound } from 'audio/sound-effects'
 import { markLevelCompleted } from './levels/chess-level-parser'
-import { Transition } from 'gfx/transitions/transition'
-import { resetRewardsDisplay } from './gui/chess-reward-elements'
+import { randomTransition, Transition } from 'gfx/transitions/transition'
+import { resetRewardsDisplay } from './gui/chess-rewards-elements'
 import type { ChessMoveAnim } from './chess-move-anim'
-import { toggleGameOverMenu } from './gui/chess-dialog-elements'
+import { toggleGameOverMenu } from './gui/chess-hud-dialog-elements'
 import { emptyScene } from 'sea-block'
-import { rewardChoiceBackground } from './chess-2d-gfx-helper'
+import { rewardChoiceBackground } from './gfx/chess-2d-gfx-helper'
 
 export function updateChessPhase(context: ChessUpdateContext) {
   const func = PHASE_UPDATERS[context.chess.currentPhase]
@@ -187,8 +187,12 @@ function completeLevel(chess: Chess) {
   markLevelCompleted() // prevent level from loading again
   playSound('chessCelebrate')
 
+  const transition = Math.random() < 0.5
+    ? Transition.create('checkered', chess.context)
+    : randomTransition(chess.context)
+
   chess.context.startTransition({
-    transition: Transition.create('checkered', chess.context),
+    transition,
     callback: () => {
       chess.currentPhase = 'reward-choice'
       emptyScene.background = rewardChoiceBackground

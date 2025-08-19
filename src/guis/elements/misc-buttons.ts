@@ -6,20 +6,24 @@
 
 import { CHESS_PLAYLIST, playNextTrack, toggleRadio } from 'audio/song-playlist'
 import { playSound } from 'audio/sound-effects'
-import { getChessCamOffset } from 'games/chess/chess-3d-gfx-helper'
+import { getChessCamOffset } from 'games/chess/gfx/chess-3d-gfx-helper'
+import { ChessScenery } from 'games/chess/levels/chess-scenery'
 import { ungrabChessPiece } from 'games/imp/free-cam-game'
 import { SeamlessTransition } from 'gfx/transitions/imp/seamless-transition'
 import { Transition } from 'gfx/transitions/transition'
 import type { GuiElement } from 'guis/gui'
+import type { FreecamLayoutKey } from 'guis/keys/freecam-layout-keys'
 
-export const grabbedMeshPanel: GuiElement = {
+type FreecamElem = GuiElement<FreecamLayoutKey>
+
+export const grabbedMeshPanel: FreecamElem = {
   layoutKey: 'grabbedMeshPanel',
   display: {
     type: 'panel',
     isVisible: false,
   },
 }
-export const grabbedMeshDiagram: GuiElement = {
+export const grabbedMeshDiagram: FreecamElem = {
   layoutKey: 'grabbedMeshDiagram',
   display: {
     type: 'diagram',
@@ -27,7 +31,7 @@ export const grabbedMeshDiagram: GuiElement = {
     isVisible: false,
   },
 }
-export const grabbedMeshPlayButton: GuiElement = {
+export const grabbedMeshPlayButton: FreecamElem = {
   layoutKey: 'grabbedMeshPlayButton',
   display: {
     type: 'button',
@@ -53,6 +57,7 @@ export const grabbedMeshPlayButton: GuiElement = {
     item.value = 'chess'
     SeamlessTransition.desiredCameraOffset.copy(getChessCamOffset(seaBlock))
     SeamlessTransition.snapshotTerrain(seaBlock)
+    ChessScenery.takeOriginalSnapshot(seaBlock)
     seaBlock.startTransition({
       transition: Transition.create('seamless', seaBlock),
       callback: () => {
@@ -62,7 +67,7 @@ export const grabbedMeshPlayButton: GuiElement = {
     seaBlock.onCtrlChange(item)
   },
 }
-export const grabbedMeshCancelButton: GuiElement = {
+export const grabbedMeshCancelButton: FreecamElem = {
   layoutKey: 'grabbedMeshCancelButton',
   display: {
     type: 'button',
@@ -81,7 +86,7 @@ export const grabbedMeshElements = [
   grabbedMeshPlayButton, grabbedMeshCancelButton,
 ]
 
-// export const spritAtlasBtn: GuiElement = {
+// export const spritAtlasBtn: FreecamElem = {
 //   display: { type: 'button', label: 'VIEW SPRITES', font: 'mini' },
 //   layoutKey: 'spritAtlasBtn',
 //   clickAction: ({ seaBlock }) => {
@@ -91,7 +96,7 @@ export const grabbedMeshElements = [
 //   },
 // }
 
-export const musicBtn: GuiElement = {
+export const musicBtn: FreecamElem = {
   display: { type: 'button', icon: `icons/16x16-music.png` },
   layoutKey: 'musicBtn',
   hotkeys: ['KeyM'],
@@ -100,7 +105,7 @@ export const musicBtn: GuiElement = {
   },
 }
 
-export const chessBtn: GuiElement = {
+export const chessBtn: FreecamElem = {
   display: { type: 'button', icon: `icons/16x16-chess.png` },
   layoutKey: 'chessBtn',
   hotkeys: [],
@@ -111,7 +116,7 @@ export const chessBtn: GuiElement = {
   },
 }
 
-export const configBtn: GuiElement = {
+export const configBtn: FreecamElem = {
   display: { type: 'button', icon: `icons/16x16-config.png` },
   layoutKey: 'configBtn',
   hotkeys: ['Escape'],

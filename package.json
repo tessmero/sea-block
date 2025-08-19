@@ -3,8 +3,10 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "concurrently \"npx vite build\" \"npx serve dist\"",
-    "build:prod": "vite build --config vite.config.prod.ts",
-    "test": "NODE_OPTIONS='--loader ts-node/esm' mocha"
+    "puppet": "vite build --config vite.config.prod.ts && mocha",
+    "zip": "cp -r reports dist && cd dist && zip -r sea-block.zip .",
+    "build:prod": "npm run puppet && npm run zip",
+    "build:quickprod": "vite build --config vite.config.prod.ts && npm run zip"
   },
   "keywords": [],
   "author": "",
@@ -49,5 +51,8 @@
     "lil-gui": "^0.20.0",
     "simplex-noise": "^4.0.3",
     "three": "=0.177.0"
+  },
+  "optionalDependencies": {
+    "demo-tests": "file:../demo-tests"
   }
 }
