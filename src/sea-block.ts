@@ -155,7 +155,7 @@ export class SeaBlock {
       transition.update(dt)
       if (this.isCovering && transition.didFinishCover) {
         // just hit mid-transition, old scene hidden
-        // console.log('mid transition')
+        // console.log('sea-block.ts detected mid transition')
         this.isCovering = false
 
         if (this.midTransitionCallback) {
@@ -170,7 +170,9 @@ export class SeaBlock {
         // this.rebuildControls()
       }
       if (transition.didFinishUncover) {
+        // console.log('sea-block.ts detected end of transition')
         // console.log('finish transition')
+        transition?.cleanupShow()
         this.transition = undefined // transition just finished
         // resetFrontLayer()
       }

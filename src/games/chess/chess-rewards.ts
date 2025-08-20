@@ -43,8 +43,8 @@ export const COLLECTIBLES: Record<CollectibleName, Collectible> = {
       prevents exploration
     `,
     icon: 'icons/16x16-arrow-down.png',
-    isValid: () => !chessRun.collected.includes('dual-vector-foil'),
-    // && chessRun.collected.includes('king'),
+    isValid: () => !chessRun.collected.includes('dual-vector-foil')
+      && chessRun.collected.includes('king'),
   },
 
   // 'long-stride': {

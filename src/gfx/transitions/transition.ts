@@ -131,6 +131,10 @@ export abstract class Transition {
     instance.layeredViewport = layeredViewport
     instance.terrain = terrain
 
+    if (context.config.flatConfig.transitionMode === 'skip') {
+      instance.totalDuration = 0
+    }
+
     if (seg) {
       const { colors, tiling } = seg
       const flatInstance = instance as FlatTransition

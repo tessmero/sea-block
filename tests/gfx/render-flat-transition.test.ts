@@ -38,6 +38,11 @@ const seaBlock = {
     pixelRatio: 1,
     frontCtx,
   },
+  config: {
+    flatConfig: {
+      transitionMode: 'enabled',
+    },
+  },
 } as SeaBlock
 
 describe('Flat Transition', function () {

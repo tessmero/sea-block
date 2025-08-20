@@ -6,7 +6,7 @@
  */
 
 import type { TileIndex } from 'core/grid-logic/indexed-grid'
-import { getAllowedMoves } from './chess-rules'
+import { canLandOn, getAllowedMoves } from './chess-rules'
 import type { Chess } from './chess-helper'
 
 const _HIGHLIGHTS = [
@@ -35,7 +35,7 @@ export class ChessHlTiles {
       const { x, z } = center
       for (let dx = -2; dx <= 2; dx++) {
         const tile = terrain.grid.xzToIndex(x + dx, z + 2)
-        if (tile && !chess.getPieceOnTile(tile)) {
+        if (tile && canLandOn(tile, { type: 'pawn', tile, chess, terrain }) && !chess.getPieceOnTile(tile)) {
           allowedMoves.add(tile.i)
         }
       }

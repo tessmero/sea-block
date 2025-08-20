@@ -29,6 +29,11 @@ export class ChessGame extends Game {
 
   // private static hasMadeChessPiecesPickable = false
   reset = (context) => {
+  // snap to good camera position in case initial seamless-transition was skipped
+    if (context.config.flatConfig.transitionMode === 'skip') {
+      this.resetCamera(context)
+    }
+
     // if (this.chess?.currentPhase === 'reward-choice') {
     //   return
     // }

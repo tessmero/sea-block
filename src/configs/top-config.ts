@@ -17,7 +17,7 @@ function applyDevMode(cfg: typeof topConfigTree.children) {
   cfg.generator.value = 'Michael2-3B'
   cfg.tiling.value = 'square'
 
-  // cfg.transitionMode.value = 'skip'
+  cfg.transitionMode.value = 'skip'
 
   // cfg.testGui.value = 'sprite-atlas'
   // cfg.testGui.isHidden = false
@@ -99,7 +99,7 @@ const topConfigTree = {
       label: 'Transitions',
       value: 'enabled',
       options: ['enabled', 'skip'],
-      isHidden: true,
+      // isHidden: true,
     } as OptionItem<'enabled' | 'skip'>,
   },
 } satisfies ConfigTree

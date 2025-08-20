@@ -16,6 +16,7 @@ import { SeaBlock } from './sea-block'
 import { loadAllMeshes } from 'gfx/3d/mesh-asset-loader'
 import { initAllSoundEffects } from 'audio/sound-effects'
 import { loadAllSounds } from 'audio/sound-asset-loader'
+import { getTestSupport } from 'test-support'
 
 async function main() {
   // preload all assets (except music)
@@ -49,52 +50,8 @@ async function main() {
   seaBlock.init()
   seaBlock.reset();
 
-  /////////////////////////////////////////////////////////////////////////
-  // START TestSupport // support automated report on tessmero.github.io //
-  /////////////////////////////////////////////////////////////////////////
-  (window as any).TestSupport = { // eslint-disable-line @typescript-eslint/no-explicit-any
-
-    getGameState: () => {
-      if (!seaBlock.didLoadAssets) {
-        return 'loading'
-      }
-      if (seaBlock.transition) {
-        return 'transition'
-      }
-      return seaBlock.currentGameName
-    },
-
-    getCameraPos: () => {
-      const { x, y, z } = seaBlock.camera.position
-      return [x, y, z]
-    },
-
-    getCursorState: () => {
-      if (!('mousePosForTestSupport' in seaBlock)) {
-        return null
-      }
-      return {
-        x: (seaBlock as any).mousePosForTestSupport.x, // eslint-disable-line @typescript-eslint/no-explicit-any
-        y: (seaBlock as any).mousePosForTestSupport.y, // eslint-disable-line @typescript-eslint/no-explicit-any
-        style: document.documentElement.style.cursor,
-      }
-    },
-
-    locateElement(titleKey) {
-      const rect = seaBlock.game.gui.layoutRectangles[titleKey]
-      if (!rect) return
-      const { x, y, w, h } = rect
-      const ps = seaBlock.config.flatConfig.pixelScale
-      return [x * ps, y * ps, w * ps, h * ps]
-
-    // const elem = global.gui.findElements({ titleKey }).next().value;
-    // const screenRect = elem._rect;
-    // return this._computeCanvasRect(screenRect);
-    },
-  }
-  ///////////////////////////////////////////////////////////////////////
-  // END TestSupport // support automated report on tessmero.github.io //
-  ///////////////////////////////////////////////////////////////////////
+  // TestSupport // support automated report on tessmero.github.io //
+  (window as any).TestSupport = getTestSupport(seaBlock) // eslint-disable-line @typescript-eslint/no-explicit-any
 
   // if (isDevMode) {
   //   seaBlock.rebuildControls() // show controls gui on startup
