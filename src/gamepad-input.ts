@@ -25,6 +25,9 @@ const prevButtonStates: Record<GamepadCode, boolean> = (() => {
 })()
 
 export function updateGamepadState(seaBlock: SeaBlock) {
+  // console.log(`start polling gamepad`)
+  // const startTime = performance.now()
+
   const gamepads = navigator.getGamepads ? navigator.getGamepads() : []
   for (const gp of gamepads) {
     if (!gp) continue
@@ -71,6 +74,9 @@ export function updateGamepadState(seaBlock: SeaBlock) {
       rightJoy, rightJoySlider, 'right',
     )
   }
+
+  // const endTime = performance.now()
+  // console.log(`gamepad polling took ${endTime-startTime} ms`)
 }
 
 function updateStick(

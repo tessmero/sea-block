@@ -11,10 +11,10 @@ import type { ConfigTree, OptionItem } from './config-tree'
 
 export const isDevMode = true
 function applyDevMode(cfg: typeof topConfigTree.children) {
-  // cfg.game.value = 'free-cam'
+  cfg.game.value = 'free-cam'// , 'walking-cube'
   cfg.game.isHidden = false
 
-  cfg.generator.value = 'Michael2-3B'
+  cfg.generator.value = 'flat'
   cfg.tiling.value = 'square'
   cfg.freeCamLayout.value = 'landscape'
 
@@ -80,7 +80,7 @@ const topConfigTree = {
 
     game: {
       value: 'free-cam',
-      options: ['chess', 'tile-inspector', 'free-cam', 'start-sequence'],
+      options: ['walking-cube', 'chess', 'tile-inspector', 'free-cam', 'start-sequence'],
       // isHidden: true,
     } as OptionItem<GameName>,
 

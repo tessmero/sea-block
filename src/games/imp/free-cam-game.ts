@@ -253,7 +253,6 @@ export class FreeCamGame extends Game {
     this.waveMaker.updateWaveMaker(context)
     // this.updateWaveMaker(dt)
 
-    // accel cam anchor towards picked intersection point
     const { CAM_ACCEL } = this.config.flatConfig
     const { camera } = seaBlock
 
