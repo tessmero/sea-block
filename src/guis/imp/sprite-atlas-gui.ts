@@ -54,7 +54,7 @@ const viewPanel: GuiElement = {
   layoutKey: 'viewPanel',
   display: { type: 'sprite-atlas' },
   clickAction: ({ inputEvent }) => {
-    if ('lvPos' in inputEvent) {
+    if (inputEvent) {
       // console.log('click lvpos', inputEvent.lvPos)
       dragStartLvPos = inputEvent.lvPos.clone()
       dragStartAtlasPos = atlasPos
@@ -64,7 +64,7 @@ const viewPanel: GuiElement = {
     }
   },
   dragAction: ({ inputEvent }) => {
-    if ('lvPos' in inputEvent) {
+    if (inputEvent) {
       if (dragStartLvPos && dragStartAtlasPos) {
         const delta = inputEvent.lvPos.clone().sub(dragStartLvPos)
         const dy = -delta.y / (getAtlasHeight() - viewHeight)

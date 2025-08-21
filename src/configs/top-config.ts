@@ -9,13 +9,14 @@ import { GENERATOR, TILING } from '../imp-names'
 import { Configurable } from './configurable'
 import type { ConfigTree, OptionItem } from './config-tree'
 
-export const isDevMode = false
+export const isDevMode = true
 function applyDevMode(cfg: typeof topConfigTree.children) {
   // cfg.game.value = 'free-cam'
   cfg.game.isHidden = false
 
   cfg.generator.value = 'Michael2-3B'
   cfg.tiling.value = 'square'
+  cfg.freeCamLayout.value = 'landscape'
 
   cfg.transitionMode.value = 'skip'
 

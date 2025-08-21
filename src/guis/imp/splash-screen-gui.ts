@@ -7,12 +7,13 @@
 import type { GuiElement } from 'guis/gui'
 import { Gui } from 'guis/gui'
 import { SPLASH_SCREEN_LAYOUT } from 'guis/layouts/splash-screen-layout'
+import { GAMEPAD_CODES, KEY_CODES } from 'input-id'
 
 const elements: Array<GuiElement> = [
   {
     display: { type: 'button', label: 'LAUNCH' },
     layoutKey: 'launch',
-    hotkeys: ['Space'],
+    hotkeys: [...KEY_CODES, ...GAMEPAD_CODES], // any bind-able button
     isSticky: true,
     clickAction: ({ seaBlock }) => {
       seaBlock.startTransition()

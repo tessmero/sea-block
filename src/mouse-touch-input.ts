@@ -319,7 +319,6 @@ export function handleEvent(
   for (const sub of subEvents) {
     const screenPos = sub.screenPos
 
-    // Plane at camera target y
     dummy.x = (screenPos.x / window.innerWidth) * 2 - 1
     dummy.y = -(screenPos.y / window.innerHeight) * 2 + 1
     raycaster.setFromCamera(dummy, camera)
@@ -336,6 +335,7 @@ export function handleEvent(
     }
 
     // // pick tile on terrain
+    // // Plane at camera target y
     // raycaster.ray.intersectPlane(planeY, intersection)
     // const { x, z } = terrain.grid.positionToCoord(intersection.x, intersection.z)
     // pickedTile = terrain.grid.xzToIndex(x, z)

@@ -14,7 +14,7 @@ const neutral = {
 } as const satisfies SliderState
 
 // current state of the two joysticks
-export const joyInputState: Record<string, SliderState> = {
+export const joyInputState: Record<'left' | 'right', SliderState> = {
   left: neutral,
   right: neutral,
 }

@@ -39,6 +39,8 @@ import { physicsConfig } from 'configs/physics-config'
 import { freeCamGameConfig } from 'configs/free-cam-game-config'
 import { preloadChessRewardHelpDiagrams } from 'games/chess/gui/chess-reward-help-elements'
 import { Chess } from 'games/chess/chess-helper'
+import { updateGamepadState } from 'gamepad-input'
+import type { KeyCode } from 'input-id'
 
 // can only be constructed once
 let didConstruct = false
@@ -149,6 +151,7 @@ export class SeaBlock {
       game,
     } = this
 
+    updateGamepadState(this)
     this.alignGuiMeshes()
 
     if (transition) {
@@ -271,10 +274,10 @@ export class SeaBlock {
 
     // listen for keyboard, pass directly to gui
     window.addEventListener('keydown', (event) => {
-      this.game.gui.keydown(this, event)
+      this.game.gui.keydown(this, event.code as KeyCode)
     })
     window.addEventListener('keyup', (event) => {
-      this.game.gui.keyup(this, event)
+      this.game.gui.keyup(this, event.code as KeyCode)
     })
 
     // finished loading meshes and images

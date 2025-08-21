@@ -3,7 +3,6 @@
  *
  * Like sphere-test, but without the sphere.
  */
-import type { Group } from 'three'
 import { BoxGeometry, Color, Mesh, MeshBasicMaterial, MeshLambertMaterial, Quaternion, Vector3 } from 'three'
 import { CAMERA_LOOK_AT } from 'settings'
 import type { SeaBlock } from 'sea-block'
@@ -22,6 +21,7 @@ import { setMaterial } from 'gfx/3d/gui-3d-gfx-helper'
 import { getOutlinedMesh } from 'games/chess/gfx/chess-outline-gfx'
 import { playSound } from 'audio/sound-effects'
 import { ChessWaveMaker } from 'games/chess/chess-wave-maker'
+import type { Group } from 'three'
 
 export const MOUSE_DEADZONE = 50 // (px) center of screen with zero force
 export const MOUSE_MAX_RAD = 200 // (px) radius with max force
@@ -275,6 +275,7 @@ export class FreeCamGame extends Game {
     const isDownHeld = wasdInputState['downBtn']
     const isLeftHeld = wasdInputState['leftBtn']
     const isRightHeld = wasdInputState['rightBtn']
+
     // if (
     //   mouseState && !mouseState.isTouch // desktop mouse on screen
     //   && !this.flatUi.hoveredButton // no buttons hovered
