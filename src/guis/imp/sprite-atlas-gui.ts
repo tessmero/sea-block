@@ -115,7 +115,7 @@ export class SpriteAtlasGui extends Gui {
   static {
     Gui.register('sprite-atlas', {
       factory: () => new SpriteAtlasGui(),
-      layoutFactory: () => (SPRITE_ATLAS_LAYOUT),
+      layoutFactory: () => SPRITE_ATLAS_LAYOUT,
       elements: [
         {
           layoutKey: 'backPanel',

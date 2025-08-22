@@ -105,13 +105,17 @@ export const musicBtn: FreecamElem = {
   },
 }
 
-export const chessBtn: FreecamElem = {
-  display: { type: 'button', icon: `icons/16x16-chess.png` },
-  layoutKey: 'chessBtn',
+export const raftBtn: FreecamElem = {
+  display: {
+    type: 'button',
+    // icon: `icons/16x16-chess.png`
+    label: 'BUILD',
+  },
+  layoutKey: 'raftBtn',
   hotkeys: [],
   clickAction: ({ seaBlock }) => {
     const item = seaBlock.config.tree.children.game
-    item.value = 'chess'
+    item.value = 'raft-build'
     seaBlock.onCtrlChange(item)
   },
 }

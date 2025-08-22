@@ -5,7 +5,7 @@
  */
 
 import type { GameName, GeneratorName, TilingName } from '../imp-names'
-import { GENERATOR, TILING } from '../imp-names'
+import { GAME, GENERATOR, TILING } from '../imp-names'
 import { Configurable } from './configurable'
 import type { ConfigTree, OptionItem } from './config-tree'
 
@@ -80,7 +80,8 @@ const topConfigTree = {
 
     game: {
       value: 'free-cam',
-      options: ['walking-cube', 'chess', 'tile-inspector', 'free-cam', 'start-sequence'],
+      options: GAME.NAMES,
+      // options: ['walking-cube', 'chess', 'tile-inspector', 'free-cam', 'start-sequence'],
       // isHidden: true,
     } as OptionItem<GameName>,
 

@@ -5,7 +5,7 @@
  */
 
 import { leftJoy, leftJoySlider, rightJoy, rightJoySlider } from 'guis/elements/joysticks'
-import { configBtn, musicBtn, grabbedMeshElements } from 'guis/elements/misc-buttons'
+import { configBtn, musicBtn, grabbedMeshElements, raftBtn } from 'guis/elements/misc-buttons'
 import { wasdButtons } from 'guis/elements/wasd-buttons'
 import type { RegisteredGui } from 'guis/gui'
 import { Gui } from 'guis/gui'
@@ -34,7 +34,7 @@ export class FreeCamGui extends Gui<FreecamLayoutKey> {
       elements: [
         // spritAtlasBtn,
         musicBtn,
-        // chessBtn,
+        raftBtn,
         configBtn,
         leftJoy, leftJoySlider,
         rightJoy, rightJoySlider,

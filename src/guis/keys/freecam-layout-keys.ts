@@ -7,7 +7,7 @@
 export const FREECAM_LAYOUT_KEYS = [
 
   'configBtn',
-  'chessBtn',
+  'raftBtn',
   'musicBtn',
 
   '_wasdBtnRegion',

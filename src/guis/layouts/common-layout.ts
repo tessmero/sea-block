@@ -22,8 +22,9 @@ export const COMMON_LAYOUT = {
     right: pad,
   },
 
-  // 2027-08-03 start chess game
-  chessBtn: { ...btn,
+  // 2025-08-21
+  raftBtn: { ...btn,
+    width: 40,
     top: pad,
     right: btn.width + 2 * pad,
   },

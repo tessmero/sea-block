@@ -457,7 +457,7 @@ export class Chess {
     const height = this.context.terrain.generatedTiles[tile.i]?.liveHeight
 
     const writeTo = target || positionDummy
-    writeTo.set(x, (height || 13), z)
+    writeTo.set(x, (height ?? 13), z)
 
     return writeTo
   }

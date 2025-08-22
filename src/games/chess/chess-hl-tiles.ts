@@ -1,8 +1,7 @@
 /**
  * @file chess-hl-tiles.ts
  *
- * Chess highlighted tiles. Manages color-overrides
- * for terrain tiles used as chess board.
+ * Chess highlighted tiles. Determines which tiles are highlighted on the chess board.
  */
 
 import type { TileIndex } from 'core/grid-logic/indexed-grid'

@@ -282,11 +282,6 @@ export class SeaBlock {
 
     // finished loading meshes and images
     this.didLoadAssets = true
-
-    // // align camera-locked meshes
-    // this.alignGuiMeshes()
-
-    this.showHideGameSpecificElems()
   }
 
   private alignGuiMeshes() {
@@ -343,24 +338,8 @@ export class SeaBlock {
     this.scene.threeScene.remove(...this.game.meshes)
     this.game = Game.create(this.config.flatConfig.game, this)
     this.scene.threeScene.add(...this.game.meshes)
-    this.showHideGameSpecificElems()
     this.layeredViewport.handleResize(this)
     // this.terrain.gfxHelper.restoreTileColors() // remove chess allowed-move highlights
-  }
-
-  private showHideGameSpecificElems() {
-    // for (const [gameName, elements] of Object.entries(elementsPerGame)) {
-    //   const shouldBeVisible = gameName === this.currentGameName
-    //   for (const loaded of elements) {
-    //     if ('mesh' in loaded) {
-    //       // 3d object
-    //       loaded.mesh.visible = shouldBeVisible
-    //     }
-    //     else {
-    //       // flat image
-    //     }
-    //   }
-    // }
   }
 
   // called when user changes a setting
@@ -478,7 +457,6 @@ export class SeaBlock {
     this.currentGameName = this.config.flatConfig.game
     // this.game = Game.create(this.currentGameName, this)
     // StartSequenceGame.isColorTransformEnabled = this.currentGameName === 'start-sequence'
-    // this.showHideGameSpecificElems()
     // soft reset (graphics)
     this.style = getStyle(this.config.flatConfig.style)
     scene.setBackground(this.style.getBackgroundColor())
