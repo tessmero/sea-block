@@ -69,6 +69,18 @@ export class Raft {
     this.waveMaker = new ChessWaveMaker(context.sphereGroup.members[0], context)
     this.raftTiles = new Set([centerTile.i])
 
+    for (let dx = -2; dx <= 2; dx++) {
+      for (let dz = -2; dz <= 2; dz++) {
+        if (dx === 0 && dz === 0) {
+          continue
+        }
+        const tile = context.terrain.grid.xzToIndex(centerTile.x + dx, centerTile.z + dz)
+        if (tile) {
+          this.buildPiece('floor', tile)
+        }
+      }
+    }
+
     // cockpit position in group is always 0,0,0
     const cockpit: UniquePiece = {
       mesh: cockpitMesh,
@@ -101,6 +113,13 @@ export class Raft {
     }
   }
 
+  buildPiece(pieceName: PlaceablePieceName, tile: TileIndex) {
+    const spawned = registerInstancedPiece(pieceName, tile)
+    this.raftTiles.add(tile.i)
+    setPiecePosition(spawned, this.getPosOnTile(tile).sub(this.centerPos))
+    this.raftPieces.push(spawned)
+  }
+
   clickWorld(inputEvent: ProcessedSubEvent): boolean {
     const { pickedTile } = inputEvent
 
@@ -110,10 +129,7 @@ export class Raft {
       if (this.currentPhase.startsWith('place-')) {
       // spawn raft piece
         const pieceName = this.currentPhase.slice(6) as PlaceablePieceName
-        const spawned = registerInstancedPiece(pieceName, pickedTile)
-        this.raftTiles.add(pickedTile.i)
-        setPiecePosition(spawned, this.getPosOnTile(pickedTile).sub(this.centerPos))
-        this.raftPieces.push(spawned)
+        this.buildPiece(pieceName, pickedTile)
         this.cancelPlacePiece()
         return true // consume event
       }
@@ -137,7 +153,7 @@ export class Raft {
 
   public getPosOnTile(tile: TileIndex, target?: Vector3): Vector3 {
     const { x, z } = this.context.terrain.grid.indexToPosition(tile)
-    const height = this.context.terrain.generatedTiles[tile.i]?.liveHeight
+    const height = 12// this.context.terrain.generatedTiles[tile.i]?.liveHeight
 
     const writeTo = target || positionDummy
     writeTo.set(x, height ?? 12, z)

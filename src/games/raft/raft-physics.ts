@@ -10,10 +10,8 @@ import type { Object3D } from 'three'
 import { Matrix4, Vector3 } from 'three'
 
 export function buildRaftRig(context: SeaBlock) {
-  const spheres = context.sphereGroup.members.slice(0, 4)
+  const spheres = context.sphereGroup.members.slice(2, 6)
   const center = context.orbitControls.target
-
-  // use first four spheres for raft
   return new RaftRig(spheres, center)
 }
 
@@ -75,9 +73,9 @@ export class RaftRig {
     const k = 1e-5 // spring constant
     for (let i = 0; i < 4; ++i) {
       for (let j = i + 1; j < 4; ++j) {
-        const pi = this.spheres[i].position
-        const pj = this.spheres[j].position
-        const restLength = pi.distanceTo(pj)
+        const si = this.spheres[i]
+        const sj = this.spheres[j]
+        const restLength = posDummy.copy(si.position).distanceTo(sj.position)
         this.springs.push({ i, j, restLength, k })
       }
     }
@@ -125,5 +123,9 @@ export class RaftRig {
     m.makeBasis(xAxis, yAxis, zAxis)
     mesh.position.copy(center)
     mesh.quaternion.setFromRotationMatrix(m)
+    // quatDummy.setFromRotationMatrix(m)
+    // mesh.quaternion.slerp(quatDummy, .1)
   }
 }
+
+// const quatDummy = new Quaternion()

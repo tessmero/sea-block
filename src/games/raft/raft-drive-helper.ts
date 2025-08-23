@@ -10,14 +10,21 @@ import type { SeaBlock } from 'sea-block'
 import { BoxGeometry, Group, Mesh, MeshBasicMaterial, Vector2 } from 'three'
 import type { RaftRig } from './raft-physics'
 import { buildRaftRig } from './raft-physics'
+import { WalkingCube } from 'games/walking-cube/wc-helper'
 
 export const drivingRaftGroup = new Group()
 drivingRaftGroup.add(new Mesh(
   new BoxGeometry(1, 1, 1),
   new MeshBasicMaterial({ color: 'red' })))
 
+const wc = new WalkingCube(1)
+
 export const drivingRaftElement = {
   meshLoader: async () => {
+    for (const name of (['leftFoot', 'rightFoot', 'torso'])) {
+      wc[name].mesh = await wc[name].meshLoader()
+      drivingRaftGroup.add(wc[name].mesh)
+    }
     return drivingRaftGroup
   },
 } satisfies GameElement
@@ -26,17 +33,21 @@ const forward = new Vector2(0, 1)
 const right = new Vector2(1, 0)
 const moveVec = new Vector2(0, 0)
 
-let rig: RaftRig // physics object made of spheres
+export let raftRig: RaftRig // physics object made of spheres
 
 export function resetRaftDrive(context: SeaBlock) {
-  rig = buildRaftRig(context)
+  wc.reset()
+
+  raftRig = buildRaftRig(context)
 }
 
 export function updateRaftDrive(context: GameUpdateContext) {
+  wc.update(context)
+
   const { seaBlock, dt } = context
 
-  rig.update(dt)
-  rig.alignMesh(drivingRaftGroup)
+  raftRig.update(dt)
+  raftRig.alignMesh(drivingRaftGroup)
 
   // 3. Build movement vector from input
   const isUpHeld = wasdInputState['upBtn']
@@ -79,7 +90,7 @@ export function updateRaftDrive(context: GameUpdateContext) {
   // drivingRaftGroup.setRotationFromAxisAngle(upAxis, raftAngle)
 
   if (moveVec.y > 0) {
-    rig.applyForwardThrust(moveVec.y * 4e-4)
+    raftRig.applyForwardThrust(moveVec.y * 4e-4)
   }
-  rig.applyTorque(moveVec.x * 4e-4)
+  raftRig.applyTorque(moveVec.x * 4e-4)
 }
