@@ -16,6 +16,7 @@ export function buildRaftRig(context: SeaBlock) {
 }
 
 const posDummy = new Vector3()
+const velDummy = new Vector3()
 const m4Dummy = new Matrix4()
 
 type Spring = { i: number, j: number, restLength: number, k: number }
@@ -28,6 +29,19 @@ export class RaftRig {
     for (const sphere of this.spheres) {
       sphere.velocity.add(forward.clone().multiplyScalar(accelMag))
     }
+  }
+
+  public getCameraTarget(target?: Vector3) {
+    const writeTo = target ?? posDummy
+
+    // center of raft
+    writeTo.copy(this.spheres[0].position).lerp(this.spheres[2].position, 0.5)
+
+    // ahead of raft
+    velDummy.copy(this.spheres[0].velocity).lerp(this.spheres[2].velocity, 0.5)
+    writeTo.addScaledVector(velDummy, 1e2)
+
+    return writeTo
   }
 
   public applyTorque(torqueMag: number) {

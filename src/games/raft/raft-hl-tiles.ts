@@ -32,7 +32,7 @@ export class RaftHlTiles {
 
   updateBuildableTiles(raft: Raft) {
     const { x, z } = raft.centerTile
-    const { grid } = raft.context.terrain
+    const { grid } = raft
     this.buildable.clear()
 
     // iterate over tiles in bounds

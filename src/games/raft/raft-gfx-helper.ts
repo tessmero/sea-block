@@ -6,11 +6,11 @@
 
 import type { GameElement } from 'games/game'
 import type { Vector3 } from 'three'
-import { Group, InstancedMesh } from 'three'
+import { Group, InstancedMesh, MeshBasicMaterial } from 'three'
 import { Mesh, BoxGeometry, MeshLambertMaterial } from 'three'
 import type { TileIndex } from 'core/grid-logic/indexed-grid'
 import type { PieceName, PlaceablePieceName } from './raft-enums'
-import { PLACEABLE_PIECE_NAMES } from './raft-enums'
+import { PIECE_NAMES } from './raft-enums'
 
 export type UniquePiece = {
   readonly mesh: Mesh
@@ -32,40 +32,56 @@ const PIECE_COLORS: Record<PieceName, number> = {
   thruster: 0xff9800, // orange
 }
 
-export let cockpitMesh: Mesh
+interface InstancedPieceElement extends GameElement {
+  pieceName: PieceName
+}
 
-export const buildingRaftGroup = new Group()
-// buildingRaftGroup.add(new Mesh(
-//   new BoxGeometry(1, 10, 1),
-//   new MeshBasicMaterial({ color: 'blue' })))
-
-export const buildingRaftGroupElement: GameElement = {
-  meshLoader: async () => {
-    for (const pieceName of PLACEABLE_PIECE_NAMES) {
+// preload instanced meshes for each piece type
+export const instancedPieceMeshes = {} as Record<PieceName, InstancedMesh>
+export const instancedPieceElements: Array<InstancedPieceElement>
+  = PIECE_NAMES.map(pieceName => ({
+    pieceName,
+    isPickable: true,
+    clickAction: () => { console.log('clicked piece instancedPieceElement') },
+    meshLoader: async () => {
       const geometry = new BoxGeometry(1, 1, 1)
       const material = new MeshLambertMaterial({ color: PIECE_COLORS[pieceName] })
       const mesh = new InstancedMesh(geometry, material, 25)
       mesh.scale.set(1, 1, 1)
-      instancedPieceMeshes.push(mesh)
-      buildingRaftGroup.add(mesh)
-    }
+      instancedPieceMeshes[pieceName] = mesh
+      return mesh
+    },
+  }))
 
+export let cockpitMesh: Mesh
+export const cockpitElement: GameElement = {
+  isPickable: true,
+  clickAction: () => { console.log('click cockpit') },
+  meshLoader: async () => {
     cockpitMesh = new Mesh(
       new BoxGeometry(1, 1, 1),
       new MeshLambertMaterial({ color: PIECE_COLORS.cockpit }),
     )
     cockpitMesh.scale.set(1.2, 1.2, 1.2)
-    buildingRaftGroup.add(cockpitMesh)
+    return cockpitMesh
+  },
+}
 
+export const buildingRaftGroup = new Group()
+buildingRaftGroup.add(new Mesh(
+  new BoxGeometry(1, 10, 1),
+  new MeshBasicMaterial({ color: 'green' })))
+export const buildingRaftGroupElement: GameElement = {
+  // isPickable: true,
+  // clickAction: (event) => { clickRaft(event) },
+  meshLoader: async () => {
+    // buildingRaftGroup.add(cockpitMesh)
     return buildingRaftGroup
   },
 }
 
-export const instancedPieceMeshes: Array<InstancedMesh> = []
-
 export function registerInstancedPiece(pieceName: PlaceablePieceName, tile: TileIndex): RenderablePiece {
-  const i = PLACEABLE_PIECE_NAMES.indexOf(pieceName)
-  const mesh = instancedPieceMeshes[i]
+  const mesh = instancedPieceMeshes[pieceName]
   if (!mesh) {
     throw new Error(`missing piece mesh for ${pieceName}`)
   }
@@ -79,7 +95,7 @@ export function registerInstancedPiece(pieceName: PlaceablePieceName, tile: Tile
 }
 
 export function setPiecePosition(piece: RenderablePiece, position: Vector3): void {
-  // console.log(`setpiecepos ${position.x.toFixed(2)}, ${position.z.toFixed(2)}`)
+  console.log(`setpiecepos ${position.x.toFixed(2)}, ${position.z.toFixed(2)}`)
 
   if ('instancedMesh' in piece) {
     setInstancePosition(piece, position)

@@ -6,7 +6,7 @@
 import type { TileIndex } from 'core/grid-logic/indexed-grid'
 import { Game } from 'games/game'
 import { resetRaftBuild, updateRaftBuild } from 'games/raft/raft'
-import { buildingRaftGroupElement } from 'games/raft/raft-gfx-helper'
+import { buildingRaftGroupElement, cockpitElement, instancedPieceElements } from 'games/raft/raft-gfx-helper'
 import type { Pipeline } from 'gfx/3d/pipelines/pipeline'
 import { raftBuildPipeline } from 'gfx/3d/pipelines/raft-build-pipeline'
 
@@ -16,8 +16,8 @@ export class RaftBuildGame extends Game {
       factory: () => new RaftBuildGame(),
       guiName: 'raft-build',
       elements: [
-        // cockpitElement,
-        // ...instancedPieceElements,
+        ...instancedPieceElements,
+        cockpitElement,
         buildingRaftGroupElement,
       ],
     })

@@ -12,11 +12,13 @@ import type { ProcessedSubEvent } from 'mouse-touch-input'
 import type { RenderablePiece, UniquePiece } from './raft-gfx-helper'
 import { buildingRaftGroup, cockpitMesh, instancedPieceMeshes,
   registerInstancedPiece, setPiecePosition } from './raft-gfx-helper'
-import type { Object3D } from 'three'
-import { Euler, Vector3 } from 'three'
+import type { Group, Intersection, Object3D } from 'three'
+import { Vector3 } from 'three'
 import { showPhaseLabel } from './raft-build-gui-elements'
-import type { PlaceablePieceName, RaftPhase } from './raft-enums'
+import type { PieceName, PlaceablePieceName, RaftPhase } from './raft-enums'
 import { drivingRaftGroup } from './raft-drive-helper'
+import { cursorMesh } from './raft-mouse-input-helper'
+import type { TiledGrid } from 'core/grid-logic/tiled-grid'
 
 export const RAFT_MAX_RAD = 2
 
@@ -28,7 +30,7 @@ export function resetRaftBuild(context: SeaBlock): void {
   const { terrain } = context
   const { x, z } = terrain.centerXZ
   const coord = terrain.grid.positionToCoord(x, z)
-  const centerTile = terrain.grid.xzToIndex(coord.x, coord.z)
+  const centerTile = JSON.parse(JSON.stringify(terrain.grid.xzToIndex(coord.x, coord.z)))
   if (!centerTile) {
     throw new Error(`could not find center tile at position ${x.toFixed(2)},${z.toFixed(2)}`)
   }
@@ -45,6 +47,7 @@ export class Raft {
 
   protected waveMaker: ChessWaveMaker // Replace 'any' with actual type if available
 
+  public readonly grid: TiledGrid
   public readonly hlTiles = new RaftHlTiles() // Highlighted tiles (raft-specific)
   public readonly raftTiles: Set<number>
   public readonly raftPieces: Array<RenderablePiece> = []
@@ -55,22 +58,25 @@ export class Raft {
     public readonly context: SeaBlock,
     public readonly centerTile: TileIndex,
   ) {
+    this.grid = context.terrain.grid.clone()
     this.getPosOnTile(centerTile, this.centerPos)
 
     buildingRaftGroup.position.copy(this.centerPos)
+    // drivingRaftGroup.setRotationFromEuler(new Euler())
     drivingRaftGroup.position.copy(this.centerPos)
-    drivingRaftGroup.setRotationFromEuler(new Euler())
+    // drivingRaftGroup.setRotationFromEuler(new Euler())
 
-    this.retrieveMeshesFromDrivingGroup() // in case previously driving raft
-    instancedPieceMeshes.forEach((im) => {
+    this.moveMeshesTo(buildingRaftGroup) // in case previously driving raft
+    Object.values(instancedPieceMeshes).forEach((im) => {
       im.position.set(0, 0, 0)
       im.count = 0
     })
     this.waveMaker = new ChessWaveMaker(context.sphereGroup.members[0], context)
     this.raftTiles = new Set([centerTile.i])
 
-    for (let dx = -2; dx <= 2; dx++) {
-      for (let dz = -2; dz <= 2; dz++) {
+    const rad = 1
+    for (let dx = -rad; dx <= rad; dx++) {
+      for (let dz = -rad; dz <= rad; dz++) {
         if (dx === 0 && dz === 0) {
           continue
         }
@@ -91,7 +97,7 @@ export class Raft {
   }
 
   update() {
-    // this.retrievePiecesFromDrivingGroup() // in case previously driving raft
+    this.moveMeshesTo(buildingRaftGroup) // in case previously driving raft
     this.hlTiles.updateBuildableTiles(this)
   }
 
@@ -108,6 +114,35 @@ export class Raft {
   getPieceOnTile(tile: TileIndex): RenderablePiece | undefined {
     for (const piece of this.raftPieces) {
       if (piece.tile.i === tile.i) {
+        return piece
+      }
+    }
+  }
+
+  // pick chess piece or treasure chest
+  public getPickedPieceMesh(inputEvent: ProcessedSubEvent): RenderablePiece | undefined {
+  // hover mesh on 3d tile
+    const { pickedMesh } = inputEvent
+    if (pickedMesh) {
+    // console.log('chess input picked mesh')
+
+      // check for extra propertu assigned in game.ts
+      const elem = (pickedMesh as any).gameElement// eslint-disable-line @typescript-eslint/no-explicit-any
+
+      if (elem && 'pieceName' in elem) {
+        const pieceType = elem.pieceType as PieceName
+        const { instanceId } = inputEvent.rawPick as Intersection
+        if (typeof instanceId === 'number') {
+          return this.identifyPiece(pieceType, instanceId)
+        }
+      }
+    }
+  }
+
+  // identify picked mesh instance
+  public identifyPiece(type: PieceName, index: number): RenderablePiece | undefined {
+    for (const piece of this.raftPieces) {
+      if (piece.type === type && 'index' in piece && piece.index === index) {
         return piece
       }
     }
@@ -161,27 +196,15 @@ export class Raft {
     return writeTo
   }
 
-  public moveMeshesToDrivingGroup() {
+  public moveMeshesTo(group: Group) {
     // Transfer each raft piece mesh/object to the driving group, positioned relative to COM
     const meshes = [
+      cursorMesh,
       cockpitMesh,
-      ...instancedPieceMeshes,
+      ...Object.values(instancedPieceMeshes),
     ] as Array<Object3D>
     for (const obj of meshes) {
-      buildingRaftGroup.remove(obj)
-      drivingRaftGroup.add(obj)
-    }
-  }
-
-  public retrieveMeshesFromDrivingGroup() {
-    // Return all raft piece object3d to the main scene (or their original parent)
-    const meshes = [
-      cockpitMesh,
-      ...instancedPieceMeshes,
-    ] as Array<Object3D>
-    for (const obj of meshes) {
-      drivingRaftGroup.remove(obj)
-      buildingRaftGroup.add(obj)
+      group.add(obj)
     }
   }
 }

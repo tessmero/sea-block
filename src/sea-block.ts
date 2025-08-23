@@ -337,7 +337,15 @@ export class SeaBlock {
   public onGameChange() {
     this.scene.threeScene.remove(...this.game.meshes)
     this.game = Game.create(this.config.flatConfig.game, this)
-    this.scene.threeScene.add(...this.game.meshes)
+    for (const mesh of this.game.meshes) {
+      if (mesh.parent) {
+        // mesh handled by game
+      }
+      else {
+        this.scene.threeScene.add(mesh)
+      }
+    }
+    // this.scene.threeScene.add(...this.game.meshes)
     this.layeredViewport.handleResize(this)
     // this.terrain.gfxHelper.restoreTileColors() // remove chess allowed-move highlights
   }

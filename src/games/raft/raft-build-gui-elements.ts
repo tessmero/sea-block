@@ -69,8 +69,8 @@ export const driveBtn: GuiElement = {
     // SeamlessTransition.desiredCameraOffset.copy(getChessCamOffset(seaBlock))
     // SeamlessTransition.snapshotTerrain(seaBlock)
     // ChessScenery.takeOriginalSnapshot(seaBlock)
-    raft.moveMeshesToDrivingGroup()
-    raft.hlTiles.clear()
+    // raft.moveMeshesToDrivingGroup()
+    // raft.hlTiles.clear()
     seaBlock.startTransition({
       transition: Transition.create('seamless', seaBlock),
     })

@@ -8,7 +8,8 @@ import type { GameUpdateContext } from 'games/game'
 import { Game } from 'games/game'
 import {
   WalkingCube,
-} from 'games/walking-cube/wc-helper'
+} from 'games/walking-cube/walking-cube'
+import { orbitWithRightJoystick } from 'guis/elements/joysticks'
 import type { SeaBlock } from 'sea-block'
 
 const wc = new WalkingCube()
@@ -33,5 +34,6 @@ export class WalkingCubeGame extends Game {
 
   public update(context: GameUpdateContext): void {
     wc.update(context)
+    orbitWithRightJoystick(context)
   }
 }

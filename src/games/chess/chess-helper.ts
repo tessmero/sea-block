@@ -342,7 +342,7 @@ export class Chess {
     this.updateFlatView()
   }
 
-  // used to support picking instanced meshes in chess-3d-gfx-helper
+  // used to identify picked mesh instance
   public identifyPiece(type: PieceName, index: number): RenderablePiece | undefined {
     const candidates = [this.player, ...this.pawns, ...this.enemies]
     for (const piece of candidates) {

@@ -10,16 +10,21 @@ import type { SeaBlock } from 'sea-block'
 import { BoxGeometry, Group, Mesh, MeshBasicMaterial, Vector2 } from 'three'
 import type { RaftRig } from './raft-physics'
 import { buildRaftRig } from './raft-physics'
-import { WalkingCube } from 'games/walking-cube/wc-helper'
+import { WalkingCube } from 'games/walking-cube/walking-cube'
+import { lerp } from 'three/src/math/MathUtils.js'
+import type { ElementEvent } from 'guis/gui'
+import { raft } from './raft'
+
+const wc = new WalkingCube(1)
+wc.isControlledByPlayer = false
 
 export const drivingRaftGroup = new Group()
 drivingRaftGroup.add(new Mesh(
   new BoxGeometry(1, 1, 1),
   new MeshBasicMaterial({ color: 'red' })))
-
-const wc = new WalkingCube(1)
-
 export const drivingRaftElement = {
+  // isPickable: true,
+  // clickAction: () => { console.log('clicked driving raft') },
   meshLoader: async () => {
     for (const name of (['leftFoot', 'rightFoot', 'torso'])) {
       wc[name].mesh = await wc[name].meshLoader()
@@ -38,13 +43,37 @@ export let raftRig: RaftRig // physics object made of spheres
 export function resetRaftDrive(context: SeaBlock) {
   wc.reset()
 
+  raft.moveMeshesTo(drivingRaftGroup)
   raftRig = buildRaftRig(context)
 }
 
-export function updateRaftDrive(context: GameUpdateContext) {
-  wc.update(context)
+let driveCamFocus = 0 // 0 = same as orbit cam, 1 = locked to raft
+const targetFocus = 0 // 0 or 1
+const focusSpeed = 1e-3 // lerp to target per ms
 
-  const { seaBlock, dt } = context
+export function clickRaft(event: ElementEvent) {
+  // console.log('click raft ')
+  // if (targetFocus === 0) {
+  //   targetFocus = 1
+  //   return
+  // }
+
+  const { inputEvent } = event
+  if (inputEvent) {
+    const pickedPiece = raft.getPickedPieceMesh(inputEvent)
+    if (pickedPiece) {
+      // console.log('picked piece', JSON.stringify(pickedPiece))
+    }
+  }
+}
+
+export function updateRaftDrive(context: GameUpdateContext) {
+  const { dt } = context
+
+  raft.moveMeshesTo(drivingRaftGroup)
+  driveCamFocus = lerp(driveCamFocus, targetFocus, focusSpeed * dt)// update cam focus
+
+  wc.update(context) // update walking cube character on raft
 
   raftRig.update(dt)
   raftRig.alignMesh(drivingRaftGroup)
@@ -76,8 +105,7 @@ export function updateRaftDrive(context: GameUpdateContext) {
     moveVec.addScaledVector(right, -x)
     moveVec.addScaledVector(forward, -y)
   }
-  orbitWithRightJoystick(seaBlock, dt) // gui/elements/joysticks.ts
-  seaBlock.orbitControls.update()
+  orbitWithRightJoystick(context) // gui/elements/joysticks.ts
 
   // if (moveVec.x !== 0 || moveVec.z !== 0) {
   //   raftVel.set(moveVec.x, 0, moveVec.z).normalize().multiplyScalar(DRIVE_SPEED * dt)

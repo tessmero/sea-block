@@ -48,6 +48,7 @@ export interface ProcessedSubEvent {
   screenPos: THREE.Vector2 // point in viewport in browser px
   lvPos: THREE.Vector2 // poitn in viewport in layeredViewport big pixels
 
+  raycaster: THREE.Raycaster
   intersection: THREE.Vector3 // picked point at sea level
   pickedTile?: TileIndex // picked tile based on intersection
 
@@ -360,6 +361,7 @@ export function handleEvent(
       screenPos,
       lvPos,
 
+      raycaster,
       intersection,
       rawPick,
       pickedMesh,

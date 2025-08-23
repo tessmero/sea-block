@@ -1,14 +1,14 @@
 /**
- * @file wc-helper.ts
+ * @file walking-cube.ts
  *
- * Logic and helpers for the walking cube game.
+ * Waslking cube character included in walking-cube and raft-drive games.
  */
 
 import type { GameElement, GameUpdateContext } from 'games/game'
 import { BoxGeometry, Mesh, MeshBasicMaterial, Vector3, Group, PlaneGeometry } from 'three'
 import { wasdInputState } from 'guis/elements/wasd-buttons'
 import { FaceGfx } from './wc-face-gfx'
-import { getLeftJoystickInput, orbitWithRightJoystick } from 'guis/elements/joysticks'
+import { getLeftJoystickInput } from 'guis/elements/joysticks'
 import { lerp } from 'three/src/math/MathUtils.js'
 
 function makeBox(
@@ -80,6 +80,8 @@ export class WalkingCube {
   private moveZ = 0
   private feet: Record<'left' | 'right', Foot>
 
+  public isControlledByPlayer: boolean = true
+
   // Fixed y-values for torso and feet
   private y0: number
   private TORSO_Y: number
@@ -140,38 +142,38 @@ export class WalkingCube {
     const { seaBlock, dt } = context
     const { camera, orbitControls } = seaBlock
 
-    forward.set(
-      camera.position.x - orbitControls.target.x,
-      0,
-      camera.position.z - orbitControls.target.z,
-    )
-    if (forward.lengthSq() > 0) forward.normalize()
-    else forward.set(0, 0, 1)
+    if (this.isControlledByPlayer) {
+      forward.set(
+        camera.position.x - orbitControls.target.x,
+        0,
+        camera.position.z - orbitControls.target.z,
+      )
+      if (forward.lengthSq() > 0) forward.normalize()
+      else forward.set(0, 0, 1)
 
-    right.crossVectors(forward, fixedUp)
+      right.crossVectors(forward, fixedUp)
 
-    const isUpHeld = wasdInputState['upBtn']
-    const isDownHeld = wasdInputState['downBtn']
-    const isLeftHeld = wasdInputState['leftBtn']
-    const isRightHeld = wasdInputState['rightBtn']
+      const isUpHeld = wasdInputState['upBtn']
+      const isDownHeld = wasdInputState['downBtn']
+      const isLeftHeld = wasdInputState['leftBtn']
+      const isRightHeld = wasdInputState['rightBtn']
 
-    moveVec.set(0, 0, 0)
-    if (isUpHeld) moveVec.sub(forward)
-    if (isDownHeld) moveVec.add(forward)
-    if (isLeftHeld) moveVec.add(right)
-    if (isRightHeld) moveVec.sub(right)
+      moveVec.set(0, 0, 0)
+      if (isUpHeld) moveVec.sub(forward)
+      if (isDownHeld) moveVec.add(forward)
+      if (isLeftHeld) moveVec.add(right)
+      if (isRightHeld) moveVec.sub(right)
 
-    const joyInput = getLeftJoystickInput()
-    if (joyInput) {
-      const { x, y } = joyInput
-      moveVec.addScaledVector(right, -x)
-      moveVec.addScaledVector(forward, y)
+      const joyInput = getLeftJoystickInput()
+      if (joyInput) {
+        const { x, y } = joyInput
+        moveVec.addScaledVector(right, -x)
+        moveVec.addScaledVector(forward, y)
+      }
+
+      this.moveX = moveVec.x
+      this.moveZ = moveVec.z
     }
-    orbitWithRightJoystick(seaBlock, dt)
-    seaBlock.orbitControls.update()
-
-    this.moveX = moveVec.x
-    this.moveZ = moveVec.z
     if (this.moveX !== 0 || this.moveZ !== 0) {
       this.torsoVel.set(this.moveX, 0, this.moveZ).normalize().multiplyScalar(this.WALK_SPEED * dt)
       this.torsoAngle = Math.atan2(this.moveX, this.moveZ)

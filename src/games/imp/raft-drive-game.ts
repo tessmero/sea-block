@@ -7,10 +7,9 @@ import type { GameUpdateContext } from 'games/game'
 import { Game } from 'games/game'
 import { FreeCamGame } from './free-cam-game'
 import { drivingRaftElement, raftRig, resetRaftDrive, updateRaftDrive } from 'games/raft/raft-drive-helper'
-import { raftBuildPipeline } from 'gfx/3d/pipelines/raft-build-pipeline'
-import type { TileIndex } from 'core/grid-logic/indexed-grid'
-import type { Pipeline } from 'gfx/3d/pipelines/pipeline'
 import type { SeaBlock } from 'sea-block'
+import { cockpitElement, instancedPieceElements } from 'games/raft/raft-gfx-helper'
+import { cursorElement } from 'games/raft/raft-mouse-input-helper'
 
 export class RaftDriveGame extends FreeCamGame {
   static {
@@ -20,8 +19,11 @@ export class RaftDriveGame extends FreeCamGame {
   static registerGame() {
     Game.register('raft-drive', {
       factory: () => new RaftDriveGame(),
-      guiName: 'free-cam',
+      guiName: 'raft-drive',
       elements: [
+        ...instancedPieceElements,
+        cockpitElement,
+        cursorElement,
         drivingRaftElement,
       ],
     })
@@ -30,20 +32,17 @@ export class RaftDriveGame extends FreeCamGame {
   public reset(context: SeaBlock): void {
     super.reset(context)
     resetRaftDrive(context)
-    // resetWalkingCube(context)
   }
 
-  public getTerrainRenderPipeline(_tile: TileIndex): Pipeline {
-    return raftBuildPipeline
-  }
+  // public getTerrainRenderPipeline(_tile: TileIndex): Pipeline {
+  //   return raftBuildPipeline
+  // }
 
   public update(context: GameUpdateContext): void {
-    // updateWalkingCube(context)
-
     // super.update(context)
-    this.cameraAnchor.position = raftRig.spheres[0].position
+
+    this.cameraAnchor.position = raftRig.getCameraTarget()
     this.centerOnAnchor(context.seaBlock)
     updateRaftDrive(context)
-    // this.centerOnAnchor(this.cameraAnchor)
   }
 }

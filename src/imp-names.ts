@@ -61,7 +61,8 @@ export type TransitionName = (typeof TRANSITION.NAMES)[number]
 // user interfaces
 export const GUI = {
   NAMES: [
-    'free-cam', 'splash-screen', 'start-sequence', 'tile-inspector', 'chess', 'raft-build',
+    'free-cam', 'splash-screen', 'start-sequence', 'tile-inspector',
+    'chess', 'raft-build', 'raft-drive',
     'empty', // placeholder used for games without gui
     'settings-menu', 'sprite-atlas', // test guis 2025-07-28
   ],

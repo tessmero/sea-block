@@ -6,7 +6,9 @@
 
 export const PLACEABLE_PIECE_NAMES = ['floor', 'thruster'] as const
 export type PlaceablePieceName = (typeof PLACEABLE_PIECE_NAMES)[number]
-export type PieceName = 'cockpit' | PlaceablePieceName
+
+export const PIECE_NAMES = ['cockpit', ...PLACEABLE_PIECE_NAMES] as const
+export type PieceName = (typeof PIECE_NAMES)[number]
 
 export const RAFT_PHASES = [
   'idle',

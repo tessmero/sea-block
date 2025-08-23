@@ -319,7 +319,7 @@ export class FreeCamGame extends Game {
 
     this.accelSphere(this.cameraAnchor, posDummy, dt * CAM_ACCEL * moveMagnitude)
 
-    orbitWithRightJoystick(seaBlock, dt) // gui/elements/joysticks.ts
+    orbitWithRightJoystick(context) // gui/elements/joysticks.ts
   }
 
   protected accelSphere(sphere: Sphere, intersection: Vector3, magnitude: number) {
