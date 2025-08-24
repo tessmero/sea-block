@@ -7,15 +7,16 @@
 
 import type { CssLayout } from 'util/layout-parser'
 import { FREECAM_PORTRAIT_LAYOUT } from './freecam-portrait-layout'
+import type { RaftLayoutKey } from 'guis/keys/raft-layout-keys'
 
 export const RAFT_DRIVE_FOCUS_TOUCH_LAYOUT = {
   ...FREECAM_PORTRAIT_LAYOUT,
 
-  doneBtn: {
+  doneBuildingBtn: {
     width: 64,
     height: 16,
     bottom: 0,
     right: 0,
   },
 
-} as const satisfies CssLayout
+} as const satisfies CssLayout<RaftLayoutKey>

@@ -4,7 +4,10 @@
  * List of parts and phases for raft builder game.
  */
 
-export const PLACEABLE_PIECE_NAMES = ['floor', 'thruster'] as const
+export const PLACEABLE_PIECE_NAMES = [
+  'floor',
+  'thruster',
+] as const
 export type PlaceablePieceName = (typeof PLACEABLE_PIECE_NAMES)[number]
 
 export const PIECE_NAMES = ['cockpit', ...PLACEABLE_PIECE_NAMES] as const

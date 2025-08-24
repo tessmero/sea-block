@@ -5,11 +5,12 @@
  * src/games/raft to interact with moving raft and its tile grid.
  */
 
-import { raftDriveLayoutFactory } from 'games/raft/raft-drive-helper'
+import { doneBuildingBtn, raftDriveLayoutFactory } from 'games/raft/raft-drive-helper'
 import { clickRaftWorld, hoverRaftWorld } from 'games/raft/raft-mouse-input-helper'
 import { leftJoy, leftJoySlider, rightJoy, rightJoySlider } from 'guis/elements/joysticks'
 import { wasdButtons } from 'guis/elements/wasd-buttons'
 import { Gui } from 'guis/gui'
+import type { RaftLayoutKey } from 'guis/keys/raft-layout-keys'
 import { FREECAM_DESKTOP_LAYOUT } from 'guis/layouts/freecam-desktop-layout'
 import { FREECAM_LANDSCAPE_LAYOUT } from 'guis/layouts/freecam-landscape-layout'
 import { FREECAM_PORTRAIT_LAYOUT } from 'guis/layouts/freecam-portrait-layout'
@@ -17,7 +18,7 @@ import { RAFT_DRIVE_FOCUS_DESKTOP_LAYOUT } from 'guis/layouts/raft-drive-focus-d
 import { RAFT_DRIVE_FOCUS_TOUCH_LAYOUT } from 'guis/layouts/raft-drive-focus-touch-layout'
 import type { ProcessedSubEvent } from 'mouse-touch-input'
 
-export class RaftDriveGui extends Gui {
+export class RaftDriveGui extends Gui<RaftLayoutKey> {
   static {
     Gui.register('raft-drive', {
       factory: () => new RaftDriveGui(),
@@ -33,6 +34,7 @@ export class RaftDriveGui extends Gui {
         leftJoy, leftJoySlider,
         rightJoy, rightJoySlider,
         ...wasdButtons,
+        doneBuildingBtn,
       ],
     })
   }

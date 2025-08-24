@@ -109,13 +109,13 @@ export const raftBtn: FreecamElem = {
   display: {
     type: 'button',
     // icon: `icons/16x16-chess.png`
-    label: 'BUILD',
+    label: 'RAFT',
   },
   layoutKey: 'raftBtn',
   hotkeys: [],
   clickAction: ({ seaBlock }) => {
     const item = seaBlock.config.tree.children.game
-    item.value = 'raft-build'
+    item.value = 'raft-drive'
     seaBlock.onCtrlChange(item)
   },
 }

@@ -19,8 +19,10 @@ import type { PieceName, PlaceablePieceName, RaftPhase } from './raft-enums'
 import { drivingRaftGroup } from './raft-drive-helper'
 import { cursorMesh } from './raft-mouse-input-helper'
 import type { TiledGrid } from 'core/grid-logic/tiled-grid'
+import type { AutoThruster } from './raft-auto-thrusters'
+import { getThrusterDirection } from './raft-auto-thrusters'
 
-export const RAFT_MAX_RAD = 2
+export const RAFT_MAX_RAD = 3
 
 export let raft: Raft
 export function resetRaftBuild(context: SeaBlock): void {
@@ -51,6 +53,7 @@ export class Raft {
   public readonly hlTiles = new RaftHlTiles() // Highlighted tiles (raft-specific)
   public readonly raftTiles: Set<number>
   public readonly raftPieces: Array<RenderablePiece> = []
+  public readonly thrusters: Array<AutoThruster> = []
 
   public readonly centerPos: Vector3 = new Vector3()
 
@@ -74,13 +77,13 @@ export class Raft {
     this.waveMaker = new ChessWaveMaker(context.sphereGroup.members[0], context)
     this.raftTiles = new Set([centerTile.i])
 
-    const rad = 1
+    const rad = 2
     for (let dx = -rad; dx <= rad; dx++) {
       for (let dz = -rad; dz <= rad; dz++) {
         if (dx === 0 && dz === 0) {
           continue
         }
-        const tile = context.terrain.grid.xzToIndex(centerTile.x + dx, centerTile.z + dz)
+        const tile = this.grid.xzToIndex(centerTile.x + dx, centerTile.z + dz)
         if (tile) {
           this.buildPiece('floor', tile)
         }
@@ -130,10 +133,10 @@ export class Raft {
       const elem = (pickedMesh as any).gameElement// eslint-disable-line @typescript-eslint/no-explicit-any
 
       if (elem && 'pieceName' in elem) {
-        const pieceType = elem.pieceType as PieceName
+        const pieceName = elem.pieceName as PieceName
         const { instanceId } = inputEvent.rawPick as Intersection
         if (typeof instanceId === 'number') {
-          return this.identifyPiece(pieceType, instanceId)
+          return this.identifyPiece(pieceName, instanceId)
         }
       }
     }
@@ -149,10 +152,23 @@ export class Raft {
   }
 
   buildPiece(pieceName: PlaceablePieceName, tile: TileIndex) {
+    // add mesh instance and logical raft piece
     const spawned = registerInstancedPiece(pieceName, tile)
     this.raftTiles.add(tile.i)
     setPiecePosition(spawned, this.getPosOnTile(tile).sub(this.centerPos))
     this.raftPieces.push(spawned)
+
+    if (pieceName === 'thruster') {
+      // add new thruster to auto-thruster logic
+      this.thrusters.push({
+        dx: tile.x - raft.centerTile.x,
+        dz: tile.z - raft.centerTile.z,
+        direction: getThrusterDirection(tile),
+        isFiring: false,
+      })
+    }
+
+    this.hlTiles.updateBuildableTiles(this)
   }
 
   clickWorld(inputEvent: ProcessedSubEvent): boolean {

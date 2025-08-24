@@ -6,7 +6,7 @@
 
 import type { CssLayout } from 'util/layout-parser'
 
-const nButtons = 2 // row of buttons at bottom center
+const nButtons = 10 // row of buttons at bottom center
 const btnHeight = 16
 const btnWidth = 64
 export const RAFT_BUILD_LAYOUT = {

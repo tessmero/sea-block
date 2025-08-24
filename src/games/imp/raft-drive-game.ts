@@ -34,6 +34,7 @@ export class RaftDriveGame extends FreeCamGame {
 
   public reset(context: SeaBlock): void {
     super.reset(context)
+    this.cameraAnchor.isGhost = true
     resetRaftDrive(context)
   }
 
@@ -45,6 +46,7 @@ export class RaftDriveGame extends FreeCamGame {
     // super.update(context)
 
     this.cameraAnchor.position = raftRig.getCameraTarget()
+    this.cameraAnchor.isGhost = true
     this.centerOnAnchor(context.seaBlock)
     updateRaftDrive(context)
   }

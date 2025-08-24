@@ -6,9 +6,10 @@
 
 import type { ProcessedSubEvent } from 'mouse-touch-input'
 import { raft } from './raft'
-import { drivingRaftGroup, targetFocus } from './raft-drive-helper'
+import { driveCamFocus, drivingRaftGroup, targetFocus } from './raft-drive-helper'
 import { BoxGeometry, Mesh, MeshBasicMaterial, type Object3D, type Raycaster } from 'three'
 import type { GameElement } from 'games/game'
+import type { TileIndex } from 'core/grid-logic/indexed-grid'
 
 export const cursorMesh = new Mesh(
   new BoxGeometry(1.2, 1.2, 1.2),
@@ -20,27 +21,40 @@ export const cursorElement: GameElement = {
 
 type XZ = { x: number, z: number }
 
-function putCursorOnTile(tile: XZ) {
+type CursorMode = 'default' | 'buildable'
+
+const cursorMats: Record<CursorMode, MeshBasicMaterial> = {
+  default: new MeshBasicMaterial({ color: 'white' }),
+  buildable: new MeshBasicMaterial({ color: 'green' }),
+}
+
+function putCursorOnTile(tile: XZ, mode: CursorMode = 'default') {
   cursorMesh.position.x = tile.x
   cursorMesh.position.z = tile.z
   cursorMesh.visible = true
+  cursorMesh.material = cursorMats[mode]
+  cursorMesh.frustumCulled = false
   document.documentElement.style.cursor = 'pointer'
 }
 
 export function hoverRaftWorld(inputEvent: ProcessedSubEvent) {
   cursorMesh.visible = false
 
+  if (targetFocus === 0 || driveCamFocus < 0.9) {
+    return false // disable hovering individual pieces while not focused
+  }
+
   // check if mouse is on existing part of raft
   const pickedPiece = raft.getPickedPieceMesh(inputEvent)
   if (pickedPiece) {
     // console.log('hoverRaftWorld existing piece', pickedPiece)
 
-    if (raft.hlTiles.buildable.has(pickedPiece.tile.i)) {
-      putCursorOnTile({
-        x: pickedPiece.tile.x - raft.centerTile.x,
-        z: pickedPiece.tile.z - raft.centerTile.z,
-      })
-    }
+    // if (raft.hlTiles.buildable.has(pickedPiece.tile.i)) {
+    putCursorOnTile({
+      x: pickedPiece.tile.x - raft.centerTile.x,
+      z: pickedPiece.tile.z - raft.centerTile.z,
+    })
+    // }
   }
   else {
     const raftTile = pickRaftTile(inputEvent)
@@ -53,7 +67,7 @@ export function hoverRaftWorld(inputEvent: ProcessedSubEvent) {
     )
     if (tileIndex) {
       if (raft.hlTiles.buildable.has(tileIndex.i)) {
-        putCursorOnTile(raftTile)
+        putCursorOnTile(raftTile, 'buildable')
       }
     }
   }
@@ -61,26 +75,36 @@ export function hoverRaftWorld(inputEvent: ProcessedSubEvent) {
 }
 
 export function clickRaftWorld(inputEvent: ProcessedSubEvent): boolean {
+  if (targetFocus === 0 || driveCamFocus < 0.9) {
+    return false // disable clicking individual pieces while not focused
+  }
+
+  let tileIndex: TileIndex | undefined
+
   // check if mouse is on existing part of raft
   const pickedPiece = raft.getPickedPieceMesh(inputEvent)
   if (pickedPiece) {
     // console.log('clickRaftWorld existing piece', pickedPiece)
-    return true // consume event
+    tileIndex = pickedPiece.tile
   }
   else {
     const raftTile = pickRaftTile(inputEvent)
     // console.log('clickRaftWorld raft tile', raftTile)
 
-    const tileIndex = raft.grid.xzToIndex(
+    tileIndex = raft.grid.xzToIndex(
       raft.centerTile.x + raftTile.x,
       raft.centerTile.z + raftTile.z,
     )
-    if (tileIndex) {
-      if (raft.hlTiles.buildable.has(tileIndex.i)) {
-        // clicked buildable tile
-        raft.buildPiece('thruster', tileIndex)
-        return true // consume event
-      }
+  }
+
+  if (tileIndex) {
+    // console.log('clicked tile index')
+
+    if (raft.hlTiles.buildable.has(tileIndex.i)) {
+      // console.log('clicked tile index BUILDABLE')
+      // clicked buildable tile
+      raft.buildPiece('thruster', tileIndex)
+      return true // consume event
     }
   }
 

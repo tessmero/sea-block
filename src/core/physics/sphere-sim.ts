@@ -39,11 +39,13 @@ export class SphereSim extends Simulation<Sphere> {
     for (let a = 0; a < spheres.length; a++) {
       const sphereA = spheres[a]
       if (!sphereA || sphereA.isGhost) {
+        // console.log('skip ghost sphere at index', a)
         continue
       }
       for (let b = a + 1; b < spheres.length; b++) {
         const sphereB = spheres[b]
         if (!sphereB || sphereB.isGhost) {
+        // console.log('skip ghost sphere at index', b)
           continue
         }
         collideSphereWithSphere(

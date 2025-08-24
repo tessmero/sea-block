@@ -9,6 +9,9 @@ import type { SeaBlock } from 'sea-block'
 import type { Object3D } from 'three'
 import { Matrix4, Vector3 } from 'three'
 
+const k = 2e-4 // spring constant
+const damping = 10 * k // damping coefficient
+
 export function buildRaftRig(context: SeaBlock) {
   const spheres = context.sphereGroup.members.slice(2, 6)
   const center = context.orbitControls.target
@@ -19,12 +22,26 @@ const posDummy = new Vector3()
 const velDummy = new Vector3()
 const m4Dummy = new Matrix4()
 
-type Spring = { i: number, j: number, restLength: number, k: number }
+type Spring = {
+  i: number
+  j: number
+  restLength: number
+  k: number
+  damping: number
+}
 
 export class RaftRig {
   springs: Array<Spring> = []
   public applyForwardThrust(accelMag: number) {
     const diag1 = new Vector3().copy(this.spheres[2].position).sub(this.spheres[0].position)
+    const forward = diag1.clone().normalize()
+    for (const sphere of this.spheres) {
+      sphere.velocity.add(forward.clone().multiplyScalar(accelMag))
+    }
+  }
+
+  public applyRightThrust(accelMag: number) {
+    const diag1 = new Vector3().copy(this.spheres[3].position).sub(this.spheres[1].position)
     const forward = diag1.clone().normalize()
     for (const sphere of this.spheres) {
       sphere.velocity.add(forward.clone().multiplyScalar(accelMag))
@@ -84,19 +101,21 @@ export class RaftRig {
     }
 
     // Build 6 springs (all pairs)
-    const k = 1e-5 // spring constant
     for (let i = 0; i < 4; ++i) {
       for (let j = i + 1; j < 4; ++j) {
         const si = this.spheres[i]
         const sj = this.spheres[j]
         const restLength = posDummy.copy(si.position).distanceTo(sj.position)
-        this.springs.push({ i, j, restLength, k })
+        this.springs.push({
+          i, j, restLength,
+          k,
+          damping,
+        })
       }
     }
   }
 
   public update(dt: number) {
-    // update springs: simple spring force between each pair
     for (const spring of this.springs) {
       const a = this.spheres[spring.i]
       const b = this.spheres[spring.j]
@@ -104,15 +123,18 @@ export class RaftRig {
       const dist = delta.length()
       if (dist < 1e-6) continue
       const dir = delta.multiplyScalar(1 / dist)
+      // Spring force
       const forceMag = -spring.k * (dist - spring.restLength)
-      // Apply force to velocities (F = m*a, assume m=1)
-      const force = dir.multiplyScalar(forceMag * 0.5 * dt) // 0.5 to split between both
-      a.velocity.add(force)
-      b.velocity.sub(force)
+      // Damping force (project relative velocity onto spring direction)
+      const relVel = velDummy.copy(a.velocity).sub(b.velocity)
+      const dampingMag = -spring.damping * relVel.dot(dir)
+      const totalForce = dir.multiplyScalar((forceMag + dampingMag) * 0.5 * dt) // 0.5 to split between both
+      a.velocity.add(totalForce)
+      b.velocity.sub(totalForce)
     }
   }
 
-  public alignMesh(mesh: Object3D) {
+  public alignMesh(mesh: Object3D, _dt: number) {
     // Compute center of mass of the 4 spheres
     const center = new Vector3(0, 0, 0)
     for (const sphere of this.spheres) {
@@ -136,9 +158,13 @@ export class RaftRig {
     const m = m4Dummy
     m.makeBasis(xAxis, yAxis, zAxis)
     mesh.position.copy(center)
+
+    // // snap to rotation
     mesh.quaternion.setFromRotationMatrix(m)
+
+    // // lerp to rotation
     // quatDummy.setFromRotationMatrix(m)
-    // mesh.quaternion.slerp(quatDummy, .1)
+    // mesh.quaternion.slerp(quatDummy, 1e-2 * dt)
   }
 }
 
