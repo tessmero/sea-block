@@ -41,3 +41,34 @@ export function lerpCameraSpherical(
     _relPos.setFromSpherical(_currentSpherical).add(target),
   )
 }
+
+export function interpCamera(
+  camera: Camera,
+  target0: Vector3,
+  target1: Vector3,
+  offset0: Vector3,
+  offset1: Vector3,
+  ratio: number,
+) {
+  // Interpolate target linearly
+  const interpTarget = new Vector3().lerpVectors(target0, target1, ratio)
+
+  // Interpolate offset in spherical coordinates
+  // const sph0 = new Spherical().setFromVector3(offset0)
+  // const sph1 = new Spherical().setFromVector3(offset1)
+  // const interpSph = new Spherical(
+  //   sph0.radius + (sph1.radius - sph0.radius) * ratio,
+  //   sph0.theta + (sph1.theta - sph0.theta) * ratio,
+  //   sph0.phi + (sph1.phi - sph0.phi) * ratio
+  // )
+  // const interpOffset = new Vector3().setFromSpherical(interpSph)
+  const interpOffset = new Vector3().lerpVectors(offset0, offset1, ratio)
+
+  // Set camera position
+  camera.position.copy(interpTarget).add(interpOffset)
+
+  // Make camera look at the interpolated target
+  camera.lookAt(interpTarget)
+
+  return camera
+}

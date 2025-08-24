@@ -6,7 +6,7 @@
 
 import type { ProcessedSubEvent } from 'mouse-touch-input'
 import { raft } from './raft'
-import { drivingRaftGroup } from './raft-drive-helper'
+import { drivingRaftGroup, targetFocus } from './raft-drive-helper'
 import { BoxGeometry, Mesh, MeshBasicMaterial, type Object3D, type Raycaster } from 'three'
 import type { GameElement } from 'games/game'
 
@@ -41,7 +41,6 @@ export function hoverRaftWorld(inputEvent: ProcessedSubEvent) {
         z: pickedPiece.tile.z - raft.centerTile.z,
       })
     }
-    return
   }
   else {
     const raftTile = pickRaftTile(inputEvent)
@@ -57,11 +56,8 @@ export function hoverRaftWorld(inputEvent: ProcessedSubEvent) {
         putCursorOnTile(raftTile)
       }
     }
-
-    return true // consume event
   }
-
-  return false
+  return true // consume event
 }
 
 export function clickRaftWorld(inputEvent: ProcessedSubEvent): boolean {
@@ -81,13 +77,17 @@ export function clickRaftWorld(inputEvent: ProcessedSubEvent): boolean {
     )
     if (tileIndex) {
       if (raft.hlTiles.buildable.has(tileIndex.i)) {
+        // clicked buildable tile
         raft.buildPiece('thruster', tileIndex)
+        return true // consume event
       }
     }
-
-    return true // consume event
   }
 
+  if (targetFocus === 1 && !inputEvent.pickedMesh) {
+    // prevent camera drag while focused on raft
+    return true // consume event
+  }
   return false
 }
 

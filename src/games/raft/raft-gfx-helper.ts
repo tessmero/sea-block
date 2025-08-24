@@ -11,6 +11,7 @@ import { Mesh, BoxGeometry, MeshLambertMaterial } from 'three'
 import type { TileIndex } from 'core/grid-logic/indexed-grid'
 import type { PieceName, PlaceablePieceName } from './raft-enums'
 import { PIECE_NAMES } from './raft-enums'
+import { clickRaftMesh } from './raft-drive-helper'
 
 export type UniquePiece = {
   readonly mesh: Mesh
@@ -42,7 +43,7 @@ export const instancedPieceElements: Array<InstancedPieceElement>
   = PIECE_NAMES.map(pieceName => ({
     pieceName,
     isPickable: true,
-    clickAction: () => { console.log('clicked piece instancedPieceElement') },
+    clickAction: (e) => { clickRaftMesh(e) },
     meshLoader: async () => {
       const geometry = new BoxGeometry(1, 1, 1)
       const material = new MeshLambertMaterial({ color: PIECE_COLORS[pieceName] })
@@ -56,7 +57,10 @@ export const instancedPieceElements: Array<InstancedPieceElement>
 export let cockpitMesh: Mesh
 export const cockpitElement: GameElement = {
   isPickable: true,
-  clickAction: () => { console.log('click cockpit') },
+  clickAction: (e) => {
+    clickRaftMesh(e)
+    // console.log('click cockpit')
+  },
   meshLoader: async () => {
     cockpitMesh = new Mesh(
       new BoxGeometry(1, 1, 1),
@@ -95,7 +99,7 @@ export function registerInstancedPiece(pieceName: PlaceablePieceName, tile: Tile
 }
 
 export function setPiecePosition(piece: RenderablePiece, position: Vector3): void {
-  console.log(`setpiecepos ${position.x.toFixed(2)}, ${position.z.toFixed(2)}`)
+  // console.log(`setpiecepos ${position.x.toFixed(2)}, ${position.z.toFixed(2)}`)
 
   if ('instancedMesh' in piece) {
     setInstancePosition(piece, position)

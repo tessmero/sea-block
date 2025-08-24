@@ -1,7 +1,7 @@
 /**
  * @file raft-build-game.ts
  *
- * Game implementation that points to modules in src/games/raft.
+ * Build raft locked to terrain grid. Points to modules in src/games/raft.
  */
 import type { TileIndex } from 'core/grid-logic/indexed-grid'
 import { Game } from 'games/game'
