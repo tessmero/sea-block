@@ -5,39 +5,31 @@
  */
 
 import type { GameElement, GameUpdateContext } from 'games/game'
-import { BoxGeometry, Mesh, MeshBasicMaterial, Vector3, Group, PlaneGeometry } from 'three'
+import { BoxGeometry, Mesh, MeshBasicMaterial, Vector3 } from 'three'
 import { wasdInputState } from 'guis/elements/wasd-buttons'
-import { FaceGfx } from './wc-face-gfx'
+import { FaceTextureGfx } from './wc-face-texture-gfx'
 import { getLeftJoystickInput } from 'guis/elements/joysticks'
 import { lerp } from 'three/src/math/MathUtils.js'
+import { FaceMeshGfx } from './wc-face-mesh-gfx'
 
 function makeBox(
   width: number, height: number, depth: number,
-  color: string, opts?: { hasFace?: boolean },
+  color: string, opts?: { hasFaceTexture?: boolean, hasFaceMesh?: boolean },
 ): GameElement {
   return {
     meshLoader: async () => {
-      if (opts?.hasFace) {
-        const group = new Group()
-        const cube = new Mesh(
-          new BoxGeometry(width, height, depth),
-          new MeshBasicMaterial({ color }),
-        )
-        group.add(cube)
-        const faceSize = 0.8
-        const faceGeo = new PlaneGeometry(faceSize, faceSize)
-        const faceTex = FaceGfx.getFaceTexture({ eyesOpen: true, mouthOpen: false, fill: false })
-        const faceMat = new MeshBasicMaterial({ map: faceTex, transparent: true })
-        const faceMesh = new Mesh(faceGeo, faceMat)
-        faceMesh.position.z = 0.5 + 0.05
-        group.add(faceMesh)
-        return group
+      const plainBox = new Mesh(
+        new BoxGeometry(width, height, depth),
+        new MeshBasicMaterial({ color }),
+      )
+      if (opts?.hasFaceTexture) {
+        return FaceTextureGfx.getTorsoWithTexturedFace(plainBox)
+      }
+      else if (opts?.hasFaceMesh) {
+        return FaceMeshGfx.getTorsoWithEyeMeshes(plainBox)
       }
       else {
-        return new Mesh(
-          new BoxGeometry(width, height, depth),
-          new MeshBasicMaterial({ color }),
-        )
+        return plainBox
       }
     },
   }
@@ -68,6 +60,8 @@ interface SlidingFoot extends AnchoredFoot {
   t: number
 }
 
+type ControlMode = 'default' | 'raft'
+
 export class WalkingCube {
   leftFoot: GameElement
   rightFoot: GameElement
@@ -80,7 +74,7 @@ export class WalkingCube {
   private moveZ = 0
   private feet: Record<'left' | 'right', Foot>
 
-  public isControlledByPlayer: boolean = true
+  public controlMode: ControlMode = 'default'
 
   // Fixed y-values for torso and feet
   private y0: number
@@ -104,7 +98,10 @@ export class WalkingCube {
     this.torsoVel = new Vector3(0, 0, 0)
     this.leftFoot = makeBox(0.3, 0.1, 0.5, 'black')
     this.rightFoot = makeBox(0.3, 0.1, 0.5, 'black')
-    this.torso = makeBox(1, 1, 1, 'white', { hasFace: true })
+    this.torso = makeBox(1, 1, 1, 'white', {
+      // hasFaceTexture: true, // render with one face textured
+      hasFaceMesh: true, // or, render with added meshes
+    })
     this.feet = {
       left: {
         state: 'anchored',
@@ -139,41 +136,24 @@ export class WalkingCube {
   }
 
   update(context: GameUpdateContext) {
-    const { seaBlock, dt } = context
-    const { camera, orbitControls } = seaBlock
-
-    if (this.isControlledByPlayer) {
-      forward.set(
-        camera.position.x - orbitControls.target.x,
-        0,
-        camera.position.z - orbitControls.target.z,
-      )
-      if (forward.lengthSq() > 0) forward.normalize()
-      else forward.set(0, 0, 1)
-
-      right.crossVectors(forward, fixedUp)
-
-      const isUpHeld = wasdInputState['upBtn']
-      const isDownHeld = wasdInputState['downBtn']
-      const isLeftHeld = wasdInputState['leftBtn']
-      const isRightHeld = wasdInputState['rightBtn']
-
-      moveVec.set(0, 0, 0)
-      if (isUpHeld) moveVec.sub(forward)
-      if (isDownHeld) moveVec.add(forward)
-      if (isLeftHeld) moveVec.add(right)
-      if (isRightHeld) moveVec.sub(right)
-
-      const joyInput = getLeftJoystickInput()
-      if (joyInput) {
-        const { x, y } = joyInput
-        moveVec.addScaledVector(right, -x)
-        moveVec.addScaledVector(forward, y)
-      }
-
-      this.moveX = moveVec.x
-      this.moveZ = moveVec.z
+    this._pollLeftHandInput(context)
+    if (this.controlMode === 'default') {
+      this._updateDefaultControls(context)
     }
+    else {
+      this._updateRaftControls(context)
+    }
+  }
+
+  private _updateRaftControls(context: GameUpdateContext) {
+    const { dt } = context
+    this.torsoPos.set(this.moveX, 1, this.moveZ)
+    this._updateFeet(dt)
+  }
+
+  private _updateDefaultControls(context: GameUpdateContext) {
+    const { dt } = context
+
     if (this.moveX !== 0 || this.moveZ !== 0) {
       this.torsoVel.set(this.moveX, 0, this.moveZ).normalize().multiplyScalar(this.WALK_SPEED * dt)
       this.torsoAngle = Math.atan2(this.moveX, this.moveZ)
@@ -183,6 +163,42 @@ export class WalkingCube {
     }
     this.torsoPos.add(this.torsoVel)
     this._updateFeet(dt)
+  }
+
+  private _pollLeftHandInput(context: GameUpdateContext) {
+    const { seaBlock } = context
+    const { camera, orbitControls } = seaBlock
+
+    forward.set(
+      camera.position.x - orbitControls.target.x,
+      0,
+      camera.position.z - orbitControls.target.z,
+    )
+    if (forward.lengthSq() > 0) forward.normalize()
+    else forward.set(0, 0, 1)
+
+    right.crossVectors(forward, fixedUp)
+
+    const isUpHeld = wasdInputState['upBtn']
+    const isDownHeld = wasdInputState['downBtn']
+    const isLeftHeld = wasdInputState['leftBtn']
+    const isRightHeld = wasdInputState['rightBtn']
+
+    moveVec.set(0, 0, 0)
+    if (isUpHeld) moveVec.sub(forward)
+    if (isDownHeld) moveVec.add(forward)
+    if (isLeftHeld) moveVec.add(right)
+    if (isRightHeld) moveVec.sub(right)
+
+    const joyInput = getLeftJoystickInput()
+    if (joyInput) {
+      const { x, y } = joyInput
+      moveVec.addScaledVector(right, -x)
+      moveVec.addScaledVector(forward, y)
+    }
+
+    this.moveX = moveVec.x
+    this.moveZ = moveVec.z
   }
 
   private _restRelPos(footName: 'left' | 'right') {

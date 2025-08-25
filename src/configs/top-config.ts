@@ -11,11 +11,11 @@ import type { ConfigTree, OptionItem } from './config-tree'
 
 export const isDevMode = true
 function applyDevMode(cfg: typeof topConfigTree.children) {
-  cfg.game.value = 'free-cam'// , 'walking-cube'
+  //cfg.game.value = 'walking-cube'
   cfg.game.isHidden = false
 
-  // cfg.generator.value = 'flat'
-  cfg.generator.value = 'all-ocean'
+  cfg.generator.value = 'flat'
+  // cfg.generator.value = 'all-ocean'
   cfg.tiling.value = 'square'
   cfg.freeCamLayout.value = 'landscape'
 

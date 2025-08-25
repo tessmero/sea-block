@@ -25,6 +25,7 @@ export const placePieceButtons = PLACEABLE_PIECE_NAMES.map((name, i) => ({
 const userFriendlyLabels = {
   'idle': '...',
   'place-floor': 'place floor tile',
+  'place-button': 'place button',
   'place-thruster': 'place thruster',
 } as const satisfies Record<RaftPhase, string>
 

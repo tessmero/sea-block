@@ -6,6 +6,7 @@
 
 export const PLACEABLE_PIECE_NAMES = [
   'floor',
+  'button',
   'thruster',
 ] as const
 export type PlaceablePieceName = (typeof PLACEABLE_PIECE_NAMES)[number]

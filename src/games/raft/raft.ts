@@ -77,6 +77,23 @@ export class Raft {
     this.waveMaker = new ChessWaveMaker(context.sphereGroup.members[0], context)
     this.raftTiles = new Set([centerTile.i])
 
+    // place starting floor tiles around center/cockpit
+    this._buildTestFloor()
+
+    // place 8 starting buttons around center/cockpit
+    this._buildTestButtons()
+
+    // cockpit position in group is always 0,0,0
+    const cockpit: UniquePiece = {
+      mesh: cockpitMesh,
+      tile: centerTile,
+      type: 'cockpit',
+    }
+    this.raftPieces.push(cockpit)
+  }
+
+  private _buildTestFloor() {
+    const { centerTile } = this
     const rad = 2
     for (let dx = -rad; dx <= rad; dx++) {
       for (let dz = -rad; dz <= rad; dz++) {
@@ -89,14 +106,17 @@ export class Raft {
         }
       }
     }
+  }
 
-    // cockpit position in group is always 0,0,0
-    const cockpit: UniquePiece = {
-      mesh: cockpitMesh,
-      tile: centerTile,
-      type: 'cockpit',
+  private _buildTestButtons() {
+    const { centerTile } = this
+    const dx = 0
+    const dz = 1
+
+    const tile = this.grid.xzToIndex(centerTile.x + dx, centerTile.z + dz)
+    if (tile) {
+      this.buildPiece('button', tile)
     }
-    this.raftPieces.push(cockpit)
   }
 
   update() {

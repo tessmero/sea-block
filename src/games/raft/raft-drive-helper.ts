@@ -37,7 +37,7 @@ export const doneBuildingBtn: GuiElement<RaftLayoutKey> = {
 }
 
 const wc = new WalkingCube(1)
-wc.isControlledByPlayer = false
+wc.controlMode = 'raft'
 
 export const drivingRaftGroup = new Group()
 drivingRaftGroup.add(new Mesh(
@@ -118,6 +118,13 @@ export function getRaftDriveCameraOverride(seaBlock: SeaBlock): Camera | null {
   const { camera, orbitControls } = seaBlock
   const { target } = orbitControls
 
+  // check if resized
+  if (raftCam.aspect !== camera.aspect) {
+    raftCam.aspect = camera.aspect
+    raftCam.fov = camera.fov
+    raftCam.updateProjectionMatrix()
+  }
+
   if (driveCamFocus === 1) {
     // interpolate from last update
     resetInterpCameraLatch()
@@ -144,13 +151,6 @@ export function getRaftDriveCameraOverride(seaBlock: SeaBlock): Camera | null {
     defaultOffset, worldPosition.sub(target), // focusOffset,
     driveCamFocus,
   )
-
-  // check if resized
-  if (raftCam.aspect !== camera.aspect) {
-    raftCam.aspect = camera.aspect
-    raftCam.fov = camera.fov
-    raftCam.updateProjectionMatrix()
-  }
 
   return raftCam
 }

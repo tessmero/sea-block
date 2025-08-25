@@ -1,11 +1,11 @@
 /**
- * @file wc-face-gfx.ts
+ * @file wc-face-texture-gfx.ts
  *
- * Build face texturs for walking-cube character.
+ * Render cube torso with one face textured.
  */
 
 import { addToSpriteAtlas } from 'gfx/2d/sprite-atlas'
-import { CanvasTexture } from 'three'
+import { CanvasTexture, Group, Mesh, MeshBasicMaterial, PlaneGeometry } from 'three'
 
 export type FaceParams = {
   shocked?: boolean // eslint-disable-line @typescript-eslint/naming-convention
@@ -15,33 +15,44 @@ export type FaceParams = {
   rotations?: number // number of 90 degree turns
 }
 
-export class FaceGfx {
+export class FaceTextureGfx {
   static _bufferWidth = 100 // pixels, detail level
   static _bufferHeight = 100
   static _lineWidth = 8
   static _graphics = {} // key are hashes, values are {buffer,texture}
 
-  /**
-   *
-   * @param {object} params
-   */
-  static getFaceTexture(params) {
-    return this._getGfx(params).texture
+  static getTorsoWithTexturedFace(cube: Mesh): Group {
+    const group = new Group()
+    // const cube = new Mesh(
+    //   new BoxGeometry(width, height, depth),
+    //   new MeshBasicMaterial({ color }),
+    // )
+    group.add(cube)
+    const faceSize = 0.8
+    const faceGeo = new PlaneGeometry(faceSize, faceSize)
+    const faceMat = FaceTextureGfx.getFaceMaterial({
+      eyesOpen: true, mouthOpen: false, fill: false,
+    })
+    const faceMesh = new Mesh(faceGeo, faceMat)
+
+    faceMesh.position.z = 0.5 + 0.05
+    group.add(faceMesh)
+    return group
   }
 
-  /**
-   *
-   * @param {object} g
-   * @param {number[]} rect
-   * @param {object} params
-   */
+  private static getFaceMaterial(params): MeshBasicMaterial {
+    const faceTex = this._getGfx(params).texture
+    const faceMat = new MeshBasicMaterial({ map: faceTex, transparent: true })
+    return faceMat
+  }
+
   static drawFace(g, rect, params) {
     const buffer = this._getGfx(params).buffer
 
     const [targetX, targetY, targetWidth, targetHeight] = rect
 
-    const scaleX = targetWidth / FaceGfx._bufferWidth
-    const scaleY = targetHeight / FaceGfx._bufferHeight
+    const scaleX = targetWidth / FaceTextureGfx._bufferWidth
+    const scaleY = targetHeight / FaceTextureGfx._bufferHeight
     const scale = Math.min(scaleX, scaleY) // Uniform scaling
 
     g.save()
@@ -56,10 +67,10 @@ export class FaceGfx {
    * @param {object} params
    */
   static _getGfx(params) {
-    const hash = FaceGfx._hash(params)
-    const all = FaceGfx._graphics
+    const hash = FaceTextureGfx._hash(params)
+    const all = FaceTextureGfx._graphics
     if (!Object.hasOwn(all, hash)) {
-      all[hash] = new FaceGfx()._buildFaceGfx(params)
+      all[hash] = new FaceTextureGfx()._buildFaceGfx(params)
     }
     return all[hash]
   }
@@ -90,8 +101,8 @@ export class FaceGfx {
     const ox = 0
     const x = 0
     const y = 0
-    const w = FaceGfx._bufferWidth
-    const h = FaceGfx._bufferHeight
+    const w = FaceTextureGfx._bufferWidth
+    const h = FaceTextureGfx._bufferHeight
     const canvas = document.createElement('canvas')
     canvas.width = w
     canvas.height = h
@@ -109,7 +120,7 @@ export class FaceGfx {
     }
 
     ctx.lineCap = 'round'
-    ctx.lineWidth = FaceGfx._lineWidth
+    ctx.lineWidth = FaceTextureGfx._lineWidth
 
     if (params.fill) {
       ctx.fillStyle = '#ddd'

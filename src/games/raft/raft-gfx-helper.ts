@@ -37,6 +37,10 @@ const PIECE_MODELS: Record<PieceName,
     geometry: () => new BoxGeometry(1, 1, 1),
     material: () => new MeshLambertMaterial({ color: 0x2196f3 }), // blue
   },
+  button: {
+    geometry: () => new BoxGeometry(1, 1, 1).translate(0, 0.05, 0),
+    material: () => new MeshLambertMaterial({ color: 0xaaaaff }), // light blue
+  },
   floor: {
     geometry: () => new BoxGeometry(1, 1, 1),
     material: () => new MeshLambertMaterial({ color: 0x8bc34a }), // green
