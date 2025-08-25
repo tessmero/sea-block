@@ -24,6 +24,7 @@ import { RAFT_DRIVE_FOCUS_TOUCH_LAYOUT } from 'guis/layouts/raft-drive-focus-tou
 import type { RaftLayoutKey } from 'guis/keys/raft-layout-keys'
 import { fireAutoThrusters } from './raft-auto-thrusters'
 import { instancedPieceMeshes } from './raft-gfx-helper'
+import { resetRaftButtons, updateRaftButtons } from './raft-buttons'
 
 export const doneBuildingBtn: GuiElement<RaftLayoutKey> = {
   layoutKey: 'doneBuildingBtn',
@@ -84,6 +85,7 @@ export function resetRaftDrive(context: SeaBlock) {
   raft.hlTiles.updateBuildableTiles(raft)
 
   wc.reset()
+  resetRaftButtons()
 
   raft.moveMeshesTo(drivingRaftGroup)
   raftRig = buildRaftRig(context)
@@ -217,6 +219,7 @@ export function updateRaftDrive(context: GameUpdateContext) {
   }
   orbitWithRightJoystick(context) // gui/elements/joysticks.ts
 
+  updateRaftButtons(wc.torsoPos)
   fireAutoThrusters(
     raft.thrusters, // available thrusters
     new Vector2(0, moveVec.y), // desired strafe

@@ -66,7 +66,7 @@ export class WalkingCube {
   leftFoot: GameElement
   rightFoot: GameElement
   torso: GameElement
-  private torsoPos: Vector3
+  public torsoPos: Vector3
   private torsoAngle = 0
   private torsoVel: Vector3
   private torsoAvel = 0
@@ -136,18 +136,20 @@ export class WalkingCube {
   }
 
   update(context: GameUpdateContext) {
-    this._pollLeftHandInput(context)
     if (this.controlMode === 'default') {
+      this._pollLeftHandInput(context, true) // relative to camera
       this._updateDefaultControls(context)
     }
     else {
+      this._pollLeftHandInput(context, false) // relative to parent
       this._updateRaftControls(context)
     }
   }
 
   private _updateRaftControls(context: GameUpdateContext) {
     const { dt } = context
-    this.torsoPos.set(this.moveX, 1, this.moveZ)
+    this.torsoAngle = Math.PI / 2
+    this.torsoPos.set(-this.moveZ / 2, 1, this.moveX / 2)
     this._updateFeet(dt)
   }
 
@@ -165,17 +167,22 @@ export class WalkingCube {
     this._updateFeet(dt)
   }
 
-  private _pollLeftHandInput(context: GameUpdateContext) {
+  private _pollLeftHandInput(context: GameUpdateContext, relativeToCamera = false) {
     const { seaBlock } = context
     const { camera, orbitControls } = seaBlock
 
-    forward.set(
-      camera.position.x - orbitControls.target.x,
-      0,
-      camera.position.z - orbitControls.target.z,
-    )
-    if (forward.lengthSq() > 0) forward.normalize()
-    else forward.set(0, 0, 1)
+    if (relativeToCamera) {
+      forward.set(
+        camera.position.x - orbitControls.target.x,
+        0,
+        camera.position.z - orbitControls.target.z,
+      )
+      if (forward.lengthSq() > 0) forward.normalize()
+      else forward.set(0, 0, 1)
+    }
+    else {
+      forward.set(0, 0, 1)
+    }
 
     right.crossVectors(forward, fixedUp)
 
@@ -193,8 +200,8 @@ export class WalkingCube {
     const joyInput = getLeftJoystickInput()
     if (joyInput) {
       const { x, y } = joyInput
-      moveVec.addScaledVector(right, -x)
-      moveVec.addScaledVector(forward, y)
+      moveVec.addScaledVector(right, -x * 2 * Math.SQRT2)
+      moveVec.addScaledVector(forward, y * 2 * Math.SQRT2)
     }
 
     this.moveX = moveVec.x

@@ -4,10 +4,9 @@
  * Help decide which thrusters should be turned on and the resulting net force.
  */
 
-import type { TileIndex } from 'core/grid-logic/indexed-grid'
-import { raft } from './raft'
 import type { Vector2 } from 'three'
 import type { RaftRig } from './raft-physics'
+import type { RenderablePiece } from './raft-gfx-helper'
 
 export type AutoThruster = {
   readonly dx: number
@@ -19,7 +18,8 @@ export type AutoThruster = {
 type Direction = 'up' | 'down' | 'left' | 'right'
 
 // Check adjacent tiles and return the direction based on first occupied one
-export function getThrusterDirection(tile: TileIndex): Direction {
+export function getThrusterDirection(piece: RenderablePiece): Direction {
+  const { raft, tile } = piece
   for (const { x, z } of raft.grid.tiling.getAdjacent(tile.x, tile.z)) {
     const adjTile = raft.grid.xzToIndex(tile.x + x, tile.z + z)
     if (!adjTile) continue
@@ -42,7 +42,7 @@ export function fireAutoThrusters(
   strafe: Vector2, turn: number,
   raftRig: RaftRig,
 ) {
-  const turnSign = Math.sign(turn)
+  // const turnSign = Math.sign(turn)
 
   // Compute net available thrust in each direction and torque
   let totalForward = 0
@@ -51,32 +51,32 @@ export function fireAutoThrusters(
 
   // Assume each thruster provides 1 unit of force in its direction
   for (const thruster of thrusters) {
-    const x = Math.sign(thruster.dx)
-    const z = Math.sign(thruster.dz)
+    // const x = Math.sign(thruster.dx)
+    // const z = Math.sign(thruster.dz)
     switch (thruster.direction) {
       case 'down':
-        thruster.isFiring = strafe.y > 0 || (z !== 0 && z === turnSign)
+        // thruster.isFiring = strafe.y > 0 || (z !== 0 && z === turnSign)
         if (thruster.isFiring) {
           totalForward += 1
           totalTorque += thruster.dz
         }
         break
       case 'up':
-        thruster.isFiring = strafe.y < 0 || (z !== 0 && z === -turnSign)
+        // thruster.isFiring = strafe.y < 0 || (z !== 0 && z === -turnSign)
         if (thruster.isFiring) {
           totalForward -= 1
           totalTorque -= thruster.dz
         }
         break
       case 'right':
-        thruster.isFiring = strafe.x > 0 || (x !== 0 && x === turnSign)
+        // thruster.isFiring = strafe.x > 0 || (x !== 0 && x === turnSign)
         if (thruster.isFiring) {
           totalRight += 1
           totalTorque += thruster.dx
         }
         break
       case 'left':
-        thruster.isFiring = strafe.x < 0 || (x !== 0 && x === -turnSign)
+        // thruster.isFiring = strafe.x < 0 || (x !== 0 && x === -turnSign)
         if (thruster.isFiring) {
           totalRight -= 1
           totalTorque -= thruster.dx

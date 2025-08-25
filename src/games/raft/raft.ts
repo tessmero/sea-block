@@ -21,6 +21,7 @@ import { cursorMesh } from './raft-mouse-input-helper'
 import type { TiledGrid } from 'core/grid-logic/tiled-grid'
 import type { AutoThruster } from './raft-auto-thrusters'
 import { getThrusterDirection } from './raft-auto-thrusters'
+import type { RaftButton } from './raft-buttons'
 
 export const RAFT_MAX_RAD = 3
 
@@ -54,6 +55,7 @@ export class Raft {
   public readonly raftTiles: Set<number>
   public readonly raftPieces: Array<RenderablePiece> = []
   public readonly thrusters: Array<AutoThruster> = []
+  public readonly buttons: Array<RaftButton> = []
 
   public readonly centerPos: Vector3 = new Vector3()
 
@@ -80,11 +82,14 @@ export class Raft {
     // place starting floor tiles around center/cockpit
     this._buildTestFloor()
 
+    this._buildTestThrusters()
+
     // place 8 starting buttons around center/cockpit
     this._buildTestButtons()
 
     // cockpit position in group is always 0,0,0
     const cockpit: UniquePiece = {
+      raft: this,
       mesh: cockpitMesh,
       tile: centerTile,
       type: 'cockpit',
@@ -108,14 +113,31 @@ export class Raft {
     }
   }
 
-  private _buildTestButtons() {
+  // place three thrusters pointing down
+  private _buildTestThrusters() {
     const { centerTile } = this
-    const dx = 0
-    const dz = 1
+    const dx = -3
 
+    for (const dz of ([2, 0, -2])) {
+      const tile = this.grid.xzToIndex(centerTile.x + dx, centerTile.z + dz)
+      if (tile) {
+        this.buildPiece('thruster', tile)
+      }
+    }
+  }
+
+  private _buildTestButtons() {
+    const [left, center, right] = this.thrusters
+    this._addButton(1, 0, [center])
+    this._addButton(0, 1, [right])
+    this._addButton(0, -1, [left])
+  }
+
+  private _addButton(dx, dz, triggers) {
+    const { centerTile } = this
     const tile = this.grid.xzToIndex(centerTile.x + dx, centerTile.z + dz)
     if (tile) {
-      this.buildPiece('button', tile)
+      this.buildPiece('button', tile, triggers)
     }
   }
 
@@ -171,9 +193,9 @@ export class Raft {
     }
   }
 
-  buildPiece(pieceName: PlaceablePieceName, tile: TileIndex) {
+  buildPiece(pieceName: PlaceablePieceName, tile: TileIndex, triggers?: Array<AutoThruster>) {
     // add mesh instance and logical raft piece
-    const spawned = registerInstancedPiece(pieceName, tile)
+    const spawned = registerInstancedPiece(this, pieceName, tile)
     this.raftTiles.add(tile.i)
     setPiecePosition(spawned, this.getPosOnTile(tile).sub(this.centerPos))
     this.raftPieces.push(spawned)
@@ -181,10 +203,24 @@ export class Raft {
     if (pieceName === 'thruster') {
       // add new thruster to auto-thruster logic
       this.thrusters.push({
-        dx: tile.x - raft.centerTile.x,
-        dz: tile.z - raft.centerTile.z,
-        direction: getThrusterDirection(tile),
+        dx: tile.x - this.centerTile.x,
+        dz: tile.z - this.centerTile.z,
+        direction: getThrusterDirection(spawned),
         isFiring: false,
+      })
+    }
+
+    if (pieceName === 'button') {
+      if (!triggers) {
+        throw new Error('raft button requires triggers')
+      }
+      // add new button to auto-thruster logic
+      this.buttons.push({
+        index: this.buttons.length,
+        dx: tile.x - this.centerTile.x,
+        dz: tile.z - this.centerTile.z,
+        triggers, // : [...this.thrusters],
+        isPressed: false,
       })
     }
 

@@ -7,12 +7,16 @@
 import type { ProcessedSubEvent } from 'mouse-touch-input'
 import { raft } from './raft'
 import { driveCamFocus, drivingRaftGroup, targetFocus } from './raft-drive-helper'
-import { BoxGeometry, Mesh, MeshBasicMaterial, type Object3D, type Raycaster } from 'three'
+import { Box3, Mesh, MeshBasicMaterial, Vector3, type Object3D, type Raycaster } from 'three'
 import type { GameElement } from 'games/game'
 import type { TileIndex } from 'core/grid-logic/indexed-grid'
+import { buildBoxEdges } from 'games/walking-cube/wc-edge-gfx'
 
+const s = 1.2
+const cursorBox = new Box3(new Vector3(-s / 2, -s / 2, -s / 2), new Vector3(s / 2, s / 2, s / 2))
 export const cursorMesh = new Mesh(
-  new BoxGeometry(1.2, 1.2, 1.2),
+  buildBoxEdges({ box: cursorBox }),
+  // new BoxGeometry(1.2, 1.2, 1.2),
   new MeshBasicMaterial({ color: 'white' }),
 )
 export const cursorElement: GameElement = {

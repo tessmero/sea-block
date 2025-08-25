@@ -15,13 +15,16 @@ import type { PieceName, PlaceablePieceName } from './raft-enums'
 import { PIECE_NAMES } from './raft-enums'
 import { clickUnfocusedRaftMesh } from './raft-drive-helper'
 import { getThrusterDirection } from './raft-auto-thrusters'
+import type { Raft } from './raft'
 
 export type UniquePiece = {
+  readonly raft: Raft
   readonly mesh: Mesh
   type: PieceName
   tile: TileIndex
 }
 export type InstancedPiece = {
+  readonly raft: Raft
   readonly instancedMesh: InstancedMesh
   readonly index: number
   type: PieceName
@@ -108,7 +111,7 @@ export const buildingRaftGroupElement: GameElement = {
   },
 }
 
-export function registerInstancedPiece(pieceName: PlaceablePieceName, tile: TileIndex): RenderablePiece {
+export function registerInstancedPiece(raft: Raft, pieceName: PlaceablePieceName, tile: TileIndex): RenderablePiece {
   const mesh = instancedPieceMeshes[pieceName]
   if (!mesh) {
     throw new Error(`missing piece mesh for ${pieceName}`)
@@ -119,7 +122,7 @@ export function registerInstancedPiece(pieceName: PlaceablePieceName, tile: Tile
   instancedMesh.count++
   instancedMesh.visible = true
 
-  return { instancedMesh, index, tile, type: pieceName }
+  return { raft, instancedMesh, index, tile, type: pieceName }
 }
 
 export function setPiecePosition(piece: RenderablePiece, position: Vector3): void {
@@ -140,7 +143,7 @@ function setInstancePosition(piece: InstancedPiece, position: Vector3): void {
 
   let m4 = new Matrix4()
   if (piece.type === 'thruster') {
-    m4 = getThrusterRotationMatrix(piece.tile)
+    m4 = getThrusterRotationMatrix(piece)
   }
   m4.setPosition(x, y, z)
   instancedMesh.setMatrixAt(index, m4)
@@ -157,8 +160,8 @@ function setInstancePosition(piece: InstancedPiece, position: Vector3): void {
 }
 
 // Returns a rotation matrix for the thruster mesh instance based on adjacent piece
-function getThrusterRotationMatrix(tile: TileIndex): Matrix4 {
-  const dir = getThrusterDirection(tile)
+function getThrusterRotationMatrix(piece: RenderablePiece): Matrix4 {
+  const dir = getThrusterDirection(piece)
   const m = new Matrix4()
   switch (dir) {
     case 'up':
