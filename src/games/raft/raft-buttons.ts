@@ -20,27 +20,34 @@ export type RaftButton = {
 }
 
 export function resetRaftButtons() {
-  const im = instancedPieceMeshes.button
   for (const raftButton of raft.buttons) {
     raftButton.isPressed = false
-    for (const thruster of raftButton.triggers) {
-      thruster.isFiring = false
-    }
-    im.setColorAt(raftButton.index, unpressedColor)
+    updateButton(raftButton)
   }
-  (im.instanceColor as InstancedBufferAttribute).needsUpdate = true
 }
 
 export function updateRaftButtons(wcPos: Vector3) {
-  const im = instancedPieceMeshes.button
   for (const raftButton of raft.buttons) {
-    const { triggers, dx, dz } = raftButton
+    const { dx, dz } = raftButton
     raftButton.isPressed = (Math.abs(wcPos.x - dx) < 0.6 && Math.abs(wcPos.z - dz) < 0.6)
-    for (const thruster of triggers) {
-      thruster.isFiring = raftButton.isPressed
-    }
+    updateButton(raftButton)
+  }
+}
+
+function updateButton(raftButton: RaftButton) {
+  const im = instancedPieceMeshes.button
+  const color = raftButton.isPressed ? pressedColor : unpressedColor
+  im.setColorAt(raftButton.index, color)
+  updateTriggers(raftButton);
+  (im.instanceColor as InstancedBufferAttribute).needsUpdate = true
+}
+
+function updateTriggers(raftButton: RaftButton) {
+  const im = instancedPieceMeshes.thruster
+  for (const thruster of raftButton.triggers) {
+    thruster.isFiring = raftButton.isPressed
     const color = raftButton.isPressed ? pressedColor : unpressedColor
-    im.setColorAt(raftButton.index, color)
+    im.setColorAt(thruster.index, color)
   }
   (im.instanceColor as InstancedBufferAttribute).needsUpdate = true
 }

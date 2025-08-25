@@ -10,11 +10,11 @@ import { ChessWaveMaker } from 'games/chess/chess-wave-maker'
 import { RaftHlTiles } from './raft-hl-tiles'
 import type { ProcessedSubEvent } from 'mouse-touch-input'
 import type { RenderablePiece, UniquePiece } from './raft-gfx-helper'
-import { buildingRaftGroup, cockpitMesh, instancedPieceMeshes,
-  registerInstancedPiece, setPiecePosition } from './raft-gfx-helper'
+import { buildingRaftGroup, cockpitMesh, hideRaftWires, instancedPieceMeshes,
+  registerInstancedPiece, setPiecePosition,
+  showRaftWires } from './raft-gfx-helper'
 import type { Group, Intersection, Object3D } from 'three'
 import { Vector3 } from 'three'
-import { showPhaseLabel } from './raft-build-gui-elements'
 import type { PieceName, PlaceablePieceName, RaftPhase } from './raft-enums'
 import { drivingRaftGroup } from './raft-drive-helper'
 import { cursorMesh } from './raft-mouse-input-helper'
@@ -22,6 +22,9 @@ import type { TiledGrid } from 'core/grid-logic/tiled-grid'
 import type { AutoThruster } from './raft-auto-thrusters'
 import { getThrusterDirection } from './raft-auto-thrusters'
 import type { RaftButton } from './raft-buttons'
+import { hidePieceDialog } from './gui/raft-piece-dialog'
+import { showBuildPhasePanel } from './gui/raft-phase-dialog'
+import { resetFrontLayer } from 'gfx/2d/flat-gui-gfx-helper'
 
 export const RAFT_MAX_RAD = 3
 
@@ -46,6 +49,7 @@ export function updateRaftBuild(_context: GameUpdateContext): void {
 }
 
 export class Raft {
+  public cameraDistance: number = 10
   public currentPhase: RaftPhase = 'idle'
 
   protected waveMaker: ChessWaveMaker // Replace 'any' with actual type if available
@@ -102,9 +106,9 @@ export class Raft {
     const rad = 2
     for (let dx = -rad; dx <= rad; dx++) {
       for (let dz = -rad; dz <= rad; dz++) {
-        if (dx === 0 && dz === 0) {
-          continue
-        }
+        // if (dx === 0 && dz === 0) {
+        //   continue // skip center tile
+        // }
         const tile = this.grid.xzToIndex(centerTile.x + dx, centerTile.z + dz)
         if (tile) {
           this.buildPiece('floor', tile)
@@ -205,6 +209,7 @@ export class Raft {
       this.thrusters.push({
         dx: tile.x - this.centerTile.x,
         dz: tile.z - this.centerTile.z,
+        index: this.thrusters.length,
         direction: getThrusterDirection(spawned),
         isFiring: false,
       })
@@ -244,15 +249,23 @@ export class Raft {
     return false
   }
 
-  public startPlacePiece(pieceName: PlaceablePieceName) {
-    this.currentPhase = `place-${pieceName}`
-    showPhaseLabel(this.currentPhase)
-    this.context.layeredViewport.handleResize(this.context)
+  public startPhase(phase: RaftPhase) {
+    this.currentPhase = phase
+    hidePieceDialog(this.context)
+    showBuildPhasePanel(this.currentPhase)
+    resetFrontLayer(this.context)
+
+    if (phase === 'wires') {
+      showRaftWires()
+    }
+    else {
+      hideRaftWires()
+    }
   }
 
   public cancelPlacePiece() {
     this.currentPhase = 'idle'
-    showPhaseLabel(this.currentPhase)
+    showBuildPhasePanel(this.currentPhase)
     // for( const btn of placePieceButtons ){
     //   btn.display.forcedState = undefined
     // }

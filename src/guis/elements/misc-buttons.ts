@@ -115,7 +115,7 @@ export const raftBtn: FreecamElem = {
   hotkeys: [],
   clickAction: ({ seaBlock }) => {
     const item = seaBlock.config.tree.children.game
-    item.value = 'raft-drive'
+    item.value = 'raft'
     seaBlock.onCtrlChange(item)
   },
 }

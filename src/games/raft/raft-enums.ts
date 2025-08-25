@@ -16,6 +16,7 @@ export type PieceName = (typeof PIECE_NAMES)[number]
 
 export const RAFT_PHASES = [
   'idle',
+  'wires',
   ...PLACEABLE_PIECE_NAMES.map(name => `place-${name}` as const),
 ] as const
 export type RaftPhase = (typeof RAFT_PHASES)[number]

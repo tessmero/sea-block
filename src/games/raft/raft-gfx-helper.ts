@@ -6,7 +6,7 @@
 
 import { DoubleSide, Matrix4 } from 'three'
 import type { GameElement } from 'games/game'
-import type { Vector3 } from 'three'
+import { Vector3 } from 'three'
 import { ConeGeometry, Group, InstancedMesh, MeshBasicMaterial } from 'three'
 import type { BufferGeometry } from 'three'
 import { Mesh, BoxGeometry, MeshLambertMaterial } from 'three'
@@ -14,8 +14,10 @@ import type { TileIndex } from 'core/grid-logic/indexed-grid'
 import type { PieceName, PlaceablePieceName } from './raft-enums'
 import { PIECE_NAMES } from './raft-enums'
 import { clickUnfocusedRaftMesh } from './raft-drive-helper'
+import type { AutoThruster } from './raft-auto-thrusters'
 import { getThrusterDirection } from './raft-auto-thrusters'
-import type { Raft } from './raft'
+import { raft, type Raft } from './raft'
+import type { RaftButton } from './raft-buttons'
 
 export type UniquePiece = {
   readonly raft: Raft
@@ -32,28 +34,40 @@ export type InstancedPiece = {
 }
 export type RenderablePiece = UniquePiece | InstancedPiece
 
+const box = (x, y, z) => new BoxGeometry(x, y, z)
+const mat = pars => new MeshLambertMaterial(pars)
+
 // Geometry and color for each raft element (now with a single 'thruster' type)
 const PIECE_MODELS: Record<PieceName,
       { geometry: () => BufferGeometry, material: () => MeshLambertMaterial }
 > = {
   cockpit: {
-    geometry: () => new BoxGeometry(1, 1, 1),
-    material: () => new MeshLambertMaterial({ color: 0x2196f3 }), // blue
-  },
-  button: {
-    geometry: () => new BoxGeometry(1, 1, 1).translate(0, 0.05, 0),
-    material: () => new MeshLambertMaterial({ color: 0xaaaaff }), // light blue
+    geometry: () => box(0.1, 0.1, 0.1), // hidden in center of floor tile
+    material: () => mat({ color: 0x2196f3 }), // blue
   },
   floor: {
-    geometry: () => new BoxGeometry(1, 1, 1),
-    material: () => new MeshLambertMaterial({ color: 0x8bc34a }), // green
+    geometry: () => box(1, 1, 1),
+    material: () => mat({ color: 0x8bc34a }), // green
+  },
+  button: {
+    geometry: () => box(0.9, 1, 0.9).translate(0, 0.05, 0), // on top of floor tile
+    material: () => mat({ color: 0xaaaaff }), // light blue
   },
   thruster: {
     geometry: () => {
-      return new ConeGeometry(1, 1, 3, 1, true)
+      const geo = new ConeGeometry(1, 3, 6, 1, true)
+      // const geo = new CylinderGeometry(1, 1, .5, 6, 1, true)
+      const pos = geo.attributes.position
+      const off = 7
+      for (let i = 0; i < 7; ++i) {
+        const y = (i % 2 === 0) ? 0.2 : -0.2
+        pos.setY(i + off, pos.getY(i + off) + y)
+      }
+      geo.computeVertexNormals()
+      return geo.scale(0.5, 0.5, 0.5)
     },
-    material: () => new MeshLambertMaterial({
-      color: 0xff9800, // orange
+    material: () => mat({
+      color: 0x555555,
       side: DoubleSide,
     }),
   },
@@ -69,7 +83,9 @@ export const instancedPieceElements: Array<InstancedPieceElement>
   = PIECE_NAMES.map(pieceName => ({
     pieceName,
     isPickable: true,
-    clickAction: (e) => { clickUnfocusedRaftMesh(e) },
+    clickAction: (_e) => {
+      // clickUnfocusedRaftMesh(e)
+    },
     meshLoader: async () => {
       const { geometry, material } = PIECE_MODELS[pieceName]
       const mesh = new InstancedMesh(geometry(), material(), 25)
@@ -109,6 +125,67 @@ export const buildingRaftGroupElement: GameElement = {
     // buildingRaftGroup.add(cockpitMesh)
     return buildingRaftGroup
   },
+}
+
+// instanced mesh to visualize connections between buttons and thrusters
+const wireMat = new MeshBasicMaterial({ color: 'white', depthTest: false, depthWrite: false })
+export const wiresMesh: InstancedMesh = new InstancedMesh(new BoxGeometry(1, 1, 1), wireMat, 100)
+wiresMesh.renderOrder = 999
+wiresMesh.count = 0
+// export const wiresElement: GameElement = {
+//   meshLoader: async () => { return wiresMesh },
+// }
+export function showRaftWires() {
+  wiresMesh.count = 0
+
+  for (const button of raft.buttons) {
+    for (const thruster of button.triggers) {
+      _registerWire(button, thruster)
+    }
+  }
+}
+export function hideRaftWires() {
+  wiresMesh.count = 0
+}
+
+function _registerWire(button: RaftButton, thruster: AutoThruster) {
+  const posA = new Vector3().copy(raft.centerPos)
+  posA.y = 0.5
+  posA.x += button.dx - 0.5
+  posA.z += button.dz - 0.5
+
+  const posB = new Vector3().copy(raft.centerPos)
+  posB.y = 0
+  posB.x += thruster.dx - 0.5
+  posB.z += thruster.dz - 0.5
+
+  // Compute midpoint and direction
+  const mid = new Vector3().addVectors(posA, posB).multiplyScalar(0.5)
+  const dir = new Vector3().subVectors(posB, posA)
+  const length = dir.length()
+  if (length < 1e-6) return // skip degenerate wires
+
+  // Default box is 1x1x1, so scale z to length, rotate to align with dir
+  const m4 = new Matrix4()
+  // Align Z axis to dir
+  const zAxis = dir.clone().normalize()
+  // Find rotation axis and angle from (0,0,1) to zAxis
+  let axis: Vector3 | undefined
+  let angle: number | undefined
+  const ref = new Vector3(0, 0, 1)
+  if (ref.clone().normalize().angleTo(zAxis) >= 1e-6) {
+    axis = new Vector3().crossVectors(ref, zAxis).normalize()
+    angle = Math.acos(ref.dot(zAxis))
+    if (axis.lengthSq() >= 1e-6 && angle !== undefined) {
+      m4.makeRotationAxis(axis, angle)
+    }
+  }
+  m4.scale(new Vector3(0.08, 0.08, length))
+  m4.setPosition(mid.x, mid.y, mid.z)
+
+  const index = wiresMesh.count++
+  wiresMesh.setMatrixAt(index, m4)
+  wiresMesh.instanceMatrix.needsUpdate = true
 }
 
 export function registerInstancedPiece(raft: Raft, pieceName: PlaceablePieceName, tile: TileIndex): RenderablePiece {

@@ -7,7 +7,6 @@
 import type { GuiElement } from 'guis/gui'
 import type { RaftPhase } from './raft-enums'
 import { PLACEABLE_PIECE_NAMES, RAFT_PHASES } from './raft-enums'
-import { raft } from './raft'
 import { Transition } from 'gfx/transitions/transition'
 
 export const placePieceButtons = PLACEABLE_PIECE_NAMES.map((name, i) => ({
@@ -18,7 +17,7 @@ export const placePieceButtons = PLACEABLE_PIECE_NAMES.map((name, i) => ({
   },
   clickAction: () => {
     // console.log(`clicked piece button ${name}`)
-    raft.startPlacePiece(name)
+    // raft.startPlacePiece(name)
   },
 } as GuiElement))
 
@@ -27,6 +26,7 @@ const userFriendlyLabels = {
   'place-floor': 'place floor tile',
   'place-button': 'place button',
   'place-thruster': 'place thruster',
+  'wires': 'show all wires',
 } as const satisfies Record<RaftPhase, string>
 
 // debug labels
@@ -48,13 +48,13 @@ const phaseLabels = Object.fromEntries(
   ]),
 ) as Record<RaftPhase, GuiElement>
 
-export function showPhaseLabel(phase: RaftPhase) {
-  for (const key of RAFT_PHASES) {
-    const { display } = phaseLabels[key]
-    display.isVisible = (key === phase)
-    display.needsUpdate = true
-  }
-}
+// export function showPhaseLabel(phase: RaftPhase) {
+//   for (const key of RAFT_PHASES) {
+//     const { display } = phaseLabels[key]
+//     display.isVisible = (key === phase)
+//     display.needsUpdate = true
+//   }
+// }
 
 export const driveBtn: GuiElement = {
   layoutKey: 'driveBtn',
@@ -66,7 +66,7 @@ export const driveBtn: GuiElement = {
     const { seaBlock } = event
     // switch to chess game
     const item = seaBlock.config.tree.children.game
-    item.value = 'raft-drive'
+    item.value = 'raft'
     // SeamlessTransition.desiredCameraOffset.copy(getChessCamOffset(seaBlock))
     // SeamlessTransition.snapshotTerrain(seaBlock)
     // ChessScenery.takeOriginalSnapshot(seaBlock)

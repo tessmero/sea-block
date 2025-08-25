@@ -14,8 +14,8 @@ function applyDevMode(cfg: typeof topConfigTree.children) {
   // cfg.game.value = 'walking-cube'
   cfg.game.isHidden = false
 
-  cfg.generator.value = 'flat'
-  // cfg.generator.value = 'all-ocean'
+  // cfg.generator.value = 'flat'
+  cfg.generator.value = 'all-ocean'
   cfg.tiling.value = 'square'
   cfg.freeCamLayout.value = 'landscape'
 

@@ -6,11 +6,14 @@
 
 import type { ProcessedSubEvent } from 'mouse-touch-input'
 import { raft } from './raft'
-import { driveCamFocus, drivingRaftGroup, targetFocus } from './raft-drive-helper'
+import { drivingRaftGroup, targetFocus } from './raft-drive-helper'
 import { Box3, Mesh, MeshBasicMaterial, Vector3, type Object3D, type Raycaster } from 'three'
 import type { GameElement } from 'games/game'
 import type { TileIndex } from 'core/grid-logic/indexed-grid'
 import { buildBoxEdges } from 'games/walking-cube/wc-edge-gfx'
+import { hidePieceDialog, showPieceHovered } from './gui/raft-piece-dialog'
+
+const camDistancethreshold = 20 // distance where individual pieces become pickable
 
 const s = 1.2
 const cursorBox = new Box3(new Vector3(-s / 2, -s / 2, -s / 2), new Vector3(s / 2, s / 2, s / 2))
@@ -38,14 +41,16 @@ function putCursorOnTile(tile: XZ, mode: CursorMode = 'default') {
   cursorMesh.visible = true
   cursorMesh.material = cursorMats[mode]
   cursorMesh.frustumCulled = false
-  document.documentElement.style.cursor = 'pointer'
 }
 
 export function hoverRaftWorld(inputEvent: ProcessedSubEvent) {
   cursorMesh.visible = false
 
-  if (targetFocus === 0 || driveCamFocus < 0.9) {
-    return false // disable hovering individual pieces while not focused
+  // if (targetFocus === 0 || driveCamFocus < 0.9) {
+  //   return false // disable hovering individual pieces while not focused
+  // }
+  if (raft.cameraDistance > camDistancethreshold) {
+    return false // disable hovering individual pieces while zoomed out
   }
 
   // check if mouse is on existing part of raft
@@ -53,14 +58,17 @@ export function hoverRaftWorld(inputEvent: ProcessedSubEvent) {
   if (pickedPiece) {
     // console.log('hoverRaftWorld existing piece', pickedPiece)
 
-    // if (raft.hlTiles.buildable.has(pickedPiece.tile.i)) {
     putCursorOnTile({
       x: pickedPiece.tile.x - raft.centerTile.x,
       z: pickedPiece.tile.z - raft.centerTile.z,
     })
+    showPieceHovered(pickedPiece)
+    // if (raft.hlTiles.buildable.has(pickedPiece.tile.i)) {
+    //   document.documentElement.style.cursor = 'pointer'
     // }
   }
   else {
+    hidePieceDialog(inputEvent.seaBlock)
     const raftTile = pickRaftTile(inputEvent)
     // putCursorOnTile(raftTile)
     // console.log('hoverRaftWorld raft tile', raftTile)
@@ -79,8 +87,11 @@ export function hoverRaftWorld(inputEvent: ProcessedSubEvent) {
 }
 
 export function clickRaftWorld(inputEvent: ProcessedSubEvent): boolean {
-  if (targetFocus === 0 || driveCamFocus < 0.9) {
-    return false // disable clicking individual pieces while not focused
+  // if (targetFocus === 0 || driveCamFocus < 0.9) {
+  //   return false // disable clicking individual pieces while not focused
+  // }
+  if (raft.cameraDistance > camDistancethreshold) {
+    return false // disable clicking individual pieces while zoomed out
   }
 
   let tileIndex: TileIndex | undefined

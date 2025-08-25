@@ -9,8 +9,21 @@ import { FREECAM_LAYOUT_KEYS } from './freecam-layout-keys'
 export const RAFT_LAYOUT_KEYS = [
   ...FREECAM_LAYOUT_KEYS,
 
-  // unlock camera from raft and stop picking pieces
-  'doneBuildingBtn', // bottom-right
+  // toolbar row along top of screen
+  'toolbar',
+  'placeFloorBtn',
+  'placeButtonBtn',
+  'placeThrusterBtn',
+  'wiresBtn',
+
+  // covers toolbar when existing piece is selected
+  'pieceDialogPanel',
+  'pieceDeleteBtn',
+
+  // covers toolbar when placing new piece
+  'buildPhasePanel',
+  'buildCancelBtn',
+
 ] as const
 
 export type RaftLayoutKey = (typeof RAFT_LAYOUT_KEYS)[number]

@@ -149,13 +149,17 @@ export class WalkingCube {
   private _updateRaftControls(context: GameUpdateContext) {
     const { dt } = context
     this.torsoAngle = Math.PI / 2
-    this.torsoPos.set(-this.moveZ / 2, 1, this.moveX / 2)
-    this._updateFeet(dt)
+    this.torsoPos.set(-this.moveZ / 2, 1.5, this.moveX / 2)
+    this._updateMeshesRaft(dt)
+
+    //
+    // this._updateWalkingFeet(dt)
   }
 
   private _updateDefaultControls(context: GameUpdateContext) {
     const { dt } = context
 
+    // update logical torso
     if (this.moveX !== 0 || this.moveZ !== 0) {
       this.torsoVel.set(this.moveX, 0, this.moveZ).normalize().multiplyScalar(this.WALK_SPEED * dt)
       this.torsoAngle = Math.atan2(this.moveX, this.moveZ)
@@ -164,7 +168,12 @@ export class WalkingCube {
       this.torsoVel.set(0, 0, 0)
     }
     this.torsoPos.add(this.torsoVel)
-    this._updateFeet(dt)
+
+    // update logical feet
+    this._updateWalkingFeet(dt)
+
+    // update meshes based on logical feet and torso
+    this._updateMeshesDefault()
   }
 
   private _pollLeftHandInput(context: GameUpdateContext, relativeToCamera = false) {
@@ -224,7 +233,30 @@ export class WalkingCube {
     return rest.add(moveVec)
   }
 
-  private _updateFeet(dt: number) {
+  private _updateMeshesRaft(_dt: number) {
+    const y = 0
+    const rad = 0.5 // distance from center x/z to foot x/z
+
+    // use logical torso position to place mesh
+    if (this.torso.mesh) {
+      this.torso.mesh.position.copy(this.torsoPos)
+      this.torso.mesh.setRotationFromAxisAngle(upAxis, this.torsoAngle)
+    }
+
+    // ignore logical feet and just place meshes
+    if (this.leftFoot.mesh) {
+      const { mesh } = this.leftFoot
+      mesh.position.set(0, y, -rad)
+      mesh.setRotationFromAxisAngle(upAxis, 0)
+    }
+    if (this.rightFoot.mesh) {
+      const { mesh } = this.rightFoot
+      mesh.position.set(0, y, rad)
+      mesh.setRotationFromAxisAngle(upAxis, 0)
+    }
+  }
+
+  private _updateWalkingFeet(dt: number) {
     let areAnySliding = Object.values(this.feet).some(f => f.state === 'sliding')
     for (const [footName, foot] of Object.entries(this.feet) as Array<['left' | 'right', Foot]>) {
       if (foot.state === 'anchored') {
@@ -257,7 +289,10 @@ export class WalkingCube {
         }
       }
     }
+  }
 
+  // apply logical feet/torso position to meshes
+  private _updateMeshesDefault() {
     if (this.leftFoot.mesh) {
       const { mesh } = this.leftFoot
       const { pos, angle } = this.feet.left

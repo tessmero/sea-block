@@ -17,8 +17,10 @@ import { getElementImageset } from './element-imageset-builder'
 
 let lastDrawnState: Partial<Record<string, ButtonState>> = {} // for purposes of requesting repaint
 const shownAsPressed: Partial<Record<string, boolean>> = {} // for purposes of click/unclick sounds
-export function resetFrontLayer() {
+export function resetFrontLayer(seaBlock: SeaBlock) {
   lastDrawnState = {}
+  const { w, h } = seaBlock.layeredViewport
+  seaBlock.layeredViewport.ctx.clearRect(0, 0, w, h)
 }
 
 export function resetLastDrawnStates(gui: Gui) {

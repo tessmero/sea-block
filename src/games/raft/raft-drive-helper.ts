@@ -9,41 +9,41 @@ import { wasdInputState } from 'guis/elements/wasd-buttons'
 import type { SeaBlock } from 'sea-block'
 import type { Camera } from 'three'
 import { Matrix4, PerspectiveCamera, Vector3 } from 'three'
-import { BoxGeometry, Group, Mesh, MeshBasicMaterial, Vector2 } from 'three'
+import { Group, Vector2 } from 'three'
 import type { RaftRig } from './raft-physics'
 import { buildRaftRig } from './raft-physics'
 import { WalkingCube } from 'games/walking-cube/walking-cube'
 import { lerp } from 'three/src/math/MathUtils.js'
-import type { ElementEvent, GuiElement } from 'guis/gui'
+import type { ElementEvent } from 'guis/gui'
 import { raft, resetRaftBuild } from './raft'
 import { interpCamera, resetInterpCameraLatch } from 'gfx/3d/lerp-camera'
-import { FREECAM_DESKTOP_LAYOUT } from 'guis/layouts/freecam-desktop-layout'
-import { FREECAM_LANDSCAPE_LAYOUT } from 'guis/layouts/freecam-landscape-layout'
-import { RAFT_DRIVE_FOCUS_DESKTOP_LAYOUT } from 'guis/layouts/raft-drive-focus-desktop-layout'
-import { RAFT_DRIVE_FOCUS_TOUCH_LAYOUT } from 'guis/layouts/raft-drive-focus-touch-layout'
-import type { RaftLayoutKey } from 'guis/keys/raft-layout-keys'
+import { RAFT_LANDSCAPE_LAYOUT } from 'guis/layouts/raft/raft-landscape-layout'
 import { fireAutoThrusters } from './raft-auto-thrusters'
-import { instancedPieceMeshes } from './raft-gfx-helper'
+import { instancedPieceMeshes, wiresMesh } from './raft-gfx-helper'
 import { resetRaftButtons, updateRaftButtons } from './raft-buttons'
+import { RAFT_DESKTOP_LAYOUT } from 'guis/layouts/raft/raft-desktop-layout'
 
-export const doneBuildingBtn: GuiElement<RaftLayoutKey> = {
-  layoutKey: 'doneBuildingBtn',
-  display: {
-    type: 'button',
-    label: 'RETURN',
-  },
-  clickAction: (e) => {
-    clickUnfocusedRaftMesh(e)
-  },
-}
+// export const doneBuildingBtn: GuiElement<RaftLayoutKey> = {
+//   layoutKey: 'doneBuildingBtn',
+//   display: {
+//     type: 'button',
+//     label: 'RETURN',
+//   },
+//   clickAction: (e) => {
+//     clickUnfocusedRaftMesh(e)
+//   },
+// }
 
 const wc = new WalkingCube(1)
 wc.controlMode = 'raft'
 
 export const drivingRaftGroup = new Group()
-drivingRaftGroup.add(new Mesh(
-  new BoxGeometry(1, 1, 1),
-  new MeshBasicMaterial({ color: 'red' })))
+
+// // add red box to debug group center position
+// drivingRaftGroup.add(new Mesh(
+//   new BoxGeometry(1, 1, 1),
+//   new MeshBasicMaterial({ color: 'red' })))
+
 export const drivingRaftElement = {
   // isPickable: true,
   // clickAction: () => { console.log('clicked driving raft') },
@@ -52,6 +52,7 @@ export const drivingRaftElement = {
       wc[name].mesh = await wc[name].meshLoader()
       drivingRaftGroup.add(wc[name].mesh)
     }
+    drivingRaftGroup.add(wiresMesh)
     return drivingRaftGroup
   },
 } satisfies GameElement
@@ -70,12 +71,9 @@ const raftCam: PerspectiveCamera = new PerspectiveCamera()
 const defaultOffset = new Vector3() // camera at zero focus, set to regular player-controlled camera
 const focusOffset = new Vector3(-4, 10, -0.1) // camera relative to raft at full focus
 
-export function raftDriveLayoutFactory() {
+export function raftLayoutFactory() {
   const isTouchDevice = true
-  if (targetFocus === 0) {
-    return isTouchDevice ? FREECAM_LANDSCAPE_LAYOUT : FREECAM_DESKTOP_LAYOUT
-  }
-  return isTouchDevice ? RAFT_DRIVE_FOCUS_TOUCH_LAYOUT : RAFT_DRIVE_FOCUS_DESKTOP_LAYOUT
+  return isTouchDevice ? RAFT_LANDSCAPE_LAYOUT : RAFT_DESKTOP_LAYOUT
 }
 
 export function resetRaftDrive(context: SeaBlock) {
@@ -112,7 +110,13 @@ function updateRaftCam({ seaBlock, dt }: GameUpdateContext) {
       seaBlock.layeredViewport.handleResize(seaBlock)
     }
   }
+  raft.cameraDistance = distDummy.subVectors(
+    seaBlock.camera.position,
+    seaBlock.orbitControls.target,
+  ).length()
 }
+
+const distDummy = new Vector3()
 
 export function getRaftDriveCameraOverride(seaBlock: SeaBlock): Camera | null {
   if (driveCamFocus === 0) return null

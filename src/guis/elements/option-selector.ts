@@ -57,7 +57,7 @@ export function optionSelectorElements(params: OptionParams): Array<GuiElement> 
     optionLabels[currentValue].display.isVisible = true
     onChange(seaBlock, currentValue)
 
-    resetFrontLayer()
+    resetFrontLayer(seaBlock)
   }
 
   return [

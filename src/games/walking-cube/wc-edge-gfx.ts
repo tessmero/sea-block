@@ -58,14 +58,14 @@ function createRodGeometry(
   p2: [number, number, number],
   thickness: number,
 ): BufferGeometry {
-  const dx = p2[0] - p1[0]
-  const dy = p2[1] - p1[1]
-  const dz = p2[2] - p1[2]
-  const len = 1 + thickness
+  const dx = Math.abs(p2[0] - p1[0])
+  const dy = Math.abs(p2[1] - p1[1])
+  const dz = Math.abs(p2[2] - p1[2])
+  const len = Math.max(dx, dy, dz) + thickness
   const geom = new BoxGeometry(
-    Math.abs(dx) > 0 ? len : thickness,
-    Math.abs(dy) > 0 ? len : thickness,
-    Math.abs(dz) > 0 ? len : thickness,
+    dx > 0 ? len : thickness,
+    dy > 0 ? len : thickness,
+    dz > 0 ? len : thickness,
   )
   // Center at midpoint
   const mx = (p1[0] + p2[0]) / 2

@@ -64,7 +64,7 @@ export class LayeredViewport {
     this.midCanvas.height = this.h
     this.frontCanvas.width = this.w
     this.frontCanvas.height = this.h
-    resetFrontLayer()
+    resetFrontLayer(context)
 
     // if( context.transition ){
 

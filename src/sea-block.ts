@@ -487,7 +487,7 @@ export class SeaBlock {
     // this.layeredViewport.ctx.fillRect( 20,20,20,20 )
     this.onResize()
 
-    resetFrontLayer()
+    resetFrontLayer(this)
     updateFrontLayer(this)
     // this.onResize()
 

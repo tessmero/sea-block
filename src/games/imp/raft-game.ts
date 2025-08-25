@@ -1,5 +1,5 @@
 /**
- * @file raft-drive-game.ts
+ * @file raft-game.ts
  *
  * Drive raft from raft-build-game with physics, and build while driving.
  */
@@ -12,17 +12,14 @@ import type { SeaBlock } from 'sea-block'
 import { cockpitElement, instancedPieceElements } from 'games/raft/raft-gfx-helper'
 import { cursorElement } from 'games/raft/raft-mouse-input-helper'
 
-export class RaftDriveGame extends FreeCamGame {
+export class RaftGame extends FreeCamGame {
   static {
-    RaftDriveGame.registerGame()
-  }
-
-  static registerGame() {
-    Game.register('raft-drive', {
-      factory: () => new RaftDriveGame(),
-      guiName: 'raft-drive',
+    Game.register('raft', {
+      factory: () => new RaftGame(),
+      guiName: 'raft',
       elements: [
         ...instancedPieceElements,
+        // wiresElement,
         cockpitElement,
         cursorElement,
         drivingRaftElement,
@@ -49,5 +46,25 @@ export class RaftDriveGame extends FreeCamGame {
     this.cameraAnchor.isGhost = true
     this.centerOnAnchor(context.seaBlock)
     updateRaftDrive(context)
+  }
+
+  protected centerOnAnchor(context: SeaBlock) {
+    const { cameraAnchor } = this
+    const { terrain, camera, orbitControls: controls } = context
+
+    if (!cameraAnchor) return
+
+    const { x, z } = cameraAnchor.position
+    camera.position.set(
+      x + (camera.position.x - this._lastAnchorPosition.x),
+      camera.position.y, // y + (camera.position.y - lastPlayerPosition.y),
+      z + (camera.position.z - this._lastAnchorPosition.z),
+    )
+    this._lastAnchorPosition.copy(cameraAnchor.position)
+    // controls.target.set(x, CAMERA_LOOK_AT.y, z)
+    controls.target.set(x, 14, z)
+    controls.update()
+
+    terrain.panToCenter(x, z)
   }
 }

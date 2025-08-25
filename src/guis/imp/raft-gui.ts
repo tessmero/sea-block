@@ -1,40 +1,41 @@
 /**
- * @file raft-drive-gui.ts
+ * @file raft-gui.ts
  *
  * Gui implementation for raft driving game, passes hover-click event to modules in
  * src/games/raft to interact with moving raft and its tile grid.
  */
 
-import { doneBuildingBtn, raftDriveLayoutFactory } from 'games/raft/raft-drive-helper'
+import { raftBuildPhasePanels } from 'games/raft/gui/raft-phase-dialog'
+import { raftPieceDialogElements } from 'games/raft/gui/raft-piece-dialog'
+import { raftToolbarElements } from 'games/raft/gui/raft-toolbar-elements'
+import { raftLayoutFactory } from 'games/raft/raft-drive-helper'
 import { clickRaftWorld, hoverRaftWorld } from 'games/raft/raft-mouse-input-helper'
 import { leftJoy, leftJoySlider, rightJoy, rightJoySlider } from 'guis/elements/joysticks'
 import { wasdButtons } from 'guis/elements/wasd-buttons'
 import { Gui } from 'guis/gui'
 import type { RaftLayoutKey } from 'guis/keys/raft-layout-keys'
-import { FREECAM_DESKTOP_LAYOUT } from 'guis/layouts/freecam-desktop-layout'
-import { FREECAM_LANDSCAPE_LAYOUT } from 'guis/layouts/freecam-landscape-layout'
-import { FREECAM_PORTRAIT_LAYOUT } from 'guis/layouts/freecam-portrait-layout'
-import { RAFT_DRIVE_FOCUS_DESKTOP_LAYOUT } from 'guis/layouts/raft-drive-focus-desktop-layout'
-import { RAFT_DRIVE_FOCUS_TOUCH_LAYOUT } from 'guis/layouts/raft-drive-focus-touch-layout'
+import { RAFT_DESKTOP_LAYOUT } from 'guis/layouts/raft/raft-desktop-layout'
+import { RAFT_LANDSCAPE_LAYOUT } from 'guis/layouts/raft/raft-landscape-layout'
+import { RAFT_PORTRAIT_LAYOUT } from 'guis/layouts/raft/raft-portrait-layout'
 import type { ProcessedSubEvent } from 'mouse-touch-input'
 
-export class RaftDriveGui extends Gui<RaftLayoutKey> {
+export class RaftGui extends Gui<RaftLayoutKey> {
   static {
-    Gui.register('raft-drive', {
-      factory: () => new RaftDriveGui(),
-      layoutFactory: raftDriveLayoutFactory,
+    Gui.register('raft', {
+      factory: () => new RaftGui(),
+      layoutFactory: raftLayoutFactory,
       allLayouts: [
-        RAFT_DRIVE_FOCUS_TOUCH_LAYOUT,
-        RAFT_DRIVE_FOCUS_DESKTOP_LAYOUT,
-        FREECAM_DESKTOP_LAYOUT,
-        FREECAM_LANDSCAPE_LAYOUT,
-        FREECAM_PORTRAIT_LAYOUT,
+        RAFT_DESKTOP_LAYOUT,
+        RAFT_LANDSCAPE_LAYOUT,
+        RAFT_PORTRAIT_LAYOUT,
       ],
       elements: [
         leftJoy, leftJoySlider,
         rightJoy, rightJoySlider,
         ...wasdButtons,
-        doneBuildingBtn,
+        ...raftToolbarElements,
+        ...Object.values(raftBuildPhasePanels),
+        ...raftPieceDialogElements,
       ],
     })
   }
