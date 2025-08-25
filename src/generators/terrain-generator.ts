@@ -6,7 +6,7 @@
 
 import type { Color } from 'three'
 import type { GeneratorName } from '../imp-names'
-import { michaelConfig } from '../configs/michael-config'
+import { michaelConfig } from '../configs/imp/michael-config'
 import { SeedablePRNG } from '../util/rng'
 import type { CssStyle } from '../util/style-parser'
 

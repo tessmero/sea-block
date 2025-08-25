@@ -143,14 +143,13 @@ export default tseslint.config(
       'src/games/imp/**/*.ts',
       'src/guis/imp/**/*.ts',
       'src/gfx/transitions/imp/**/*.ts',
-      'src/configs/**/*.ts',
+      'src/configs/imp/**/*.ts',
       'src/gfx/grid-anims/**/*.ts',
     ],
     ignores: [
       // base classes are exempt (they define protected constructor)
       'src/grid-logic/tilings/tiling.ts',
       'src/generators/terrain-generator.ts',
-      'src/configs/configurable.ts',
       'src/gfx/grid-anims/grid-animation.ts',
     ],
     rules: {

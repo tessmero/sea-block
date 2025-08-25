@@ -5,7 +5,7 @@
  * Michael2-3B/Procedural-Perlin-Terrain.
  */
 import { Color } from 'three'
-import { michaelConfig } from '../configs/michael-config'
+import { michaelConfig } from '../configs/imp/michael-config'
 import { SeedablePRNG } from '../util/rng'
 import type { GeneratedTile } from './terrain-generator'
 import { TerrainGenerator } from './terrain-generator'

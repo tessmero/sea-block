@@ -4,8 +4,8 @@
  * Water and sphere physics settings.
  */
 
-import { Configurable } from './configurable'
-import type { ConfigTree } from './config-tree'
+import { Configurable } from '../configurable'
+import type { ConfigTree } from '../config-tree'
 
 const GRAVITY = 5e-4
 const AIR_RESISTANCE = 1e-2

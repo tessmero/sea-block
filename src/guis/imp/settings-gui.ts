@@ -8,9 +8,9 @@ import { Gui } from 'guis/gui'
 import { SETTINGS_LAYOUT } from 'guis/layouts/settings-layout'
 import type { GuiElement } from 'guis/gui'
 import { optionSelectorElements } from 'guis/elements/option-selector'
-import { gfxConfig } from 'configs/gfx-config'
+import { gfxConfig } from 'configs/imp/gfx-config'
 import type { OptionItem } from 'configs/config-tree'
-import { topConfig } from 'configs/top-config'
+import { topConfig } from 'configs/imp/top-config'
 
 const elements: Array<GuiElement> = [
   {

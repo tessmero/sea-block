@@ -26,10 +26,13 @@ import { hidePieceDialog } from './gui/raft-piece-dialog'
 import { showBuildPhasePanel } from './gui/raft-phase-dialog'
 import { resetFrontLayer } from 'gfx/2d/flat-gui-gfx-helper'
 
+import testRaft from './blueprints/test-raft.json'
+import type { RaftBlueprint } from './blueprints/raft.json'
+import { raftFromJson } from './blueprints/raft-io'
 export const RAFT_MAX_RAD = 3
 
 export let raft: Raft
-export function resetRaftBuild(context: SeaBlock): void {
+export function resetRaftBuild(context: SeaBlock, blueprint?: RaftBlueprint): void {
   // find center tile based on camera target
   // const { target } = orbitControls
   // const { x, z } = target
@@ -42,6 +45,7 @@ export function resetRaftBuild(context: SeaBlock): void {
   }
 
   raft = new Raft(context, centerTile)
+  raftFromJson(blueprint ?? testRaft as RaftBlueprint)
 }
 
 export function updateRaftBuild(_context: GameUpdateContext): void {
@@ -83,14 +87,6 @@ export class Raft {
     this.waveMaker = new ChessWaveMaker(context.sphereGroup.members[0], context)
     this.raftTiles = new Set([centerTile.i])
 
-    // place starting floor tiles around center/cockpit
-    this._buildTestFloor()
-
-    this._buildTestThrusters()
-
-    // place 8 starting buttons around center/cockpit
-    this._buildTestButtons()
-
     // cockpit position in group is always 0,0,0
     const cockpit: UniquePiece = {
       raft: this,
@@ -99,6 +95,11 @@ export class Raft {
       type: 'cockpit',
     }
     this.raftPieces.push(cockpit)
+
+    // // should be same as blueprints/test-raft.json
+    // this._buildTestFloor()
+    // this._buildTestThrusters()
+    // this._buildTestButtons()
   }
 
   private _buildTestFloor() {
@@ -209,7 +210,8 @@ export class Raft {
       this.thrusters.push({
         dx: tile.x - this.centerTile.x,
         dz: tile.z - this.centerTile.z,
-        index: this.thrusters.length,
+        imIndex: this.thrusters.length,
+        pieceIndex: this.raftPieces.length - 1, // index of piece registered above
         direction: getThrusterDirection(spawned),
         isFiring: false,
       })

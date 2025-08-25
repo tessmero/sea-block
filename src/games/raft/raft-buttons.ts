@@ -47,7 +47,7 @@ function updateTriggers(raftButton: RaftButton) {
   for (const thruster of raftButton.triggers) {
     thruster.isFiring = raftButton.isPressed
     const color = raftButton.isPressed ? pressedColor : unpressedColor
-    im.setColorAt(thruster.index, color)
+    im.setColorAt(thruster.imIndex, color)
   }
   (im.instanceColor as InstancedBufferAttribute).needsUpdate = true
 }

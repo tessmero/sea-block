@@ -4,8 +4,8 @@
  * Configurable for free-cam game.
  */
 
-import type { ConfigTree } from './config-tree'
-import { Configurable } from './configurable'
+import type { ConfigTree } from '../config-tree'
+import { Configurable } from '../configurable'
 
 const freeCamGameConfigTree = {
   children: {

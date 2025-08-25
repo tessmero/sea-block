@@ -47,9 +47,21 @@ export const raftPieceLabels = Object.fromEntries(
   ]),
 ) as Record<string, RaftElem>
 
+const pieceDeleteBtn: RaftElem = {
+  layoutKey: 'pieceDeleteBtn',
+  display: {
+    type: 'button',
+    icon: 'icons/16x16-x.png',
+  },
+  clickAction: () => {
+
+  },
+}
+
 export const raftPieceDialogElements: Array<RaftElem> = [
   raftPieceDialogPanel,
   ...Object.values(raftPieceLabels),
+  pieceDeleteBtn,
 ]
 
 export function showPieceHovered(piece: RenderablePiece) {

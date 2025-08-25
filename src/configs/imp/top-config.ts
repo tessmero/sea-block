@@ -4,10 +4,10 @@
  * Top-level config items.
  */
 
-import type { GameName, GeneratorName, TilingName } from '../imp-names'
-import { GAME, GENERATOR, TILING } from '../imp-names'
-import { Configurable } from './configurable'
-import type { ConfigTree, OptionItem } from './config-tree'
+import type { GameName, GeneratorName, TilingName } from '../../imp-names'
+import { GAME, GENERATOR, TILING } from '../../imp-names'
+import { Configurable } from '../configurable'
+import type { ConfigTree, OptionItem } from '../config-tree'
 
 export const isDevMode = true
 function applyDevMode(cfg: typeof topConfigTree.children) {

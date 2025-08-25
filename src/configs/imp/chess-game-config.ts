@@ -4,8 +4,8 @@
  * Configurable for chess game.
  */
 
-import type { ConfigTree } from './config-tree'
-import { Configurable } from './configurable'
+import type { ConfigTree } from '../config-tree'
+import { Configurable } from '../configurable'
 
 const chessGameConfigTree = {
   children: {

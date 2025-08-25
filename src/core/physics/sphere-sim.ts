@@ -9,7 +9,7 @@ import type { Tile } from '../tile'
 import type { TileGroup } from '../groups/tile-group'
 import { SPHERE_RADIUS, COLLISION_KERNEL_RADIUS } from '../../settings'
 import { STEP_DURATION } from '../../settings'
-import { physicsConfig } from '../../configs/physics-config'
+import { physicsConfig } from '../../configs/imp/physics-config'
 import type { FlatConfigMap } from '../../configs/configurable'
 import { Simulation } from './simulation'
 

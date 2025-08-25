@@ -4,8 +4,8 @@
  * Controls heirarchy and default values for terrain generator.
  */
 
-import { Configurable } from './configurable'
-import type { ConfigTree } from './config-tree'
+import { Configurable } from '../configurable'
+import type { ConfigTree } from '../config-tree'
 
 const michaelConfigTree = {
   label: 'Michael2-3B Terrain Config',

@@ -3,13 +3,14 @@
  *
  * Combined config tree displayed in user interface.
  */
-import { Configurable } from './configurable'
+import { Configurable } from '../configurable'
 import { gfxConfig } from './gfx-config'
 import { physicsConfig } from './physics-config'
 import { michaelConfig } from './michael-config'
-import type { ConfigTree } from './config-tree'
+import type { ConfigTree } from '../config-tree'
 import { topConfig } from './top-config'
 import { freeCamGameConfig } from './free-cam-game-config'
+import { raftConfig } from './raft-config'
 
 const seaBlockConfigTree = {
 
@@ -21,6 +22,7 @@ const seaBlockConfigTree = {
     },
 
     ...topConfig.tree.children, // unpack children at top level
+    ...raftConfig.tree.children,
     gfx: gfxConfig.tree,
     physics: physicsConfig.tree,
     freeCamGame: freeCamGameConfig.tree,

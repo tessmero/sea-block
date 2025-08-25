@@ -4,10 +4,10 @@
  * Settings for graphics, performance, and styles.
  */
 
-import { STYLES } from '../gfx/styles/styles-list'
-import type { SeaBlock } from '../sea-block'
-import { Configurable } from './configurable'
-import type { ConfigTree, OptionItem } from './config-tree'
+import { STYLES } from '../../gfx/styles/styles-list'
+import type { SeaBlock } from '../../sea-block'
+import { Configurable } from '../configurable'
+import type { ConfigTree, OptionItem } from '../config-tree'
 
 // performance details
 const gfxConfigTree = {

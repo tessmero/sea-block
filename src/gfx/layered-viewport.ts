@@ -10,7 +10,7 @@
  */
 
 import { WebGLRenderer } from 'three'
-import { gfxConfig } from '../configs/gfx-config'
+import { gfxConfig } from '../configs/imp/gfx-config'
 import type { Rectangle } from '../util/layout-parser'
 import type { SeaBlock } from '../sea-block'
 import { resetFrontLayer } from './2d/flat-gui-gfx-helper'

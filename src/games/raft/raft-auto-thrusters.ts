@@ -11,7 +11,8 @@ import type { RenderablePiece } from './raft-gfx-helper'
 export type AutoThruster = {
   readonly dx: number // position relative to center of raft
   readonly dz: number
-  readonly index: number // index of mesh instance
+  readonly imIndex: number // index of mesh instance
+  readonly pieceIndex: number // index in raft piece list
   readonly direction: Direction // direction of propellant
   isFiring: boolean
 }

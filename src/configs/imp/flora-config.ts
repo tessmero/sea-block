@@ -4,8 +4,8 @@
  * Flora physics and display settings.
  */
 
-import type { ConfigTree } from './config-tree'
-import { Configurable } from './configurable'
+import type { ConfigTree } from '../config-tree'
+import { Configurable } from '../configurable'
 
 // springs between flora tiles
 const FLORA_FRICTION = 5e-4

@@ -6,7 +6,7 @@
 import { BoxGeometry, Color, Mesh, MeshBasicMaterial, MeshLambertMaterial, Quaternion, Vector3 } from 'three'
 import { CAMERA_LOOK_AT } from 'settings'
 import type { SeaBlock } from 'sea-block'
-import { freeCamGameConfig } from 'configs/free-cam-game-config'
+import { freeCamGameConfig } from 'configs/imp/free-cam-game-config'
 import type { Sphere } from 'core/sphere'
 import { wasdInputState } from 'guis/elements/wasd-buttons'
 import { getLeftJoystickInput, leftDead, orbitWithRightJoystick } from 'guis/elements/joysticks'

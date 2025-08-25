@@ -10,7 +10,7 @@ import.meta.glob('./**/*.ts', { eager: true })
 import { randChoice } from 'util/rng'
 import { loadAllImages } from 'gfx/2d/image-asset-loader'
 import { TILING } from 'imp-names'
-import { gfxConfig } from './configs/gfx-config'
+import { gfxConfig } from './configs/imp/gfx-config'
 import { LayeredViewport } from './gfx/layered-viewport'
 import { SeaBlock } from './sea-block'
 import { loadAllMeshes } from 'gfx/3d/mesh-asset-loader'

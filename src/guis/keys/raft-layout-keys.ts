@@ -16,11 +16,11 @@ export const RAFT_LAYOUT_KEYS = [
   'placeThrusterBtn',
   'wiresBtn',
 
-  // covers toolbar when existing piece is selected
+  // when existing piece is selected
   'pieceDialogPanel',
   'pieceDeleteBtn',
 
-  // covers toolbar when placing new piece
+  // when placing new piece
   'buildPhasePanel',
   'buildCancelBtn',
 

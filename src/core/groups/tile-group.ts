@@ -16,7 +16,7 @@ import type { TileIndex } from '../grid-logic/indexed-grid'
 import type { RenderableTile } from '../../gfx/3d/tile-group-gfx-helper'
 import { TileGroupGfxHelper } from '../../gfx/3d/tile-group-gfx-helper'
 import { extrude, TileMeshIm } from '../../gfx/3d/tile-mesh'
-import { gfxConfig } from '../../configs/gfx-config'
+import { gfxConfig } from '../../configs/imp/gfx-config'
 import { Group } from './group'
 
 const dummy = new THREE.Object3D()
