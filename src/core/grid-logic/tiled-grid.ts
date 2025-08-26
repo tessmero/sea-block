@@ -52,10 +52,4 @@ export class TiledGrid extends IndexedGrid {
 
     return result
   }
-
-  public clone(): TiledGrid {
-    const cloned = new TiledGrid(this.width, this.depth, this.tiling)
-    Object.assign(cloned, super.clone()) // deep-copy IndexedGrid properties
-    return cloned
-  }
 }

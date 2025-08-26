@@ -14,6 +14,7 @@ import { resetFrontLayer } from 'gfx/2d/flat-gui-gfx-helper'
 import type { SeaBlock } from 'sea-block'
 import { raft } from '../raft'
 import { hideRaftWires, showRaftWires } from '../gfx/raft-wires-overlay'
+import { putSelectedCursorOnTile } from '../gfx/raft-clicked-tile-highlight'
 
 type RaftElem = GuiElement<RaftLayoutKey>
 
@@ -88,6 +89,10 @@ export function showPieceClicked(piece: RenderablePiece) {
   clickedPiece = piece // checked on delete button click
   showPieceHovered(piece) // show dialog without buttons
   vis(pieceDeleteBtn, true) // add delete button
+  putSelectedCursorOnTile({ // show cursor graphics on tile
+    x: piece.tile.x - raft.centerTile.x,
+    z: piece.tile.z - raft.centerTile.z,
+  })
 }
 
 export function showPieceHovered(piece: RenderablePiece) {

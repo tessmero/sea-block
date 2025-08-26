@@ -16,7 +16,7 @@ import type { Intersection } from 'three'
 import { Vector3 } from 'three'
 import type { PieceName, PlaceablePieceName, RaftPhase } from './raft-enums'
 import { drivingRaftGroup } from './raft-drive-helper'
-import type { TiledGrid } from 'core/grid-logic/tiled-grid'
+import { TiledGrid } from 'core/grid-logic/tiled-grid'
 import type { AutoThruster } from './raft-auto-thrusters'
 import { getThrusterDirection } from './raft-auto-thrusters'
 import type { RaftButton } from './raft-buttons'
@@ -28,6 +28,7 @@ import testRaft from './blueprints/test-raft.json'
 import type { RaftBlueprint } from './blueprints/raft.json'
 import { raftFromJson, raftToJson } from './blueprints/raft-io'
 import { hideRaftWires, showRaftWires } from './gfx/raft-wires-overlay'
+import { Tiling } from 'core/grid-logic/tilings/tiling'
 export const RAFT_MAX_RAD = 3
 
 let raftGrid
@@ -38,17 +39,10 @@ export function resetRaftBuild(context: SeaBlock, blueprint?: RaftBlueprint): vo
   // const { target } = orbitControls
   // const { x, z } = target
 
-  // first time, build grid for raft by cloning terrain grid
+  // first time, build grid for raft
   if (!raftGrid) {
-    const { terrain } = context
-    const { x, z } = terrain.centerXZ
-    const coord = terrain.grid.positionToCoord(x, z)
-    // raftCenterTile = JSON.parse(JSON.stringify(terrain.grid.xzToIndex(coord.x, coord.z)))
-    raftCenterTile = terrain.grid.xzToIndex(coord.x, coord.z)
-    if (!raftCenterTile) {
-      throw new Error(`could not find center tile at position ${x.toFixed(2)},${z.toFixed(2)}`)
-    }
-    raftGrid = context.terrain.grid.clone()
+    raftGrid = new TiledGrid(50, 50, Tiling.create('square'))// context.terrain.grid.clone()
+    raftCenterTile = raftGrid.xzToIndex(25, 25)
   }
 
   raft = new Raft(context, raftCenterTile)

@@ -10,7 +10,7 @@ import { drivingRaftGroup } from './raft-drive-helper'
 import { type Object3D, type Raycaster } from 'three'
 import type { TileIndex } from 'core/grid-logic/indexed-grid'
 import { clickedPiece, hidePieceDialog, showPieceClicked, showPieceHovered } from './gui/raft-piece-dialog'
-import { cursorMesh, putCursorOnTile } from './gfx/raft-cursor-highlight'
+import { hoverCursorMesh, putHoverCursorOnTile } from './gfx/raft-hovered-tile-highlight'
 import { showRaftWires } from './gfx/raft-wires-overlay'
 
 const camDistancethreshold = 20 // distance where individual pieces become pickable
@@ -41,8 +41,9 @@ export function hoverRaftWorld(inputEvent: ProcessedSubEvent) {
   // }
   // else {
   if (!clickedPiece) {
-    // hide cursor and info by default, they will be
-    cursorMesh.visible = false
+    // hide cursor and info by default, they may be reinstated below
+    hoverCursorMesh.visible = false
+    selectedCursorMesh.visible = false
     hidePieceDialog(inputEvent.seaBlock)
   }
   const raftTile = pickRaftTile(inputEvent)
@@ -63,12 +64,12 @@ export function hoverRaftWorld(inputEvent: ProcessedSubEvent) {
 function _hoverRaftTile(raftTile: XZ, tileIndex: TileIndex) {
   if (raft.currentPhase !== 'edit-button' && raft.hlTiles.clickable.has(tileIndex.i)) {
     if (!clickedPiece) {
-      putCursorOnTile(raftTile, 'buildable')
+      putHoverCursorOnTile(raftTile, 'buildable')
     }
   }
   else {
+    putHoverCursorOnTile(raftTile, 'default')
     if (!clickedPiece) {
-      putCursorOnTile(raftTile, 'default')
       const piece = raft.getRelevantPiece(tileIndex)
       if (piece) {
         showPieceHovered(piece)
@@ -155,7 +156,7 @@ export function clickRaftWorld(inputEvent: ProcessedSubEvent): boolean {
     else {
       // tile not buildable
       if (piece) {
-        putCursorOnTile(raftTile, 'default')
+        putHoverCursorOnTile(raftTile, 'default')
         showPieceClicked(piece)
       }
       if (piece?.type === 'button') {
@@ -177,6 +178,7 @@ export function clickRaftWorld(inputEvent: ProcessedSubEvent): boolean {
 
 // Dummy objects to avoid allocations in pickRaftTile
 import { Vector3, Matrix4 } from 'three'
+import { selectedCursorMesh } from './gfx/raft-clicked-tile-highlight'
 const _raftOrigin = new Vector3()
 const _raftDirection = new Vector3()
 const _raftInvMatrix = new Matrix4()

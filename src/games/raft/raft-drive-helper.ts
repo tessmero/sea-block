@@ -19,9 +19,10 @@ import { fireAutoThrusters } from './raft-auto-thrusters'
 import { instancedPieceElements, instancedPieceMeshes } from './gfx/raft-gfx-helper'
 import { resetRaftButtons, updateRaftButtons } from './raft-buttons'
 import { RAFT_DESKTOP_LAYOUT } from 'guis/layouts/raft/raft-desktop-layout'
-import { cursorMesh } from './gfx/raft-cursor-highlight'
+import { hoverCursorMesh } from './gfx/raft-hovered-tile-highlight'
 import { clickablesMesh } from './gfx/raft-clickable-highlight'
 import { wiresMesh } from './gfx/raft-wires-overlay'
+import { selectedCursorMesh } from './gfx/raft-clicked-tile-highlight'
 
 const wc = new WalkingCube(1)
 wc.controlMode = 'raft'
@@ -43,8 +44,9 @@ export const drivingRaftElement = {
       drivingRaftGroup.add(wc[name].mesh)
     }
 
-    // raft parts
-    drivingRaftGroup.add(cursorMesh)
+    // cursors to highlight 0-2 tiles
+    drivingRaftGroup.add(hoverCursorMesh) // hovered tile
+    drivingRaftGroup.add(selectedCursorMesh) // selected tile
 
     // overlays for building/wiring phases
     drivingRaftGroup.add(clickablesMesh)

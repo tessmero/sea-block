@@ -95,40 +95,4 @@ export class IndexedGrid {
     }
     map.get(newX)!.set(newZ, idx)
   }
-
-  /**
-   * Returns a deep copy of this IndexedGrid.
-   */
-  clone(): IndexedGrid {
-    // Create a new IndexedGrid using the constructor
-    const gridClone = new IndexedGrid(this.width, this.depth)
-
-    // Deep-copy tileIndices
-    const newTileIndices: Array<TileIndex> = this.tileIndices.map(ti => ({
-      i: ti.i,
-      x: ti.x,
-      z: ti.z,
-    }))
-
-    // Map from old i to new TileIndex for lookup
-    const iToNewTile = new Map<number, TileIndex>()
-    for (const ti of newTileIndices) {
-      iToNewTile.set(ti.i, ti)
-    }
-
-    // Rebuild xzIndexMap to point to the new TileIndex objects
-    const newXzIndexMap = new Map<number, Map<number, TileIndex>>()
-    for (const [x, zMap] of this.xzIndexMap.entries()) {
-      const newZMap = new Map<number, TileIndex>()
-      for (const [z, ti] of zMap.entries()) {
-        newZMap.set(z, iToNewTile.get(ti.i)!)
-      }
-      newXzIndexMap.set(x, newZMap)
-    }
-
-    // Overwrite the readonly properties via type assertion (safe here for cloning)
-    (gridClone as any).tileIndices = newTileIndices; // eslint-disable-line @typescript-eslint/no-explicit-any
-    (gridClone as any).xzIndexMap = newXzIndexMap // eslint-disable-line @typescript-eslint/no-explicit-any
-    return gridClone
-  }
 }
