@@ -9,10 +9,11 @@ import type { GuiElement } from 'guis/gui'
 import type { RaftLayoutKey } from 'guis/keys/raft-layout-keys'
 import type { PieceName } from '../raft-enums'
 import { PIECE_NAMES } from '../raft-enums'
-import { hideRaftWires, showRaftWires, type RenderablePiece } from '../raft-gfx-helper'
+import { type RenderablePiece } from '../gfx/raft-gfx-helper'
 import { resetFrontLayer } from 'gfx/2d/flat-gui-gfx-helper'
 import type { SeaBlock } from 'sea-block'
 import { raft } from '../raft'
+import { hideRaftWires, showRaftWires } from '../gfx/raft-wires-overlay'
 
 type RaftElem = GuiElement<RaftLayoutKey>
 

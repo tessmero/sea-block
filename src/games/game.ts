@@ -12,7 +12,7 @@
  * visual elements, used to preload assets on startup.
  */
 
-import type { Camera, Material } from 'three'
+import type { Material } from 'three'
 import { type Object3D, type Vector3 } from 'three'
 import type { GameName, GuiName } from '../imp-names'
 import type { SeaBlock } from '../sea-block'
@@ -55,10 +55,6 @@ export abstract class Game {
 
   public meshes: Array<Object3D> = [] // all loaded game-specific meshes
   public pickableMeshes: Array<Object3D> = [] // subset that can be hovered/clicked
-
-  public getCameraOverride(_seaBlock: SeaBlock): Camera | null {
-    return null
-  }
 
   public getCamOffset(context: SeaBlock): Vector3 {
     const { w, h } = context.layeredViewport

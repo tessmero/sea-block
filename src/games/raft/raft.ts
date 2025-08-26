@@ -8,10 +8,10 @@ import type { TileIndex } from 'core/grid-logic/indexed-grid'
 import { ChessWaveMaker } from 'games/chess/chess-wave-maker'
 import { RaftHlTiles } from './raft-hl-tiles'
 import type { ProcessedSubEvent } from 'mouse-touch-input'
-import type { RenderablePiece, UniquePiece } from './raft-gfx-helper'
-import { cockpitMesh, hideRaftWires, instancedPieceMeshes,
+import type { RenderablePiece, UniquePiece } from './gfx/raft-gfx-helper'
+import { cockpitMesh, instancedPieceMeshes,
   registerInstancedPiece, setPiecePosition,
-  showRaftWires } from './raft-gfx-helper'
+} from './gfx/raft-gfx-helper'
 import type { Intersection } from 'three'
 import { Vector3 } from 'three'
 import type { PieceName, PlaceablePieceName, RaftPhase } from './raft-enums'
@@ -27,6 +27,7 @@ import { resetFrontLayer } from 'gfx/2d/flat-gui-gfx-helper'
 import testRaft from './blueprints/test-raft.json'
 import type { RaftBlueprint } from './blueprints/raft.json'
 import { raftFromJson } from './blueprints/raft-io'
+import { hideRaftWires, showRaftWires } from './gfx/raft-wires-overlay'
 export const RAFT_MAX_RAD = 3
 
 export let raft: Raft
@@ -151,7 +152,6 @@ export class Raft {
 
   hoverWorld(inputEvent: ProcessedSubEvent): boolean {
     const { pickedTile } = inputEvent
-    this.hlTiles.hovered = pickedTile
 
     if (pickedTile) {
       return true // consume event
@@ -249,7 +249,7 @@ export class Raft {
   clickWorld(inputEvent: ProcessedSubEvent): boolean {
     const { pickedTile } = inputEvent
 
-    if (pickedTile && this.hlTiles.buildable.has(pickedTile.i)) {
+    if (pickedTile && this.hlTiles.clickable.has(pickedTile.i)) {
       // clicked buildable tile
 
       if (this.currentPhase.startsWith('place-')) {

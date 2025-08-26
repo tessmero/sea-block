@@ -9,7 +9,7 @@ import type { InstancedBufferAttribute } from 'three'
 import { Color, type Vector3 } from 'three'
 import type { AutoThruster } from './raft-auto-thrusters'
 import { raft } from './raft'
-import { instancedPieceMeshes } from './raft-gfx-helper'
+import { instancedPieceMeshes } from './gfx/raft-gfx-helper'
 
 export type RaftButton = {
   dx: number // position relative to center of raft surface

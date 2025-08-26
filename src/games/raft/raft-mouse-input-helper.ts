@@ -10,7 +10,8 @@ import { drivingRaftGroup } from './raft-drive-helper'
 import { type Object3D, type Raycaster } from 'three'
 import type { TileIndex } from 'core/grid-logic/indexed-grid'
 import { hidePieceDialog, showPieceHovered } from './gui/raft-piece-dialog'
-import { cursorMesh, putCursorOnTile, showRaftWires } from './raft-gfx-helper'
+import { cursorMesh, putCursorOnTile } from './gfx/raft-cursor-highlight'
+import { showRaftWires } from './gfx/raft-wires-overlay'
 
 const camDistancethreshold = 20 // distance where individual pieces become pickable
 
@@ -58,7 +59,7 @@ export function hoverRaftWorld(inputEvent: ProcessedSubEvent) {
 }
 
 function _hoverRaftTile(raftTile: XZ, tileIndex: TileIndex) {
-  if (raft.currentPhase !== 'edit-button' && raft.hlTiles.buildable.has(tileIndex.i)) {
+  if (raft.currentPhase !== 'edit-button' && raft.hlTiles.clickable.has(tileIndex.i)) {
     putCursorOnTile(raftTile, 'buildable')
   }
   else {
@@ -110,7 +111,7 @@ export function clickRaftWorld(inputEvent: ProcessedSubEvent): boolean {
     const piece = raft.getRelevantPiece(tileIndex)
     // console.log('clicked tile index')
 
-    if (raft.hlTiles.buildable.has(tileIndex.i)) {
+    if (raft.hlTiles.clickable.has(tileIndex.i)) {
       // console.log('clicked tile index BUILDABLE')
       // clicked buildable tile
       if (raft.currentPhase === 'place-thruster') {
@@ -171,28 +172,35 @@ export function clickRaftWorld(inputEvent: ProcessedSubEvent): boolean {
   return false
 }
 
+// Dummy objects to avoid allocations in pickRaftTile
+import { Vector3, Matrix4 } from 'three'
+const _raftOrigin = new Vector3()
+const _raftDirection = new Vector3()
+const _raftInvMatrix = new Matrix4()
+const _raftIntersect = new Vector3()
+
 function pickRaftTile(inputEvent: ProcessedSubEvent): XZ {
   const surface: Object3D = drivingRaftGroup
   const raycaster: Raycaster = inputEvent.raycaster
 
   // Assume the raft is a flat square in the XZ plane, centered at (0,0,0), y=0
   // We'll intersect the ray with the y=0 plane in the local space of the raft
-  const origin = raycaster.ray.origin.clone()
-  const direction = raycaster.ray.direction.clone()
+  _raftOrigin.copy(raycaster.ray.origin)
+  _raftDirection.copy(raycaster.ray.direction)
 
   // Transform ray into local space of the raft
-  const invMatrix = surface.matrixWorld.clone().invert()
-  origin.applyMatrix4(invMatrix)
-  direction.transformDirection(invMatrix)
+  _raftInvMatrix.copy(surface.matrixWorld).invert()
+  _raftOrigin.applyMatrix4(_raftInvMatrix)
+  _raftDirection.transformDirection(_raftInvMatrix)
 
   // Ray-plane intersection (y=0)
-  if (Math.abs(direction.y) < 1e-6) {
+  if (Math.abs(_raftDirection.y) < 1e-6) {
     // Ray is parallel to the raft surface
     return { x: 0, z: 0 }
   }
-  const t = -origin.y / direction.y
-  const intersect = origin.clone().add(direction.multiplyScalar(t))
+  const t = -_raftOrigin.y / _raftDirection.y
+  _raftIntersect.copy(_raftOrigin).add(_raftDirection.multiplyScalar(t))
 
   // Round to nearest integer tile
-  return { x: Math.round(intersect.x), z: Math.round(intersect.z) }
+  return { x: Math.round(_raftIntersect.x), z: Math.round(_raftIntersect.z) }
 }

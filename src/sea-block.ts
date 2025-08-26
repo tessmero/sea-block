@@ -148,10 +148,8 @@ export class SeaBlock {
   async animate(dt: number) {
     const { transition,
       scene, terrain, sphereGroup, floraGroup,
-      game,
+      game, camera,
     } = this
-
-    const camera = game.getCameraOverride(this) ?? this.camera
 
     updateGamepadState(this)
     this.alignGuiMeshes()

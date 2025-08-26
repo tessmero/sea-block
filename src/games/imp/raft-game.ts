@@ -1,12 +1,12 @@
 /**
  * @file raft-game.ts
  *
- * Drive raft from raft-build-game with physics, and build while driving.
+ * Build raft, connect buttons to thrusters, and steer it with physics.
  */
 import type { GameUpdateContext } from 'games/game'
 import { Game } from 'games/game'
 import { FreeCamGame } from './free-cam-game'
-import { drivingRaftElement, getRaftDriveCameraOverride,
+import { drivingRaftElement,
   raftRig, resetRaftDrive, updateRaftDrive } from 'games/raft/raft-drive-helper'
 import type { SeaBlock } from 'sea-block'
 
@@ -20,8 +20,6 @@ export class RaftGame extends FreeCamGame {
       ],
     })
   }
-
-  getCameraOverride = getRaftDriveCameraOverride
 
   public reset(context: SeaBlock): void {
     super.reset(context)

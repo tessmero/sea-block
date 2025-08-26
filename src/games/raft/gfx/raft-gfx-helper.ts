@@ -4,21 +4,17 @@
  * Helper build meshes for raft builder.
  */
 
-import { Box3, DoubleSide, Matrix4 } from 'three'
+import { DoubleSide, Matrix4 } from 'three'
 import type { GameElement } from 'games/game'
-import { Vector3 } from 'three'
-import { ConeGeometry, InstancedMesh, MeshBasicMaterial } from 'three'
+import type { Vector3 } from 'three'
+import { ConeGeometry, InstancedMesh } from 'three'
 import type { BufferGeometry } from 'three'
 import { Mesh, BoxGeometry, MeshLambertMaterial } from 'three'
 import type { TileIndex } from 'core/grid-logic/indexed-grid'
-import type { PieceName, PlaceablePieceName } from './raft-enums'
-import { PIECE_NAMES } from './raft-enums'
-import { clickUnfocusedRaftMesh } from './raft-drive-helper'
-import type { AutoThruster } from './raft-auto-thrusters'
-import { getThrusterDirection } from './raft-auto-thrusters'
-import { raft, type Raft } from './raft'
-import type { RaftButton } from './raft-buttons'
-import { buildBoxEdges } from 'games/walking-cube/wc-edge-gfx'
+import type { PieceName, PlaceablePieceName } from '../raft-enums'
+import { PIECE_NAMES } from '../raft-enums'
+import { getThrusterDirection } from '../raft-auto-thrusters'
+import { type Raft } from '../raft'
 
 export type UniquePiece = {
   readonly raft: Raft
@@ -99,8 +95,8 @@ export const instancedPieceElements: Array<InstancedPieceElement>
 export let cockpitMesh: Mesh
 export const cockpitElement: GameElement = {
   isPickable: true,
-  clickAction: (e) => {
-    clickUnfocusedRaftMesh(e)
+  clickAction: () => {
+    // clickDistantRaftMesh(e)
     // console.log('click cockpit')
   },
   meshLoader: async () => {
@@ -126,122 +122,6 @@ export const cockpitElement: GameElement = {
 //     return buildingRaftGroup
 //   },
 // }
-
-// thick cube frame showing hovered tile in raft grid
-const s = 1.2
-const cursorBox = new Box3(new Vector3(-s / 2, -s / 2, -s / 2), new Vector3(s / 2, s / 2, s / 2))
-export const cursorMesh = new Mesh(
-  buildBoxEdges({ box: cursorBox }),
-  // new BoxGeometry(1.2, 1.2, 1.2),
-  new MeshBasicMaterial({ color: 'white' }),
-)
-type CursorMode = 'default' | 'buildable'
-const cursorMats: Record<CursorMode, MeshBasicMaterial> = {
-  default: new MeshBasicMaterial({ color: 'white' }),
-  buildable: new MeshBasicMaterial({ color: 'green' }),
-}
-type XZ = { x: number, z: number }
-export function putCursorOnTile(tile: XZ, mode: CursorMode = 'default') {
-  cursorMesh.position.x = tile.x
-  cursorMesh.position.z = tile.z
-  cursorMesh.visible = true
-  cursorMesh.material = cursorMats[mode]
-  cursorMesh.frustumCulled = false
-}
-export function resetCursorMode() {
-  cursorMesh.material = cursorMats['default']
-}
-// instanced mesh to visualize buildable tiles
-const buildableMat = new MeshBasicMaterial({ color: 'white', depthTest: false, depthWrite: false })
-export const buildablesMesh: InstancedMesh
-    = new InstancedMesh(new BoxGeometry(1, 1, 1).scale(0.1, 0.1, 0.1), buildableMat, 100)
-buildablesMesh.renderOrder = 999 // on top
-buildablesMesh.count = 0
-let buildableY = 0
-export function showRaftBuildables() {
-  buildablesMesh.count = 0
-  buildableY = raft.currentPhase === 'place-button' ? 0.5 : 0 // indicate buttons on top of surface
-  for (const i of raft.hlTiles.buildable) {
-    _registerBuildable(raft.grid.tileIndices[i])
-  }
-  buildablesMesh.instanceMatrix.needsUpdate = true
-}
-export function hideRaftBuildables() {
-  buildablesMesh.count = 0
-}
-function _registerBuildable(tile: TileIndex) {
-  const m4 = new Matrix4()
-  const { x, z } = raft.getPosOnTile(tile)
-  m4.setPosition(x - 0.5, buildableY, z - 0.5)
-  const index = buildablesMesh.count++
-  buildablesMesh.setMatrixAt(index, m4)
-}
-
-// instanced mesh to visualize connections between buttons and thrusters
-const wireMat = new MeshBasicMaterial({ color: 'white', depthTest: false, depthWrite: false })
-export const wiresMesh: InstancedMesh = new InstancedMesh(new BoxGeometry(1, 1, 1), wireMat, 100)
-wiresMesh.renderOrder = 999 // on top
-wiresMesh.count = 0
-// export const wiresElement: GameElement = {
-//   meshLoader: async () => { return wiresMesh },
-// }
-export function showRaftWires(onlyFor?: RaftButton) {
-  wiresMesh.count = 0
-  if (onlyFor) {
-    for (const thruster of onlyFor.triggers) {
-      _registerWire(onlyFor, thruster)
-    }
-  }
-  else {
-    for (const button of raft.buttons) {
-      for (const thruster of button.triggers) {
-        _registerWire(button, thruster)
-      }
-    }
-  }
-  wiresMesh.instanceMatrix.needsUpdate = true
-}
-export function hideRaftWires() {
-  wiresMesh.count = 0
-}
-function _registerWire(button: RaftButton, thruster: AutoThruster) {
-  const posA = new Vector3().copy(raft.centerPos)
-  posA.y = 0.5
-  posA.x += button.dx - 0.5
-  posA.z += button.dz - 0.5
-
-  const posB = new Vector3().copy(raft.centerPos)
-  posB.y = 0
-  posB.x += thruster.dx - 0.5
-  posB.z += thruster.dz - 0.5
-
-  // Compute midpoint and direction
-  const mid = new Vector3().addVectors(posA, posB).multiplyScalar(0.5)
-  const dir = new Vector3().subVectors(posB, posA)
-  const length = dir.length()
-  if (length < 1e-6) return // skip degenerate wires
-
-  // Default box is 1x1x1, so scale z to length, rotate to align with dir
-  const m4 = new Matrix4()
-  // Align Z axis to dir
-  const zAxis = dir.clone().normalize()
-  // Find rotation axis and angle from (0,0,1) to zAxis
-  let axis: Vector3 | undefined
-  let angle: number | undefined
-  const ref = new Vector3(0, 0, 1)
-  if (ref.clone().normalize().angleTo(zAxis) >= 1e-6) {
-    axis = new Vector3().crossVectors(ref, zAxis).normalize()
-    angle = Math.acos(ref.dot(zAxis))
-    if (axis.lengthSq() >= 1e-6 && angle !== undefined) {
-      m4.makeRotationAxis(axis, angle)
-    }
-  }
-  m4.scale(new Vector3(0.08, 0.08, length))
-  m4.setPosition(mid.x, mid.y, mid.z)
-
-  const index = wiresMesh.count++
-  wiresMesh.setMatrixAt(index, m4)
-}
 
 export function registerInstancedPiece(raft: Raft, pieceName: PlaceablePieceName, tile: TileIndex): RenderablePiece {
   const mesh = instancedPieceMeshes[pieceName]

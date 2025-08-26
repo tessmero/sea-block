@@ -20,6 +20,21 @@ export function buildRaftRig(context: SeaBlock) {
 
 const posDummy = new Vector3()
 const velDummy = new Vector3()
+
+// dummies to compute torque from thrusters
+const tqUp = new Vector3(0, 1, 0)
+const tqCenter = new Vector3()
+const tqR = new Vector3()
+const tqTangential = new Vector3()
+
+// dummies to apply thrust to physics rig
+// dummies to align visual group with physcs rig
+const center = new Vector3()
+const diag1 = new Vector3()
+const diag2 = new Vector3()
+const xAxis = new Vector3()
+const yAxis = new Vector3()
+const zAxis = new Vector3()
 const m4Dummy = new Matrix4()
 
 type Spring = {
@@ -33,18 +48,22 @@ type Spring = {
 export class RaftRig {
   springs: Array<Spring> = []
   public applyForwardThrust(accelMag: number) {
-    const diag1 = new Vector3().copy(this.spheres[2].position).sub(this.spheres[0].position)
-    const forward = diag1.clone().normalize()
+    diag1.copy(this.spheres[2].position)
+      .sub(this.spheres[0].position)
+      .normalize()
+      .multiplyScalar(accelMag)
     for (const sphere of this.spheres) {
-      sphere.velocity.add(forward.clone().multiplyScalar(accelMag))
+      sphere.velocity.add(diag1)
     }
   }
 
   public applyRightThrust(accelMag: number) {
-    const diag1 = new Vector3().copy(this.spheres[3].position).sub(this.spheres[1].position)
-    const forward = diag1.clone().normalize()
+    diag2.copy(this.spheres[3].position)
+      .sub(this.spheres[1].position)
+      .normalize()
+      .multiplyScalar(accelMag)
     for (const sphere of this.spheres) {
-      sphere.velocity.add(forward.clone().multiplyScalar(accelMag))
+      sphere.velocity.add(diag2)
     }
   }
 
@@ -62,14 +81,13 @@ export class RaftRig {
   }
 
   public applyTorque(torqueMag: number) {
-    const up = new Vector3(0, 1, 0)
-    const center = new Vector3(0, 0, 0)
-    for (const sphere of this.spheres) center.add(sphere.position)
-    center.multiplyScalar(1 / this.spheres.length)
+    tqCenter.set(0, 0, 0)
+    for (const sphere of this.spheres) tqCenter.add(sphere.position)
+    tqCenter.multiplyScalar(1 / this.spheres.length)
     for (const sphere of this.spheres) {
-      const r = new Vector3().copy(sphere.position).sub(center)
-      const tangential = new Vector3().crossVectors(up, r).normalize()
-      sphere.velocity.add(tangential.multiplyScalar(torqueMag))
+      tqR.copy(sphere.position).sub(tqCenter)
+      tqTangential.crossVectors(tqUp, tqR).normalize()
+      sphere.velocity.add(tqTangential.multiplyScalar(torqueMag))
     }
   }
 
@@ -136,7 +154,7 @@ export class RaftRig {
 
   public alignMesh(mesh: Object3D, _dt: number) {
     // Compute center of mass of the 4 spheres
-    const center = new Vector3(0, 0, 0)
+    center.set(0, 0, 0)
     for (const sphere of this.spheres) {
       center.add(sphere.position)
     }
@@ -144,23 +162,22 @@ export class RaftRig {
 
     // Approximate raft orientation using diagonals
     // Use spheres 0 and 2 for one diagonal, 1 and 3 for the other
-    const diag1 = new Vector3().copy(this.spheres[2].position).sub(this.spheres[0].position) // x axis
-    const diag2 = new Vector3().copy(this.spheres[3].position).sub(this.spheres[1].position) // z axis
+    diag1.copy(this.spheres[2].position).sub(this.spheres[0].position) // x axis
+    diag2.copy(this.spheres[3].position).sub(this.spheres[1].position) // z axis
 
     // Create orthonormal basis: x = diag1, z = diag2, y = up
-    const xAxis = diag1.clone().normalize()
-    const zAxis = diag2.clone().normalize()
-    const yAxis = new Vector3().crossVectors(zAxis, xAxis).normalize()
+    xAxis.copy(diag1).normalize()
+    zAxis.copy(diag2).normalize()
+    yAxis.crossVectors(zAxis, xAxis).normalize()
     // Re-orthogonalize z to ensure right-handed basis
     zAxis.crossVectors(xAxis, yAxis).normalize()
 
     // Build rotation matrix
-    const m = m4Dummy
-    m.makeBasis(xAxis, yAxis, zAxis)
+    m4Dummy.makeBasis(xAxis, yAxis, zAxis)
     mesh.position.copy(center)
 
     // // snap to rotation
-    mesh.quaternion.setFromRotationMatrix(m)
+    mesh.quaternion.setFromRotationMatrix(m4Dummy)
 
     // // lerp to rotation
     // quatDummy.setFromRotationMatrix(m)

@@ -4,9 +4,8 @@
  * Help decide which thrusters should be turned on and the resulting net force.
  */
 
-import type { Vector2 } from 'three'
 import type { RaftRig } from './raft-physics'
-import type { RenderablePiece } from './raft-gfx-helper'
+import type { RenderablePiece } from './gfx/raft-gfx-helper'
 
 export type AutoThruster = {
   readonly dx: number // position relative to center of raft
@@ -40,7 +39,6 @@ export function getThrusterDirection(piece: RenderablePiece): Direction {
 // attempt to control raft using thrusters
 export function fireAutoThrusters(
   thrusters: Array<AutoThruster>,
-  strafe: Vector2, turn: number,
   raftRig: RaftRig,
 ) {
   // const turnSign = Math.sign(turn)

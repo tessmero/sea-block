@@ -309,8 +309,7 @@ export function handleEvent(
   //   return
   // }
 
-  const { terrain, layeredViewport, game } = seaBlock
-  const camera = game.getCameraOverride(seaBlock) ?? seaBlock.camera
+  const { terrain, layeredViewport, game, camera } = seaBlock
 
   // for (const subgoup of terrain.subgroups) {
   //   subgoup.mesh.computeBoundingSphere()
