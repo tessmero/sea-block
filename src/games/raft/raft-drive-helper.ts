@@ -23,6 +23,7 @@ import { hoverCursorMesh } from './gfx/raft-hovered-tile-highlight'
 import { clickablesMesh } from './gfx/raft-clickable-highlight'
 import { wiresMesh } from './gfx/raft-wires-overlay'
 import { selectedCursorMesh } from './gfx/raft-clicked-tile-highlight'
+import { flamesMesh } from './gfx/raft-thruster-flames'
 
 const wc = new WalkingCube(1)
 wc.controlMode = 'raft'
@@ -51,6 +52,9 @@ export const drivingRaftElement = {
     // overlays for building/wiring phases
     drivingRaftGroup.add(clickablesMesh)
     drivingRaftGroup.add(wiresMesh)
+
+    // flame effect for firing thrusters
+    drivingRaftGroup.add(flamesMesh)
 
     return drivingRaftGroup
   },

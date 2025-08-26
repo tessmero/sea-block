@@ -55,7 +55,7 @@ export function getOutlinedMesh(group: Group, params?: { scale: number, dilate: 
   return group
 }
 
-function dilateGeometry(geometry, dilationAmount = 0.1) {
+export function dilateGeometry(geometry, dilationAmount = 0.1) {
   const geo = geometry.index ? geometry.toNonIndexed() : geometry.clone()
 
   // Merge vertices to weld shared vertices

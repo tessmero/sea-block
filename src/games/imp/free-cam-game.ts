@@ -51,11 +51,6 @@ const grabbedMat = new MeshLambertMaterial({
 const startPiece = randChoice(['rook']) as PieceName
 let pickablePieceMesh: Group
 
-/**
- * Returns the world position of the pickablePieceMesh.
- * Optionally, if camera and layeredViewport are provided, returns the screen position in pixels.
- */
-
 export function getPickablePieceMeshPosition(): Vector3 | undefined {
   if (!pickablePieceMesh) return undefined
   return pickablePieceMesh.getWorldPosition(new Vector3())
