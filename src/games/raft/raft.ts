@@ -26,24 +26,32 @@ import { resetFrontLayer } from 'gfx/2d/flat-gui-gfx-helper'
 
 import testRaft from './blueprints/test-raft.json'
 import type { RaftBlueprint } from './blueprints/raft.json'
-import { raftFromJson } from './blueprints/raft-io'
+import { raftFromJson, raftToJson } from './blueprints/raft-io'
 import { hideRaftWires, showRaftWires } from './gfx/raft-wires-overlay'
 export const RAFT_MAX_RAD = 3
 
+let raftGrid
+let raftCenterTile
 export let raft: Raft
 export function resetRaftBuild(context: SeaBlock, blueprint?: RaftBlueprint): void {
   // find center tile based on camera target
   // const { target } = orbitControls
   // const { x, z } = target
-  const { terrain } = context
-  const { x, z } = terrain.centerXZ
-  const coord = terrain.grid.positionToCoord(x, z)
-  const centerTile = JSON.parse(JSON.stringify(terrain.grid.xzToIndex(coord.x, coord.z)))
-  if (!centerTile) {
-    throw new Error(`could not find center tile at position ${x.toFixed(2)},${z.toFixed(2)}`)
+
+  // first time, build grid for raft by cloning terrain grid
+  if (!raftGrid) {
+    const { terrain } = context
+    const { x, z } = terrain.centerXZ
+    const coord = terrain.grid.positionToCoord(x, z)
+    // raftCenterTile = JSON.parse(JSON.stringify(terrain.grid.xzToIndex(coord.x, coord.z)))
+    raftCenterTile = terrain.grid.xzToIndex(coord.x, coord.z)
+    if (!raftCenterTile) {
+      throw new Error(`could not find center tile at position ${x.toFixed(2)},${z.toFixed(2)}`)
+    }
+    raftGrid = context.terrain.grid.clone()
   }
 
-  raft = new Raft(context, centerTile)
+  raft = new Raft(context, raftCenterTile)
   raftFromJson(blueprint ?? testRaft as RaftBlueprint)
 }
 
@@ -70,7 +78,7 @@ export class Raft {
     public readonly context: SeaBlock,
     public readonly centerTile: TileIndex,
   ) {
-    this.grid = context.terrain.grid.clone()
+    this.grid = raftGrid
     this.getPosOnTile(centerTile, this.centerPos)
 
     // buildingRaftGroup.position.copy(this.centerPos)
@@ -210,6 +218,59 @@ export class Raft {
     }
   }
 
+  deletePiece(piece: RenderablePiece) {
+    const deletingIndex = this.raftPieces.indexOf(piece)
+    if (deletingIndex === -1) {
+      throw new Error('piece to be deleted is not in raftPieces')
+    }
+
+    // remove connections
+    if (piece.type === 'thruster') {
+      const at = this.thrusters.find(({ pieceIndex }) => pieceIndex === deletingIndex)
+      if (!at) {
+        throw new Error('thruster piece to be deleted has no AutoThruster instance')
+      }
+      for (const { triggers } of this.buttons) {
+        const iToRemove = triggers.indexOf(at)
+        if (iToRemove > -1) {
+          // button was connected to the thruster being deleted
+          triggers.splice(iToRemove, 1) // remove wire
+        }
+      }
+    }
+
+    // remove piece from logical lists
+    this.raftPieces.splice(deletingIndex, 1)
+    if (piece.type === 'thruster') {
+      const iToRemove = this.thrusters.findIndex(({ pieceIndex }) => pieceIndex === deletingIndex)
+      if (iToRemove === -1) {
+        throw new Error('thruster piece to be deleted has no AutoThruster instance')
+      }
+      this.thrusters.splice(iToRemove, 1)
+    }
+    if (piece.type === 'button') {
+      const iToRemove = this.buttons.findIndex(({ pieceIndex }) => pieceIndex === deletingIndex)
+      if (iToRemove === -1) {
+        throw new Error('button piece to be deleted has no RaftButton instance')
+      }
+      this.buttons.splice(iToRemove, 1)
+    }
+
+    // decrement affected indices pointing to piece list
+    for (const pointer of ([...this.buttons, ...this.thrusters])) {
+      if (pointer.pieceIndex === deletingIndex) {
+        throw new Error('logical button/thruster to be deleted should have been removed')
+      }
+      else if (pointer.pieceIndex > deletingIndex) {
+        pointer.pieceIndex--
+      }
+    }
+
+    // rebuild gfx meshes (replace this with new Raft instance)
+    const blueprint = raftToJson() // blueprint encodees changes above
+    resetRaftBuild(this.context, blueprint)
+  }
+
   buildPiece(pieceName: PlaceablePieceName, tile: TileIndex, triggers?: Array<AutoThruster>) {
     // add mesh instance and logical raft piece
     const spawned = registerInstancedPiece(this, pieceName, tile)
@@ -288,7 +349,7 @@ export class Raft {
   }
 
   public getPosOnTile(tile: TileIndex, target?: Vector3): Vector3 {
-    const { x, z } = this.context.terrain.grid.indexToPosition(tile)
+    const { x, z } = this.grid.indexToPosition(tile)
     const height = 12// this.context.terrain.generatedTiles[tile.i]?.liveHeight
 
     const writeTo = target || positionDummy

@@ -30,7 +30,7 @@ export function hideRaftClickables() {
 const m4 = new Matrix4()
 function _registerClickable(tile: TileIndex) {
   const { x, z } = raft.getPosOnTile(tile)
-  m4.setPosition(x - 0.5, buildableY, z - 0.5)
+  m4.setPosition(x - 0.5, buildableY, z - 0.5) // center or top-center of tile
   const index = clickablesMesh.count++
   clickablesMesh.setMatrixAt(index, m4)
 }

@@ -48,21 +48,16 @@ const _scale = new Vector3()
 const _m4 = new Matrix4()
 
 function _registerWire(button: RaftButton, thruster: AutoThruster) {
-  _posA.copy(raft.centerPos)
-  _posA.y = 0.5
-  _posA.x += button.dx - 0.5
-  _posA.z += button.dz - 0.5
-
-  _posB.copy(raft.centerPos)
-  _posB.y = 0
-  _posB.x += thruster.dx - 0.5
-  _posB.z += thruster.dz - 0.5
+  _posA.set(button.dx, 0.5, button.dz) // top center of button tile
+  _posB.set(thruster.dx, 0, thruster.dz) // center of thruster tile
 
   // Compute midpoint and direction
   _mid.addVectors(_posA, _posB).multiplyScalar(0.5)
   _dir.subVectors(_posB, _posA)
   const length = _dir.length()
-  if (length < 1e-6) return // skip degenerate wires
+  if (length < 1e-6) {
+    throw new Error('wire is too short')
+  }
 
   // Default box is 1x1x1, so scale z to length, rotate to align with dir
   _m4.identity()

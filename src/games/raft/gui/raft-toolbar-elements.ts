@@ -12,14 +12,15 @@ import { raft } from '../raft'
 type RaftElem = GuiElement<RaftLayoutKey>
 
 export const RAFT_TOOLBAR_BUTTONS = [
-  // 'placeFloorBtn',
+  'placeFloorBtn',
   'placeButtonBtn', 'placeThrusterBtn', 'wiresBtn',
 ] as const satisfies ReadonlyArray<RaftLayoutKey>
 
 const actions: Record<(typeof RAFT_TOOLBAR_BUTTONS)[number], (e: ElementEvent) => void> = {
-  // placeFloorBtn: () => {
-  //   raft.startPhase(`place-floor`)
-  // },
+  placeFloorBtn: () => {
+    raft.startPhase(`place-floor`)
+    raft.hlTiles.updateBuildableTiles('floor')
+  },
   placeButtonBtn: () => {
     raft.startPhase(`place-button`)
     raft.hlTiles.updateBuildableTiles('button')
@@ -35,7 +36,7 @@ const actions: Record<(typeof RAFT_TOOLBAR_BUTTONS)[number], (e: ElementEvent) =
 }
 
 const userFriendlyLabels: Record<(typeof RAFT_TOOLBAR_BUTTONS)[number], string> = {
-  // placeFloorBtn: 'Floor',
+  placeFloorBtn: 'Floor',
   placeButtonBtn: 'Button',
   placeThrusterBtn: 'Thruster',
   wiresBtn: 'Wires',

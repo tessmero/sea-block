@@ -16,6 +16,8 @@ import { PIECE_NAMES } from '../raft-enums'
 import { getThrusterDirection } from '../raft-auto-thrusters'
 import { type Raft } from '../raft'
 
+const maxInstances = 50 // maximum number visible for each instanced piece type
+
 export type UniquePiece = {
   readonly raft: Raft
   readonly mesh: Mesh
@@ -85,7 +87,7 @@ export const instancedPieceElements: Array<InstancedPieceElement>
     // },
     meshLoader: async () => {
       const { geometry, material } = PIECE_MODELS[pieceName]
-      const mesh = new InstancedMesh(geometry(), material(), 25)
+      const mesh = new InstancedMesh(geometry(), material(), maxInstances)
       mesh.scale.set(1, 1, 1)
       instancedPieceMeshes[pieceName] = mesh
       return mesh

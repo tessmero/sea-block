@@ -9,7 +9,7 @@ import { raft } from './raft'
 import { drivingRaftGroup } from './raft-drive-helper'
 import { type Object3D, type Raycaster } from 'three'
 import type { TileIndex } from 'core/grid-logic/indexed-grid'
-import { hidePieceDialog, showPieceHovered } from './gui/raft-piece-dialog'
+import { clickedPiece, hidePieceDialog, showPieceClicked, showPieceHovered } from './gui/raft-piece-dialog'
 import { cursorMesh, putCursorOnTile } from './gfx/raft-cursor-highlight'
 import { showRaftWires } from './gfx/raft-wires-overlay'
 
@@ -18,8 +18,6 @@ const camDistancethreshold = 20 // distance where individual pieces become picka
 type XZ = { x: number, z: number }
 
 export function hoverRaftWorld(inputEvent: ProcessedSubEvent) {
-  cursorMesh.visible = false
-
   // if (targetFocus === 0 || driveCamFocus < 0.9) {
   //   return false // disable hovering individual pieces while not focused
   // }
@@ -42,7 +40,11 @@ export function hoverRaftWorld(inputEvent: ProcessedSubEvent) {
   //   // }
   // }
   // else {
-  hidePieceDialog(inputEvent.seaBlock)
+  if (!clickedPiece) {
+    // hide cursor and info by default, they will be
+    cursorMesh.visible = false
+    hidePieceDialog(inputEvent.seaBlock)
+  }
   const raftTile = pickRaftTile(inputEvent)
   // putCursorOnTile(raftTile)
   // console.log('hoverRaftWorld raft tile', raftTile)
@@ -60,21 +62,18 @@ export function hoverRaftWorld(inputEvent: ProcessedSubEvent) {
 
 function _hoverRaftTile(raftTile: XZ, tileIndex: TileIndex) {
   if (raft.currentPhase !== 'edit-button' && raft.hlTiles.clickable.has(tileIndex.i)) {
-    putCursorOnTile(raftTile, 'buildable')
+    if (!clickedPiece) {
+      putCursorOnTile(raftTile, 'buildable')
+    }
   }
   else {
-    putCursorOnTile(raftTile, 'default')
+    if (!clickedPiece) {
+      putCursorOnTile(raftTile, 'default')
+      const piece = raft.getRelevantPiece(tileIndex)
+      if (piece) {
+        showPieceHovered(piece)
 
-    const piece = raft.getRelevantPiece(tileIndex)
-    if (piece) {
-      showPieceHovered(piece)
-
-      if (piece.type === 'button') {
-        // can click to start edit-button phase
-        document.documentElement.style.cursor = 'pointer'
-      }
-      else if (raft.currentPhase === 'edit-button' && piece.type === 'thruster') {
-        // can click to toggle wire connection with thruster
+        // any piece can be clicked and selected
         document.documentElement.style.cursor = 'pointer'
       }
     }
@@ -155,6 +154,10 @@ export function clickRaftWorld(inputEvent: ProcessedSubEvent): boolean {
     }
     else {
       // tile not buildable
+      if (piece) {
+        putCursorOnTile(raftTile, 'default')
+        showPieceClicked(piece)
+      }
       if (piece?.type === 'button') {
         const i = raft.raftPieces.indexOf(piece)
         raft.editingButton = raft.buttons.find(({ pieceIndex }) => pieceIndex === i)

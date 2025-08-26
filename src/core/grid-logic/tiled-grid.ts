@@ -54,8 +54,8 @@ export class TiledGrid extends IndexedGrid {
   }
 
   public clone(): TiledGrid {
-    const result = super.clone() as TiledGrid;
-    (result as any).tiling = this.tiling // eslint-disable-line @typescript-eslint/no-explicit-any
-    return result
+    const cloned = new TiledGrid(this.width, this.depth, this.tiling)
+    Object.assign(cloned, super.clone()) // deep-copy IndexedGrid properties
+    return cloned
   }
 }

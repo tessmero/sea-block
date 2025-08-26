@@ -49,7 +49,7 @@ export const raftPieceLabels = Object.fromEntries(
   ]),
 ) as Record<string, RaftElem>
 
-const pieceDeleteBtn: RaftElem = {
+export const pieceDeleteBtn: RaftElem = {
   layoutKey: 'pieceDeleteBtn',
   display: {
     type: 'button',
@@ -57,7 +57,18 @@ const pieceDeleteBtn: RaftElem = {
     isVisible: false,
   },
   clickAction: () => {
-
+    if (raft.currentPhase === 'edit-button') {
+      if (raft.editingButton) {
+        raft.deletePiece(raft.raftPieces[raft.editingButton.pieceIndex])
+        raft.editingButton = undefined
+        raft.startPhase('idle')
+        // hideRaftWires()
+      }
+    }
+    else if (clickedPiece) { // assigned in showPieceClicked()
+      raft.deletePiece(clickedPiece)
+      clickedPiece = undefined
+    }
   },
 }
 
@@ -67,14 +78,25 @@ export const raftPieceDialogElements: Array<RaftElem> = [
   pieceDeleteBtn,
 ]
 
+function vis({ display }: GuiElement, isVisible: boolean) {
+  display.isVisible = isVisible
+  display.needsUpdate = true
+}
+
+export let clickedPiece: RenderablePiece | undefined = undefined
+export function showPieceClicked(piece: RenderablePiece) {
+  clickedPiece = piece // checked on delete button click
+  showPieceHovered(piece) // show dialog without buttons
+  vis(pieceDeleteBtn, true) // add delete button
+}
+
 export function showPieceHovered(piece: RenderablePiece) {
+  // show pieece dialog without delete button
   for (const pieceName in raftPieceLabels) {
-    const { display } = raftPieceLabels[pieceName]
-    display.isVisible = pieceName === piece.type
-    display.needsUpdate = true
+    vis(raftPieceLabels[pieceName], pieceName === piece.type)
   }
-  raftPieceDialogPanel.display.isVisible = true
-  raftPieceDialogPanel.display.needsUpdate = true
+  vis(pieceDeleteBtn, false)
+  vis(raftPieceDialogPanel, true)
 
   // update wires overlay
   if (raft.currentPhase === 'edit-button') {
@@ -93,12 +115,9 @@ export function showPieceHovered(piece: RenderablePiece) {
 }
 
 export function hidePieceDialog(seaBlock: SeaBlock) {
-  for (const pieceName in raftPieceLabels) {
-    const { display } = raftPieceLabels[pieceName]
+  for (const { display } of raftPieceDialogElements) {
     display.isVisible = false
     display.needsUpdate = true
   }
-  raftPieceDialogPanel.display.isVisible = false
-  raftPieceDialogPanel.display.needsUpdate = true
   resetFrontLayer(seaBlock)
 }

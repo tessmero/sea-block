@@ -17,6 +17,7 @@ export const RAFT_COMMON_LAYOUT = {
 
   toolbar: {
     height: 16,
+    top: 16, // leave space for debug controls
   },
 
   ...Object.fromEntries(RAFT_TOOLBAR_BUTTONS.map((name, i) => [

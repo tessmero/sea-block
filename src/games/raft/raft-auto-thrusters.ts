@@ -11,7 +11,7 @@ export type AutoThruster = {
   readonly dx: number // position relative to center of raft
   readonly dz: number
   readonly imIndex: number // index of mesh instance
-  readonly pieceIndex: number // index in raft piece list
+  pieceIndex: number // index in raft piece list
   readonly direction: Direction // direction of propellant
   isFiring: boolean
 }

@@ -10,6 +10,7 @@ import type { RaftPhase } from '../raft-enums'
 import { RAFT_PHASES } from '../raft-enums'
 import type { RaftLayoutKey } from 'guis/keys/raft-layout-keys'
 import { raft } from '../raft'
+import { pieceDeleteBtn } from './raft-piece-dialog'
 
 type RaftElem = GuiElement<RaftLayoutKey>
 
@@ -27,9 +28,9 @@ const userFriendlyLabels = {
   'idle': '...',
   'edit-button': 'connect button',
   'show-all-wires': 'show all wires',
-  'place-floor': 'place floor tile',
-  'place-button': 'place button',
-  'place-thruster': 'place thruster',
+  'place-floor': 'place floor tiles',
+  'place-button': 'place buttons',
+  'place-thruster': 'place thrusters',
 } as const satisfies Record<RaftPhase, string>
 
 // debug labels
@@ -52,22 +53,24 @@ const phasePanels = Object.fromEntries(
 
 export function showBuildPhasePanel(phase: RaftPhase) {
   for (const key of RAFT_PHASES) {
-    const { display } = phasePanels[key]
-    display.isVisible = (key === phase)
-    display.needsUpdate = true
+    vis(phasePanels[key], key === phase)
   }
-  buildCancelBtn.display.isVisible = phase !== 'idle'
-  buildCancelBtn.display.needsUpdate = true
+  vis(buildCancelBtn, phase !== 'idle')
+
+  // show delete button if editing button
+  vis(pieceDeleteBtn, phase === 'edit-button')
+}
+
+function vis({ display }: GuiElement, isVisible: boolean) {
+  display.isVisible = isVisible
+  display.needsUpdate = true
 }
 
 export function hideBuildPhasePanel() {
   for (const key of RAFT_PHASES) {
-    const { display } = phasePanels[key]
-    display.isVisible = false
-    display.needsUpdate = true
+    vis(phasePanels[key], false)
   }
-  buildCancelBtn.display.isVisible = false
-  buildCancelBtn.display.needsUpdate = true
+  vis(buildCancelBtn, false)
 }
 
 export const raftPhaseDialogElements: Array<RaftElem> = [
