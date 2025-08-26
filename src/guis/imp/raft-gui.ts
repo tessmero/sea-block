@@ -5,7 +5,7 @@
  * src/games/raft to interact with moving raft and its tile grid.
  */
 
-import { raftBuildPhasePanels } from 'games/raft/gui/raft-phase-dialog'
+import { raftPhaseDialogElements } from 'games/raft/gui/raft-phase-dialog'
 import { raftPieceDialogElements } from 'games/raft/gui/raft-piece-dialog'
 import { raftToolbarElements } from 'games/raft/gui/raft-toolbar-elements'
 import { raftLayoutFactory } from 'games/raft/raft-drive-helper'
@@ -34,7 +34,7 @@ export class RaftGui extends Gui<RaftLayoutKey> {
         rightJoy, rightJoySlider,
         ...wasdButtons,
         ...raftToolbarElements,
-        ...Object.values(raftBuildPhasePanels),
+        ...raftPhaseDialogElements,
         ...raftPieceDialogElements,
       ],
     })

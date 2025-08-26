@@ -9,9 +9,10 @@ import type { GuiElement } from 'guis/gui'
 import type { RaftLayoutKey } from 'guis/keys/raft-layout-keys'
 import type { PieceName } from '../raft-enums'
 import { PIECE_NAMES } from '../raft-enums'
-import type { RenderablePiece } from '../raft-gfx-helper'
+import { hideRaftWires, showRaftWires, type RenderablePiece } from '../raft-gfx-helper'
 import { resetFrontLayer } from 'gfx/2d/flat-gui-gfx-helper'
 import type { SeaBlock } from 'sea-block'
+import { raft } from '../raft'
 
 type RaftElem = GuiElement<RaftLayoutKey>
 
@@ -52,6 +53,7 @@ const pieceDeleteBtn: RaftElem = {
   display: {
     type: 'button',
     icon: 'icons/16x16-x.png',
+    isVisible: false,
   },
   clickAction: () => {
 
@@ -72,6 +74,21 @@ export function showPieceHovered(piece: RenderablePiece) {
   }
   raftPieceDialogPanel.display.isVisible = true
   raftPieceDialogPanel.display.needsUpdate = true
+
+  // update wires overlay
+  if (raft.currentPhase === 'edit-button') {
+    showRaftWires(raft.editingButton)
+  }
+  else if (raft.currentPhase !== 'show-all-wires') {
+    hideRaftWires()
+    if (piece.type === 'button') {
+      const i = raft.raftPieces.indexOf(piece)
+      const btn = raft.buttons.find(button => button.pieceIndex === i)
+      if (btn) {
+        showRaftWires(btn)
+      }
+    }
+  }
 }
 
 export function hidePieceDialog(seaBlock: SeaBlock) {

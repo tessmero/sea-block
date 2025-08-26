@@ -58,7 +58,7 @@ export function raftFromJson(blueprint: RaftBlueprint) {
 function assignTriggersForButton(
   blueprint: RaftBlueprint, // blueprint
   bpButton: Button, // button in blueprint
-  buttonIndex: number, // idnex of button in raft
+  buttonIndex: number, // index of button in raft
 ) {
   for (const pieceIndex of bpButton.triggers) {
     if (blueprint[pieceIndex - 1].type !== 'thruster') { // blueprint skips first piece (cokcpit)

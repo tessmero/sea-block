@@ -9,8 +9,6 @@ import { FreeCamGame } from './free-cam-game'
 import { drivingRaftElement, getRaftDriveCameraOverride,
   raftRig, resetRaftDrive, updateRaftDrive } from 'games/raft/raft-drive-helper'
 import type { SeaBlock } from 'sea-block'
-import { cockpitElement, instancedPieceElements } from 'games/raft/raft-gfx-helper'
-import { cursorElement } from 'games/raft/raft-mouse-input-helper'
 
 export class RaftGame extends FreeCamGame {
   static {
@@ -18,10 +16,6 @@ export class RaftGame extends FreeCamGame {
       factory: () => new RaftGame(),
       guiName: 'raft',
       elements: [
-        ...instancedPieceElements,
-        // wiresElement,
-        cockpitElement,
-        cursorElement,
         drivingRaftElement,
       ],
     })

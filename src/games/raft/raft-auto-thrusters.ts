@@ -25,9 +25,8 @@ export function getThrusterDirection(piece: RenderablePiece): Direction {
   for (const { x, z } of raft.grid.tiling.getAdjacent(tile.x, tile.z)) {
     const adjTile = raft.grid.xzToIndex(tile.x + x, tile.z + z)
     if (!adjTile) continue
-    const adjPiece = raft.getPieceOnTile(adjTile)
-    if (!adjPiece) continue
-    if (adjPiece.type === 'floor') {
+    const adjPieces = raft.getPiecesOnTile(adjTile)
+    if (adjPieces.some(({ type }) => type === 'floor')) {
       if (x === -1) return 'up'
       if (x === 1) return 'down'
       if (z === -1) return 'right'

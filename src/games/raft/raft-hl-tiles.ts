@@ -1,15 +1,16 @@
 /**
  * @file raft-hl-tiles.ts
  *
- * Raft highlighted tiles. Determines which tiles are highlighted in raft-build.
+ * Raft highlighted tiles. Determines which tiles are highlighted when building raft.
  */
 
 import type { TileColors } from 'gfx/styles/style'
-import type { Raft } from './raft'
-import { RAFT_MAX_RAD } from './raft'
+import { raft, RAFT_MAX_RAD } from './raft'
 import { Color } from 'three'
 import type { TileIndex } from 'core/grid-logic/indexed-grid'
-import type { TiledGrid } from 'core/grid-logic/tiled-grid'
+import { isBuildable } from './raft-building-rules'
+import type { PieceName } from './raft-enums'
+import { hideRaftBuildables, showRaftBuildables } from './raft-gfx-helper'
 
 const _HIGHLIGHTS = [
   'buildable',
@@ -27,10 +28,21 @@ export class RaftHlTiles {
 
   clear() {
     this.buildable.clear()
+    hideRaftBuildables()
     this.hovered = undefined
   }
 
-  updateBuildableTiles(raft: Raft) {
+  // co-opt buildable highlight to show possible connections for button
+  highlightThrusters() {
+    this.buildable.clear()
+    for (const at of raft.thrusters) {
+      const piece = raft.raftPieces[at.pieceIndex]
+      this.buildable.add(piece.tile.i)
+    }
+    showRaftBuildables()
+  }
+
+  updateBuildableTiles(piece: PieceName) {
     const { x, z } = raft.centerTile
     const { grid } = raft
     this.buildable.clear()
@@ -39,28 +51,30 @@ export class RaftHlTiles {
     for (let dx = -RAFT_MAX_RAD; dx <= RAFT_MAX_RAD; dx++) {
       for (let dz = -RAFT_MAX_RAD; dz <= RAFT_MAX_RAD; dz++) {
         const tile = grid.xzToIndex(x + dx, z + dz)
-        if (tile && isBuildable(tile, grid, raft.raftTiles)) {
+        if (tile && isBuildable(piece, tile)) {
           this.buildable.add(tile.i)
         }
       }
     }
+
+    showRaftBuildables()
   }
 }
 
-function isBuildable(tile: TileIndex, grid: TiledGrid, raftTiles: Set<number>): boolean {
-  if (raftTiles.has(tile.i)) {
-    return false // tile is occupied
-  }
-  // iterate over adjacent neighbors
-  for (const { x, z } of grid.tiling.getAdjacent(tile.x, tile.z)) {
-    const adjTile = grid.xzToIndex(tile.x + x, tile.z + z)
-    if (adjTile && raftTiles.has(adjTile.i)) {
-      // tile has existing raft piece as neighbor so it is buildable
-      return true
-    }
-  }
-  return false
-}
+// function isBuildable(tile: TileIndex, grid: TiledGrid, raftTiles: Set<number>): boolean {
+//   if (raftTiles.has(tile.i)) {
+//     return false // tile is occupied
+//   }
+//   // iterate over adjacent neighbors
+//   for (const { x, z } of grid.tiling.getAdjacent(tile.x, tile.z)) {
+//     const adjTile = grid.xzToIndex(tile.x + x, tile.z + z)
+//     if (adjTile && raftTiles.has(adjTile.i)) {
+//       // tile has existing raft piece as neighbor so it is buildable
+//       return true
+//     }
+//   }
+//   return false
+// }
 
 const hlColors: Record<RaftTileHighlight, TileColors> = {
   buildable: {

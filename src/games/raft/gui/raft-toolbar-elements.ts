@@ -22,12 +22,15 @@ const actions: Record<(typeof RAFT_TOOLBAR_BUTTONS)[number], (e: ElementEvent) =
   // },
   placeButtonBtn: () => {
     raft.startPhase(`place-button`)
+    raft.hlTiles.updateBuildableTiles('button')
   },
   placeThrusterBtn: () => {
     raft.startPhase(`place-thruster`)
+    raft.hlTiles.updateBuildableTiles('thruster')
   },
   wiresBtn: () => {
-    raft.startPhase('wires')
+    raft.startPhase('show-all-wires')
+    raft.hlTiles.clear()
   },
 }
 

@@ -19,7 +19,7 @@ import { raft, resetRaftBuild } from './raft'
 import { interpCamera, resetInterpCameraLatch } from 'gfx/3d/lerp-camera'
 import { RAFT_LANDSCAPE_LAYOUT } from 'guis/layouts/raft/raft-landscape-layout'
 import { fireAutoThrusters } from './raft-auto-thrusters'
-import { instancedPieceMeshes, wiresMesh } from './raft-gfx-helper'
+import { buildablesMesh, cursorMesh, instancedPieceElements, instancedPieceMeshes, wiresMesh } from './raft-gfx-helper'
 import { resetRaftButtons, updateRaftButtons } from './raft-buttons'
 import { RAFT_DESKTOP_LAYOUT } from 'guis/layouts/raft/raft-desktop-layout'
 
@@ -44,15 +44,29 @@ export const drivingRaftGroup = new Group()
 //   new BoxGeometry(1, 1, 1),
 //   new MeshBasicMaterial({ color: 'red' })))
 
+// element with raft-locked meshes
 export const drivingRaftElement = {
   // isPickable: true,
   // clickAction: () => { console.log('clicked driving raft') },
   meshLoader: async () => {
+    // raft parts
+    for (const elem of instancedPieceElements) {
+      drivingRaftGroup.add(await elem.meshLoader())
+    }
+
+    // walking cube character
     for (const name of (['leftFoot', 'rightFoot', 'torso'])) {
       wc[name].mesh = await wc[name].meshLoader()
       drivingRaftGroup.add(wc[name].mesh)
     }
+
+    // raft parts
+    drivingRaftGroup.add(cursorMesh)
+
+    // overlays for building/wiring phases
+    drivingRaftGroup.add(buildablesMesh)
     drivingRaftGroup.add(wiresMesh)
+
     return drivingRaftGroup
   },
 } satisfies GameElement
@@ -80,12 +94,12 @@ export function resetRaftDrive(context: SeaBlock) {
   if (!raft) {
     resetRaftBuild(context)
   }
-  raft.hlTiles.updateBuildableTiles(raft)
+  raft.hlTiles.clear()
 
   wc.reset()
   resetRaftButtons()
 
-  raft.moveMeshesTo(drivingRaftGroup)
+  // raft.moveMeshesTo(drivingRaftGroup)
   raftRig = buildRaftRig(context)
   raftCam.copy(context.camera)
 }
@@ -186,7 +200,7 @@ export function updateRaftDrive(context: GameUpdateContext) {
   updateRaftCam(context)
   const { dt } = context
 
-  raft.moveMeshesTo(drivingRaftGroup)
+  // raft.moveMeshesTo(drivingRaftGroup)
   driveCamFocus = lerp(driveCamFocus, targetFocus, focusSpeed * dt)// update cam focus
 
   wc.update(context) // update walking cube character on raft

@@ -4,26 +4,24 @@
  * Raft/raft singleton main helper for raft-build game.
  */
 import type { SeaBlock } from 'sea-block'
-import type { GameUpdateContext } from 'games/game'
 import type { TileIndex } from 'core/grid-logic/indexed-grid'
 import { ChessWaveMaker } from 'games/chess/chess-wave-maker'
 import { RaftHlTiles } from './raft-hl-tiles'
 import type { ProcessedSubEvent } from 'mouse-touch-input'
 import type { RenderablePiece, UniquePiece } from './raft-gfx-helper'
-import { buildingRaftGroup, cockpitMesh, hideRaftWires, instancedPieceMeshes,
+import { cockpitMesh, hideRaftWires, instancedPieceMeshes,
   registerInstancedPiece, setPiecePosition,
   showRaftWires } from './raft-gfx-helper'
-import type { Group, Intersection, Object3D } from 'three'
+import type { Intersection } from 'three'
 import { Vector3 } from 'three'
 import type { PieceName, PlaceablePieceName, RaftPhase } from './raft-enums'
 import { drivingRaftGroup } from './raft-drive-helper'
-import { cursorMesh } from './raft-mouse-input-helper'
 import type { TiledGrid } from 'core/grid-logic/tiled-grid'
 import type { AutoThruster } from './raft-auto-thrusters'
 import { getThrusterDirection } from './raft-auto-thrusters'
 import type { RaftButton } from './raft-buttons'
 import { hidePieceDialog } from './gui/raft-piece-dialog'
-import { showBuildPhasePanel } from './gui/raft-phase-dialog'
+import { hideBuildPhasePanel, showBuildPhasePanel } from './gui/raft-phase-dialog'
 import { resetFrontLayer } from 'gfx/2d/flat-gui-gfx-helper'
 
 import testRaft from './blueprints/test-raft.json'
@@ -48,9 +46,9 @@ export function resetRaftBuild(context: SeaBlock, blueprint?: RaftBlueprint): vo
   raftFromJson(blueprint ?? testRaft as RaftBlueprint)
 }
 
-export function updateRaftBuild(_context: GameUpdateContext): void {
-  raft.update()
-}
+// export function updateRaftBuild(_context: GameUpdateContext): void {
+//   raft.update()
+// }
 
 export class Raft {
   public cameraDistance: number = 10
@@ -74,12 +72,12 @@ export class Raft {
     this.grid = context.terrain.grid.clone()
     this.getPosOnTile(centerTile, this.centerPos)
 
-    buildingRaftGroup.position.copy(this.centerPos)
+    // buildingRaftGroup.position.copy(this.centerPos)
     // drivingRaftGroup.setRotationFromEuler(new Euler())
     drivingRaftGroup.position.copy(this.centerPos)
     // drivingRaftGroup.setRotationFromEuler(new Euler())
 
-    this.moveMeshesTo(buildingRaftGroup) // in case previously driving raft
+    // this.moveMeshesTo(buildingRaftGroup) // in case previously driving raft
     Object.values(instancedPieceMeshes).forEach((im) => {
       im.position.set(0, 0, 0)
       im.count = 0
@@ -146,10 +144,10 @@ export class Raft {
     }
   }
 
-  update() {
-    this.moveMeshesTo(buildingRaftGroup) // in case previously driving raft
-    this.hlTiles.updateBuildableTiles(this)
-  }
+  // update() {
+  //   this.moveMeshesTo(buildingRaftGroup) // in case previously driving raft
+  //   //this.hlTiles.updateBuildableTiles(this)
+  // }
 
   hoverWorld(inputEvent: ProcessedSubEvent): boolean {
     const { pickedTile } = inputEvent
@@ -161,11 +159,25 @@ export class Raft {
     return false
   }
 
-  getPieceOnTile(tile: TileIndex): RenderablePiece | undefined {
+  getPiecesOnTile(tile: TileIndex): Array<RenderablePiece> {
+    const result: Array<RenderablePiece> = []
     for (const piece of this.raftPieces) {
       if (piece.tile.i === tile.i) {
-        return piece
+        result.push(piece)
       }
+    }
+    return result
+  }
+
+  getRelevantPiece(tileIndex: TileIndex): RenderablePiece | undefined {
+    const occupants = this.getPiecesOnTile(tileIndex)
+
+    // de-prioritize floor tile
+    if (occupants.length > 1 && occupants[0].type === 'floor') {
+      return occupants[1]
+    }
+    else if (occupants.length === 1) {
+      return occupants[0]
     }
   }
 
@@ -216,14 +228,14 @@ export class Raft {
         isFiring: false,
       })
     }
-
-    if (pieceName === 'button') {
+    else if (pieceName === 'button') {
       if (!triggers) {
         throw new Error('raft button requires triggers')
       }
       // add new button to auto-thruster logic
       this.buttons.push({
-        index: this.buttons.length,
+        imIndex: this.buttons.length,
+        pieceIndex: this.raftPieces.length - 1, // index of piece registered above
         dx: tile.x - this.centerTile.x,
         dz: tile.z - this.centerTile.z,
         triggers, // : [...this.thrusters],
@@ -231,7 +243,7 @@ export class Raft {
       })
     }
 
-    this.hlTiles.updateBuildableTiles(this)
+    // this.hlTiles.updateBuildableTiles(this)
   }
 
   clickWorld(inputEvent: ProcessedSubEvent): boolean {
@@ -244,20 +256,21 @@ export class Raft {
       // spawn raft piece
         const pieceName = this.currentPhase.slice(6) as PlaceablePieceName
         this.buildPiece(pieceName, pickedTile)
-        this.cancelPlacePiece()
+        this.cancelBuild()
         return true // consume event
       }
     }
     return false
   }
 
+  public editingButton: RaftButton | undefined = undefined
   public startPhase(phase: RaftPhase) {
     this.currentPhase = phase
     hidePieceDialog(this.context)
     showBuildPhasePanel(this.currentPhase)
     resetFrontLayer(this.context)
 
-    if (phase === 'wires') {
+    if (phase === 'show-all-wires') {
       showRaftWires()
     }
     else {
@@ -265,9 +278,10 @@ export class Raft {
     }
   }
 
-  public cancelPlacePiece() {
+  public cancelBuild() {
     this.currentPhase = 'idle'
-    showBuildPhasePanel(this.currentPhase)
+    hideBuildPhasePanel()
+    this.hlTiles.clear()
     // for( const btn of placePieceButtons ){
     //   btn.display.forcedState = undefined
     // }
@@ -281,18 +295,6 @@ export class Raft {
     writeTo.set(x, height ?? 12, z)
 
     return writeTo
-  }
-
-  public moveMeshesTo(group: Group) {
-    // Transfer each raft piece mesh/object to the driving group, positioned relative to COM
-    const meshes = [
-      cursorMesh,
-      cockpitMesh,
-      ...Object.values(instancedPieceMeshes),
-    ] as Array<Object3D>
-    for (const obj of meshes) {
-      group.add(obj)
-    }
   }
 }
 
