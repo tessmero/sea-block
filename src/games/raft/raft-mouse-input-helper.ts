@@ -40,12 +40,16 @@ export function hoverRaftWorld(inputEvent: ProcessedSubEvent) {
   //   // }
   // }
   // else {
+
+  // hide cursor by default, may be reinstated below
+  hoverCursorMesh.visible = false
+
   if (!clickedPiece) {
     // hide cursor and info by default, they may be reinstated below
-    hoverCursorMesh.visible = false
     selectedCursorMesh.visible = false
     hidePieceDialog(inputEvent.seaBlock)
   }
+
   const raftTile = pickRaftTile(inputEvent)
   // putCursorOnTile(raftTile)
   // console.log('hoverRaftWorld raft tile', raftTile)
@@ -63,9 +67,9 @@ export function hoverRaftWorld(inputEvent: ProcessedSubEvent) {
 
 function _hoverRaftTile(raftTile: XZ, tileIndex: TileIndex) {
   if (raft.currentPhase !== 'edit-button' && raft.hlTiles.clickable.has(tileIndex.i)) {
-    if (!clickedPiece) {
-      putHoverCursorOnTile(raftTile, 'buildable')
-    }
+    // if (!clickedPiece) {
+    putHoverCursorOnTile(raftTile, 'buildable')
+    // }
   }
   else {
     putHoverCursorOnTile(raftTile, 'default')
@@ -155,16 +159,34 @@ export function clickRaftWorld(inputEvent: ProcessedSubEvent): boolean {
     }
     else {
       // tile not buildable
-      if (piece) {
-        putHoverCursorOnTile(raftTile, 'default')
-        showPieceClicked(piece)
+      putHoverCursorOnTile(raftTile, 'default')
+
+      if (raft.currentPhase === 'edit-button' && piece) {
+        raft.startPhase('idle') // can deslect button by clicking another piece
       }
-      if (piece?.type === 'button') {
-        const i = raft.raftPieces.indexOf(piece)
-        raft.editingButton = raft.buttons.find(({ pieceIndex }) => pieceIndex === i)
-        raft.startPhase('edit-button')
-        showRaftWires(raft.editingButton)
-        raft.hlTiles.highlightThrusters()
+
+      if (piece) {
+        if (piece.type === 'button') {
+          showPieceClicked(piece)
+          const i = raft.raftPieces.indexOf(piece)
+          raft.editingButton = raft.buttons.find(({ pieceIndex }) => pieceIndex === i)
+          raft.startPhase('edit-button')
+          setRaftToolbarPressed() // release raft toolbar buttons
+          showRaftWires(raft.editingButton)
+          raft.hlTiles.highlightThrusters()
+        }
+        else {
+          // may cancel build phase by clicking piece on non-buildable tile
+          raft.startPhase('idle')
+          showPieceClicked(piece)
+        }
+      }
+      else {
+        // no piece on picked tile
+        if (raft.currentPhase !== 'edit-button') {
+          selectedCursorMesh.visible = false
+          hidePieceDialog(raft.context)
+        }
       }
     }
   }
@@ -179,6 +201,7 @@ export function clickRaftWorld(inputEvent: ProcessedSubEvent): boolean {
 // Dummy objects to avoid allocations in pickRaftTile
 import { Vector3, Matrix4 } from 'three'
 import { selectedCursorMesh } from './gfx/raft-clicked-tile-highlight'
+import { setRaftToolbarPressed } from './gui/raft-toolbar-elements'
 const _raftOrigin = new Vector3()
 const _raftDirection = new Vector3()
 const _raftInvMatrix = new Matrix4()

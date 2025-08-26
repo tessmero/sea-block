@@ -18,7 +18,8 @@ const buildCancelBtn: RaftElem = {
   layoutKey: 'buildCancelBtn',
   display: {
     type: 'button',
-    icon: 'icons/16x16-x.png',
+    label: 'DONE',
+    font: 'mini',
     isVisible: false,
   },
   clickAction: () => raft.cancelBuild(),
@@ -26,9 +27,9 @@ const buildCancelBtn: RaftElem = {
 
 const userFriendlyLabels = {
   'idle': '...',
-  'edit-button': 'connect button',
+  'edit-button': 'Button',
   'show-all-wires': 'show all wires',
-  'place-floor': 'place floor tiles',
+  'place-floor': 'place floors',
   'place-button': 'place buttons',
   'place-thruster': 'place thrusters',
 } as const satisfies Record<RaftPhase, string>

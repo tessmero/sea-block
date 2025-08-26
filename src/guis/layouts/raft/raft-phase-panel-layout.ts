@@ -17,7 +17,7 @@ export const RAFT_PHASE_PANEL_LAYOUT = {
 
   buildCancelBtn: {
     parent: 'buildPhasePanel',
-    width: 16,
-    right: 0,
+    width: 32,
+    left: 0,
   },
 } as const satisfies CssLayout<RaftLayoutKey>

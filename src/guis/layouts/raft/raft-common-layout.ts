@@ -10,14 +10,13 @@ import type { CssLayout } from 'util/layout-parser'
 import { RAFT_PIECE_DIALOG_LAYOUT } from './raft-piece-dialog-layout'
 import { RAFT_PHASE_PANEL_LAYOUT } from './raft-phase-panel-layout'
 
-const buttonWidth = 32
+const buttonWidth = 16
 // const allButtons: Array<RaftLayoutKey> = ['placeFloorBtn', 'placeButtonBtn', 'placeThrusterBtn']
 
 export const RAFT_COMMON_LAYOUT = {
 
   toolbar: {
     height: 16,
-    top: 16, // leave space for debug controls
   },
 
   ...Object.fromEntries(RAFT_TOOLBAR_BUTTONS.map((name, i) => [

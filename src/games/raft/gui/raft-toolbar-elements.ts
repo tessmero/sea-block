@@ -8,6 +8,7 @@
 import type { ElementEvent, GuiElement } from 'guis/gui'
 import type { RaftLayoutKey } from 'guis/keys/raft-layout-keys'
 import { raft } from '../raft'
+import type { ImageAssetUrl } from 'gfx/2d/image-asset-loader'
 
 type RaftElem = GuiElement<RaftLayoutKey>
 
@@ -16,37 +17,81 @@ export const RAFT_TOOLBAR_BUTTONS = [
   'placeButtonBtn', 'placeThrusterBtn', 'wiresBtn',
 ] as const satisfies ReadonlyArray<RaftLayoutKey>
 
-const actions: Record<(typeof RAFT_TOOLBAR_BUTTONS)[number], (e: ElementEvent) => void> = {
+type ButtonName = (typeof RAFT_TOOLBAR_BUTTONS)[number]
+
+const actions: Record<ButtonName, (e: ElementEvent) => void> = {
   placeFloorBtn: () => {
-    raft.startPhase(`place-floor`)
-    raft.hlTiles.updateBuildableTiles('floor')
+    if (raft.currentPhase === 'place-floor') {
+      raft.startPhase('idle')
+    }
+    else {
+      setRaftToolbarPressed('placeFloorBtn')
+      raft.startPhase(`place-floor`)
+      raft.hlTiles.updateBuildableTiles('floor')
+    }
   },
   placeButtonBtn: () => {
-    raft.startPhase(`place-button`)
-    raft.hlTiles.updateBuildableTiles('button')
+    if (raft.currentPhase === `place-button`) {
+      raft.startPhase('idle')
+    }
+    else {
+      setRaftToolbarPressed('placeButtonBtn')
+      raft.startPhase(`place-button`)
+      raft.hlTiles.updateBuildableTiles('button')
+    }
   },
   placeThrusterBtn: () => {
-    raft.startPhase(`place-thruster`)
-    raft.hlTiles.updateBuildableTiles('thruster')
+    if (raft.currentPhase === `place-thruster`) {
+      raft.startPhase('idle')
+    }
+    else {
+      setRaftToolbarPressed('placeThrusterBtn')
+      raft.startPhase(`place-thruster`)
+      raft.hlTiles.updateBuildableTiles('thruster')
+    }
   },
   wiresBtn: () => {
-    raft.startPhase('show-all-wires')
-    raft.hlTiles.clear()
+    if (raft.currentPhase === 'show-all-wires') {
+      raft.startPhase('idle')
+    }
+    else {
+      setRaftToolbarPressed('wiresBtn')
+      raft.startPhase('show-all-wires')
+      raft.hlTiles.clear()
+    }
   },
 }
 
-const userFriendlyLabels: Record<(typeof RAFT_TOOLBAR_BUTTONS)[number], string> = {
-  placeFloorBtn: 'Floor',
-  placeButtonBtn: 'Button',
-  placeThrusterBtn: 'Thruster',
-  wiresBtn: 'Wires',
+// const userFriendlyLabels: Record<(typeof RAFT_TOOLBAR_BUTTONS)[number], string> = {
+//   placeFloorBtn: 'Floor',
+//   placeButtonBtn: 'Button',
+//   placeThrusterBtn: 'Thruster',
+//   wiresBtn: 'Wires',
+// }
+const toolbarIcons: Record<(typeof RAFT_TOOLBAR_BUTTONS)[number], ImageAssetUrl> = {
+  placeFloorBtn: 'icons/16x16-checkered.png',
+  placeButtonBtn: 'icons/raft/16x16-raft-button.png',
+  placeThrusterBtn: 'icons/raft/16x16-thruster.png',
+  wiresBtn: 'icons/raft/16x16-wire.png',
 }
 
-export const raftToolbarElements = RAFT_TOOLBAR_BUTTONS.map(layoutKey => ({
-  layoutKey,
-  display: {
-    type: 'button',
-    label: userFriendlyLabels[layoutKey],
-  },
-  clickAction: actions[layoutKey],
-}) satisfies RaftElem)
+export const raftToolbarElements: Array<RaftElem>
+  = RAFT_TOOLBAR_BUTTONS.map(layoutKey => ({
+    layoutKey,
+    display: {
+      type: 'button',
+      icon: toolbarIcons[layoutKey],
+      // label: userFriendlyLabels[layoutKey],
+    },
+    clickAction: (e) => {
+      actions[layoutKey](e) // button-specific action
+    },
+  }))
+
+export function setRaftToolbarPressed(pressedBtn?: ButtonName) {
+  for (const [i, name] of RAFT_TOOLBAR_BUTTONS.entries()) {
+    const { display } = raftToolbarElements[i]
+    display.forcedState = (name === pressedBtn) ? 'pressed' : undefined
+    display.needsUpdate = true
+  }
+}

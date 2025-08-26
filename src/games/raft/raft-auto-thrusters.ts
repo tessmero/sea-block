@@ -70,14 +70,14 @@ export function fireAutoThrusters(
       case 'right':
         // thruster.isFiring = strafe.x > 0 || (x !== 0 && x === turnSign)
         if (thruster.isFiring) {
-          totalRight += 1
+          totalRight -= 1
           totalTorque += thruster.dx
         }
         break
       case 'left':
         // thruster.isFiring = strafe.x < 0 || (x !== 0 && x === -turnSign)
         if (thruster.isFiring) {
-          totalRight -= 1
+          totalRight += 1
           totalTorque -= thruster.dx
         }
         break

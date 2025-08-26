@@ -199,7 +199,7 @@ export default tseslint.config(
           selector: ['variable', 'typeProperty'],
           types: ['boolean'],
           format: ['PascalCase'],
-          prefix: ['is', 'are', 'should', 'has', 'can', 'did', 'will', 'needs'],
+          prefix: ['is', 'was', 'are', 'should', 'has', 'can', 'did', 'will', 'needs'],
         },
         {
           // types must be PascalCase

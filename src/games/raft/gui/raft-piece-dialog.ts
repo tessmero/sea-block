@@ -54,7 +54,9 @@ export const pieceDeleteBtn: RaftElem = {
   layoutKey: 'pieceDeleteBtn',
   display: {
     type: 'button',
-    icon: 'icons/16x16-x.png',
+    // icon: 'icons/16x16-x.png',
+    label: 'DELETE',
+    font: 'mini',
     isVisible: false,
   },
   clickAction: () => {

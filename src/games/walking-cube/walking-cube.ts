@@ -98,7 +98,7 @@ export class WalkingCube {
     this.torsoVel = new Vector3(0, 0, 0)
     this.leftFoot = makeBox(0.3, 0.1, 0.5, 'black')
     this.rightFoot = makeBox(0.3, 0.1, 0.5, 'black')
-    this.torso = makeBox(1, 1, 1, 'white', {
+    this.torso = makeBox(1, 1, 1, '#fff360', {
       // hasFaceTexture: true, // render with one face textured
       hasFaceMesh: true, // or, render with added meshes
     })

@@ -10,6 +10,8 @@ import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js'
 // find public/obj -type f | sed 's|^public/obj/||;s|$|\",|;s|^|\"|'
 export const MESH_ASSET_URLS = [
 
+  'raft/thruster.obj',
+
   'kenney/chest.obj',
 
   'chess/bishop.obj',

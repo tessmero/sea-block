@@ -17,7 +17,7 @@ export class FaceMeshGfx {
 
     const blackMat = new MeshBasicMaterial({ color: 'black' })
 
-    const edgeGeom = buildBoxEdges()
+    const edgeGeom = buildBoxEdges({ thickness: 0.05 })
     const edgeMesh = new Mesh(edgeGeom, blackMat)
     group.add(edgeMesh)
 

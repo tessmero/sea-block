@@ -8,41 +8,31 @@ import { addToSpriteAtlas } from './sprite-atlas'
 
 // find public/images -type f | sed 's|^public/images/||;s|$|\",|;s|^|\"|'
 export const IMAGE_ASSET_URLS = [
-
-  'textures/kenney-colormap.png',
-
+  'tile-shapes/4_0.71_0.79.png',
+  'tile-shapes/8_0.77_0.39.png',
+  'tile-shapes/3_1.15_3.14.png',
+  'tile-shapes/3_1.15_0.00.png',
+  'tile-shapes/6_0.87_0.52.png',
+  'tile-shapes/4_0.43_0.79.png',
   'borders/16x16-panel.png',
-
-  'borders/16x16-btn-shiny-default.png',
-  'borders/16x16-btn-shiny-hovered.png',
-  'borders/16x16-btn-shiny-pressed.png',
-
-  'borders/16x16-btn-square-default.png',
   'borders/16x16-btn-square-hovered.png',
+  'borders/24x24-joy-slider-default.png',
+  'borders/16x16-btn-shiny-pressed.png',
   'borders/16x16-btn-square-pressed.png',
-
-  // 'borders/48x48-joy-region-default.png',
-  // 'borders/48x48-joy-region-hovered.png',
-  // 'borders/48x48-joy-region-pressed.png',
-
-  // 'borders/24x24-joy-slider-default.png',
-  // 'borders/24x24-joy-slider-hovered.png',
-  // 'borders/24x24-joy-slider-pressed.png',
-
-  'icons/launch.png',
-  `icons/skip.png`,
-  `icons/16x16-music.png`,
-  'icons/16x16-chess.png',
-  `icons/16x16-config.png`,
-  `icons/16x16-arrow-up.png`,
-  `icons/16x16-arrow-down.png`,
-  `icons/16x16-arrow-left.png`,
-  `icons/16x16-arrow-right.png`,
-  'icons/16x16-ellipsis.png',
-  'icons/16x16-x.png',
+  'borders/16x16-btn-square-default.png',
+  'borders/16x16-btn-shiny-default.png',
+  'borders/24x24-joy-slider-pressed.png',
+  'borders/24x24-joy-slider-hovered.png',
+  'borders/16x16-btn-shiny-hovered.png',
+  'textures/kenney-colormap.png',
+  'icons/skip.png',
+  'icons/16x16-arrow-up.png',
+  'icons/16x16-config.png',
   'icons/16x16-pan.png',
-  'icons/16x16-rotate.png',
-
+  'icons/launch.png',
+  'icons/16x16-arrow-down.png',
+  'icons/16x16-arrow-right.png',
+  'icons/16x16-music.png',
   'icons/chess/16x16-queen.png',
   'icons/chess/16x16-rook.png',
   'icons/chess/8x8-queen.png',
@@ -56,6 +46,14 @@ export const IMAGE_ASSET_URLS = [
   'icons/chess/16x16-knight.png',
   'icons/chess/16x16-chest.png',
   'icons/chess/16x16-bishop.png',
+  'icons/16x16-arrow-left.png',
+  'icons/raft/16x16-thruster.png',
+  'icons/raft/16x16-raft-button.png',
+  'icons/raft/16x16-wire.png',
+  'icons/16x16-x.png',
+  'icons/16x16-checkered.png',
+  'icons/16x16-rotate.png',
+  'icons/16x16-ellipsis.png',
 ] as const
 export type ImageAssetUrl = (typeof IMAGE_ASSET_URLS)[number]
 

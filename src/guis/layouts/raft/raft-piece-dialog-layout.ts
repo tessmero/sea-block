@@ -13,14 +13,13 @@ export const RAFT_PIECE_DIALOG_LAYOUT = {
   pieceDialogPanel: {
     parent: 'toolbar',
     top: '100%',
-    width: 80,
     left: 'auto',
   },
 
   pieceDeleteBtn: {
     parent: 'pieceDialogPanel',
-    width: 16,
-    left: 0,
+    width: 40,
+    right: 0,
   },
 
 } as const satisfies CssLayout<RaftLayoutKey>

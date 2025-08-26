@@ -29,6 +29,8 @@ import type { RaftBlueprint } from './blueprints/raft.json'
 import { raftFromJson, raftToJson } from './blueprints/raft-io'
 import { hideRaftWires, showRaftWires } from './gfx/raft-wires-overlay'
 import { Tiling } from 'core/grid-logic/tilings/tiling'
+import { hideRaftClickables } from './gfx/raft-clickable-highlight'
+import { setRaftToolbarPressed } from './gui/raft-toolbar-elements'
 export const RAFT_MAX_RAD = 3
 
 let raftGrid
@@ -322,7 +324,15 @@ export class Raft {
   public startPhase(phase: RaftPhase) {
     this.currentPhase = phase
     hidePieceDialog(this.context)
-    showBuildPhasePanel(this.currentPhase)
+    if (phase === 'idle') {
+      hideBuildPhasePanel()
+      hideRaftClickables()
+      setRaftToolbarPressed() // un-press toolbar buttons
+      this.hlTiles.clear()
+    }
+    else {
+      showBuildPhasePanel(this.currentPhase)
+    }
     resetFrontLayer(this.context)
 
     if (phase === 'show-all-wires') {
@@ -334,8 +344,7 @@ export class Raft {
   }
 
   public cancelBuild() {
-    this.currentPhase = 'idle'
-    hideBuildPhasePanel()
+    this.startPhase('idle')
     this.hlTiles.clear()
     // for( const btn of placePieceButtons ){
     //   btn.display.forcedState = undefined

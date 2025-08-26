@@ -10,6 +10,13 @@ import { Color, type Vector3 } from 'three'
 import type { AutoThruster } from './raft-auto-thrusters'
 import { raft } from './raft'
 import { instancedPieceMeshes } from './gfx/raft-gfx-helper'
+import { playSound } from 'audio/sound-effects'
+
+const pressedColor = new Color('#ffffff')
+const unpressedColor = new Color('#7eb5e8')
+
+const thrusterFiringColor = new Color('#c4d4fa')
+const thrusterOffColor = new Color('#868686')
 
 export type RaftButton = {
   dx: number // position relative to center of raft surface
@@ -33,8 +40,14 @@ export function updateRaftButtons(wcPos: Vector3) {
   }
   for (const raftButton of raft.buttons) {
     const { dx, dz } = raftButton
+    const wasPressed = raftButton.isPressed
     raftButton.isPressed = (Math.abs(wcPos.x - dx) < 0.6 && Math.abs(wcPos.z - dz) < 0.6)
     updateButton(raftButton)
+
+    if (wasPressed !== raftButton.isPressed) {
+      // button just changed state
+      playSound('chessClick')
+    }
   }
   _updateThrusterColors()
 }
@@ -58,11 +71,8 @@ function _updateTriggers(raftButton: RaftButton) {
 function _updateThrusterColors() {
   const im = instancedPieceMeshes.thruster
   for (const thruster of raft.thrusters) {
-    const color = thruster.isFiring ? pressedColor : unpressedColor
+    const color = thruster.isFiring ? thrusterFiringColor : thrusterOffColor
     im.setColorAt(thruster.imIndex, color)
   }
   (im.instanceColor as InstancedBufferAttribute).needsUpdate = true
 }
-
-const pressedColor = new Color('white')
-const unpressedColor = new Color('black')

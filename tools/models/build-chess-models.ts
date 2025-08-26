@@ -6,6 +6,8 @@
  * manually download in tools/models/chess
  * final output in public/obj/chess.
  */
+const srcUrl = 'https://sketchfab.com/robie1/collections/low-poly-chess-set'
+
 import path from 'path'
 const src = piece => path.join(__dirname, `raw-chess-models/${piece}/scene.gltf`)
 const out = piece => path.join(__dirname, `../../public/obj/chess/${piece}.obj`)
@@ -92,7 +94,7 @@ function getBaseRadius(geometry: BufferGeometry) {
 function writeGeometryToFile(geometry: BufferGeometry, outPath: string) {
   const objString = exporter.parse(new Mesh(geometry, new MeshBasicMaterial()))
   writeFileSync(outPath, `
-# https://sketchfab.com/robie1/collections/low-poly-chess-set
+# ${srcUrl}
 ${objString}
   `)
   console.log(`Saved ${outPath}`)

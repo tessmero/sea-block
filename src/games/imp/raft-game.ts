@@ -54,7 +54,7 @@ export class RaftGame extends FreeCamGame {
     )
     this._lastAnchorPosition.copy(cameraAnchor.position)
     // controls.target.set(x, CAMERA_LOOK_AT.y, z)
-    controls.target.set(x, 14, z)
+    controls.target.set(x, 13, z)
     controls.update()
 
     terrain.panToCenter(x, z)

@@ -154,7 +154,7 @@ export class RaftRig {
 
   public alignMesh(mesh: Object3D, _dt: number) {
     // Compute center of mass of the 4 spheres
-    center.set(0, 0, 0)
+    center.set(0, -4, 0)
     for (const sphere of this.spheres) {
       center.add(sphere.position)
     }
