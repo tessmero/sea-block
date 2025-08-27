@@ -4,8 +4,9 @@
  * Gui for free-cam game with WASD or joystick controls.
  */
 
+import { grabbedMeshElements } from 'games/free-cam/freecam-grabbed-mesh-dialog'
 import { leftJoy, leftJoySlider, rightJoy, rightJoySlider } from 'guis/elements/joysticks'
-import { configBtn, musicBtn, grabbedMeshElements, raftBtn } from 'guis/elements/misc-buttons'
+import { configBtn, musicBtn, raftBtn } from 'guis/elements/misc-buttons'
 import { wasdButtons } from 'guis/elements/wasd-buttons'
 import type { RegisteredGui } from 'guis/gui'
 import { Gui } from 'guis/gui'

@@ -9,7 +9,7 @@ import { GAME, GENERATOR, TILING } from '../../imp-names'
 import { Configurable } from '../configurable'
 import type { ConfigTree, OptionItem } from '../config-tree'
 
-export const isDevMode = true
+export const isDevMode = false
 function applyDevMode(cfg: typeof topConfigTree.children) {
   // cfg.game.value = 'walking-cube'
   cfg.game.isHidden = false

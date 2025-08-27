@@ -20,6 +20,7 @@ export const RAFT_PIECE_DIALOG_LAYOUT = {
     parent: 'pieceDialogPanel',
     width: 40,
     right: 0,
+    top: '100%',
   },
 
 } as const satisfies CssLayout<RaftLayoutKey>

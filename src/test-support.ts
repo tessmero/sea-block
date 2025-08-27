@@ -4,8 +4,8 @@
  * Interface to support automated report ath appears on tessmero.github.io.
  */
 
+import { getPickablePieceMeshPosition } from 'games/free-cam/freecam-pickable-meshes'
 import type { ChessGame } from 'games/imp/chess-game'
-import { getPickablePieceMeshPosition } from 'games/imp/free-cam-game'
 import type { SeaBlock } from 'sea-block'
 import type { Vector3 } from 'three'
 
@@ -69,7 +69,7 @@ export function getTestSupport(seaBlock: SeaBlock) {
 
       // pickable mesh in freecam
       if (id === 'rookMesh') {
-        const result = getPickablePieceMeshPosition()
+        const result = getPickablePieceMeshPosition('rook')
         if (result) {
           return locateOnScreen(seaBlock, result)
         }

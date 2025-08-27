@@ -29,13 +29,21 @@ const classicalMidi = (name: string) => `./music-data/midi/www-kunstderfuge-com/
 
 export const SONGS_TO_BUILD: Record<string, SongParams> = {
 
-  // Chopin / Nocturne in E Flat Major
-  chopin: {
-    src: classicalMidi('chopin'),
+  // Mendelssohn / Spring song
+  mendelssohn: {
+    src: classicalMidi('mendelssohn'),
     adjust: ({ synth }) => {
-      synth.programChange(0, 12) // 12 marimba
+      synth.programChange(0, 46) // 46 harp
     },
   },
+
+  // // Chopin / Nocturne in E Flat Major
+  // chopin: {
+  //   src: classicalMidi('chopin'),
+  //   adjust: ({ synth }) => {
+  //     synth.programChange(0, 12) // 12 marimba
+  //   },
+  // },
 
   // // Albeniz / Granada
   // albeniz: {

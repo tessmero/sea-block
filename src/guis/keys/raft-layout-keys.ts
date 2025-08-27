@@ -16,6 +16,9 @@ export const RAFT_LAYOUT_KEYS = [
   'placeThrusterBtn',
   'wiresBtn',
 
+  // top right quit game button
+  'quitBtn',
+
   // when existing piece is selected
   'pieceDialogPanel',
   'pieceDeleteBtn',

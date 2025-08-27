@@ -23,30 +23,6 @@ import type { Tiling } from 'core/grid-logic/tilings/tiling'
 export const rewardChoiceBackground = new Color(0x000000)
 export const flatChessBackground = new Color(0xaaccff) // sky color
 
-// dialog after clicking chess piece in free-cam
-export function buildGrabbedMeshDiagram(elem: StaticElement) {
-  const buffer = elem.display.imageset?.default
-  if (!buffer) {
-    throw new Error(`grabbed mesh diagram element with layout key ${elem.layoutKey} has no buffer`)
-  }
-
-  const { width, height } = buffer
-  const ctx = buffer.getContext('2d') as OffscreenCanvasRenderingContext2D
-  ctx.clearRect(0, 0, width, height)
-  ctx.strokeStyle = 'black'
-  // ctx.strokeRect(0.5, 0.5, width - 1, height - 1)
-
-  // draw chess piece icon
-  const iconImage = getImage('icons/chess/16x16-rook.png')
-  ctx.drawImage(iconImage, 9, 14, iconImage.width, iconImage.height)
-
-  // draw text
-  drawText(ctx, { width, height, label: 'ROOK', offset: [6, 3] })
-
-  // draw text
-  drawText(ctx, { width, height, label: 'CHESS PIECE', font: 'mini', offset: [0, -12] })
-}
-
 export function updatePawnButtonLabel() {
   const elem = pawnLabel
   const buffer = elem.display.imageset?.default

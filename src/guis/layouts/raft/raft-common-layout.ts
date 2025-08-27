@@ -9,6 +9,9 @@ import type { RaftLayoutKey } from 'guis/keys/raft-layout-keys'
 import type { CssLayout } from 'util/layout-parser'
 import { RAFT_PIECE_DIALOG_LAYOUT } from './raft-piece-dialog-layout'
 import { RAFT_PHASE_PANEL_LAYOUT } from './raft-phase-panel-layout'
+import { standards } from '../layout-helper'
+
+const { btn } = standards
 
 const buttonWidth = 16
 // const allButtons: Array<RaftLayoutKey> = ['placeFloorBtn', 'placeButtonBtn', 'placeThrusterBtn']
@@ -17,6 +20,11 @@ export const RAFT_COMMON_LAYOUT = {
 
   toolbar: {
     height: 16,
+  },
+
+  quitBtn: {
+    ...btn,
+    right: 0,
   },
 
   ...Object.fromEntries(RAFT_TOOLBAR_BUTTONS.map((name, i) => [

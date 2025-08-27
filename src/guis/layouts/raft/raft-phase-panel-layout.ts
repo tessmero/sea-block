@@ -19,5 +19,6 @@ export const RAFT_PHASE_PANEL_LAYOUT = {
     parent: 'buildPhasePanel',
     width: 32,
     left: 0,
+    top: '100%',
   },
 } as const satisfies CssLayout<RaftLayoutKey>

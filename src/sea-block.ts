@@ -8,7 +8,6 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { Gui } from 'guis/gui'
 import { preloadPixelTiles } from 'gfx/2d/pixel-tiles-gfx-helper'
-import { isDevMode } from 'configs/imp/top-config'
 import type { ConfigButton, ConfigItem } from './configs/config-tree'
 import { TerrainGenerator } from './generators/terrain-generator'
 import type { TileGroupGfxHelper } from './gfx/3d/tile-group-gfx-helper'
@@ -41,6 +40,7 @@ import { preloadChessRewardHelpDiagrams } from 'games/chess/gui/chess-reward-hel
 import { Chess } from 'games/chess/chess-helper'
 import { updateGamepadState } from 'gamepad-input'
 import type { KeyCode } from 'input-id'
+import { preloadGrabbedMeshDiagrams } from 'games/free-cam/freecam-grabbed-mesh-dialog'
 
 // can only be constructed once
 let didConstruct = false
@@ -127,6 +127,7 @@ export class SeaBlock {
     loadPromises.push(preloadPixelTiles(Tiling.getAllShapes()))
     loadPromises.push(preloadChessSprites())
     loadPromises.push(preloadChessRewardHelpDiagrams())
+    loadPromises.push(preloadGrabbedMeshDiagrams())
 
     // start generating images/meshes for all guis
     for (const guiName of GUI.NAMES) {
@@ -426,10 +427,10 @@ export class SeaBlock {
       })
       this.orbitControls.domElement = newCanvas
 
-      // fullscreen
-      if (!isDevMode) { // fullscreen
-        document.documentElement.requestFullscreen()
-      }
+      // // fullscreen
+      // if (!isDevMode) { // fullscreen
+      //   document.documentElement.requestFullscreen()
+      // }
 
       // wait two animation frames
       await new Promise<void>((resolve) => {

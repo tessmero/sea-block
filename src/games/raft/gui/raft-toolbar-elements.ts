@@ -9,6 +9,9 @@ import type { ElementEvent, GuiElement } from 'guis/gui'
 import type { RaftLayoutKey } from 'guis/keys/raft-layout-keys'
 import { raft } from '../raft'
 import type { ImageAssetUrl } from 'gfx/2d/image-asset-loader'
+import { FREECAM_PLAYLIST, playNextTrack } from 'audio/song-playlist'
+import { playSound } from 'audio/sound-effects'
+import { ChessScenery } from 'games/chess/levels/chess-scenery'
 
 type RaftElem = GuiElement<RaftLayoutKey>
 
@@ -94,4 +97,23 @@ export function setRaftToolbarPressed(pressedBtn?: ButtonName) {
     display.forcedState = (name === pressedBtn) ? 'pressed' : undefined
     display.needsUpdate = true
   }
+}
+
+export const quitBtn: RaftElem = {
+  layoutKey: 'quitBtn',
+  display: {
+    type: 'button',
+    icon: 'icons/16x16-x.png',
+    isVisible: true,
+  },
+  clickAction: ({ seaBlock }) => {
+    playSound('click')
+    // switch to free-cam game
+    seaBlock.startTransition({
+      callback: () => {
+        ChessScenery.restoreOriginalSnapshot(seaBlock)
+        playNextTrack(FREECAM_PLAYLIST)
+      },
+    })
+  },
 }
