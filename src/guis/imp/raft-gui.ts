@@ -7,7 +7,7 @@
 
 import { raftPhaseDialogElements } from 'games/raft/gui/raft-phase-dialog'
 import { raftPieceDialogElements } from 'games/raft/gui/raft-piece-dialog'
-import { quitBtn, raftToolbarElements } from 'games/raft/gui/raft-toolbar-elements'
+import { raftSettingsBtn, raftToolbarElements } from 'games/raft/gui/raft-toolbar-elements'
 import { raftLayoutFactory } from 'games/raft/raft-drive-helper'
 import { clickRaftWorld, hoverRaftWorld } from 'games/raft/raft-mouse-input-helper'
 import { leftJoy, leftJoySlider, rightJoy, rightJoySlider } from 'guis/elements/joysticks'
@@ -33,7 +33,7 @@ export class RaftGui extends Gui<RaftLayoutKey> {
         leftJoy, leftJoySlider,
         rightJoy, rightJoySlider,
         ...wasdButtons,
-        ...raftToolbarElements, quitBtn,
+        ...raftToolbarElements, raftSettingsBtn,
         ...raftPhaseDialogElements,
         ...raftPieceDialogElements,
       ],

@@ -62,6 +62,7 @@ export type ElementDisplayParams = {
   readonly icon?: ImageAssetUrl
   readonly label?: string
   readonly font?: FontVariant
+  readonly color?: string
   readonly textAlign?: TextAlign
 
   shouldClearBehind?: boolean

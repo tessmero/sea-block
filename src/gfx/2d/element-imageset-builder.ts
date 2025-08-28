@@ -19,7 +19,7 @@ export type ElementType
     | 'sprite-atlas' // special case, atlas buffer excluded from atlas
 
 export type BorderVariant
-  = '16x16-btn-shiny' | '16x16-btn-square'
+  = '16x16-btn-shiny' | '16x16-btn-square' | '16x16-btn-sm'
 //   | '48x48-joy-region' | '24x24-joy-slider'
 
 // parameters that define unique generated imageset
@@ -29,6 +29,7 @@ export type BlankParams = {
   type: ElementType
   border?: BorderVariant
   font?: FontVariant
+  color?: string
   textAlign?: TextAlign
 }
 
@@ -173,6 +174,7 @@ function _buildLabelImageset(params: ElementImagesetParams): ElementImageset {
       width, height,
       label: params.label,
       font: params.font,
+      color: params.color,
       textAlign: params.textAlign,
     })
   }
@@ -318,6 +320,7 @@ function buildSimpleButtonImage(borderSrc: ImageAssetUrl, params: LabelParams): 
     width, height,
     label: params.label,
     font: params.font,
+    color: params.color,
     textAlign: params.textAlign,
   })
 

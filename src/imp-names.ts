@@ -15,14 +15,16 @@ export type ImpManifest = {
 
 // configurables
 export const CONFIGURABLE = {
-  NAMES: ['sea-block', 'top', 'gfx', 'michael', 'physics', 'free-cam', 'flora', 'chess', 'raft'],
+  NAMES: ['sea-block', 'top', 'gfx', 'michael', 'sounds',
+    'physics', 'free-cam', 'flora', 'chess', 'raft'],
   SOURCES: ['src/configs/imp/**/*.ts'],
 } as const satisfies ImpManifest
 export type ConfigurableName = (typeof CONFIGURABLE.NAMES)[number]
 
 // games
 export const GAME = {
-  NAMES: ['splash-screen', 'start-sequence', 'free-cam',
+  NAMES: ['splash-screen', 'start-menu',
+    'start-sequence', 'free-cam',
     'sphere-test', 'tile-inspector',
     'chess', 'free-chess', 'walking-cube', 'raft',
   ],
@@ -32,7 +34,8 @@ export type GameName = (typeof GAME.NAMES)[number]
 
 // terrain generators
 export const GENERATOR = {
-  NAMES: ['Michael2-3B', 'space-quest', 'all-ocean', 'flora-test', 'flat', 'chess'],
+  NAMES: ['Michael2-3B', 'space-quest', 'all-ocean',
+    'flora-test', 'flat', 'chess'],
   SOURCES: ['src/generators/**/*.ts'],
 } as const satisfies ImpManifest
 export type GeneratorName = (typeof GENERATOR.NAMES)[number]
@@ -61,7 +64,8 @@ export type TransitionName = (typeof TRANSITION.NAMES)[number]
 // user interfaces
 export const GUI = {
   NAMES: [
-    'free-cam', 'splash-screen', 'start-sequence', 'tile-inspector',
+    'splash-screen', 'start-menu',
+    'free-cam', 'start-sequence', 'tile-inspector',
     'chess', 'raft',
     'empty', // placeholder used for games without gui
     'settings-menu', 'sprite-atlas', // test guis 2025-07-28

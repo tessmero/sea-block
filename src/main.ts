@@ -17,6 +17,7 @@ import { loadAllMeshes } from 'gfx/3d/mesh-asset-loader'
 import { initAllSoundEffects } from 'audio/sound-effects'
 import { loadAllSounds } from 'audio/sound-asset-loader'
 import { getTestSupport } from 'test-support'
+import { isDevMode } from 'configs/imp/top-config'
 
 async function main() {
   // preload all assets (except music)
@@ -53,9 +54,9 @@ async function main() {
   // TestSupport // support automated report on tessmero.github.io //
   (window as any).TestSupport = getTestSupport(seaBlock) // eslint-disable-line @typescript-eslint/no-explicit-any
 
-  // if (isDevMode) {
-  //   seaBlock.rebuildControls() // show controls gui on startup
-  // }
+  if (isDevMode) {
+    seaBlock.rebuildControls() // show controls gui on startup
+  }
 
   // Animation loop
   let lastTime = performance.now()

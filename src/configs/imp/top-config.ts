@@ -9,9 +9,9 @@ import { GAME, GENERATOR, TILING } from '../../imp-names'
 import { Configurable } from '../configurable'
 import type { ConfigTree, OptionItem } from '../config-tree'
 
-export const isDevMode = false
+export const isDevMode = true
 function applyDevMode(cfg: typeof topConfigTree.children) {
-  // cfg.game.value = 'walking-cube'
+  cfg.game.value = 'free-cam' // skip start menu
   cfg.game.isHidden = false
 
   // cfg.generator.value = 'flat'
@@ -80,7 +80,7 @@ const topConfigTree = {
     } as OptionItem<TilingName>,
 
     game: {
-      value: 'free-cam',
+      value: 'start-menu', // 'free-cam',
       options: GAME.NAMES,
       // options: ['walking-cube', 'chess', 'tile-inspector', 'free-cam', 'start-sequence'],
       // isHidden: true,
@@ -96,7 +96,7 @@ const topConfigTree = {
       value: 'none',
       options: ['none', 'sprite-atlas'],
       // isHidden: true,
-    } as OptionItem<'none' | 'settings-menu' | 'sprite-atlas'>,
+    } as OptionItem<'none' | 'sprite-atlas'>,
 
     transitionMode: {
       label: 'Transitions',

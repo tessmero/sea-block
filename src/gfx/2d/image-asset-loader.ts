@@ -8,6 +8,7 @@ import { addToSpriteAtlas } from './sprite-atlas'
 
 // find public/images -type f | sed 's|^public/images/||;s|$|\",|;s|^|\"|'
 export const IMAGE_ASSET_URLS = [
+  'sm-banner.png',
   'tile-shapes/4_0.71_0.79.png',
   'tile-shapes/8_0.77_0.39.png',
   'tile-shapes/3_1.15_3.14.png',
@@ -15,6 +16,9 @@ export const IMAGE_ASSET_URLS = [
   'tile-shapes/6_0.87_0.52.png',
   'tile-shapes/4_0.43_0.79.png',
   'borders/16x16-panel.png',
+  'borders/16x16-btn-sm-default.png',
+  'borders/16x16-btn-sm-hovered.png',
+  'borders/16x16-btn-sm-pressed.png',
   'borders/16x16-btn-square-hovered.png',
   'borders/24x24-joy-slider-default.png',
   'borders/16x16-btn-shiny-pressed.png',

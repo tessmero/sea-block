@@ -8,7 +8,7 @@ import * as defaultFont from './default-font.json'
 import * as miniFont from './mini-font.json'
 import type { PixelFontData, Glyph } from './font.json.d.ts'
 
-export type FontVariant = 'default' | 'mini'
+export type FontVariant = 'default' | 'mini' | 'mini-white'
 export type TextAlign = 'top-left' | 'center' | 'left'
 
 const basement = 2 // distance below baseline for lowercase q and g
@@ -18,6 +18,7 @@ export type DrawTextParams = {
   width: number
   height: number
   font?: FontVariant
+  color?: string
   textAlign?: TextAlign
   offset?: [number, number]
 }
@@ -26,6 +27,7 @@ export function drawText(ctx, params: DrawTextParams) {
   const {
     label, width, height,
     font = 'default',
+    color = 'black',
     textAlign = 'center',
     offset = [0, 0],
   } = params
@@ -58,7 +60,7 @@ export function drawText(ctx, params: DrawTextParams) {
   x0 += offset[0]
   y0 += offset[1]
 
-  ctx.fillStyle = 'black'// font === 'mini' ? 'gray' : 'black'
+  ctx.fillStyle = color
   for (let i = 0; i < numLines; i++) {
     const pixels = linePixels[i]
     for (const [y, row] of pixels.entries()) {

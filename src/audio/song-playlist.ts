@@ -12,25 +12,63 @@ type SongParams = {
   volume: number
 }
 
-function sng(name) {
-  return { src: `music/${name}.ogg`, volume: 0.1 }
-}
-
-const SONG_NAMES = ['debussy', 'satie', 'mozart', 'chopin', 'mendelssohn'] as const
+const SONG_NAMES = [
+  'debussy',
+  'satie',
+  'mozart',
+  'chopin',
+  'mendelssohn',
+  'retroindiejosh_mysterious-wave',
+] as const
 export type SongName = (typeof SONG_NAMES)[number]
 
-const SONGS = Object.fromEntries(
-  SONG_NAMES.map(name => [name, sng(name)]),
-) as Record<SongName, SongParams>
+const SONGS: Record<SongName, SongParams> = {
+  'debussy': {
+    src: 'music/debussy.ogg',
+    volume: 0.1,
+  },
+  'satie': {
+    src: 'music/satie.ogg',
+    volume: 0.1,
+  },
+  'mozart': {
+    src: 'music/mozart.ogg',
+    volume: 0.1,
+  },
+  'chopin': {
+    src: 'music/chopin.ogg',
+    volume: 0.1,
+  },
+  'mendelssohn': {
+    src: 'music/mendelssohn.ogg',
+    volume: 0.1,
+  },
+  'retroindiejosh_mysterious-wave': {
+    // cut first 58 seconds: ffmpeg -ss 58 -i in.ogg -c copy out.ogg
+    src: 'music/retroindiejosh_mysterious-wave.ogg',
+    volume: 1,
+  },
+}
 
 export const FREECAM_PLAYLIST = [
   'satie', 'debussy', 'mozart',
 ] as const satisfies Array<SongName>
-export const CHESS_PLAYLIST = ['chopin'] as const satisfies Array<SongName>
-export const RAFT_PLAYLIST = ['mendelssohn'] as const satisfies Array<SongName>
+
+export const CHESS_PLAYLIST = [
+  'chopin',
+] as const satisfies Array<SongName>
+
+export const RAFT_PLAYLIST = [
+  'mendelssohn',
+] as const satisfies Array<SongName>
+
+export const START_MENU_PLAYLIST = [
+  'retroindiejosh_mysterious-wave',
+] as const satisfies Array<SongName>
+
 let currentPlaylist: Array<SongName> = FREECAM_PLAYLIST
 
-let currentSong: SongParams = SONGS[0]
+let currentSong: SongParams = SONGS[SONG_NAMES[0]]
 
 let currentHowl: Howl | null = null
 let isPlaying = false
@@ -79,7 +117,6 @@ function _playNextTrack(): void {
     },
   })
 
-  // console.log('play song howl')
   currentHowl.play()
 }
 

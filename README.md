@@ -57,3 +57,11 @@ npx mocha
 [SpessaSynth](https://spessasus.github.io/SpessaSynth/) - play midi with sound font in javascript
 
 [Sketchfab](https://sketchfab.com/robie1/collections/low-poly-chess-set) - chess pieces (.obj)
+
+[Retro Indie Josh](https://retroindiejosh.itch.io/free-music-pack-1) - start menu music 
+
+<details>
+<summary>License Text</summary>
+Contains music ©2025 Retro Indie Josh (https://retroindiejosh.itch.io)
+Licensed under Creative Commons Attribution 4.0 International
+</details>

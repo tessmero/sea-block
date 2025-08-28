@@ -17,7 +17,7 @@ export const RAFT_LAYOUT_KEYS = [
   'wiresBtn',
 
   // top right quit game button
-  'quitBtn',
+  'raftSettingsBtn',
 
   // when existing piece is selected
   'pieceDialogPanel',

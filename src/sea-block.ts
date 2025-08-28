@@ -41,6 +41,7 @@ import { Chess } from 'games/chess/chess-helper'
 import { updateGamepadState } from 'gamepad-input'
 import type { KeyCode } from 'input-id'
 import { preloadGrabbedMeshDiagrams } from 'games/free-cam/freecam-grabbed-mesh-dialog'
+import { isDevMode } from 'configs/imp/top-config'
 
 // can only be constructed once
 let didConstruct = false
@@ -72,6 +73,14 @@ export class SeaBlock {
   // defined only during transition sequence
   transition?: Transition
   midTransitionCallback?: () => void
+
+  public isShowingSettingsMenu = false
+
+  public toggleSettings() {
+    this.isShowingSettingsMenu = !this.isShowingSettingsMenu
+    Gui.create('settings-menu').resetElementStates()
+    this.onResize()
+  }
 
   constructor(public readonly layeredViewport: LayeredViewport) {
     if (didConstruct) {
@@ -232,7 +241,7 @@ export class SeaBlock {
     updateFrontLayer(this)
   }
 
-  private onResize() {
+  public onResize() {
     const { layeredViewport, camera } = this
     layeredViewport.handleResize(this)
 
@@ -427,10 +436,10 @@ export class SeaBlock {
       })
       this.orbitControls.domElement = newCanvas
 
-      // // fullscreen
-      // if (!isDevMode) { // fullscreen
-      //   document.documentElement.requestFullscreen()
-      // }
+      // fullscreen
+      if (!isDevMode) { // fullscreen
+        document.documentElement.requestFullscreen()
+      }
 
       // wait two animation frames
       await new Promise<void>((resolve) => {
@@ -505,12 +514,13 @@ export class SeaBlock {
     const result = [this.game.gui]
 
     const { testGui } = this.config.flatConfig
-    if (testGui === 'settings-menu') {
-      result.unshift(Gui.create('settings-menu')) // show settings menu on top
-    }
-    else if (testGui === 'sprite-atlas') {
+    if (testGui === 'sprite-atlas') {
       return [Gui.create('sprite-atlas')] // show sprite atlas alone
       // result.unshift(Gui.create('sprite-atlas'))
+    }
+
+    if (this.isShowingSettingsMenu) {
+      result.unshift(Gui.create('settings-menu')) // show settings menu on top
     }
 
     return result

@@ -11,6 +11,7 @@ import type { ConfigTree } from '../config-tree'
 import { topConfig } from './top-config'
 import { freeCamGameConfig } from './free-cam-game-config'
 import { raftConfig } from './raft-config'
+import { soundsConfig } from './sounds-config'
 
 const seaBlockConfigTree = {
 
@@ -27,6 +28,7 @@ const seaBlockConfigTree = {
     physics: physicsConfig.tree,
     freeCamGame: freeCamGameConfig.tree,
     michael: michaelConfig.tree,
+    sounds: soundsConfig.tree,
     // chess: chessGameConfig.tree,
 
     // musicTest: { // test built song

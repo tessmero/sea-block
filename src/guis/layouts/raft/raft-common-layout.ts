@@ -22,7 +22,7 @@ export const RAFT_COMMON_LAYOUT = {
     height: 16,
   },
 
-  quitBtn: {
+  raftSettingsBtn: {
     ...btn,
     right: 0,
   },
