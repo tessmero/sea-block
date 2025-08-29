@@ -8,7 +8,7 @@ import { addToSpriteAtlas } from './sprite-atlas'
 
 // find public/images -type f | sed 's|^public/images/||;s|$|\",|;s|^|\"|'
 export const IMAGE_ASSET_URLS = [
-  'sm-banner.png',
+  'sm-banner-edge.png',
   'tile-shapes/4_0.71_0.79.png',
   'tile-shapes/8_0.77_0.39.png',
   'tile-shapes/3_1.15_3.14.png',

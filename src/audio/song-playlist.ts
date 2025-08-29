@@ -18,11 +18,11 @@ const SONG_NAMES = [
   'mozart',
   'chopin',
   'mendelssohn',
-  'retroindiejosh_mysterious-wave',
+  'retroindiejosh_mysterious-wave', // iuyt
 ] as const
 export type SongName = (typeof SONG_NAMES)[number]
 
-const SONGS: Record<SongName, SongParams> = {
+export const SONGS: Record<SongName, SongParams> = {
   'debussy': {
     src: 'music/debussy.ogg',
     volume: 0.1,
@@ -44,9 +44,9 @@ const SONGS: Record<SongName, SongParams> = {
     volume: 0.1,
   },
   'retroindiejosh_mysterious-wave': {
-    // cut first 58 seconds: ffmpeg -ss 58 -i in.ogg -c copy out.ogg
+    // cut first 58 seconds: ffmpeg -ss 58.1 -i in.ogg -c copy out.ogg
     src: 'music/retroindiejosh_mysterious-wave.ogg',
-    volume: 1,
+    volume: 0.1,
   },
 }
 
