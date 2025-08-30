@@ -30,6 +30,12 @@ export type StaticElement<TLayoutKey extends string = string> = {
   isSticky?: boolean
   isPickable?: boolean
   hotkeys?: ReadonlyArray<KeyCode | GamepadCode> // bound keyboard keys
+
+  // optional virtual layout rectangle for gamepad navigation
+  gamepadNavBox?: TLayoutKey
+
+  rectangle?: Rectangle // assigned when rendered on screen
+  gguiNavRectangle?: Rectangle // assigned when rendered on screen
 }
 
 // sliders define "slideIn" property pointing to a layout key
@@ -98,7 +104,7 @@ export class Gui<TLayoutKey extends string = string> {
   private readonly panels: Set<ElementId> = new Set() // subset that only consume events
   private readonly stuckDown: Set<ElementId> = new Set() // subset of elements
   private readonly hidden: Set<ElementId> = new Set() // subset of elements
-  private hovered?: ElementId // element hovered by mouse
+  public hovered?: ElementId // element hovered by mouse
 
   public resetElementStates() {
     resetLastDrawnStates(this)
@@ -171,7 +177,7 @@ export class Gui<TLayoutKey extends string = string> {
     //       ${JSON.stringify(this.layoutRectangles)}`)
   }
 
-  protected pickElementAtPoint(p: Vector2): ElementId | undefined {
+  protected pickElementAtPoint(...points: Array<Vector2>): ElementId | undefined {
     // console.log(`picking button at point ${p.x}, ${p.y}: ${JSON.stringify(this.pickable)}`)
     for (const id in this.pickable) {
       // console.log(`gui ${this.constructor.name} try picking ${id} at ${this.pickable[id]}}`)
@@ -189,10 +195,12 @@ export class Gui<TLayoutKey extends string = string> {
         continue // element is not visible (not in current layout)
       }
       const { x, y, w, h } = rectangle
-      if ((p.x > x) && (p.x < (x + w)) && (p.y > y) && (p.y < (y + h))) {
+      for (const p of points) {
+        if ((p.x > x) && (p.x < (x + w)) && (p.y > y) && (p.y < (y + h))) {
         // console.log(`picked element: ${id} in ${this.pickable[id]}`)
         // document.documentElement.style.cursor = 'pointer'
-        return id as ElementId
+          return id as ElementId
+        }
       }
     }
     // console.log('picked no element ')

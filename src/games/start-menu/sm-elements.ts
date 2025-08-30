@@ -52,6 +52,10 @@ export const smSettingsBtn: SmElem = {
   },
   clickAction: ({ seaBlock }) => {
     seaBlock.isShowingSettingsMenu = true
+    for (const { display } of smSequenceElems) {
+      display.isVisible = false
+      display.needsUpdate = true
+    }
     seaBlock.onResize()
   },
 }

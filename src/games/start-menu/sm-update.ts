@@ -12,6 +12,7 @@ import { ivyUpdate } from './sm-ivy/ivy-update'
 import { ivyDraw } from './sm-ivy/ivy-draw'
 import { ivySetup } from './sm-ivy/ivy-setup'
 import { wasdInputState } from 'guis/elements/wasd-buttons'
+import { smBanner } from './sm-elements'
 
 let elapsed = 0
 let currentSegment = -1
@@ -56,5 +57,13 @@ export function smUpdate(context: GameUpdateContext): void {
 
     ivyUpdate(dt)
     ivyDraw(context)
+  }
+
+  if (didStartIvy && smBanner.display.isVisible === false && !seaBlock.isShowingSettingsMenu) {
+    // just closed settings menu
+    for (const { display } of smSequence[currentSegment].elements) {
+      display.isVisible = true
+      display.needsUpdate = true
+    }
   }
 }

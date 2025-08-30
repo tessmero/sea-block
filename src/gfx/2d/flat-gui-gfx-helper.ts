@@ -52,22 +52,33 @@ export function updateFrontLayer(seaBlock: SeaBlock) {
         continue // isVisible set to false
       }
 
-      const rect = overrideLayout[layoutKey] || layout[layoutKey]
-      if (!rect) {
-        continue // not in current layout
-      }
+      // get live position of element on screen
+      let rect = overrideLayout[layoutKey] || layout[layoutKey]
 
       if (display.forcedSliderState && 'slideIn' in elem) {
         const { slideIn } = elem
         const { x, y } = display.forcedSliderState
         const { w, h } = rect // layout[layoutKey]
         const container = overrideLayout[slideIn] || layout[slideIn]
-        overrideLayout[layoutKey] = {
+        rect = {
           x: container.x + x * (container.w - w),
           y: container.y + y * (container.h - h),
           w, h,
         }
+        overrideLayout[layoutKey] = rect
         display.forcedSliderState = undefined
+      }
+
+      // assign rectangle for purposes of gamepad/keyboard navigation
+      if (elem.gamepadNavBox) {
+        elem.gguiNavRectangle = overrideLayout[elem.gamepadNavBox] || layout[elem.gamepadNavBox]
+      }
+      else {
+        elem.gguiNavRectangle = rect
+      }
+
+      if (!rect) {
+        continue // not in current layout
       }
 
       let stateToDraw = gui.getElementState(id as ElementId)
@@ -120,6 +131,8 @@ export function updateFrontLayer(seaBlock: SeaBlock) {
         else {
           // not sprite-atlas
           // console.log(`drawing element with layout key ${layoutKey} state ${stateToDraw}`)
+          display.isVisible = true
+          elem.rectangle = rect
           ctx.drawImage(
             imageset[stateToDraw] as CanvasImageSource,
             rect.x,

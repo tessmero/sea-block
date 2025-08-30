@@ -166,10 +166,7 @@ export class SeaBlock {
     } = this
 
     updateGamepadState(this)
-
-    if (this.isUsingGamepad) {
-      updateGamepadGui({ seaBlock: this, dt })
-    }
+    updateGamepadGui({ seaBlock: this, dt })
 
     this.alignGuiMeshes()
 

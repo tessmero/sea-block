@@ -12,7 +12,7 @@ import type { ConfigTree, OptionItem } from '../config-tree'
 export const isDevMode = true
 function applyDevMode(cfg: typeof topConfigTree.children) {
   cfg.game.value = 'free-cam' // skip start menu
-  cfg.game.isHidden = false // show in debug controls
+  cfg.game.isHidden = false // allow changing game in debug controls
 
   // cfg.generator.value = 'flat'
   cfg.generator.value = 'all-ocean'
