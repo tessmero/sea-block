@@ -6,7 +6,7 @@
 import { Color, Vector3 } from 'three'
 import type { SeaBlock } from 'sea-block'
 import type { Sphere } from 'core/sphere'
-import type { ProcessedSubEvent } from 'mouse-touch-input'
+import type { ProcessedSubEvent } from 'input/mouse-touch-input'
 import { Game } from '../game'
 import type { GameUpdateContext } from '../game'
 

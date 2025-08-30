@@ -6,7 +6,7 @@
 
 import type { GuiElement } from 'guis/gui'
 import type { FreecamLayoutKey } from 'guis/keys/freecam-layout-keys'
-import type { GamepadCode, KeyCode } from 'input-id'
+import type { GamepadCode, KeyCode } from 'input/input-id'
 
 type FreecamElem = GuiElement<FreecamLayoutKey>
 export const wasdInputState = {

@@ -4,7 +4,7 @@
  * Pick raft tiles on or near moving raft.
  */
 
-import type { ProcessedSubEvent } from 'mouse-touch-input'
+import type { ProcessedSubEvent } from 'input/mouse-touch-input'
 import { raft } from './raft'
 import { drivingRaftGroup } from './raft-drive-helper'
 import { type Object3D, type Raycaster } from 'three'

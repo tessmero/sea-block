@@ -11,6 +11,7 @@ import { playNextTrack, START_MENU_PLAYLIST } from 'audio/song-playlist'
 import { ivyUpdate } from './sm-ivy/ivy-update'
 import { ivyDraw } from './sm-ivy/ivy-draw'
 import { ivySetup } from './sm-ivy/ivy-setup'
+import { wasdInputState } from 'guis/elements/wasd-buttons'
 
 let elapsed = 0
 let currentSegment = -1
@@ -19,6 +20,13 @@ let didStartIvy = false
 
 export function smUpdate(context: GameUpdateContext): void {
   const { seaBlock, dt } = context
+
+  // navigate gui like gamepad if user hits arrows or wasd
+  for (const button in wasdInputState) {
+    if (wasdInputState[button]) {
+      seaBlock.isUsingGamepad = true
+    }
+  }
 
   // pick current segment
   elapsed += dt

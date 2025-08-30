@@ -4,7 +4,7 @@
  * Handlers for mouse/touch inputs on chessboard flat view / terrain tiles.
  */
 
-import { isTouchDevice, type ProcessedSubEvent } from 'mouse-touch-input'
+import { isTouchDevice, type ProcessedSubEvent } from 'input/mouse-touch-input'
 import { chessRun } from './chess-run'
 import type { Chess } from './chess-helper'
 import type { TileIndex } from 'core/grid-logic/indexed-grid'
@@ -12,7 +12,7 @@ import {
   instancedPieceMeshes, registerInstancedPiece,
   setPiecePosition, treasureChestElement,
 } from './gfx/chess-3d-gfx-helper'
-import type { InputId } from 'input-id'
+import type { InputId } from 'input/input-id'
 import { playSound } from 'audio/sound-effects'
 import { updatePawnButtonLabel } from './gfx/chess-2d-gfx-helper'
 import type { PieceName } from './chess-enums'

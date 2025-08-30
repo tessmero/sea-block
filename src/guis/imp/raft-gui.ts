@@ -17,7 +17,7 @@ import type { RaftLayoutKey } from 'guis/keys/raft-layout-keys'
 import { RAFT_DESKTOP_LAYOUT } from 'guis/layouts/raft/raft-desktop-layout'
 import { RAFT_LANDSCAPE_LAYOUT } from 'guis/layouts/raft/raft-landscape-layout'
 import { RAFT_PORTRAIT_LAYOUT } from 'guis/layouts/raft/raft-portrait-layout'
-import type { ProcessedSubEvent } from 'mouse-touch-input'
+import type { ProcessedSubEvent } from 'input/mouse-touch-input'
 
 export class RaftGui extends Gui<RaftLayoutKey> {
   static {

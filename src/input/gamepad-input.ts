@@ -9,6 +9,7 @@ import { GAMEPAD_AXES, GAMEPAD_BUTTONS, GAMEPAD_CODES, GAMEPAD_TRIGGERS } from '
 import type { GamepadCode } from './input-id'
 import { joyInputState, leftJoy, leftJoySlider, rightJoy, rightJoySlider } from 'guis/elements/joysticks'
 import type { GuiElement, Slider, SliderState } from 'guis/gui'
+import { guiNavJoystickDeadzone, navigateGuiWithGamepad } from './gamepad-gui-mapper'
 
 export const gamepadState = {} as Record<GamepadCode, boolean | number>
 for (const code of GAMEPAD_CODES) {
@@ -40,7 +41,9 @@ export function updateGamepadState(seaBlock: SeaBlock) {
       if (isPressed && !prevButtonStates[code]) {
         // Button pressed
         if (seaBlock?.game?.gui?.keydown) {
+          seaBlock.isUsingGamepad = true
           seaBlock.game.gui.keydown(seaBlock, code)
+          navigateGuiWithGamepad(seaBlock, code as GamepadCode)
         }
       }
       else if (!isPressed && prevButtonStates[code]) {
@@ -59,6 +62,10 @@ export function updateGamepadState(seaBlock: SeaBlock) {
     // Axes (analog value)
     for (const [axis, idx] of Object.entries(GAMEPAD_AXES)) {
       const value = gp.axes[idx] ?? 0
+      if (Math.abs(value) > guiNavJoystickDeadzone) {
+        seaBlock.isUsingGamepad = true
+        navigateGuiWithGamepad(seaBlock, axis as GamepadCode, value)
+      }
       gamepadState[axis] = value
     }
 

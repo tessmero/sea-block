@@ -7,7 +7,7 @@
 import type { GuiElement } from 'guis/gui'
 import { Gui } from 'guis/gui'
 import { SPLASH_SCREEN_LAYOUT } from 'guis/layouts/splash-screen-layout'
-import { GAMEPAD_CODES, KEY_CODES } from 'input-id'
+import { GAMEPAD_CODES, KEY_CODES } from 'input/input-id'
 
 const elements: Array<GuiElement> = [
   {

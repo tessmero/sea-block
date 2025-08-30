@@ -12,8 +12,8 @@ import type { ConfigButton, ConfigItem } from './configs/config-tree'
 import { TerrainGenerator } from './generators/terrain-generator'
 import type { TileGroupGfxHelper } from './gfx/3d/tile-group-gfx-helper'
 import { getStyle, STYLES } from './gfx/styles/styles-list'
-import type { ProcessedSubEvent } from './mouse-touch-input'
-import { initMouseListeners } from './mouse-touch-input'
+import type { ProcessedSubEvent } from './input/mouse-touch-input'
+import { initMouseListeners } from './input/mouse-touch-input'
 import { GRID_DETAIL, STEP_DURATION } from './settings'
 import { GAME, GUI, type GameName, type GeneratorName } from './imp-names'
 import { Game } from './games/game'
@@ -38,10 +38,11 @@ import { physicsConfig } from 'configs/imp/physics-config'
 import { freeCamGameConfig } from 'configs/imp/free-cam-game-config'
 import { preloadChessRewardHelpDiagrams } from 'games/chess/gui/chess-reward-help-elements'
 import { Chess } from 'games/chess/chess-helper'
-import { updateGamepadState } from 'gamepad-input'
-import type { KeyCode } from 'input-id'
+import { updateGamepadState } from 'input/gamepad-input'
+import type { KeyCode } from 'input/input-id'
 import { preloadGrabbedMeshDiagrams } from 'games/free-cam/freecam-grabbed-mesh-dialog'
 import { isDevMode } from 'configs/imp/top-config'
+import { updateGamepadGui } from 'input/gamepad-gui-mapper'
 
 // can only be constructed once
 let didConstruct = false
@@ -69,6 +70,9 @@ export class SeaBlock {
   camera!: THREE.PerspectiveCamera
   orbitControls!: OrbitControls
   game!: Game // current game
+
+  // set to true on any gamepad input, false on any mouse/touch
+  isUsingGamepad = false
 
   // defined only during transition sequence
   transition?: Transition
@@ -155,13 +159,18 @@ export class SeaBlock {
 
   public isCovering = false // true during first half of transition animation
 
-  async animate(dt: number) {
+  async update(dt: number) {
     const { transition,
       scene, terrain, sphereGroup, floraGroup,
       game, camera,
     } = this
 
     updateGamepadState(this)
+
+    if (this.isUsingGamepad) {
+      updateGamepadGui({ seaBlock: this, dt })
+    }
+
     this.alignGuiMeshes()
 
     if (transition) {

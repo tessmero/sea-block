@@ -8,7 +8,7 @@
 
 import type { ElementEvent, GuiElement, RegisteredGui } from '../gui'
 import { Gui } from '../gui'
-import type { ProcessedSubEvent } from 'mouse-touch-input'
+import type { ProcessedSubEvent } from 'input/mouse-touch-input'
 import type { Chess } from 'games/chess/chess-helper'
 import { getChessPhase } from 'games/chess/chess-helper'
 import { CHESS_HUD_ELEMENTS } from 'games/chess/gui/chess-hud-elements'

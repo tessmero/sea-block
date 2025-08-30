@@ -7,7 +7,7 @@ import type { SeaBlock } from 'sea-block'
 import type { TileIndex } from 'core/grid-logic/indexed-grid'
 import { ChessWaveMaker } from 'games/chess/chess-wave-maker'
 import { RaftHlTiles } from './raft-hl-tiles'
-import type { ProcessedSubEvent } from 'mouse-touch-input'
+import type { ProcessedSubEvent } from 'input/mouse-touch-input'
 import type { RenderablePiece, UniquePiece } from './gfx/raft-gfx-helper'
 import { cockpitMesh, instancedPieceMeshes,
   registerInstancedPiece, setPiecePosition,

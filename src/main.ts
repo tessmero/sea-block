@@ -67,7 +67,7 @@ async function main() {
     const dt = Math.min(50, currentTime - lastTime)
     lastTime = currentTime
 
-    await seaBlock.animate(dt) // update everything
+    await seaBlock.update(dt) // update everything
   }
   animate() // start first loop
 }

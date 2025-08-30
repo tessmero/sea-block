@@ -24,10 +24,10 @@ let zoomOrbitId: ProcessedSubEvent | undefined = undefined
 let pinchDistance: number | undefined = undefined
 
 import * as THREE from 'three'
-import type { InputId } from 'input-id'
-import { CAMERA_LOOK_AT } from './settings'
-import type { TileIndex } from './core/grid-logic/indexed-grid'
-import type { SeaBlock } from './sea-block'
+import type { InputId } from 'input/input-id'
+import { CAMERA_LOOK_AT } from '../settings'
+import type { TileIndex } from '../core/grid-logic/indexed-grid'
+import type { SeaBlock } from '../sea-block'
 import type { GameElement } from 'games/game'
 import { setMaterial } from 'gfx/3d/gui-3d-gfx-helper'
 import { pickAabbTile } from 'util/aabb-raycaster'
@@ -353,6 +353,8 @@ export function handleEvent(
       // use touch input layout and only listen for touch events from now on
       isTouchDevice = true
     }
+
+    seaBlock.isUsingGamepad = false // turn off gamepad gui mode
 
     // do event-type-specific action
     action({
