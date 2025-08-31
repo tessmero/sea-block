@@ -13,7 +13,7 @@ import type { ConfigTree, OptionItem } from '../config-tree'
 const gfxConfigTree = {
   label: 'Graphics',
   children: {
-    pixelScale: {
+    pixelScale: { // controlled by in-game settings
       value: (4 * ((typeof window !== 'undefined') ? window.devicePixelRatio : 1)),
       min: 1,
       max: 20,

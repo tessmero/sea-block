@@ -13,7 +13,7 @@ import {
   setPiecePosition, treasureChestElement,
 } from './gfx/chess-3d-gfx-helper'
 import type { InputId } from 'input/input-id'
-import { playSound } from 'audio/sound-effects'
+import { playSound } from 'audio/sound-effect-player'
 import { updatePawnButtonLabel } from './gfx/chess-2d-gfx-helper'
 import type { PieceName } from './chess-enums'
 import type { Intersection } from 'three'

@@ -12,7 +12,7 @@ export type InputId
 
 // event.code values for bindable keyboard keys
 export const KEY_CODES = [
-  'Escape', 'Space', 'KeyM',
+  'Escape', 'Backquote', 'Space', 'KeyM',
   'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
   'KeyW', 'KeyS', 'KeyA', 'KeyD',
 ] as const

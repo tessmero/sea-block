@@ -14,6 +14,7 @@ import { Game } from '../game'
 import type { GameUpdateContext } from '../game'
 import { ChessWaveMaker } from 'games/chess/chess-wave-maker'
 import { freecamPickableElements, targetElements, updateFreecamPickables } from 'games/free-cam/freecam-pickable-meshes'
+import { gamepadState } from 'input/gamepad-input'
 
 export const MOUSE_DEADZONE = 50 // (px) center of screen with zero force
 export const MOUSE_MAX_RAD = 200 // (px) radius with max force
@@ -122,10 +123,11 @@ export class FreeCamGame extends Game {
     right.crossVectors(forward, fixedUp)
 
     // 3. Build movement vector from input
-    const isUpHeld = wasdInputState['upBtn']
-    const isDownHeld = wasdInputState['downBtn']
-    const isLeftHeld = wasdInputState['leftBtn']
-    const isRightHeld = wasdInputState['rightBtn']
+    const isInSettings = seaBlock.isShowingSettingsMenu
+    const isUpHeld = wasdInputState['upBtn'] && !isInSettings
+    const isDownHeld = wasdInputState['downBtn'] && !isInSettings
+    const isLeftHeld = wasdInputState['leftBtn'] && !isInSettings
+    const isRightHeld = wasdInputState['rightBtn'] && !isInSettings
 
     // if (
     //   mouseState && !mouseState.isTouch // desktop mouse on screen
@@ -172,6 +174,8 @@ export class FreeCamGame extends Game {
     this.accelSphere(this.cameraAnchor, posDummy, dt * CAM_ACCEL * moveMagnitude)
 
     orbitWithRightJoystick(context) // gui/elements/joysticks.ts
+
+    zoomWithTriggers(context)
   }
 
   protected accelSphere(sphere: Sphere, intersection: Vector3, magnitude: number) {
@@ -204,5 +208,26 @@ export class FreeCamGame extends Game {
     controls.update()
 
     terrain.panToCenter(x, z)
+  }
+}
+
+// expose private methods of OrbitControls
+type HackedOrbitControls = {
+  _getZoomScale: (number) => number
+  _dollyIn: (number) => void
+  _dollyOut: (number) => void
+}
+
+export function zoomWithTriggers(context: GameUpdateContext) {
+  const { seaBlock, dt } = context
+  const orbitControls = seaBlock.orbitControls as unknown as HackedOrbitControls
+  const input = (gamepadState.ButtonLT as number) - (gamepadState.ButtonRT as number)
+  const delta = 1e0 * dt * input
+
+  if (delta < 0) {
+    orbitControls._dollyIn(orbitControls._getZoomScale(delta))
+  }
+  else if (delta > 0) {
+    orbitControls._dollyOut(orbitControls._getZoomScale(delta))
   }
 }

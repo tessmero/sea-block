@@ -7,7 +7,7 @@
 import { Howler } from 'howler'
 import type { GameUpdateContext } from 'games/game'
 import { pickSegment, smSequence, toggleElements } from './sm-sequence'
-import { playNextTrack, START_MENU_PLAYLIST } from 'audio/song-playlist'
+import { playNextTrack, START_MENU_PLAYLIST } from 'audio/song-player'
 import { ivyUpdate } from './sm-ivy/ivy-update'
 import { ivyDraw } from './sm-ivy/ivy-draw'
 import { ivySetup } from './sm-ivy/ivy-setup'

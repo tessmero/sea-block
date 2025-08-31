@@ -10,7 +10,7 @@ import { SeamlessTransition } from 'gfx/transitions/imp/seamless-transition'
 import { getChessCamOffset } from 'games/chess/gfx/chess-3d-gfx-helper'
 import { ChessScenery } from 'games/chess/levels/chess-scenery'
 import { Transition } from 'gfx/transitions/transition'
-import { CHESS_PLAYLIST, playNextTrack, RAFT_PLAYLIST } from 'audio/song-playlist'
+import { CHESS_PLAYLIST, playNextTrack, RAFT_PLAYLIST } from 'audio/song-player'
 
 export const allPickableParams: Record<PickableName, PickableParams> = {
 

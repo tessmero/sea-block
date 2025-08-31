@@ -11,7 +11,7 @@ import { getImage } from 'gfx/2d/image-asset-loader'
 import { buildGoalDiagram } from '../gfx/chess-2d-gfx-helper'
 import { togglePauseMenu } from './chess-hud-dialog-elements'
 import type { ChessButton } from './chess-button'
-import { playSound } from 'audio/sound-effects'
+import { playSound } from 'audio/sound-effect-player'
 import { quitChess } from '../chess-helper'
 import type { ChessLayoutKey } from 'guis/keys/chess-layout-keys'
 

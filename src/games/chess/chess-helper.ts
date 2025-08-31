@@ -17,7 +17,7 @@ import { ChessMoveAnim } from './chess-move-anim'
 import type { ChessGui } from 'guis/imp/chess-gui'
 import { PIECE_NAMES, type ChessPhase, type PieceName } from './chess-enums'
 import { currentLevelId, loadChessLevel } from './levels/chess-level-parser'
-import { playSound } from 'audio/sound-effects'
+import { playSound } from 'audio/sound-effect-player'
 import {
   buildGoalDiagram, flatChessBackground,
   updateFlatView, updatePawnButtonLabel,
@@ -34,7 +34,7 @@ import { cancelPawnBtn, flatViewport, goalDisplays, pawnBtn, showCurrentPiece } 
 import { toggleGameOverMenu, togglePauseMenu } from './gui/chess-hud-dialog-elements'
 import { showPhaseLabel } from './gui/chess-debug-elements'
 import { updateChessPhase } from './chess-update-helper'
-import { FREECAM_PLAYLIST, playNextTrack } from 'audio/song-playlist'
+import { FREECAM_PLAYLIST, playNextTrack } from 'audio/song-player'
 import {
   flatViewPortClick, flatViewPortUnclick,
   resetHeldChessInputs, updateHeldChessInputs,

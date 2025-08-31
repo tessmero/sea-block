@@ -11,6 +11,18 @@ const ruleTester = new RuleTester()
 
 ruleTester.run('valid-key-type', rule, {
   valid: [
+
+    {
+      // Valid: correct array and type with -Url suffix
+      code: `
+        export const MESH_ASSET_URLS = [
+          'raft/thruster.obj',
+          'chess/rook.obj',
+        ] as const
+        export type MeshAssetUrl = (typeof MESH_ASSET_URLS)[number]
+      `,
+      filename: 'mesh-asset-urls.ts',
+    },
     {
       // Valid: correct array and type
       code: `

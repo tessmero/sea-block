@@ -38,11 +38,12 @@ import { physicsConfig } from 'configs/imp/physics-config'
 import { freeCamGameConfig } from 'configs/imp/free-cam-game-config'
 import { preloadChessRewardHelpDiagrams } from 'games/chess/gui/chess-reward-help-elements'
 import { Chess } from 'games/chess/chess-helper'
-import { updateGamepadState } from 'input/gamepad-input'
+import { pollGamepadInput } from 'input/gamepad-input'
 import type { KeyCode } from 'input/input-id'
 import { preloadGrabbedMeshDiagrams } from 'games/free-cam/freecam-grabbed-mesh-dialog'
 import { isDevMode } from 'configs/imp/top-config'
 import { updateGamepadGui } from 'input/gamepad-gui-mapper'
+import { playSound } from 'audio/sound-effect-player'
 
 // can only be constructed once
 let didConstruct = false
@@ -82,6 +83,12 @@ export class SeaBlock {
 
   public toggleSettings() {
     this.isShowingSettingsMenu = !this.isShowingSettingsMenu
+    if (this.isShowingSettingsMenu) {
+      playSound('settingsOpen')
+    }
+    else {
+      playSound('settingsClose')
+    }
     Gui.create('settings-menu').resetElementStates()
     this.onResize()
   }
@@ -165,7 +172,7 @@ export class SeaBlock {
       game, camera,
     } = this
 
-    updateGamepadState(this)
+    pollGamepadInput(this)
     updateGamepadGui({ seaBlock: this, dt })
 
     this.alignGuiMeshes()

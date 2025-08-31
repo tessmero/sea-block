@@ -10,6 +10,13 @@ import { standards } from './layout-helper'
 const { btn } = standards
 
 const rowThickness = 12
+const rowWidth = 76 // width with margin inside of panel
+
+const row = {
+  height: rowThickness,
+  width: rowWidth,
+  left: 'auto',
+} as const
 
 export const SETTINGS_LAYOUT = {
 
@@ -23,75 +30,58 @@ export const SETTINGS_LAYOUT = {
   settingsTitleBar: {
     parent: 'settingsPanel',
     top: 0,
-    left: 0,
-    width: '100%',
     height: rowThickness,
-  },
-
-  musicVolumeLabel: {
-    parent: 'settingsPanel',
-    top: rowThickness * 1,
-    left: 0,
-    width: '100%',
-    height: rowThickness,
-  },
-  musicVolumeRegion: {
-    parent: 'settingsPanel',
-    top: rowThickness * 2,
-    left: 0,
-    width: '100%',
-    height: rowThickness,
-  },
-  musicVolumeSlider: {
-    parent: 'musicVolumeRegion',
-    width: 10,
-    left: 'auto',
-  },
-
-  sfxVolumeLabel: {
-    parent: 'settingsPanel',
-    top: rowThickness * 3,
-    left: 0,
-    width: '100%',
-    height: rowThickness,
-  },
-  sfxVolumeRegion: {
-    parent: 'settingsPanel',
-    top: rowThickness * 4,
-    left: 0,
-    width: '100%',
-    height: rowThickness,
-  },
-  sfxVolumeSlider: {
-    parent: 'sfxVolumeRegion',
-    width: 10,
-    left: 'auto',
-  },
-
-  pixelScaleLabel: {
-    parent: 'settingsPanel',
-    top: rowThickness * 5,
-    left: 0,
-    width: '100%',
-    height: rowThickness,
-  },
-  pixelScaleRegion: {
-    parent: 'settingsPanel',
-    top: rowThickness * 6,
-    left: 0,
-    width: '100%',
-    height: rowThickness,
-  },
-  pixelScaleSlider: {
-    parent: 'pixelScaleRegion',
-    width: 10,
-    left: 'auto',
   },
 
   settingsCloseBtn: {
     parent: 'settingsPanel',
     ...btn,
     right: 0,
+  },
+
+  musicVolumeLabel: {
+    parent: 'settingsPanel',
+    top: rowThickness * 1,
+    ...row,
+  },
+  musicVolumeRegion: {
+    parent: 'settingsPanel',
+    top: rowThickness * 2,
+    ...row,
+  },
+  musicVolumeSlider: {
+    parent: 'musicVolumeRegion',
+    width: 10,
+  },
+
+  sfxVolumeLabel: {
+    parent: 'settingsPanel',
+    top: rowThickness * 3,
+    ...row,
+  },
+  sfxVolumeRegion: {
+    parent: 'settingsPanel',
+    top: rowThickness * 4,
+    ...row,
+  },
+  sfxVolumeSlider: {
+    parent: 'sfxVolumeRegion',
+    width: 10,
+  },
+
+  pixelScaleLabel: {
+    parent: 'settingsPanel',
+    top: rowThickness * 5,
+    ...row,
+  },
+  pixelScaleRegion: {
+    parent: 'settingsPanel',
+    top: rowThickness * 6,
+    ...row,
+  },
+  pixelScaleSlider: {
+    parent: 'pixelScaleRegion',
+    width: 10,
   },
 
 } as const satisfies CssLayout<SettingsLayoutKey>

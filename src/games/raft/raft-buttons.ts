@@ -10,7 +10,7 @@ import { Color, type Vector3 } from 'three'
 import type { AutoThruster } from './raft-auto-thrusters'
 import { raft } from './raft'
 import { instancedPieceMeshes } from './gfx/raft-gfx-helper'
-import { playSound } from 'audio/sound-effects'
+import { playSound } from 'audio/sound-effect-player'
 import { updateRaftThrusterFlames } from './gfx/raft-thruster-flames'
 
 const pressedColor = new Color('#ffffff')

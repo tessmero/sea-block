@@ -218,7 +218,13 @@ export default tseslint.config(
 
   // require valid key enumeration files
   {
-    files: ['src/guis/keys/**/*.ts'],
+    files: [
+      'src/guis/keys/**/*.ts', // gui layout keys
+      'src/gfx/2d/image-asset-urls.ts', // 2d assets
+      'src/gfx/3d/mesh-asset-urls.ts', // 3d assets
+      'src/audio/sound-asset-urls.ts', // sound assets
+      'src/audio/sound-effect=names.ts', // sound keys
+    ],
     plugins: { '@typescript-eslint': tseslint.plugin },
     languageOptions: {
       parserOptions: {
@@ -227,7 +233,7 @@ export default tseslint.config(
       },
     },
     rules: {
-      'sb/valid-key-type': 'error',
+      'sb/valid-key-type': ['error', { allowedSuffixes: ['-keys.ts', '-urls.ts'] }],
     },
   },
 

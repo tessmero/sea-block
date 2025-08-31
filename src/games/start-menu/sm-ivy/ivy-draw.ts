@@ -12,11 +12,10 @@ let t = 0
 const noise2D = createNoise2D()
 
 // Precompute 100 random-hue, high-lightness colors using three.js
-const vineBaseHue = Math.random()
-const vineHueRad = 0.3
 const color = new Color()
-const vineColors: Array<string> = Array.from({ length: 100 }, () => {
-  const hue = vineBaseHue + (Math.random() * 2 - 1) * vineHueRad
+const nColors = 100
+const vineColors: Array<string> = Array.from({ length: 100 }, (_v, i) => {
+  const hue = i / nColors
   const saturation = 0.5
   const lightness = 0.3
   color.setHSL(hue, saturation, lightness)
@@ -28,7 +27,8 @@ export function ivyDraw({ seaBlock: _seaBlock, dt }: GameUpdateContext) {
   // draw new vines on buffer
   const ctx = smIvy.ctx
   // Pick a random color for this draw call
-  const randomColor = vineColors[Math.floor(Math.random() * vineColors.length)]
+  const hue = smIvy.hue + (Math.random() - 0.5) * smIvy.hueVariance
+  const randomColor = vineColors[Math.floor(hue * vineColors.length)]
   ctx.strokeStyle = randomColor
   ctx.fillStyle = randomColor
   ctx.lineWidth = smIvyConstants.vineThickness

@@ -98,6 +98,7 @@ export function setRaftToolbarPressed(pressedBtn?: ButtonName) {
 
 export const raftSettingsBtn: RaftElem = {
   layoutKey: 'raftSettingsBtn',
+  hotkeys: ['Escape', 'ButtonStart'],
   display: {
     type: 'button',
     icon: 'icons/16x16-config.png',

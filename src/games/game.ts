@@ -66,6 +66,10 @@ export abstract class Game {
     return true
   }
 
+  public doesAllowGgui(): boolean {
+    return false
+  }
+
   public doesAllow3DRender(): boolean {
     return true
   }

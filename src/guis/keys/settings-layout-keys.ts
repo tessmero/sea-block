@@ -6,8 +6,12 @@
 
 export const SETTINGS_LAYOUT_KEYS = [
   'settingsPanel',
-  'settingsTitleBar',
 
+  // top row
+  'settingsTitleBar',
+  'settingsCloseBtn',
+
+  // slider to adjust music volume
   'musicVolumeLabel',
   'musicVolumeRegion',
   'musicVolumeSlider',
@@ -20,6 +24,5 @@ export const SETTINGS_LAYOUT_KEYS = [
   'pixelScaleRegion',
   'pixelScaleSlider',
 
-  'settingsCloseBtn',
 ] as const
 export type SettingsLayoutKey = (typeof SETTINGS_LAYOUT_KEYS)[number]

@@ -9,6 +9,15 @@ import { FreeCamGame } from './free-cam-game'
 import { drivingRaftElement,
   raftRig, resetRaftDrive, updateRaftDrive } from 'games/raft/raft-drive-helper'
 import type { SeaBlock } from 'sea-block'
+import { Vector3 } from 'three'
+
+// camera relative to player x/z position
+const _camScale = 5
+const _camera: Vector3 = new Vector3(
+  _camScale, _camScale, _camScale)
+const _portraitCamScale = 10
+const _portraitCamera: Vector3 = new Vector3(
+  _portraitCamScale, _portraitCamScale, _portraitCamScale)
 
 export class RaftGame extends FreeCamGame {
   static {
@@ -19,6 +28,11 @@ export class RaftGame extends FreeCamGame {
         drivingRaftElement,
       ],
     })
+  }
+
+  public getCamOffset(context: SeaBlock): Vector3 {
+    const { w, h } = context.layeredViewport
+    return h > w ? _portraitCamera : _camera
   }
 
   public reset(context: SeaBlock): void {

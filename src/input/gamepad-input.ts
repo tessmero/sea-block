@@ -25,7 +25,7 @@ const prevButtonStates: Record<GamepadCode, boolean> = (() => {
   return obj
 })()
 
-export function updateGamepadState(seaBlock: SeaBlock) {
+export function pollGamepadInput(seaBlock: SeaBlock) {
   // console.log(`start polling gamepad`)
   // const startTime = performance.now()
 
@@ -40,16 +40,17 @@ export function updateGamepadState(seaBlock: SeaBlock) {
       // Edge detection for keydown/keyup
       if (isPressed && !prevButtonStates[code]) {
         // Button pressed
-        if (seaBlock?.game?.gui?.keydown) {
-          seaBlock.isUsingGamepad = true
-          seaBlock.game.gui.keydown(seaBlock, code)
-          navigateGuiWithGamepad(seaBlock, code as GamepadCode)
+        seaBlock.isUsingGamepad = true
+        for (const gui of seaBlock.getLayeredGuis()) {
+          gui.keydown(seaBlock, code)
         }
+        navigateGuiWithGamepad(seaBlock, code as GamepadCode)
       }
       else if (!isPressed && prevButtonStates[code]) {
         // Button released
-        if (seaBlock?.game?.gui?.keyup) {
-          seaBlock.game.gui.keyup(seaBlock, code)
+        seaBlock.isUsingGamepad = true
+        for (const gui of seaBlock.getLayeredGuis()) {
+          gui.keyup(seaBlock, code)
         }
       }
       prevButtonStates[code] = isPressed

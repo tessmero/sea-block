@@ -29,9 +29,21 @@ export default ESLintUtils.RuleCreator.withoutDocs({
        ending with _KEYS, and a type named PascalCase ending with Key.`,
     },
     fixable: undefined,
-    schema: [],
+    schema: [
+      {
+        type: 'object',
+        properties: {
+          allowedSuffixes: {
+            type: 'array',
+            items: { type: 'string' },
+            default: ['-keys.ts', '-urls.ts'],
+          },
+        },
+        additionalProperties: false,
+      },
+    ],
     messages: {
-      keysFilename: 'Filename for key type must end with -keys.ts',
+      keysFilename: 'Filename for key type must end with one of: {{suffixes}}',
       exportConstArray: 'Must export an array like "export const {{expected}} = [...] as const"',
       exportType: 'Must export a type referencing the array, e.g. (typeof ARRAY_NAME)[number].',
       arrayNameMatchesType: 'Type name must match PascalCase version of array name: {{expected}}',
@@ -39,8 +51,10 @@ export default ESLintUtils.RuleCreator.withoutDocs({
       nonNumeric: 'Array must contain non-numeric values',
     },
   },
-  defaultOptions: [],
+  defaultOptions: [{ allowedSuffixes: ['-keys.ts', '-urls.ts'] }],
   create(context) {
+    const options = context.options[0] || {}
+    const allowedSuffixes: Array<string> = options.allowedSuffixes || ['-keys.ts', '-urls.ts']
     let exportedArrayDecl: TSESTree.ExportNamedDeclaration | undefined
     let exportedTypeDecl: TSESTree.ExportNamedDeclaration | undefined
 
@@ -48,8 +62,13 @@ export default ESLintUtils.RuleCreator.withoutDocs({
       Program(node) {
         // Check filename first
         const filename = context.getFilename()
-        if (!filename.endsWith('-keys.ts')) {
-          context.report({ node, messageId: 'keysFilename' })
+        const matchesSuffix = allowedSuffixes.some(suffix => filename.endsWith(suffix))
+        if (!matchesSuffix) {
+          context.report({
+            node,
+            messageId: 'keysFilename',
+            data: { suffixes: allowedSuffixes.join(', ') },
+          })
           return
         }
 
@@ -67,7 +86,7 @@ export default ESLintUtils.RuleCreator.withoutDocs({
           const firstDecl = decl.declarations[0]
           return (
             firstDecl.id.type === 'Identifier'
-            && /^[A-Z0-9_]+_KEYS$/.test(firstDecl.id.name)
+            // && /^[A-Z0-9_]$/.test(firstDecl.id.name)
           )
         })
         if (
@@ -76,7 +95,17 @@ export default ESLintUtils.RuleCreator.withoutDocs({
           || exportedArrayDecl.declaration.type !== 'VariableDeclaration'
         ) {
           // Suggest expected array name from filename
-          const base = filename.replace(/.*\/(.+)-keys\.ts$/, '$1').toUpperCase().replace(/-/g, '_') + '_KEYS'
+          const base = (() => {
+            for (const suffix of allowedSuffixes) {
+              if (filename.endsWith(suffix)) {
+                return filename
+                  .replace(new RegExp(`.*/(.+)\\.ts$`), '$1')
+                  .toUpperCase()
+                  .replace(/-/g, '_')
+              }
+            }
+            return 'ARRAY_KEYS'
+          })()
           context.report({ node, messageId: 'exportConstArray', data: { expected: base } })
           return
         }
@@ -138,7 +167,7 @@ export default ESLintUtils.RuleCreator.withoutDocs({
           const decl = exp.declaration as TSESTree.TSTypeAliasDeclaration
           return (
             decl.id.type === 'Identifier'
-            && /Key$/.test(decl.id.name)
+            // && /Key$/.test(decl.id.name)
           )
         })
         if (
@@ -161,7 +190,17 @@ export default ESLintUtils.RuleCreator.withoutDocs({
           const typeArrayName = typeDecl.typeAnnotation.objectType.exprName.name
           if (arrayName !== typeArrayName) {
             // Report exportConstArray with expected name if array name does not match filename
-            const base = filename.replace(/.*\/(.+)-keys\.ts$/, '$1').toUpperCase().replace(/-/g, '_') + '_KEYS'
+            const base = (() => {
+              for (const suffix of allowedSuffixes) {
+                if (filename.endsWith(suffix)) {
+                  return filename
+                    .replace(new RegExp(`.*/(.+)${suffix.replace('.', '\\.')}$`), '$1')
+                    .toUpperCase()
+                    .replace(/-/g, '_') + '_KEYS'
+                }
+              }
+              return 'ARRAY_KEYS'
+            })()
             context.report({ node: arrayDeclarator, messageId: 'exportConstArray', data: { expected: base } })
           }
         }
@@ -172,9 +211,8 @@ export default ESLintUtils.RuleCreator.withoutDocs({
         // Check type name matches PascalCase version of array name
         const arrayName = arrayDeclarator.id.type === 'Identifier' ? arrayDeclarator.id.name : ''
         const expectedTypeName = arrayName
-          .replace(/_KEYS$/, '')
           .toLowerCase()
-          .replace(/(^|_)([a-z])/g, (_, __, l) => l.toUpperCase()) + 'Key'
+          .replace(/(^|_)([a-z])/g, (_, __, l) => l.toUpperCase()).slice(0, -1)
         if (typeDecl.id.name !== expectedTypeName) {
           context.report({ node: typeDecl, messageId: 'arrayNameMatchesType', data: { expected: expectedTypeName } })
         }

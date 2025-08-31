@@ -5,11 +5,10 @@
  * Clicking them opens a prompt to start a game.
  */
 
-import { playSound } from 'audio/sound-effects'
+import { playSound } from 'audio/sound-effect-player'
 import { getOutlinedMesh } from 'games/chess/gfx/chess-outline-gfx'
 import type { GameElement } from 'games/game'
 import { setMaterial } from 'gfx/3d/gui-3d-gfx-helper'
-import type { MeshAssetUrl } from 'gfx/3d/mesh-asset-loader'
 import { getMesh } from 'gfx/3d/mesh-asset-loader'
 import type { ElementEvent } from 'guis/gui'
 import type { SeaBlock } from 'sea-block'
@@ -18,6 +17,7 @@ import { BoxGeometry, Color, Mesh, MeshBasicMaterial, Quaternion, Vector3 } from
 import { grabbedMeshElements, updateGrabbedMeshDiagram } from './freecam-grabbed-mesh-dialog'
 import type { ImageAssetUrl } from 'gfx/2d/image-asset-loader'
 import { allPickableParams } from './freecam-pickables'
+import type { MeshAssetUrl } from 'gfx/3d/mesh-asset-urls'
 
 export const PICKABLE_NAMES = ['rook', 'thruster'] as const
 export type PickableName = (typeof PICKABLE_NAMES)[number]

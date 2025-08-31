@@ -7,19 +7,21 @@
 import type { GameName, GeneratorName, TilingName } from '../../imp-names'
 import { GAME, GENERATOR, TILING } from '../../imp-names'
 import { Configurable } from '../configurable'
-import type { ConfigTree, OptionItem } from '../config-tree'
+import type { ConfigButton, ConfigTree, OptionItem } from '../config-tree'
+import { saveSnapshot } from 'util/config-snapshot-helper'
+import { renderSoundBalanceConfig } from 'configs/sounds/enabled-sounds'
 
 export const isDevMode = true
 function applyDevMode(cfg: typeof topConfigTree.children) {
   cfg.game.value = 'free-cam' // skip start menu
   cfg.game.isHidden = false // allow changing game in debug controls
 
-  // cfg.generator.value = 'flat'
-  cfg.generator.value = 'all-ocean'
-  cfg.tiling.value = 'square'
-  cfg.freeCamLayout.value = 'landscape'
+  // cfg.transitionMode.value = 'skip'
 
-  cfg.transitionMode.value = 'skip'
+  // // cfg.generator.value = 'flat'
+  // cfg.generator.value = 'all-ocean'
+  // cfg.tiling.value = 'square'
+  cfg.freeCamLayout.value = 'landscape'
 
   // cfg.testGui.value = 'sprite-atlas'
   // cfg.testGui.isHidden = false
@@ -53,19 +55,24 @@ const topConfigTree = {
     //   },
     // },
 
-    // snapshot: {
-    //   action: (seaBlock) => {
-    //     if (original) {
-    //       console.log('snapshot compare')
-    //       current = saveSnapshot(seaBlock)
-    //       debugSnapshotDelta(original, current)
-    //     }
-    //     else {
-    //       console.log('snapshot original')
-    //       original = saveSnapshot(seaBlock)
-    //     }
-    //   },
-    // } as ConfigButton,
+    snapshot: {
+      action: (seaBlock) => {
+        const snapshot = saveSnapshot(seaBlock)
+
+        // render volume values to paste into enabled-sounds.ts
+        renderSoundBalanceConfig(snapshot)
+
+        // if (original) {
+        //   console.log('snapshot compare')
+        //   current = saveSnapshot(seaBlock)
+        //   diffSnapshots(original, current)
+        // }
+        // else {
+        //   console.log('snapshot original')
+        //   original = saveSnapshot(seaBlock)
+        // }
+      },
+    } as ConfigButton,
 
     generator: {
       value: 'Michael2-3B', // randChoice(Object.keys(allGenerators)),

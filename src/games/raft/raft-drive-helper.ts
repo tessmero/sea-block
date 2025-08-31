@@ -24,6 +24,7 @@ import { clickablesMesh } from './gfx/raft-clickable-highlight'
 import { wiresMesh } from './gfx/raft-wires-overlay'
 import { selectedCursorMesh } from './gfx/raft-clicked-tile-highlight'
 import { flamesMesh } from './gfx/raft-thruster-flames'
+import { zoomWithTriggers } from 'games/imp/free-cam-game'
 
 const wc = new WalkingCube(1)
 wc.controlMode = 'raft'
@@ -124,6 +125,7 @@ export function updateRaftDrive(context: GameUpdateContext) {
     moveVec.addScaledVector(forward, -2 * y)
   }
   orbitWithRightJoystick(context) // gui/elements/joysticks.ts
+  zoomWithTriggers(context)
 
   // update buttons on surface of raft based on walking-cube torso position
   updateRaftButtons(wc.torsoPos)

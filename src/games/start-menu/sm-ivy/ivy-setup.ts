@@ -56,6 +56,7 @@ export function fitToContainer(forceReset = false) {
 
 function reset() {
   smIvy.resetCountdown = smIvy.resetDelay
+  smIvy.hue = Math.random()
   doRandomPattern()
 
   // // draw scaffolds

@@ -11,13 +11,13 @@ const { btn, pad, point } = standards
 export const COMMON_LAYOUT = {
 
   // config on top left
-  configBtn: { ...btn,
+  debugBtn: { ...btn,
     top: pad,
     left: pad,
   },
 
   // play/stop on top right
-  musicBtn: { ...btn,
+  settingsBtn: { ...btn,
     top: pad,
     right: pad,
   },

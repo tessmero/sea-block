@@ -8,7 +8,7 @@
  */
 
 import type { SeaBlock } from 'sea-block'
-import { playSound } from 'audio/sound-effects'
+import { playSound } from 'audio/sound-effect-player'
 import type { ButtonState, ElementId, Gui, GuiElement } from 'guis/gui'
 import type { SpriteAtlasGui } from 'guis/imp/sprite-atlas-gui'
 import { getElementImageset } from './element-imageset-builder'
@@ -55,7 +55,7 @@ export function updateFrontLayer(seaBlock: SeaBlock) {
       // get live position of element on screen
       let rect = overrideLayout[layoutKey] || layout[layoutKey]
 
-      if (display.forcedSliderState && 'slideIn' in elem) {
+      if (rect && display.forcedSliderState && 'slideIn' in elem) {
         const { slideIn } = elem
         const { x, y } = display.forcedSliderState
         const { w, h } = rect // layout[layoutKey]

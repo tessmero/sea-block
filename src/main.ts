@@ -14,7 +14,7 @@ import { gfxConfig } from './configs/imp/gfx-config'
 import { LayeredViewport } from './gfx/layered-viewport'
 import { SeaBlock } from './sea-block'
 import { loadAllMeshes } from 'gfx/3d/mesh-asset-loader'
-import { initAllSoundEffects } from 'audio/sound-effects'
+import { initAllSoundEffects } from 'audio/sound-effect-player'
 import { loadAllSounds } from 'audio/sound-asset-loader'
 import { getTestSupport } from 'test-support'
 

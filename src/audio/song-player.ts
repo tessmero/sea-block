@@ -1,10 +1,11 @@
 /**
- * @file song-playlist.ts
+ * @file song-player.ts
  *
  * List of songs and helper function to play songs.
  * Songs are streamed only when necessary, unlike sound
  * effects which are loaded on startup.
  */
+import { audioConfig } from 'configs/imp/audio-config'
 import { Howl } from 'howler'
 
 type SongParams = {
@@ -46,7 +47,7 @@ export const SONGS: Record<SongName, SongParams> = {
   'retroindiejosh_mysterious-wave': {
     // cut first 58 seconds: ffmpeg -ss 58.1 -i in.ogg -c copy out.ogg
     src: 'music/retroindiejosh_mysterious-wave.ogg',
-    volume: 0.1,
+    volume: 0.2,
   },
 }
 
@@ -97,8 +98,9 @@ function _playNextTrack(): void {
 
   // const i = Math.floor(Math.random() * SONG.NAMES.length)
   const i = (lastPlayedIndex + 1) % currentPlaylist.length
-  currentSong = SONGS[currentPlaylist[i]]
-  const { src, volume } = currentSong
+  const key = currentPlaylist[i]
+  currentSong = SONGS[key]
+  const { src } = currentSong
   lastPlayedIndex = i
 
   if (currentHowl) {
@@ -109,7 +111,7 @@ function _playNextTrack(): void {
   currentHowl = new Howl({
     src: [src],
     format: ['ogg'],
-    volume,
+    volume: _getSongVolume(currentSong),
     html5: true, // Recommended for streaming-like behavior
     onend: () => {
       // console.log('Track ended, playing next…')
@@ -134,4 +136,16 @@ export function toggleRadio(): void {
       currentHowl = null
     }
   }
+}
+
+export function updateAllSongVolumes() {
+  if (currentHowl) {
+    // update volume of ongoing song
+    currentHowl.volume(_getSongVolume(currentSong))
+  }
+}
+
+function _getSongVolume(song: SongParams) {
+  return song.volume // volume for specific song
+    * audioConfig.tree.children.musicVolume.value // global music volume slider
 }

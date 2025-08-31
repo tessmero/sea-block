@@ -1,7 +1,7 @@
 /**
  * @file sea-block-config.ts
  *
- * Combined config tree displayed in user interface.
+ * Combined config tree displayed as debugging user interface.
  */
 import { Configurable } from '../configurable'
 import { gfxConfig } from './gfx-config'
@@ -10,8 +10,7 @@ import { michaelConfig } from './michael-config'
 import type { ConfigTree } from '../config-tree'
 import { topConfig } from './top-config'
 import { freeCamGameConfig } from './free-cam-game-config'
-import { raftConfig } from './raft-config'
-import { soundsConfig } from './sounds-config'
+import { audioConfig } from './audio-config'
 
 const seaBlockConfigTree = {
 
@@ -23,19 +22,13 @@ const seaBlockConfigTree = {
     },
 
     ...topConfig.tree.children, // unpack children at top level
-    ...raftConfig.tree.children,
+    // ...raftConfig.tree.children,
     gfx: gfxConfig.tree,
     physics: physicsConfig.tree,
     freeCamGame: freeCamGameConfig.tree,
     michael: michaelConfig.tree,
-    sounds: soundsConfig.tree,
+    sounds: audioConfig.tree,
     // chess: chessGameConfig.tree,
-
-    // musicTest: { // test built song
-    //   label: 'Play/Stop Music',
-    //   action: () => { toggleRadio () },
-    //   hasNoEffect: true, // clicking button doesn't effect seablock
-    // },
   },
 } satisfies ConfigTree
 

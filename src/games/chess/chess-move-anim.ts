@@ -4,7 +4,7 @@
  * Animation of a chess piece moving between two tiles.
  */
 
-import { playSound } from 'audio/sound-effects'
+import { playSound } from 'audio/sound-effect-player'
 import type { TileIndex } from 'core/grid-logic/indexed-grid'
 import { Vector3 } from 'three'
 

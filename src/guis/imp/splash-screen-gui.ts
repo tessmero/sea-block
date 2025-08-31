@@ -16,7 +16,11 @@ const elements: Array<GuiElement> = [
     hotkeys: [...KEY_CODES, ...GAMEPAD_CODES], // any bind-able button
     isSticky: true,
     clickAction: ({ seaBlock }) => {
-      seaBlock.startTransition()
+      // const transition = Transition.create('zoom', seaBlock)
+      // transition.skipShow = true
+      seaBlock.startTransition({
+        // transition
+      })
     },
   },
 ]

@@ -23,6 +23,12 @@ export class StartMenuGame extends Game {
     })
   }
 
+  // use gamepad to navigate gui
+  public doesAllowGgui(): boolean {
+    return true
+  }
+
+  // do not render 3d world
   public doesAllow3DRender(): boolean {
     return false
   }

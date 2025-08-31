@@ -5,9 +5,9 @@
  */
 
 import type { GuiElement } from 'guis/gui'
-import { smBanner, smSettingsBtn, smStartBtn, smStory, smWarning } from './sm-elements'
+import { smBanner, smSettingsBtn, smStartBtn, smWarning } from './sm-elements'
 import type { SmLayoutKey } from 'guis/keys/sm-layout-keys'
-import { isDevMode } from 'configs/imp/top-config'
+import { isDevMode, topConfig } from 'configs/imp/top-config'
 
 type SmElem = GuiElement<SmLayoutKey>
 
@@ -29,11 +29,11 @@ export const smSequence: Array<Segment> = [
     duration: 2000,
     elements: [smWarning],
   },
-  {
-    // story
-    duration: 2000,
-    elements: [smStory],
-  },
+  // {
+  //   // story
+  //   duration: 2000,
+  //   elements: [smStory],
+  // },
   {
     // start music
     duration: 1000,
@@ -53,7 +53,7 @@ export const smSequence: Array<Segment> = [
   },
 ]
 
-if (isDevMode) {
+if (isDevMode && topConfig.flatConfig.transitionMode === 'skip') {
   for (const seg of smSequence) {
     seg.duration /= 1000
   }

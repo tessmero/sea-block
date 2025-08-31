@@ -36,8 +36,24 @@ function wasdButton(
 }
 
 export const wasdButtons: ReadonlyArray<FreecamElem> = [
-  wasdButton('upBtn', 'up', ['KeyW', 'ArrowUp', 'DPadUp']),
-  wasdButton('downBtn', 'down', ['KeyS', 'ArrowDown', 'DPadDown']),
-  wasdButton('leftBtn', 'left', ['KeyA', 'ArrowLeft', 'DPadLeft']),
-  wasdButton('rightBtn', 'right', ['KeyD', 'ArrowRight', 'DPadRight']),
+  wasdButton('upBtn', 'up', [
+    'KeyW',
+    'ArrowUp',
+    'DPadUp',
+  ]),
+  wasdButton('downBtn', 'down', [
+    'KeyS',
+    'ArrowDown',
+    'DPadDown',
+  ]),
+  wasdButton('leftBtn', 'left', [
+    'KeyA',
+    'ArrowLeft',
+    'DPadLeft',
+  ]),
+  wasdButton('rightBtn', 'right', [
+    'KeyD',
+    'ArrowRight',
+    'DPadRight',
+  ]),
 ]

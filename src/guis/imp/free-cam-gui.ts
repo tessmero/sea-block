@@ -6,7 +6,7 @@
 
 import { grabbedMeshElements } from 'games/free-cam/freecam-grabbed-mesh-dialog'
 import { leftJoy, leftJoySlider, rightJoy, rightJoySlider } from 'guis/elements/joysticks'
-import { configBtn, musicBtn, raftBtn } from 'guis/elements/misc-buttons'
+import { debugBtn, fcSettingsBtn } from 'guis/elements/misc-buttons'
 import { wasdButtons } from 'guis/elements/wasd-buttons'
 import type { RegisteredGui } from 'guis/gui'
 import { Gui } from 'guis/gui'
@@ -18,35 +18,32 @@ import { isTouchDevice } from 'input/mouse-touch-input'
 import type { SeaBlock } from 'sea-block'
 
 export class FreeCamGui extends Gui<FreecamLayoutKey> {
-  // public clickElem(elem: GuiElement, event: ElementEvent): void {
-  //   super.clickElem(elem, event)
-  //   if (targetElement.layoutKey === 'grabbedMesh') {
-  //     // // mesh is currently grabbed
-  //     // if (!grabbedMeshElements.includes(elem)) {
-
-  //     ungrabChessPiece(event.seaBlock)
-  //     // }
-  //   }
-  // }
-
   static {
     Gui.register('free-cam', {
       factory: () => new FreeCamGui(),
       elements: [
-        // spritAtlasBtn,
-        musicBtn,
-        raftBtn,
-        configBtn,
+
+        // top of screen
+        debugBtn,
+        // raftBtn,
+        fcSettingsBtn,
+
+        // all possible control elements
         leftJoy, leftJoySlider,
         rightJoy, rightJoySlider,
         ...wasdButtons,
+
+        // dialog visible after clicking rook or thruster mesh
         ...grabbedMeshElements,
+
       ],
+
       allLayouts: [
         FREECAM_DESKTOP_LAYOUT,
         FREECAM_LANDSCAPE_LAYOUT,
         FREECAM_PORTRAIT_LAYOUT,
       ],
+
       layoutFactory: (context: SeaBlock) => {
       // context.config.refreshConfig()
         const lyt = context.config.flatConfig.freeCamLayout

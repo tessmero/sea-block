@@ -21,17 +21,25 @@ import { randChoice } from 'util/rng'
 export function randomTransition(context: SeaBlock): Transition {
   // const name = randChoice(TRANSITION.NAMES)
 
-  // do sweep-sweep-drop combo transition just for launch
-  const name = Transition.isFirstUncover
-    ? randChoice(['zoom'] as const)
-    : randChoice(['flat', 'ss'] as const)
+  if (Transition.isLaunching) {
+    return Transition.create(randChoice(['zoom'] as const), context)
+  }
+  if (Transition.isFirstUncover) {
+    return Transition.create(randChoice(['ss'] as const), context)
+  }
+
+  // // do sweep-sweep-drop combo transition just for launch
+  // const name = Transition.isFirstUncover
+  //   ? randChoice(['zoom'] as const)
+  //   : randChoice(['flat', 'ss'] as const)
 
   // const name = 'flat'
-  return Transition.create(name, context)
+  return Transition.create(randChoice(['flat', 'ss'] as const), context)
 }
 
 export abstract class Transition {
-  static isFirstUncover = true
+  static isLaunching = true
+  static isFirstUncover = false
 
   // optional extra step before rendering tile (tile-group-gfx-helper.ts)
   public getExtraPipelineStep(): Step | null { return null }
@@ -68,13 +76,7 @@ export abstract class Transition {
     // describe elapsed time range as fraction of animation
     const start = this.elapsed / this.totalDuration
 
-    // if (this.didFinishCover && isFirstUncover) {
-    if (Transition.isFirstUncover) {
-      this.elapsed += 0.5 * dt // slow down first uncover
-    }
-    else {
-      this.elapsed += dt
-    }
+    this.elapsed += dt
 
     const end = this.elapsed / this.totalDuration
 
@@ -90,7 +92,9 @@ export abstract class Transition {
       // signal to end transition
       this.cleanupShow()
       this.didFinishUncover = true
-      Transition.isFirstUncover = false
+      if (Transition.isFirstUncover) {
+        Transition.isFirstUncover = false
+      }
       return
     }
 

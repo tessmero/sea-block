@@ -1,5 +1,5 @@
 /**
- * @file sound-effects.ts
+ * @file sound-effect-player.ts
  *
  * Helper functions to play sound effects.
  */
@@ -7,8 +7,9 @@ import type { Howl } from 'howler'
 import { Howler } from 'howler'
 import { typedEntries } from '../util/typed-entries'
 import { getSound } from './sound-asset-loader'
-import type { SoundEffectName } from 'configs/imp/sounds-config'
-import { SOUND_SOURCES, soundsConfig } from 'configs/imp/sounds-config'
+import type { SoundEffectName } from 'configs/sounds/sound-sources'
+import { SOUND_SOURCES } from 'configs/sounds/sound-sources'
+import { audioConfig } from 'configs/imp/audio-config'
 
 // called on startup
 export function initAllSoundEffects() {
@@ -34,7 +35,11 @@ export function playSound(key: SoundEffectName) {
     if (!sounds || sounds.length === 0) return
     // Pick one randomly
     const sound = sounds[Math.floor(Math.random() * sounds.length)]
-    sound.volume(soundsConfig.tree.children[`sound-${key}`].value)
+    const sfxConfigItems = audioConfig.tree.children.enabled.children
+    sound.volume(
+      sfxConfigItems[`sound-${key}`].value
+      * audioConfig.tree.children.sfxVolume.value,
+    )
     sound.stop() // stop if already playing
     sound.play()
   }
@@ -42,6 +47,21 @@ export function playSound(key: SoundEffectName) {
     // attempt to enable sound
     Howler.ctx.resume()
   }
+}
+
+export function updateAllSfxVolumes() {
+  for (const name in SOUND_SOURCES) {
+    const vol = _getSoundVolume(name as SoundEffectName)
+    for (const howl of soundEffects[name as SoundEffectName]) {
+      howl.volume(vol)
+    }
+  }
+}
+
+function _getSoundVolume(key: SoundEffectName) {
+  const sfxConfigItems = audioConfig.tree.children.enabled.children
+  return sfxConfigItems[`sound-${key}`].value // volume for specific sound
+    * audioConfig.tree.children.sfxVolume.value // global sound effect volume slider
 }
 
 export function toggleSound(key: SoundEffectName) {

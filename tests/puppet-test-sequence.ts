@@ -40,7 +40,7 @@ export const puppetTestSequence = [
     test: 'buttons-are-hoverable',
     state: 'free-cam',
     buttons: [
-      'musicBtn',
+      'settingsBtn',
       'rookMesh',
     ],
     backgroundPoint: [200, 100],

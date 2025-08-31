@@ -43,11 +43,13 @@ const seaBlock = {
       transitionMode: 'enabled',
     },
   },
-} as SeaBlock
+} as unknown as SeaBlock
 
 describe('Flat Transition', function () {
   for (const tiling of TILING.NAMES) {
     it(`generates non-antialiased ${tiling} tiling image`, function () {
+      Transition.isLaunching = false
+      Transition.isFirstUncover = false
       FlatTransition.forceFlatSweep = true
       const transition = Transition.create('flat', seaBlock, {
         t0: 0,
@@ -60,7 +62,7 @@ describe('Flat Transition', function () {
       frontCtx.fillRect(0, 0, width, height)
 
       // cover screen partway
-      transition.update(0.4 * transition.totalDuration)
+      transition.update(0.2 * transition.totalDuration)
 
       // // emulate anti-aliased pixel to make sure test can fail
       // ctx.fillStyle = 'gray'
@@ -70,7 +72,6 @@ describe('Flat Transition', function () {
       saveTestImage(canvas, `${tiling}-transition`)
 
       // assert that pixels are black and white
-
       assertNotAntialiased(canvas, { expectedPallette: ['black', 'white'] })
     })
   }

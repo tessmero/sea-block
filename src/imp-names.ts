@@ -15,7 +15,7 @@ export type ImpManifest = {
 
 // configurables
 export const CONFIGURABLE = {
-  NAMES: ['sea-block', 'top', 'gfx', 'michael', 'sounds',
+  NAMES: ['sea-block', 'top', 'gfx', 'michael', 'audio',
     'physics', 'free-cam', 'flora', 'chess', 'raft'],
   SOURCES: ['src/configs/imp/**/*.ts'],
 } as const satisfies ImpManifest

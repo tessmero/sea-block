@@ -56,6 +56,15 @@ export function navigateGuiWithGamepad(seaBlock: SeaBlock,
   inputId: InputId, // button/axis
   axisValue?: number, // state of analog axis
 ) {
+  if (!seaBlock.isShowingSettingsMenu && !seaBlock.game.doesAllowGgui()) {
+    return // gamepad is not used for gui in current game
+  }
+
+  if (typeof axisValue === 'number'
+    && seaBlock.isShowingSettingsMenu && !seaBlock.game.doesAllowGgui()) {
+    return // don't use analog input to navigate settings when camera can be controlled instead
+  }
+
   if (typeof axisValue === 'number') {
     if (Math.abs(axisValue) < guiNavJoystickDeadzone) {
       // joystick is in deadzone
