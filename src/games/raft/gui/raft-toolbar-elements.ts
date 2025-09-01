@@ -8,7 +8,7 @@
 import type { ElementEvent, GuiElement } from 'guis/gui'
 import type { RaftLayoutKey } from 'guis/keys/raft-layout-keys'
 import { raft } from '../raft'
-import type { ImageAssetUrl } from 'gfx/2d/image-asset-loader'
+import type { ImageAssetUrl } from 'gfx/2d/image-asset-urls'
 
 type RaftElem = GuiElement<RaftLayoutKey>
 

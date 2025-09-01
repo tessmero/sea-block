@@ -14,14 +14,14 @@ import { renderSoundBalanceConfig } from 'configs/sounds/enabled-sounds'
 export const isDevMode = true
 function applyDevMode(cfg: typeof topConfigTree.children) {
   cfg.game.value = 'free-cam' // skip start menu
-  cfg.game.isHidden = false // allow changing game in debug controls
 
   // cfg.transitionMode.value = 'skip'
 
+  // cfg.game.isHidden = false // allow changing game in debug controls
   // // cfg.generator.value = 'flat'
   // cfg.generator.value = 'all-ocean'
   // cfg.tiling.value = 'square'
-  cfg.freeCamLayout.value = 'landscape'
+  // cfg.freeCamLayout.value = 'landscape'
 
   // cfg.testGui.value = 'sprite-atlas'
   // cfg.testGui.isHidden = false

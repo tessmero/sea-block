@@ -13,8 +13,16 @@ import { getLeftJoystickInput, leftDead, orbitWithRightJoystick } from 'guis/ele
 import { Game } from '../game'
 import type { GameUpdateContext } from '../game'
 import { ChessWaveMaker } from 'games/chess/chess-wave-maker'
-import { freecamPickableElements, targetElements, updateFreecamPickables } from 'games/free-cam/freecam-pickable-meshes'
+import { freecamPickableElements, getNearestFreecamPickable,
+  targetElements, updateFreecamPickables } from 'games/free-cam/freecam-pickable-meshes'
 import { gamepadState } from 'input/gamepad-input'
+import { gguiCursorMesh, hideGguiCursor, setGguiSelectAction } from 'gfx/3d/ggui-3d-cursor'
+import { grabbedMeshPanel } from 'games/free-cam/freecam-grabbed-mesh-dialog'
+
+// idle camera will center on mesh if nearby and using gamepad
+const gamepadSnapToPickableRadSq = Math.pow(10, 2)
+const gamepadSnapToPickableEps = Math.pow(0.1, 2) // close enough distance squared
+const gamepadSnapToPickableForce = 1e-4
 
 export const MOUSE_DEADZONE = 50 // (px) center of screen with zero force
 export const MOUSE_MAX_RAD = 200 // (px) radius with max force
@@ -41,12 +49,28 @@ export class FreeCamGame extends Game {
     })
   }
 
-  public doesAllowOrbitControls(_context: SeaBlock): boolean {
-    // const lyt = context.config.flatConfig.freeCamLayout
-    // if (lyt === 'landscape') {
-    //   return false // use right joystick instead of orbit controls
-    // }
+  public doesAllowOrbitControls(): boolean {
     return true
+  }
+
+  public doesAllowGgui(): boolean {
+    return false
+    // if (grabbedMeshPanel.display.isVisible) {
+    //   // allow using gamepad to navigate grabbed mesh dialog
+    //   return true
+    // }
+    // else {
+    //   return false
+    // }
+  }
+
+  public doesAllowGgui3DCursor(): boolean {
+    if (grabbedMeshPanel.display.isVisible) {
+      return false
+    }
+    else {
+      return true
+    }
   }
 
   public readonly config = freeCamGameConfig
@@ -94,18 +118,54 @@ export class FreeCamGame extends Game {
     //   pickablePieceMesh.rotateY(0.005 * dt) // add spinning animation
     // }
 
-    this.waveMaker.wmRadius = seaBlock.config.flatConfig.visibleRadius / 2
-    this.waveMaker.sphere.scalePressure = 0.5
-
     updateFreecamPickables(dt)
 
-    // pan grid if necessary
+    const moveVec = this._moveWithWasdOrLeftJoystick(context)
+
+    // maybe snap camera to pickable
+    if (!grabbedMeshPanel.display.isVisible && seaBlock.isUsingGamepad && moveVec.x === 0 && moveVec.z === 0) {
+      // using gamepad but not actively panning camera
+      const { name, pos, distSq } = getNearestFreecamPickable(this.cameraAnchor.position)
+
+      if (distSq < gamepadSnapToPickableRadSq) {
+        // move anchor towards pickable
+        const frac = Math.max(0, (distSq - gamepadSnapToPickableEps)
+          / (gamepadSnapToPickableRadSq - gamepadSnapToPickableEps))
+        this.accelSphere(
+          this.cameraAnchor, pos,
+          dt * gamepadSnapToPickableForce * Math.pow(frac, 0.1),
+        )
+
+        // place cursor on pickable
+        gguiCursorMesh.position.copy(pos)
+        gguiCursorMesh.visible = true
+        setGguiSelectAction(() => {
+          const { clickAction } = freecamPickableElements[name]
+          if (!clickAction) return
+          clickAction({ seaBlock })
+        })
+      }
+      else {
+        // hide cursor
+        hideGguiCursor()
+      }
+    }
+
+    // pan terrain grid if necessary
     this.centerOnAnchor(seaBlock)
 
-    // accel wave maker towards center
+    // wave make sphere distrubs water
+    this.waveMaker.wmRadius = seaBlock.config.flatConfig.visibleRadius / 2
+    this.waveMaker.sphere.scalePressure = 0.5
     this.waveMaker.updateWaveMaker(context)
-    // this.updateWaveMaker(dt)
 
+    // control camera
+    orbitWithRightJoystick(context) // gui/elements/joysticks.ts
+    zoomWithTriggers(context)
+  }
+
+  private _moveWithWasdOrLeftJoystick(context: GameUpdateContext): Vector3 {
+    const { seaBlock, dt } = context
     const { CAM_ACCEL } = this.config.flatConfig
     const { camera } = seaBlock
 
@@ -173,9 +233,7 @@ export class FreeCamGame extends Game {
 
     this.accelSphere(this.cameraAnchor, posDummy, dt * CAM_ACCEL * moveMagnitude)
 
-    orbitWithRightJoystick(context) // gui/elements/joysticks.ts
-
-    zoomWithTriggers(context)
+    return moveVec
   }
 
   protected accelSphere(sphere: Sphere, intersection: Vector3, magnitude: number) {

@@ -26,6 +26,7 @@ const rewardsPanel: ChessElem = {
 }
 export const leftRewardBtn: ChessButton = {
   layoutKey: 'leftReward',
+  gamepadNavBox: 'leftReward',
   display: {
     type: 'button',
     // isVisible: false,
@@ -53,6 +54,7 @@ export const leftRewardDisplay: ChessElem = {
 }
 export const rightRewardBtn: ChessButton = {
   layoutKey: 'rightReward',
+  gamepadNavBox: 'rightReward',
   display: {
     type: 'button',
     // isVisible: false,
@@ -108,6 +110,7 @@ const bottomTitle: ChessElem = {
 
 export const acceptBtn: ChessButton = {
   layoutKey: 'confirmBtn',
+  gamepadNavBox: 'confirmBtn',
   display: {
     type: 'button',
     label: 'ACCEPT',

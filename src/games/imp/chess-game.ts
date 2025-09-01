@@ -5,7 +5,8 @@
  */
 import { Game } from 'games/game'
 import type { Chess } from 'games/chess/chess-helper'
-import { chessAllow3DRender, resetChess, updateChess } from 'games/chess/chess-helper'
+import { chessAllow3DRender, chessAllowGgui,
+  chessAllowGgui3DCursor, resetChess, updateChess } from 'games/chess/chess-helper'
 import {
   treasureChestElement, instancedPieceElements, getChessPipeline, getChessCamOffset,
   outlinedPieceElements,
@@ -52,6 +53,8 @@ export class ChessGame extends Game {
 
   getTerrainRenderPipeline = tile => getChessPipeline(this.chess, tile)
   update = updateChess
+  doesAllowGgui = chessAllowGgui
+  doesAllowGgui3DCursor = chessAllowGgui3DCursor
   doesAllow3DRender = chessAllow3DRender
   getCamOffset = getChessCamOffset
 }

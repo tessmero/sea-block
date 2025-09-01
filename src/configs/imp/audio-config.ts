@@ -7,6 +7,7 @@
 import type { ConfigTree } from 'configs/config-tree'
 import { Configurable } from 'configs/configurable'
 import { enabledConfigItems } from 'configs/sounds/enabled-sounds'
+import { testConfigItems } from 'configs/sounds/test-sounds'
 
 // type SoundParams = {
 //   src: Array<SoundAssetUrl>
@@ -28,7 +29,7 @@ const audioConfigTree = {
       step: 0.01,
     },
     ...enabledConfigItems, // sound assets tracked and used in production
-    // ...testConfigItems, // other sound assets
+    ...testConfigItems, // other sound assets
   },
 } satisfies ConfigTree
 

@@ -6,7 +6,7 @@
 import assert from 'assert'
 import fs from 'fs'
 import path from 'path'
-import { IMAGE_ASSET_URLS } from '../../src/gfx/2d/image-asset-loader'
+import { IMAGE_ASSET_URLS } from '../../src/gfx/2d/image-asset-urls'
 
 const PUBLIC_IMAGES_DIR = path.resolve(__dirname, '../../public/images')
 

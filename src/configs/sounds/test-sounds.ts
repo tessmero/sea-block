@@ -25,6 +25,7 @@ export const testConfigItemsByCategory = SOUND_ASSET_URLS.reduce((acc, url) => {
     action: () => {
       // test sound
       const howl = getSound(url)
+      howl.volume(0.1)
       howl.play()
     },
     // tooltip: JSON.stringify([url]),

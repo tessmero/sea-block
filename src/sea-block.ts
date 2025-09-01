@@ -42,8 +42,9 @@ import { pollGamepadInput } from 'input/gamepad-input'
 import type { KeyCode } from 'input/input-id'
 import { preloadGrabbedMeshDiagrams } from 'games/free-cam/freecam-grabbed-mesh-dialog'
 import { isDevMode } from 'configs/imp/top-config'
-import { updateGamepadGui } from 'input/gamepad-gui-mapper'
+import { releaseGgui, updateGamepadGui } from 'input/ggui-nav-wasd'
 import { playSound } from 'audio/sound-effect-player'
+import { hideGguiCursor } from 'gfx/3d/ggui-3d-cursor'
 
 // can only be constructed once
 let didConstruct = false
@@ -85,6 +86,7 @@ export class SeaBlock {
     this.isShowingSettingsMenu = !this.isShowingSettingsMenu
     if (this.isShowingSettingsMenu) {
       playSound('settingsOpen')
+      releaseGgui() // release gamepad cursor, now only settings can be navigated
     }
     else {
       playSound('settingsClose')
@@ -358,6 +360,8 @@ export class SeaBlock {
 
   // called when user switches games
   public onGameChange() {
+    hideGguiCursor()
+
     this.scene.threeScene.remove(...this.game.meshes)
     this.game = Game.create(this.config.flatConfig.game, this)
     for (const mesh of this.game.meshes) {

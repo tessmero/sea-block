@@ -17,9 +17,9 @@ import type { GuiName } from 'imp-names'
 import type { BorderVariant, ElementImageset, ElementType } from 'gfx/2d/element-imageset-builder'
 import { getElementImageset } from 'gfx/2d/element-imageset-builder'
 import { resetLastDrawnStates } from 'gfx/2d/flat-gui-gfx-helper'
-import type { ImageAssetUrl } from 'gfx/2d/image-asset-loader'
 import type { FontVariant, TextAlign } from 'gfx/2d/text-gfx-helper'
 import { getElementDims } from './layouts/layout-helper'
+import type { ImageAssetUrl } from 'gfx/2d/image-asset-urls'
 
 export type StaticElement<TLayoutKey extends string = string> = {
   layoutKey: TLayoutKey // must have layout rectangle
@@ -331,7 +331,7 @@ export class Gui<TLayoutKey extends string = string> {
     this.clickElem(elem, event)
   }
 
-  protected clickElem(elem: GuiElement<TLayoutKey>, event: ElementEvent) {
+  private clickElem(elem: GuiElement<TLayoutKey>, event: ElementEvent) {
     const { clickAction } = elem
     if (clickAction) {
       clickAction(event)
@@ -417,8 +417,8 @@ export class Gui<TLayoutKey extends string = string> {
     }
 
     for (const id in this.elements) {
-      const { hotkeys } = this.elements[id]
-      if (hotkeys?.includes(buttonCode)) {
+      const { display, hotkeys } = this.elements[id]
+      if (display.isVisible && hotkeys?.includes(buttonCode)) {
         this._click({ seaBlock, buttonCode }, id as ElementId)
       }
     }

@@ -9,8 +9,8 @@ import type { CssLayout } from 'util/layout-parser'
 import { standards } from './layout-helper'
 const { btn } = standards
 
-const rowThickness = 12
-const rowWidth = 76 // width with margin inside of panel
+const rowThickness = 8
+const rowWidth = 68 // width with margin inside of panel
 
 const row = {
   height: rowThickness,
@@ -82,6 +82,14 @@ export const SETTINGS_LAYOUT = {
   pixelScaleSlider: {
     parent: 'pixelScaleRegion',
     width: 10,
+  },
+
+  settingsQuitBtn: {
+    parent: 'settingsPanel',
+    width: rowWidth,
+    height: 16,
+    left: 'auto',
+    bottom: 0,
   },
 
 } as const satisfies CssLayout<SettingsLayoutKey>

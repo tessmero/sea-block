@@ -1,16 +1,19 @@
 /**
- * @file gamepad-gui-mapper.ts
+ * @file ggui-nav-wasd.ts
  *
- * Help make mouse/touch GUIs usable with just gamepad or just keyboard.
- * The mouse hovering graphics are used as a cursor.
+ * Gamepad Graphical User Interface navigator.
+ * Navigates GUIs with up/down/left/right buttons.
  */
 
 import type { GameUpdateContext } from 'games/game'
-import type { ElementId, GuiElement } from 'guis/gui'
+import { Gui, type ElementId, type GuiElement } from 'guis/gui'
 import type { SeaBlock } from 'sea-block'
 import type { InputId } from './input-id'
+import type { Vector2Like } from 'three'
 import { Vector2 } from 'three'
 import type { Rectangle } from 'util/layout-parser'
+import { playSound } from 'audio/sound-effect-player'
+import { gguiNavAction, gguiSelectAction } from 'gfx/3d/ggui-3d-cursor'
 
 // deadzone for any physical joysticks controlling gui
 export const guiNavJoystickDeadzone = 0.3
@@ -43,19 +46,30 @@ type Direction = 'up' | 'down' | 'left' | 'right'
 const selectInputs: Array<InputId> = [
   'ButtonA', 'ButtonStart', 'ButtonLB', 'ButtonRB',
 ]
+const DIR_ANGLES = {
+  up: -Math.PI / 2,
+  down: Math.PI / 2,
+  left: Math.PI,
+  right: 0,
+}
 
-type Sign = -1 | 0 | 1
-
-// get sign from joystick axis value centered at 0.5
-const getSign = (val: number) => Math.sign(val - 0.5) as Sign
-
-const lastAxisSign: Partial<Record<InputId, Sign>> = {}
-
-// called on active input
+// navigate oalong grid axis (not diagonal) called on active input
 export function navigateGuiWithGamepad(seaBlock: SeaBlock,
   inputId: InputId, // button/axis
-  axisValue?: number, // state of analog axis
+  axisValue: number, // state of analog axis or digital button
+  angle?: number, // only when called through ggui-nav-circular
 ) {
+  if (!seaBlock.isShowingSettingsMenu && seaBlock.game.doesAllowGgui3DCursor()) {
+    // special case, consume event and only control 3d cursor in world
+    if (selectInputs.includes(inputId)) {
+      gguiSelectAction(inputId, axisValue)
+    }
+    else if (inputId in navInputs && axisValue === 1) { // nav on button down, not up
+      gguiNavAction(angle ?? DIR_ANGLES[navInputs[inputId][0]])
+    }
+    return
+  }
+
   if (!seaBlock.isShowingSettingsMenu && !seaBlock.game.doesAllowGgui()) {
     return // gamepad is not used for gui in current game
   }
@@ -65,17 +79,17 @@ export function navigateGuiWithGamepad(seaBlock: SeaBlock,
     return // don't use analog input to navigate settings when camera can be controlled instead
   }
 
-  if (typeof axisValue === 'number') {
-    if (Math.abs(axisValue) < guiNavJoystickDeadzone) {
-      // joystick is in deadzone
-      lastAxisSign[inputId] = 0
-      return
-    }
-    else {
-      // joystick is being held beyond deadzone
-      seaBlock.isUsingGamepad = true
-    }
-  }
+  // if (typeof axisValue === 'number') {
+  //   if (Math.abs(axisValue) < guiNavJoystickDeadzone) {
+  //     // joystick is in deadzone
+  //     lastAxisSign[inputId] = 0
+  //     return
+  //   }
+  //   else {
+  //     // joystick is being held beyond deadzone
+  //     seaBlock.isUsingGamepad = true
+  //   }
+  // }
 
   // check for rapid input
   const t = performance.now()
@@ -85,14 +99,14 @@ export function navigateGuiWithGamepad(seaBlock: SeaBlock,
   }
   lastNavTime = t
 
-  // check for joystick changing position but still in same direction
-  if (axisValue) {
-    const sign = getSign(axisValue)
-    if (lastAxisSign[inputId] === sign) {
-      return // ignore
-    }
-    lastAxisSign[inputId] = sign
-  }
+  // // check for joystick changing position but still in same direction
+  // if (axisValue) {
+  //   const sign = getSign(axisValue)
+  //   if (lastAxisSign[inputId] === sign) {
+  //     return // ignore
+  //   }
+  //   lastAxisSign[inputId] = sign
+  // }
 
   if (inputId in navInputs) {
     // input counts as navigation or slide
@@ -129,12 +143,12 @@ export function navigateGuiWithGamepad(seaBlock: SeaBlock,
         })
       }
 
-      // debug
-      for (const gui of seaBlock.getLayeredGuis()) {
-        for (const elem of Object.values(gui.elements)) {
-          elem.display.needsUpdate = true
-        }
-      }
+      // // debug
+      // for (const gui of seaBlock.getLayeredGuis()) {
+      //   for (const elem of Object.values(gui.elements)) {
+      //     elem.display.needsUpdate = true
+      //   }
+      // }
 
       return // don't navigate
     }
@@ -146,17 +160,23 @@ export function navigateGuiWithGamepad(seaBlock: SeaBlock,
 
   else if (selectInputs.includes(inputId)) {
     // input counts as click
-    if (selectedElem && selectedElem.clickAction) {
+    if (selectedElem && selectedElem.clickAction && axisValue) {
       // emulate click on selected element
       selectedElem.display.forcedState = 'pressed'
       selectedElem.display.needsUpdate = true
       selectedElem.clickAction({ seaBlock })
     }
+    else if (selectedElem && selectedElem.unclickAction && !axisValue) {
+      // emulate click on selected element
+      selectedElem.display.forcedState = undefined
+      selectedElem.display.needsUpdate = true
+      selectedElem.unclickAction({ seaBlock })
+    }
   }
 }
 
 function _getDirection(arr: Array<Direction>, axisValue?: number): Direction {
-  if (arr[1] && axisValue && getSign(axisValue) === 1) {
+  if (arr[1] && axisValue) {
     return arr[1]
   }
   return arr[0]
@@ -216,7 +236,7 @@ function selectNeighbor(
   const y0 = (y + h / 2) + (h / 2 * dy)
 
   // step in desired direction
-  const stepSize = 1
+  const stepSize = 4
   const screenWidth = seaBlock.layeredViewport.w
   const screenHeight = seaBlock.layeredViewport.h
   for (let stepIndex = 0; stepIndex < checkPoints.length; stepIndex++) {
@@ -233,7 +253,11 @@ function selectNeighbor(
   }
 }
 
-const checkPoints = Array.from({ length: 1000 }, () => new Vector2())
+const checkPoints = Array.from({ length: 100 }, () => new Vector2())
+
+export function releaseGgui() {
+  _releaseSelected()
+}
 
 function _releaseSelected() {
   if (!selectedElem) {
@@ -264,6 +288,43 @@ function _select(id: ElementId, elem: GuiElement) {
   // hover new element
   selectedElem.display.forcedState = 'hovered'
   selectedElem.display.needsUpdate = true
+
+  playSound('smNav')
+}
+
+function selectSomething(
+  _seaBlock: SeaBlock,
+  allClickables: Record<string, GuiElement>,
+  exclude?: ElementId,
+) {
+  // get some clickable button
+  for (const [id, elem] of Object.entries(allClickables)) {
+    if (id === exclude) continue // skip excluded element
+    // set/replace selection
+    _select(id as ElementId, elem)
+
+    return // don't check remaining clickables
+  }
+}
+
+function _getClickableElements(seaBlock: SeaBlock): Record<string, GuiElement> {
+  const result: Record<string, GuiElement> = {}
+  let guisToCheck: ReadonlyArray<Gui>
+  if (seaBlock.isShowingSettingsMenu) {
+    guisToCheck = [Gui.create('settings-menu')]
+  }
+  else {
+    guisToCheck = seaBlock.getLayeredGuis()
+  }
+  for (const gui of guisToCheck) {
+    for (const [id, elem] of Object.entries(gui.elements)) {
+      const { display } = elem
+      if (display.type === 'button' && elem.gamepadNavBox && display.isVisible) {
+        result[id] = elem
+      }
+    }
+  }
+  return result
 }
 
 function _pickElement(
@@ -272,51 +333,16 @@ function _pickElement(
 ): ElementId | undefined {
   //
   for (const p of points) {
-    for (const id in allClickables) {
-      const elem = allClickables[id]
-      if (elem.gguiNavRectangle) {
-        const { x, y, w, h } = elem.gguiNavRectangle
-        if ((p.x > x) && (p.x < (x + w)) && (p.y > y) && (p.y < (y + h))) {
-        // console.log(`picked element: ${id} in ${this.pickable[id]}`)
-        // document.documentElement.style.cursor = 'pointer'
-          return id as ElementId
-        }
+    for (const [id, { gguiNavRectangle }] of Object.entries(allClickables)) {
+      if (_pointIsInRectangle(p, gguiNavRectangle)) {
+        return id as ElementId
       }
     }
   }
 }
 
-function selectSomething(
-  seaBlock: SeaBlock,
-  allClickables: Record<string, GuiElement>,
-  exclude?: ElementId,
-) {
-  // get some clickable button
-  for (const [id, elem] of Object.entries(allClickables)) {
-    if (id === exclude) continue // skip excluded element
-    const { display } = elem
-    if (
-      display.type === 'button'
-      && elem.clickAction
-      && display.isVisible
-    ) {
-      // set/replace selection
-      _select(id as ElementId, elem)
-
-      return // don't check remaining clickables
-    }
-  }
-}
-
-function _getClickableElements(seaBlock: SeaBlock): Record<string, GuiElement> {
-  const result: Record<string, GuiElement> = {}
-  for (const gui of seaBlock.getLayeredGuis()) {
-    for (const [id, elem] of Object.entries(gui.elements)) {
-      const { display } = elem
-      if (display.type === 'button' && elem.clickAction && display.isVisible) {
-        result[id] = elem
-      }
-    }
-  }
-  return result
+function _pointIsInRectangle(p: Vector2Like, rectangle) {
+  if (!rectangle) return false
+  const { x, y, w, h } = rectangle
+  return (p.x > x) && (p.x < (x + w)) && (p.y > y) && (p.y < (y + h))
 }

@@ -39,9 +39,11 @@ export const enabledConfigItems = {
       'sound-unclick': { ...sfxItem, value: 0.03 },
       'sound-collapse': { ...sfxItem, value: 0.1 },
 
-      'sound-smStart': { ...sfxItem, value: 0.05 },
-      'sound-settingsOpen': { ...sfxItem, value: 0.1 },
-      'sound-settingsClose': { ...sfxItem, value: 0.1 },
+      'sound-smStart': { ...sfxItem, value: 0.2 },
+      'sound-smNav': { ...sfxItem, value: 0.2 },
+
+      'sound-settingsOpen': { ...sfxItem, value: 0.2 },
+      'sound-settingsClose': { ...sfxItem, value: 0.2 },
 
       'sound-chessClick': { ...sfxItem, value: 0.05 },
       'sound-chessCancel': { ...sfxItem, value: 0.08 },

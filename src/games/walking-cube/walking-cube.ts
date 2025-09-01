@@ -136,6 +136,14 @@ export class WalkingCube {
   }
 
   update(context: GameUpdateContext) {
+    if (context.seaBlock.isShowingSettingsMenu) {
+      // always neutral while in settings menu
+      moveVec.set(0, 0, 0)
+      this.moveX = 0
+      this.moveZ = 0
+      return
+    }
+
     if (this.controlMode === 'default') {
       this._pollLeftHandInput(context, true) // relative to camera
       this._updateDefaultControls(context)

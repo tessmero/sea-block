@@ -24,5 +24,8 @@ export const SETTINGS_LAYOUT_KEYS = [
   'pixelScaleRegion',
   'pixelScaleSlider',
 
+  // quit button at bottom
+  'settingsQuitBtn',
+
 ] as const
 export type SettingsLayoutKey = (typeof SETTINGS_LAYOUT_KEYS)[number]

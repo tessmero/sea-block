@@ -9,7 +9,6 @@ import type { PieceName } from '../chess-enums'
 import { PIECE_NAMES } from '../chess-enums'
 import { getImage } from 'gfx/2d/image-asset-loader'
 import { buildGoalDiagram } from '../gfx/chess-2d-gfx-helper'
-import { togglePauseMenu } from './chess-hud-dialog-elements'
 import type { ChessButton } from './chess-button'
 import { playSound } from 'audio/sound-effect-player'
 import { quitChess } from '../chess-helper'
@@ -75,17 +74,19 @@ const topLeftB: ChessElem = {
 
 const topRightBtn: ChessButton = {
   layoutKey: 'topRightBtn',
+  hotkeys: ['ButtonStart'],
   display: {
     type: 'button',
     icon: 'icons/16x16-x.png',
   },
-  chessAction: ({ chess }) => {
+  chessAction: ({ seaBlock, chess }) => {
     if (chess.currentPhase === 'game-over') {
       playSound('click')
       quitChess(chess)
     }
 
-    togglePauseMenu(chess)
+    seaBlock.toggleSettings()
+    // togglePauseMenu(chess)
   },
 }
 
@@ -191,6 +192,7 @@ export const pawnBtn: ChessButton = {
 // label on pawn button
 export const pawnLabel: ChessElem = {
   layoutKey: 'pawnBtn',
+  hotkeys: ['ButtonB'],
   isPickable: false,
   display: {
     type: 'diagram',
@@ -200,6 +202,7 @@ export const pawnLabel: ChessElem = {
 
 export const cancelPawnBtn: ChessButton = {
   layoutKey: 'cancelPawnBtn',
+  hotkeys: ['ButtonB'],
   display: {
     type: 'button',
     label: 'CANCEL',

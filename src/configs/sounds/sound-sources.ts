@@ -24,6 +24,7 @@ export const SOUND_SOURCES = {
     // 'kenney/confirmation_004.ogg',
   ],
 
+  smNav: ['kenney/drop_001.ogg'],
   settingsOpen: ['kenney/maximize_006.ogg'],
   settingsClose: ['kenney/drop_004.ogg'],
 

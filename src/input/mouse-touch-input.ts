@@ -31,6 +31,7 @@ import type { SeaBlock } from '../sea-block'
 import type { GameElement } from 'games/game'
 import { setMaterial } from 'gfx/3d/gui-3d-gfx-helper'
 import { pickAabbTile } from 'util/aabb-raycaster'
+import { gguiCursorMesh } from 'gfx/3d/ggui-3d-cursor'
 
 export let isTouchDevice = false // set to true on first touch event -> ignore mouse events
 
@@ -355,6 +356,7 @@ export function handleEvent(
     }
 
     seaBlock.isUsingGamepad = false // turn off gamepad gui mode
+    gguiCursorMesh.visible = false
 
     // do event-type-specific action
     action({

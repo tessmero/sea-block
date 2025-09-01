@@ -4,11 +4,10 @@
  * Helper for raft-drive game.
  */
 import type { GameElement, GameUpdateContext } from 'games/game'
-import { getLeftJoystickInput, orbitWithRightJoystick } from 'guis/elements/joysticks'
-import { wasdInputState } from 'guis/elements/wasd-buttons'
+import { orbitWithRightJoystick } from 'guis/elements/joysticks'
 import type { SeaBlock } from 'sea-block'
 import { Matrix4 } from 'three'
-import { Group, Vector2 } from 'three'
+import { Group } from 'three'
 import type { RaftRig } from './raft-physics'
 import { buildRaftRig } from './raft-physics'
 import { WalkingCube } from 'games/walking-cube/walking-cube'
@@ -61,9 +60,9 @@ export const drivingRaftElement = {
   },
 } satisfies GameElement
 
-const forward = new Vector2(0, 1)
-const right = new Vector2(1, 0)
-const moveVec = new Vector2(0, 0)
+// const forward = new Vector2(0, 1)
+// const right = new Vector2(1, 0)
+// const moveVec = new Vector2(0, 0)
 
 export let raftRig: RaftRig // physics object made of spheres
 
@@ -89,6 +88,38 @@ export function clickDistantRaftMesh(_event: ElementEvent) {
   // console.log(' clickDistantRaftMesh ')
 }
 
+function _updateControls(context: GameUpdateContext) {
+  // // 3. Build movement vector from input
+  // const isUpHeld = wasdInputState['upBtn']
+  // const isDownHeld = wasdInputState['downBtn']
+  // const isLeftHeld = wasdInputState['leftBtn']
+  // const isRightHeld = wasdInputState['rightBtn']
+
+  // // WASD input
+  // moveVec.set(0, 0)
+  // if (isUpHeld) moveVec.add(forward)
+  // if (isDownHeld) moveVec.sub(forward)
+  // if (isLeftHeld) moveVec.add(right)
+  // if (isRightHeld) moveVec.sub(right)
+
+  // // let moveMagnitude = 0
+  // // if (moveVec.lengthSq() > 0) {
+  // //   // moveVec.normalize()
+  // //   moveMagnitude = 1
+  // // }
+
+  // // joystick input
+  // const joyInput = getLeftJoystickInput()
+  // if (joyInput) {
+  //   const { x, y } = joyInput
+  //   // moveMagnitude = Math.min(1, (Math.hypot(x, y) - leftDead) * 2)
+  //   moveVec.addScaledVector(right, -2 * x)
+  //   moveVec.addScaledVector(forward, -2 * y)
+  // }
+  orbitWithRightJoystick(context) // gui/elements/joysticks.ts
+  zoomWithTriggers(context)
+}
+
 export function updateRaftDrive(context: GameUpdateContext) {
   const { dt } = context
 
@@ -97,35 +128,12 @@ export function updateRaftDrive(context: GameUpdateContext) {
   raftRig.update(dt)
   raftRig.alignMesh(drivingRaftGroup, dt)
 
-  // 3. Build movement vector from input
-  const isUpHeld = wasdInputState['upBtn']
-  const isDownHeld = wasdInputState['downBtn']
-  const isLeftHeld = wasdInputState['leftBtn']
-  const isRightHeld = wasdInputState['rightBtn']
-
-  // WASD input
-  moveVec.set(0, 0)
-  if (isUpHeld) moveVec.add(forward)
-  if (isDownHeld) moveVec.sub(forward)
-  if (isLeftHeld) moveVec.add(right)
-  if (isRightHeld) moveVec.sub(right)
-
-  // let moveMagnitude = 0
-  // if (moveVec.lengthSq() > 0) {
-  //   // moveVec.normalize()
-  //   moveMagnitude = 1
-  // }
-
-  // joystick input
-  const joyInput = getLeftJoystickInput()
-  if (joyInput) {
-    const { x, y } = joyInput
-    // moveMagnitude = Math.min(1, (Math.hypot(x, y) - leftDead) * 2)
-    moveVec.addScaledVector(right, -2 * x)
-    moveVec.addScaledVector(forward, -2 * y)
+  if (context.seaBlock.isShowingSettingsMenu) {
+    //
   }
-  orbitWithRightJoystick(context) // gui/elements/joysticks.ts
-  zoomWithTriggers(context)
+  else {
+    _updateControls(context)
+  }
 
   // update buttons on surface of raft based on walking-cube torso position
   updateRaftButtons(wc.torsoPos)

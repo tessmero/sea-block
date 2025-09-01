@@ -7,7 +7,7 @@
 import type { NumericItem } from 'configs/config-tree'
 import { gfxConfig } from 'configs/imp/gfx-config'
 import { audioConfig } from 'configs/imp/audio-config'
-import type { ImageAssetUrl } from 'gfx/2d/image-asset-loader'
+import type { ImageAssetUrl } from 'gfx/2d/image-asset-urls'
 import type { ElementEvent, GuiElement } from 'guis/gui'
 import { Gui } from 'guis/gui'
 import type { SettingsLayoutKey } from 'guis/keys/settings-layout-keys'
@@ -22,6 +22,7 @@ const settingsPanel: Selem = {
   layoutKey: 'settingsPanel',
   display: {
     type: 'panel',
+    border: '16x16-dark-panel',
   },
 }
 
@@ -80,8 +81,7 @@ function buildSliderElements(key: SliderKey, params: SliderParams): SliderElemen
     region: {
       layoutKey: `${key}Region`,
       display: {
-        // type: 'panel',
-        type: 'button',
+        type: 'ss-region',
       },
     } as Selem,
 
@@ -91,6 +91,7 @@ function buildSliderElements(key: SliderKey, params: SliderParams): SliderElemen
       gamepadNavBox: `${key}Region`,
       display: {
         type: 'button',
+        border: '16x16-btn-sm',
       },
       clickAction: (e) => {
         _slideSetting(key, e)
@@ -161,6 +162,24 @@ const settingsCloseBtn: Selem = {
   },
 }
 
+const settingsQuitBtn: Selem = {
+  layoutKey: 'settingsQuitBtn',
+  display: {
+    type: 'button',
+    label: 'QUIT',
+  },
+  clickAction: ({ seaBlock }) => {
+    seaBlock.toggleSettings()
+    if (seaBlock.currentGameName === 'free-cam') {
+      seaBlock.config.tree.children.game.value = 'start-menu'
+    }
+    else {
+      seaBlock.config.tree.children.game.value = 'free-cam'
+    }
+    seaBlock.startTransition()
+  },
+}
+
 export class SettingsGui extends Gui<SettingsLayoutKey> {
   static {
     Gui.register('settings-menu', {
@@ -168,13 +187,14 @@ export class SettingsGui extends Gui<SettingsLayoutKey> {
       layoutFactory: () => SETTINGS_LAYOUT,
       elements: [
         settingsPanel,
+        settingsCloseBtn,
 
         // sliders as flat list of elements
         ...Object.values(allSliders).flatMap(
           slider => Object.values(slider.elements),
         ),
 
-        settingsCloseBtn,
+        settingsQuitBtn,
       ],
     })
   }

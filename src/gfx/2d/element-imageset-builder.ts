@@ -6,20 +6,32 @@
  */
 
 import { BUTTON_STATES, type ButtonState } from 'guis/gui'
-import type { ImageAssetUrl } from './image-asset-loader'
 import { getImage } from './image-asset-loader'
 import type { FontVariant, TextAlign } from './text-gfx-helper'
 import { drawText } from './text-gfx-helper'
 import { addToSpriteAtlas } from './sprite-atlas'
+import { drawExpandedBorder } from './border-expander'
+import type { ImageAssetUrl } from './image-asset-urls'
 
 export type ElementType
   = 'button' | 'panel' | 'label'
     | 'diagram' // buffer to draw on
     | 'joy-region' // special button, clear region behind element
+    | 'ss-region' // thin horizontal slider in settings panel
     | 'sprite-atlas' // special case, atlas buffer excluded from atlas
 
-export type BorderVariant
-  = '16x16-btn-shiny' | '16x16-btn-square' | '16x16-btn-sm'
+export const BUTTON_VARIANTS = [
+  '16x16-btn-shiny', '16x16-btn-square', '16x16-btn-sm',
+] as const
+export type ButtonVariant = (typeof BUTTON_VARIANTS)[number]
+
+export const PANEL_VARIANTS = [
+  '16x16-panel', '16x16-dark-panel',
+] as const
+export type PanelVariant = (typeof PANEL_VARIANTS)[number]
+
+export type BorderVariant = ButtonVariant | PanelVariant
+
 //   | '48x48-joy-region' | '24x24-joy-slider'
 
 // parameters that define unique generated imageset
@@ -55,9 +67,17 @@ export type ElementImageset
   = Partial<Record<ButtonState, OffscreenCanvas>>
   // & { default: OffscreenCanvas }
 
+const _defaultButton = {
+  border: '16x16-btn-shiny', font: 'default', textAlign: 'center',
+} as const
+const _defaultPanel = {
+  border: '16x16-panel',
+} as const
+
 export function getElementImageset(rawParams: ElementImagesetParams): ElementImageset {
+  const defaultParams = rawParams.type === 'button' ? _defaultButton : _defaultPanel
   const params: ElementImagesetParams = {
-    border: '16x16-btn-shiny', font: 'default', textAlign: 'center',
+    ...defaultParams,
     ...rawParams,
   }
   const key = getHash(params)
@@ -75,6 +95,7 @@ const imagesetBuilders: Record<
     'button': _buildButtonImageset,
     'label': _buildLabelImageset,
     'panel': _buildPanelImageset,
+    'ss-region': _buildSettingSliderImageset,
     'joy-region': _buildJoyRegionImageset,
     'diagram': _buildDiagramImageset,
     'sprite-atlas': _buildAtlasImageset,
@@ -137,10 +158,32 @@ function _buildJoyRegionImageset(params: ElementImagesetParams): ElementImageset
   return imageset
 }
 
+function _buildSettingSliderImageset(params: ElementImagesetParams): ElementImageset {
+  const { w, h } = params
+  const image = new OffscreenCanvas(w, h)
+  const ctx = image.getContext('2d') as OffscreenCanvasRenderingContext2D
+
+  ctx.fillStyle = 'rgb(192,192,192)'
+  ctx.fillRect(0, 0, w, h)
+
+  ctx.fillStyle = 'black'
+  ctx.fillRect(0, h / 2, w, 1)
+  ctx.fillRect(0, 0, 1, h)
+  ctx.fillRect(w - 1, 0, 1, h)
+
+  return {
+    default: image,
+  }
+}
+
 function _buildPanelImageset(params: ElementImagesetParams): ElementImageset {
   let image
 
-  const borderSrc: ImageAssetUrl = `borders/16x16-panel.png`
+  const { border } = params
+  if (!border || !(PANEL_VARIANTS as ReadonlyArray<string>).includes(border)) {
+    throw new Error(`panel border must be one of ${JSON.stringify(PANEL_VARIANTS)}`)
+  }
+  const borderSrc: ImageAssetUrl = `borders/${border as PanelVariant}.png`
 
   if ('label' in params) {
     image = buildSimpleButtonImage(borderSrc, params)
@@ -194,8 +237,11 @@ function _buildButtonImageset(params: ElementImagesetParams): ElementImageset {
     let image
 
     // border must have been explicit or filled in with default
-    const border = params.border as BorderVariant
-    const borderSrc: ImageAssetUrl = `borders/${border}-${state}.png`
+    const { border } = params
+    if (!border || !(BUTTON_VARIANTS as ReadonlyArray<string>).includes(border)) {
+      throw new Error(`button border must be one of ${JSON.stringify(BUTTON_VARIANTS)}`)
+    }
+    const borderSrc: ImageAssetUrl = `borders/${border as ButtonVariant}-${state}.png`
 
     if ('label' in params) {
       image = buildSimpleButtonImage(borderSrc, params)
@@ -238,7 +284,7 @@ function buildIconButtonImage(borderSrc: ImageAssetUrl, params: IconParams): Off
 
   const rawBorder = getImage(borderSrc)
 
-  drawBorder(rawBorder, ctx, width, height)
+  drawExpandedBorder(ctx, rawBorder, width, height)
 
   const iconImage = getImage(icon)
   const xOff = Math.floor((width - iconImage.width) / 2)
@@ -251,41 +297,6 @@ function buildIconButtonImage(borderSrc: ImageAssetUrl, params: IconParams): Off
   // ctx.putImageData(imageData, 0, 0)
 
   return buffer
-}
-
-async function drawBorder(rawBorder, ctx, width, height) {
-  if (rawBorder.width === width && rawBorder.height === height) {
-    ctx.drawImage(rawBorder, 0, 0)
-    // console.log('unstretched border')
-    return
-  }
-
-  // console.log('stretched border')
-
-  // Corner sizes
-  const corner = 8
-  // Draw corners
-  // Top-left
-  ctx.drawImage(rawBorder, 0, 0, corner, corner, 0, 0, corner, corner)
-  // Top-right
-  ctx.drawImage(rawBorder, 16 - corner, 0, corner, corner, width - corner, 0, corner, corner)
-  // Bottom-left
-  ctx.drawImage(rawBorder, 0, 16 - corner, corner, corner, 0, height - corner, corner, corner)
-  // Bottom-right
-  ctx.drawImage(rawBorder, 16 - corner, 16 - corner, corner, corner, width - corner, height - corner, corner, corner)
-
-  // Edges (repeat/stretch 1px slice)
-  // Top
-  ctx.drawImage(rawBorder, corner, 0, 1, corner, corner, 0, width - 2 * corner, corner)
-  // Bottom
-  ctx.drawImage(rawBorder, corner, 16 - corner, 1, corner, corner, height - corner, width - 2 * corner, corner)
-  // Left
-  ctx.drawImage(rawBorder, 0, corner, corner, 1, 0, corner, corner, height - 2 * corner)
-  // Right
-  ctx.drawImage(rawBorder, 16 - corner, corner, corner, 1, width - corner, corner, corner, height - 2 * corner)
-
-  // Fill the center region by stretching the 1x1-pixel center
-  ctx.drawImage(rawBorder, corner, corner, 1, 1, corner, corner, width - 2 * corner, height - 2 * corner)
 }
 
 // build placeholder icon by drawing text
@@ -313,7 +324,7 @@ function buildSimpleButtonImage(borderSrc: ImageAssetUrl, params: LabelParams): 
 
   const rawBorder = getImage(borderSrc)
 
-  drawBorder(rawBorder, ctx, width, height)
+  drawExpandedBorder(ctx, rawBorder, width, height)
   // ctx.drawImage(icon, 0, 0)
 
   drawText(ctx, {

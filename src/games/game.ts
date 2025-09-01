@@ -70,6 +70,10 @@ export abstract class Game {
     return false
   }
 
+  public doesAllowGgui3DCursor(): boolean {
+    return false
+  }
+
   public doesAllow3DRender(): boolean {
     return true
   }

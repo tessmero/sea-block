@@ -18,7 +18,10 @@ import type { Vector2 } from 'three'
 
 const scrollBar: GuiElement = {
   layoutKey: 'scrollBar',
-  display: { type: 'panel', border: '16x16-btn-square' },
+  display: {
+    type: 'panel',
+    // border: '16x16-btn-square'
+  },
   // dragAction: (event) => {
   //   //slider.display.offsetY = Math.max(0, Math.min(barHeight, event.lvPos.y - y0))
   //   scrollBar.display.offsetY = 20//Math.min(barHeight, event.lvPos.y)

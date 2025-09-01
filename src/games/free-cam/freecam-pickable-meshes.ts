@@ -15,7 +15,7 @@ import type { SeaBlock } from 'sea-block'
 import type { Object3D } from 'three'
 import { BoxGeometry, Color, Mesh, MeshBasicMaterial, Quaternion, Vector3 } from 'three'
 import { grabbedMeshElements, updateGrabbedMeshDiagram } from './freecam-grabbed-mesh-dialog'
-import type { ImageAssetUrl } from 'gfx/2d/image-asset-loader'
+import type { ImageAssetUrl } from 'gfx/2d/image-asset-urls'
 import { allPickableParams } from './freecam-pickables'
 import type { MeshAssetUrl } from 'gfx/3d/mesh-asset-urls'
 
@@ -108,6 +108,30 @@ export function updateFreecamPickables(dt: number) {
       }
     }
   }
+}
+
+const resultPosDummy = new Vector3()
+export function getNearestFreecamPickable(targetPos: Vector3):
+{ name: PickableName, pos: Vector3, distSq: number } {
+  const result = {
+    name: PICKABLE_NAMES[0] as PickableName,
+    pos: resultPosDummy,
+    distSq: Infinity,
+  }
+
+  for (const [name, { mesh }] of Object.entries(freecamPickableElements)) {
+    if (!mesh) continue
+
+    // check distance considering x and z only
+    const d2 = posDummy.copy(mesh.position).sub(targetPos).setY(0).lengthSq()
+    if (d2 < result.distSq) {
+      result.name = name as PickableName
+      result.pos.copy(mesh.position)
+      result.distSq = d2
+    }
+  }
+
+  return result
 }
 
 export function getPickablePieceMeshPosition(name: PickableName): Vector3 | undefined {

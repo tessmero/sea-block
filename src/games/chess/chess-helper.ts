@@ -4,7 +4,7 @@
  * Chess logic functions referenced in chess-game and chess-gui.
  */
 
-import { Vector3 } from 'three'
+import { Vector2, Vector3 } from 'three'
 import type { GameElement } from '../game'
 import { type GameUpdateContext } from '../game'
 import { emptyScene, type SeaBlock } from 'sea-block'
@@ -36,8 +36,9 @@ import { showPhaseLabel } from './gui/chess-debug-elements'
 import { updateChessPhase } from './chess-update-helper'
 import { FREECAM_PLAYLIST, playNextTrack } from 'audio/song-player'
 import {
+  clickTile,
   flatViewPortClick, flatViewPortUnclick,
-  resetHeldChessInputs, updateHeldChessInputs,
+  resetHeldChessInputs, unclickTile, updateHeldChessInputs,
 } from './chess-input-helper'
 import { ChessWaveMaker } from './chess-wave-maker'
 import { ZoomTransition } from 'gfx/transitions/imp/zoom-transition'
@@ -45,6 +46,9 @@ import { acceptBtn } from './gui/chess-rewards-elements'
 import { updateRepaintEffect } from './gfx/chess-repaint-effect'
 import { rewardHelpDiagram, rewardHelpState } from './gui/chess-reward-help-elements'
 import { ChessScenery } from './levels/chess-scenery'
+import { gguiCursorMesh, hideGguiCursor, setGguiNavAction, setGguiSelectAction } from 'gfx/3d/ggui-3d-cursor'
+import { orbitWithRightJoystick } from 'guis/elements/joysticks'
+import { zoomWithTriggers } from 'games/imp/free-cam-game'
 
 // no 3D terrrain in background when selecting reward
 export function chessAllow3DRender(): boolean {
@@ -55,6 +59,20 @@ export function chessAllow3DRender(): boolean {
     return false
   }
   return true
+}
+
+export function chessAllowGgui3DCursor(): boolean {
+  if (instance.currentPhase === 'player-choice') {
+    return true
+  }
+  return false
+}
+
+export function chessAllowGgui(): boolean {
+  if (instance.currentPhase === 'reward-choice') {
+    return true
+  }
+  return false
 }
 
 export function clearChessRun(): void {
@@ -74,9 +92,64 @@ export function resetChess(context: SeaBlock): Chess {
     chessBoardPipeline.setChess(instance)
   }
   resetHeldChessInputs()
+  if (context.isUsingGamepad) {
+    putGguiCursorOnSomeValidMove()
+  }
+  else {
+    hideGguiCursor()
+  }
   togglePauseMenu(instance, false)
 
   return instance
+}
+
+const targetVec = new Vector2()
+// const dummyVec = new Vector2()
+
+function putGguiCursorOnSomeValidMove(startFrom?: TileIndex, angle?: number) {
+  targetVec.set(0, 0)
+  if (startFrom && (typeof angle === 'number')) {
+    targetVec.set(
+      startFrom.x + Math.cos(angle),
+      startFrom.z + Math.sin(angle),
+    )
+  }
+
+  // console.log(`chess ggui nav with angle ${angle}`)
+
+  const candidates = [...instance.hlTiles.allowedMoves]
+  let nearest: TileIndex | null = null
+  let nearestDistSq = Infinity
+  for (const i of candidates) {
+    if (startFrom && startFrom.i === i) continue
+    const tileIndex = instance.context.terrain.grid.tileIndices[i]
+    const dx = tileIndex.x - targetVec.x
+    const dz = tileIndex.z - targetVec.y
+    const distSq = dx * dx + dz * dz
+    if (distSq < nearestDistSq) {
+      nearest = tileIndex
+      nearestDistSq = distSq
+    }
+  }
+
+  if (nearest) {
+    const tileIndex = nearest
+    instance.hlTiles.hovered = tileIndex
+    instance.getPosOnTile(tileIndex, gguiCursorMesh.position)
+    gguiCursorMesh.visible = true
+    setGguiSelectAction((inputId, axisValue) => {
+      if (axisValue) {
+        clickTile(instance, tileIndex, inputId)
+      }
+      else {
+        unclickTile(instance, tileIndex, inputId)
+      }
+    })
+    setGguiNavAction((angle) => {
+      resetHeldChessInputs()
+      putGguiCursorOnSomeValidMove(tileIndex, angle)
+    })
+  }
 }
 
 export function quitChess(chess: Chess): void {
@@ -124,6 +197,11 @@ export function updateChess(context: GameUpdateContext): void {
   // if (context.seaBlock.transition) {
   //   return // do not update chess during transition
   // }
+
+  if (context.seaBlock.isUsingGamepad && (!gguiCursorMesh.visible || !instance.hlTiles.hovered)) {
+    putGguiCursorOnSomeValidMove()
+  }
+
   updateHeldChessInputs()
   if (rewardHelpState) {
     updateRepaintEffect(context.dt)
@@ -338,6 +416,9 @@ export class Chess {
 
     // advance phase-specific animation (may override mesh positions)
     updateChessPhase({ ...context, chess: this })
+
+    orbitWithRightJoystick(context)
+    zoomWithTriggers(context)
 
     this.updateFlatView()
   }

@@ -84,6 +84,7 @@ export const grabbedMeshPanel: FreecamElem = {
 }
 export const grabbedMeshPlayButton: FreecamElem = {
   layoutKey: 'grabbedMeshPlayButton',
+  hotkeys: ['ButtonA', 'ButtonStart'],
   display: {
     type: 'button',
     label: 'Play',
@@ -93,6 +94,7 @@ export const grabbedMeshPlayButton: FreecamElem = {
 }
 export const grabbedMeshCancelButton: FreecamElem = {
   layoutKey: 'grabbedMeshCancelButton',
+  hotkeys: ['ButtonB'],
   display: {
     type: 'button',
     label: 'Cancel',

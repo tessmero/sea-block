@@ -9,7 +9,8 @@ import { GAMEPAD_AXES, GAMEPAD_BUTTONS, GAMEPAD_CODES, GAMEPAD_TRIGGERS } from '
 import type { GamepadCode } from './input-id'
 import { joyInputState, leftJoy, leftJoySlider, rightJoy, rightJoySlider } from 'guis/elements/joysticks'
 import type { GuiElement, Slider, SliderState } from 'guis/gui'
-import { navigateGuiWithGamepad } from './gamepad-gui-mapper'
+import { navigateGuiWithGamepad } from './ggui-nav-wasd'
+import { navigateWithStick } from './ggui-nav-circular'
 
 export const gamepadState = {} as Record<GamepadCode, boolean | number>
 for (const code of GAMEPAD_CODES) {
@@ -44,28 +45,41 @@ export function pollGamepadInput(seaBlock: SeaBlock) {
         for (const gui of seaBlock.getLayeredGuis()) {
           gui.keydown(seaBlock, code)
         }
-        navigateGuiWithGamepad(seaBlock, code as GamepadCode)
+        navigateGuiWithGamepad(seaBlock, code as GamepadCode, 1)
       }
       else if (!isPressed && prevButtonStates[code]) {
         // Button released
-        seaBlock.isUsingGamepad = true
+        // seaBlock.isUsingGamepad = true
         for (const gui of seaBlock.getLayeredGuis()) {
           gui.keyup(seaBlock, code)
         }
+        navigateGuiWithGamepad(seaBlock, code as GamepadCode, 0)
       }
       prevButtonStates[code] = isPressed
     }
     // Triggers (analog)
     for (const [name, idx] of Object.entries(GAMEPAD_TRIGGERS)) {
       const value = gp.buttons[idx]?.value ?? 0
+      if (Math.abs(value) > 0.1) {
+        seaBlock.isUsingGamepad = true
+      }
       gamepadState[name as GamepadCode] = value
     }
     // Axes (analog value)
     for (const [axis, idx] of Object.entries(GAMEPAD_AXES)) {
       const value = gp.axes[idx] ?? 0
-      navigateGuiWithGamepad(seaBlock, axis as GamepadCode, value)
+      // if (Math.abs(value) > 0.1) {
+      //   seaBlock.isUsingGamepad = true
+      // }
+
+      // // handle as WASD here works,
+      // // but two axes would count as separate events
+      // navigateGuiWithGamepad(seaBlock, axis as GamepadCode, value)
+
       gamepadState[axis] = value
     }
+
+    navigateWithStick(seaBlock) // process 2D joystick axes
 
     // pass state to virtual joysticks logic/display
     updateStick(seaBlock,
