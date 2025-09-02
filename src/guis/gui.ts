@@ -17,7 +17,7 @@ import type { GuiName } from 'imp-names'
 import type { BorderVariant, ElementImageset, ElementType } from 'gfx/2d/element-imageset-builder'
 import { getElementImageset } from 'gfx/2d/element-imageset-builder'
 import { resetLastDrawnStates } from 'gfx/2d/flat-gui-gfx-helper'
-import type { FontVariant, TextAlign } from 'gfx/2d/text-gfx-helper'
+import type { FontVariant, TextAlign } from 'gfx/2d/text/text-gfx-helper'
 import { getElementDims } from './layouts/layout-helper'
 import type { ImageAssetUrl } from 'gfx/2d/image-asset-urls'
 

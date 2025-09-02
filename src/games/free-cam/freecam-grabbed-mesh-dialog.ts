@@ -8,7 +8,7 @@ import type { PickableName, PickableParams } from 'games/free-cam/freecam-pickab
 import { cancelClicked, PICKABLE_NAMES, playClicked } from 'games/free-cam/freecam-pickable-meshes'
 import { getImage } from 'gfx/2d/image-asset-loader'
 import { addToSpriteAtlas } from 'gfx/2d/sprite-atlas'
-import { drawText } from 'gfx/2d/text-gfx-helper'
+import { drawText } from 'gfx/2d/text/text-gfx-helper'
 import type { GuiElement } from 'guis/gui'
 import type { FreecamLayoutKey } from 'guis/keys/freecam-layout-keys'
 import { allPickableParams } from './freecam-pickables'

@@ -7,7 +7,7 @@
 import { getPickablePieceMeshPosition } from 'games/free-cam/freecam-pickable-meshes'
 import type { ChessGame } from 'games/imp/chess-game'
 import type { SeaBlock } from 'sea-block'
-import type { Vector3 } from 'three'
+import { locateOnScreen, tsLocateOnScreen } from 'util/locate-on-screen'
 
 export function getTestSupport(seaBlock: SeaBlock) {
   return {
@@ -64,14 +64,14 @@ export function getTestSupport(seaBlock: SeaBlock) {
         if (!tileIndex) {
           return
         }
-        return locateOnScreen(seaBlock, chess.getPosOnTile(tileIndex))
+        return tsLocateOnScreen(seaBlock, chess.getPosOnTile(tileIndex))
       }
 
       // pickable mesh in freecam
       if (id === 'rookMesh') {
         const result = getPickablePieceMeshPosition('rook')
         if (result) {
-          return locateOnScreen(seaBlock, result)
+          return tsLocateOnScreen(seaBlock, result)
         }
       }
 
@@ -87,23 +87,4 @@ export function getTestSupport(seaBlock: SeaBlock) {
       // return this._computeCanvasRect(screenRect);
     },
   }
-}
-
-function locateOnScreen(seaBlock: SeaBlock, worldPos: Vector3) {
-  const ps = seaBlock.config.flatConfig.pixelScale
-  const { camera, layeredViewport } = seaBlock
-
-  // Project world position to normalized device coordinates (NDC)
-  const ndc = worldPos.clone().project(camera)
-  // Convert NDC to screen coordinates
-  const x = (ndc.x + 1) / 2 * layeredViewport.w
-  const y = (1 - ndc.y) / 2 * layeredViewport.h
-
-  const size = 50
-  return [
-    // square centered on mesh
-    x * ps - size / 2,
-    y * ps - size / 2,
-    size, size,
-  ]
 }

@@ -164,6 +164,7 @@ const settingsCloseBtn: Selem = {
 
 const settingsQuitBtn: Selem = {
   layoutKey: 'settingsQuitBtn',
+  gamepadNavBox: 'settingsQuitBtn',
   display: {
     type: 'button',
     label: 'QUIT',

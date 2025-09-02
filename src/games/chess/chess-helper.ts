@@ -49,6 +49,7 @@ import { ChessScenery } from './levels/chess-scenery'
 import { gguiCursorMesh, hideGguiCursor, setGguiNavAction, setGguiSelectAction } from 'gfx/3d/ggui-3d-cursor'
 import { orbitWithRightJoystick } from 'guis/elements/joysticks'
 import { zoomWithTriggers } from 'games/imp/free-cam-game'
+import { setGamepadConfirmPrompt } from 'gfx/2d/gamepad-btn-prompts'
 
 // no 3D terrrain in background when selecting reward
 export function chessAllow3DRender(): boolean {
@@ -109,9 +110,15 @@ const targetVec = new Vector2()
 function putGguiCursorOnSomeValidMove(startFrom?: TileIndex, angle?: number) {
   targetVec.set(0, 0)
   if (startFrom && (typeof angle === 'number')) {
+    const seaBlock = instance.context
+    const { camera, orbitControls } = seaBlock
+    const camAngle = -Math.PI / 2 + Math.atan2(
+      camera.position.z - orbitControls.target.z,
+      camera.position.x - orbitControls.target.x,
+    )
     targetVec.set(
-      startFrom.x + Math.cos(angle),
-      startFrom.z + Math.sin(angle),
+      startFrom.x + Math.cos(angle + camAngle),
+      startFrom.z + Math.sin(angle + camAngle),
     )
   }
 
@@ -134,9 +141,18 @@ function putGguiCursorOnSomeValidMove(startFrom?: TileIndex, angle?: number) {
 
   if (nearest) {
     const tileIndex = nearest
-    instance.hlTiles.hovered = tileIndex
+    instance.hlTiles.hovered = tileIndex // color tile liek mouse hover
+
+    // put 3d cursor over tile
     instance.getPosOnTile(tileIndex, gguiCursorMesh.position)
     gguiCursorMesh.visible = true
+
+    // put 2d button prompt on cursor
+    // const screenPos = locateOnScreen(instance.context, gguiCursorMesh.position)
+    // setGamepadConfirmPrompt(screenPos.round()) // round to pixel
+    setGamepadConfirmPrompt(gguiCursorMesh.position)
+
+    //
     setGguiSelectAction((inputId, axisValue) => {
       if (axisValue) {
         clickTile(instance, tileIndex, inputId)

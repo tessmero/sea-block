@@ -45,6 +45,7 @@ import { isDevMode } from 'configs/imp/top-config'
 import { releaseGgui, updateGamepadGui } from 'input/ggui-nav-wasd'
 import { playSound } from 'audio/sound-effect-player'
 import { hideGguiCursor } from 'gfx/3d/ggui-3d-cursor'
+import { drawGamepadPrompts } from 'gfx/2d/gamepad-btn-prompts'
 
 // can only be constructed once
 let didConstruct = false
@@ -72,6 +73,9 @@ export class SeaBlock {
   camera!: THREE.PerspectiveCamera
   orbitControls!: OrbitControls
   game!: Game // current game
+
+  // latch set on first gamepad input
+  hasConnectedGamepad: null | 'xbox' | 'playstation' = null
 
   // set to true on any gamepad input, false on any mouse/touch
   isUsingGamepad = false
@@ -142,8 +146,18 @@ export class SeaBlock {
     this.orbitControls.minDistance = 4
     this.orbitControls.maxDistance = 60
 
-    // Responsive resize
+    // update layout and graphics on resize
     window.addEventListener('resize', () => this.onResize())
+
+    // start polling gamepad when connected or first used
+    window.addEventListener('gamepadconnected', (e) => {
+      const gp = navigator.getGamepads()[e.gamepad.index] as Gamepad
+      const id = gp.id.toLowerCase()
+      if (id.includes('playstation') || id.includes('dualshock') || id.includes('dual sense')) {
+        this.hasConnectedGamepad = 'playstation' // display "X" button prompts
+      }
+      this.hasConnectedGamepad = 'xbox' // display "A" button prompts
+    })
 
     const loadPromises: Array<Promise<void | Array<void>>> = []
     loadPromises.push(preloadPixelTiles(Tiling.getAllShapes()))
@@ -174,9 +188,18 @@ export class SeaBlock {
       game, camera,
     } = this
 
-    pollGamepadInput(this)
-    updateGamepadGui({ seaBlock: this, dt })
+    if (this.hasConnectedGamepad) {
+      pollGamepadInput(this)
+      if (this.isUsingGamepad) {
+        // hide mouse cursor until next mousemove
+        document.documentElement.style.cursor = 'none'
+      }
+      // show or clear overlays
+      drawGamepadPrompts(this)
+      updateGamepadGui({ seaBlock: this, dt })
+    }
 
+    // update camera-locked
     this.alignGuiMeshes()
 
     if (transition) {

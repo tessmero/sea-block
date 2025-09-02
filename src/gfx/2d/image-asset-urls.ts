@@ -6,6 +6,12 @@
 
 // find public/images -type f | sed 's|^public/images/||;s|$|\",|;s|^|\"|'
 export const IMAGE_ASSET_URLS = [
+
+  'gamepad/playstation-x-btn.png',
+  'gamepad/playstation-o-btn.png',
+  'gamepad/xbox-a-btn.png',
+  'gamepad/xbox-b-btn.png',
+
   'sm-banner-edge.png',
   'tile-shapes/4_0.71_0.79.png',
   'tile-shapes/8_0.77_0.39.png',

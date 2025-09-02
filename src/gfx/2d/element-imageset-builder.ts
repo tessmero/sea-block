@@ -7,8 +7,8 @@
 
 import { BUTTON_STATES, type ButtonState } from 'guis/gui'
 import { getImage } from './image-asset-loader'
-import type { FontVariant, TextAlign } from './text-gfx-helper'
-import { drawText } from './text-gfx-helper'
+import type { FontVariant, TextAlign } from './text/text-gfx-helper'
+import { drawText } from './text/text-gfx-helper'
 import { addToSpriteAtlas } from './sprite-atlas'
 import { drawExpandedBorder } from './border-expander'
 import type { ImageAssetUrl } from './image-asset-urls'

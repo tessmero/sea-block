@@ -6,10 +6,10 @@
  */
 
 import type { InputId } from 'input/input-id'
-import { Mesh, MeshBasicMaterial, SphereGeometry } from 'three'
+import { CylinderGeometry, Mesh, MeshBasicMaterial } from 'three'
 
 export const gguiCursorMesh = new Mesh(
-  new SphereGeometry(0.5, 5, 5).translate(0, 2, 0),
+  new CylinderGeometry(0.5, 0, 1, 5, 1).translate(0, 2, 0),
   new MeshBasicMaterial({ color: 'white' }),
 )
 

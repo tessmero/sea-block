@@ -23,6 +23,7 @@ export const smBanner: SmElem = {
 
 export const smStartBtn: SmElem = {
   layoutKey: 'smStartBtn',
+  gamepadNavBox: 'smStartBtn',
   hotkeys: ['Space', 'ButtonStart'],
   display: {
     type: 'button',
@@ -47,6 +48,7 @@ export const smStartBtn: SmElem = {
 
 export const smSettingsBtn: SmElem = {
   layoutKey: 'smSettingsBtn',
+  gamepadNavBox: 'smSettingsBtn',
   display: {
     type: 'button',
     border: '16x16-btn-sm',

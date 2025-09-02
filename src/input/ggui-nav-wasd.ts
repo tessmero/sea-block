@@ -14,6 +14,7 @@ import { Vector2 } from 'three'
 import type { Rectangle } from 'util/layout-parser'
 import { playSound } from 'audio/sound-effect-player'
 import { gguiNavAction, gguiSelectAction } from 'gfx/3d/ggui-3d-cursor'
+import { setGamepadConfirmPrompt } from 'gfx/2d/gamepad-btn-prompts'
 
 // deadzone for any physical joysticks controlling gui
 export const guiNavJoystickDeadzone = 0.3
@@ -59,17 +60,30 @@ export function navigateGuiWithGamepad(seaBlock: SeaBlock,
   axisValue: number, // state of analog axis or digital button
   angle?: number, // only when called through ggui-nav-circular
 ) {
+  // check if 3d in-world cursor can be controlled
   if (!seaBlock.isShowingSettingsMenu && seaBlock.game.doesAllowGgui3DCursor()) {
     // special case, consume event and only control 3d cursor in world
     if (selectInputs.includes(inputId)) {
+      // input counts as click/confirm for 3d cursor in world
       gguiSelectAction(inputId, axisValue)
     }
-    else if (inputId in navInputs && axisValue === 1) { // nav on button down, not up
-      gguiNavAction(angle ?? DIR_ANGLES[navInputs[inputId][0]])
+    else if (inputId in navInputs && axisValue !== 0) {
+      // input counts as navigation attempt for 3d cursor in world
+
+      if (typeof angle === 'number') {
+        // use precise joystick angle
+        gguiNavAction(angle)
+      }
+      else {
+        // interpret as wasd direction
+        const dirs = navInputs[inputId]
+        gguiNavAction(DIR_ANGLES[dirs[(axisValue === -1 ? 0 : 1) % dirs.length]])
+      }
     }
-    return
+    return // can only effect 3d cursor in world
   }
 
+  // start check for 2d gui gamepad control
   if (!seaBlock.isShowingSettingsMenu && !seaBlock.game.doesAllowGgui()) {
     return // gamepad is not used for gui in current game
   }
@@ -268,6 +282,9 @@ function _releaseSelected() {
   selectedElem = undefined
   selectedId = undefined
   isHorizontalSlider = false
+
+  // hide input prompt overlay
+  setGamepadConfirmPrompt(null)
 }
 
 function _select(id: ElementId, elem: GuiElement) {
@@ -289,8 +306,17 @@ function _select(id: ElementId, elem: GuiElement) {
   selectedElem.display.forcedState = 'hovered'
   selectedElem.display.needsUpdate = true
 
+  // position button prompt overlay
+  if (elem.rectangle) {
+    const { x, y } = elem.rectangle
+    dummy.set(x, y)
+    setGamepadConfirmPrompt(dummy)
+  }
+
   playSound('smNav')
 }
+
+const dummy = new Vector2()
 
 function selectSomething(
   _seaBlock: SeaBlock,
@@ -344,5 +370,5 @@ function _pickElement(
 function _pointIsInRectangle(p: Vector2Like, rectangle) {
   if (!rectangle) return false
   const { x, y, w, h } = rectangle
-  return (p.x > x) && (p.x < (x + w)) && (p.y > y) && (p.y < (y + h))
+  return (p.x >= x) && (p.x < (x + w)) && (p.y >= y) && (p.y < (y + h))
 }
