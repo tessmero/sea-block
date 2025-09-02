@@ -65,7 +65,7 @@ export function hoverRaftWorld(inputEvent: ProcessedSubEvent) {
   return true // consume event
 }
 
-function _hoverRaftTile(raftTile: XZ, tileIndex: TileIndex) {
+export function _hoverRaftTile(raftTile: XZ, tileIndex: TileIndex) {
   if (raft.currentPhase !== 'edit-button' && raft.hlTiles.clickable.has(tileIndex.i)) {
     // if (!clickedPiece) {
     putHoverCursorOnTile(raftTile, 'buildable')
@@ -112,81 +112,86 @@ export function clickRaftWorld(inputEvent: ProcessedSubEvent): boolean {
   // }
 
   if (tileIndex) {
-    const piece = raft.getRelevantPiece(tileIndex)
-    // console.log('clicked tile index')
+    return clickRaftTile(raftTile, tileIndex)
+  }
+  return false
+}
 
-    if (raft.hlTiles.clickable.has(tileIndex.i)) {
-      // console.log('clicked tile index BUILDABLE')
-      // clicked buildable tile
-      if (raft.currentPhase === 'place-thruster') {
-        raft.buildPiece('thruster', tileIndex)
-        raft.hlTiles.updateBuildableTiles('thruster')
-        _hoverRaftTile(raftTile, tileIndex)
-        return true // consume event
-      }
-      else if (raft.currentPhase === 'place-floor') {
-        raft.buildPiece('floor', tileIndex)
-        raft.hlTiles.updateBuildableTiles('floor')
-        _hoverRaftTile(raftTile, tileIndex)
-        return true // consume event
-      }
-      else if (raft.currentPhase === 'place-button') {
-        raft.buildPiece('button', tileIndex, [])
-        raft.hlTiles.updateBuildableTiles('button')
-        _hoverRaftTile(raftTile, tileIndex)
-        return true // consume event
-      }
-      else if (
-        raft.currentPhase === 'edit-button'
-        && raft.editingButton && piece?.type === 'thruster'
-      ) {
-        // toggle wire connection
-        const i = raft.raftPieces.indexOf(piece)
-        const thruster = raft.thrusters.find(({ pieceIndex }) => pieceIndex === i)
-        if (thruster) {
-          const { triggers } = raft.editingButton
-          if (triggers.includes(thruster)) {
-            // break wire
-            triggers.splice(triggers.indexOf(thruster), 1)
-          }
-          else {
-            // add wire
-            triggers.push(thruster)
-          }
-          showRaftWires(raft.editingButton)
+export function clickRaftTile(raftTile: XZ, tileIndex: TileIndex): boolean {
+  const piece = raft.getRelevantPiece(tileIndex)
+  // console.log('clicked tile index')
+
+  if (raft.hlTiles.clickable.has(tileIndex.i)) {
+    // console.log('clicked tile index BUILDABLE')
+    // clicked buildable tile
+    if (raft.currentPhase === 'place-thruster') {
+      raft.buildPiece('thruster', tileIndex)
+      raft.hlTiles.updateBuildableTiles('thruster')
+      _hoverRaftTile(raftTile, tileIndex)
+      return true // consume event
+    }
+    else if (raft.currentPhase === 'place-floor') {
+      raft.buildPiece('floor', tileIndex)
+      raft.hlTiles.updateBuildableTiles('floor')
+      _hoverRaftTile(raftTile, tileIndex)
+      return true // consume event
+    }
+    else if (raft.currentPhase === 'place-button') {
+      raft.buildPiece('button', tileIndex, [])
+      raft.hlTiles.updateBuildableTiles('button')
+      _hoverRaftTile(raftTile, tileIndex)
+      return true // consume event
+    }
+    else if (
+      raft.currentPhase === 'edit-button'
+      && raft.editingButton && piece?.type === 'thruster'
+    ) {
+      // toggle wire connection
+      const i = raft.raftPieces.indexOf(piece)
+      const thruster = raft.thrusters.find(({ pieceIndex }) => pieceIndex === i)
+      if (thruster) {
+        const { triggers } = raft.editingButton
+        if (triggers.includes(thruster)) {
+          // break wire
+          triggers.splice(triggers.indexOf(thruster), 1)
         }
+        else {
+          // add wire
+          triggers.push(thruster)
+        }
+        showRaftWires(raft.editingButton)
+      }
+    }
+  }
+  else {
+    // tile not buildable
+    putHoverCursorOnTile(raftTile, 'default')
+
+    if (raft.currentPhase === 'edit-button' && piece) {
+      raft.startPhase('idle') // can deslect button by clicking another piece
+    }
+
+    if (piece) {
+      if (piece.type === 'button') {
+        showPieceClicked(piece)
+        const i = raft.raftPieces.indexOf(piece)
+        raft.editingButton = raft.buttons.find(({ pieceIndex }) => pieceIndex === i)
+        raft.startPhase('edit-button')
+        setRaftToolbarPressed() // release raft toolbar buttons
+        showRaftWires(raft.editingButton)
+        raft.hlTiles.highlightThrusters()
+      }
+      else {
+        // may cancel build phase by clicking piece on non-buildable tile
+        raft.startPhase('idle')
+        showPieceClicked(piece)
       }
     }
     else {
-      // tile not buildable
-      putHoverCursorOnTile(raftTile, 'default')
-
-      if (raft.currentPhase === 'edit-button' && piece) {
-        raft.startPhase('idle') // can deslect button by clicking another piece
-      }
-
-      if (piece) {
-        if (piece.type === 'button') {
-          showPieceClicked(piece)
-          const i = raft.raftPieces.indexOf(piece)
-          raft.editingButton = raft.buttons.find(({ pieceIndex }) => pieceIndex === i)
-          raft.startPhase('edit-button')
-          setRaftToolbarPressed() // release raft toolbar buttons
-          showRaftWires(raft.editingButton)
-          raft.hlTiles.highlightThrusters()
-        }
-        else {
-          // may cancel build phase by clicking piece on non-buildable tile
-          raft.startPhase('idle')
-          showPieceClicked(piece)
-        }
-      }
-      else {
-        // no piece on picked tile
-        if (raft.currentPhase !== 'edit-button') {
-          selectedCursorMesh.visible = false
-          hidePieceDialog(raft.context)
-        }
+      // no piece on picked tile
+      if (raft.currentPhase !== 'edit-button') {
+        selectedCursorMesh.visible = false
+        hidePieceDialog(raft.context)
       }
     }
   }

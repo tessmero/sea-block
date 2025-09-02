@@ -181,6 +181,18 @@ const settingsQuitBtn: Selem = {
   },
 }
 
+const settingsOkayBtn: Selem = {
+  layoutKey: 'settingsQuitBtn',
+  gamepadNavBox: 'settingsQuitBtn',
+  display: {
+    type: 'button',
+    label: 'OKAY',
+  },
+  clickAction: ({ seaBlock }) => {
+    seaBlock.toggleSettings()
+  },
+}
+
 export class SettingsGui extends Gui<SettingsLayoutKey> {
   static {
     Gui.register('settings-menu', {
@@ -196,8 +208,22 @@ export class SettingsGui extends Gui<SettingsLayoutKey> {
         ),
 
         settingsQuitBtn,
+        settingsOkayBtn,
       ],
     })
+  }
+
+  public resetElementStates(seaBlock: SeaBlock): void {
+    super.resetElementStates(seaBlock)
+
+    if (seaBlock.currentGameName === 'start-menu') {
+      settingsOkayBtn.display.isVisible = true
+      settingsQuitBtn.display.isVisible = false
+    }
+    else {
+      settingsOkayBtn.display.isVisible = false
+      settingsQuitBtn.display.isVisible = true
+    }
   }
 
   public refreshLayout(context: SeaBlock): void {

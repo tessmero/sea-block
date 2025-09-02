@@ -7,7 +7,6 @@
 import type { GuiElement } from 'guis/gui'
 import { smBanner, smSettingsBtn, smStartBtn, smWarning } from './sm-elements'
 import type { SmLayoutKey } from 'guis/keys/sm-layout-keys'
-import { isDevMode, topConfig } from 'configs/imp/top-config'
 
 type SmElem = GuiElement<SmLayoutKey>
 
@@ -53,11 +52,11 @@ export const smSequence: Array<Segment> = [
   },
 ]
 
-if (isDevMode && topConfig.flatConfig.transitionMode === 'skip') {
-  for (const seg of smSequence) {
-    seg.duration /= 1000
-  }
-}
+// if (isDevMode && topConfig.flatConfig.transitionMode === 'skip') {
+//   for (const seg of smSequence) {
+//     seg.duration /= 1000
+//   }
+// }
 
 export function pickSegment(elapsed: number): number {
   let t = elapsed

@@ -11,7 +11,7 @@ import type { ConfigButton, ConfigTree, OptionItem } from '../config-tree'
 import { saveSnapshot } from 'util/config-snapshot-helper'
 import { renderSoundBalanceConfig } from 'configs/sounds/enabled-sounds'
 
-export const isDevMode = true
+export const isDevMode = false
 function applyDevMode(cfg: typeof topConfigTree.children) {
   cfg.game.value = 'free-cam' // skip start menu
 

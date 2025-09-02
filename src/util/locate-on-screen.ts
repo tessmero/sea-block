@@ -7,7 +7,8 @@
  */
 
 import type { SeaBlock } from 'sea-block'
-import type { Vector3 } from 'three'
+import type { Vector3Like } from 'three'
+import { Vector3 } from 'three'
 import { Vector2 } from 'three'
 
 // get rectangle for test-support
@@ -23,16 +24,17 @@ export function tsLocateOnScreen(seaBlock: SeaBlock, worldPos: Vector3) {
   ]
 }
 
-const dummy = new Vector2()
+const dummy2 = new Vector2()
+const dummy3 = new Vector3()
 
-export function locateOnScreen(seaBlock: SeaBlock, worldPos: Vector3): Vector2 {
+export function locateOnScreen(seaBlock: SeaBlock, worldPos: Vector3Like): Vector2 {
   const { camera, layeredViewport } = seaBlock
 
   // Project world position to normalized device coordinates (NDC)
-  const ndc = worldPos.clone().project(camera)
-  dummy.set(
+  const ndc = dummy3.copy(worldPos).project(camera)
+  dummy2.set(
     (ndc.x + 1) / 2 * layeredViewport.w,
     (1 - ndc.y) / 2 * layeredViewport.h,
   )
-  return dummy
+  return dummy2
 }

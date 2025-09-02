@@ -7,30 +7,38 @@
 import type { SeaBlock } from 'sea-block'
 import { getImage } from './image-asset-loader'
 import type { ImageAssetUrl } from './image-asset-urls'
-import type { Vector2, Vector3 } from 'three'
+import type { Vector2Like, Vector3Like } from 'three'
 import { locateOnScreen } from 'util/locate-on-screen'
+import { visiblePrompts } from 'input/ggui-nav-wasd'
 
 // position on screen or in world
-let selectPrompt: null | Vector2 | Vector3 = null
+let selectPrompt: null | Vector2Like | Vector3Like = null
 
-export function setGamepadConfirmPrompt(pos: null | Vector2 | Vector3) {
+export function setGamepadConfirmPrompt(pos: null | Vector2Like | Vector3Like) {
   selectPrompt = pos
 }
 
-function getConfirmBtnUrl(seaBlock: SeaBlock): ImageAssetUrl {
+function getPromptUrl(seaBlock: SeaBlock, prompt: 'cancel' | 'confirm'): ImageAssetUrl {
   if (seaBlock.hasConnectedGamepad === 'xbox') {
-    return 'gamepad/xbox-a-btn.png'
+    if (prompt === 'confirm') {
+      return 'gamepad/xbox-a-btn.png'
+    }
+    else {
+      return 'gamepad/xbox-b-btn.png'
+    }
   }
-  return 'gamepad/playstation-x-btn.png'
+  if (prompt === 'confirm') {
+    return 'gamepad/playstation-x-btn.png'
+  }
+  else {
+    return 'gamepad/playstation-o-btn.png'
+  }
 }
 
 export function drawGamepadPrompts(seaBlock: SeaBlock) {
   if (seaBlock.transition) {
     return // don't interfere with transition
   }
-
-  const src = getConfirmBtnUrl(seaBlock)
-  const img = getImage(src)
 
   const { w, h } = seaBlock.layeredViewport
   const ctx = seaBlock.layeredViewport.frontCtx
@@ -41,8 +49,26 @@ export function drawGamepadPrompts(seaBlock: SeaBlock) {
     return // just keep layer clear
   }
 
+  // check if for elements with gamepadPrompt property assigned
+  for (const prompt in visiblePrompts) {
+    const { rectangle } = visiblePrompts[prompt]
+    if (rectangle) {
+      const src = getPromptUrl(seaBlock, prompt as 'confirm' | 'cancel')
+      const img = getImage(src)
+      ctx.drawImage(img,
+        0, 0, img.width, img.height,
+        rectangle.x, rectangle.y, img.width, img.height,
+      )
+    }
+  }
+
+  // show prompts
+
   if (selectPrompt) {
-    if ('z' in selectPrompt) {
+    const src = getPromptUrl(seaBlock, 'confirm')
+    const img = getImage(src)
+    if ('z' in selectPrompt && !seaBlock.isShowingSettingsMenu) {
+      // has set world posigion
       const screenPos = locateOnScreen(seaBlock, selectPrompt)
       screenPos.round()
       ctx.drawImage(img,
@@ -51,10 +77,15 @@ export function drawGamepadPrompts(seaBlock: SeaBlock) {
       )
     }
     else {
+      // has set screen position
       ctx.drawImage(img,
         0, 0, img.width, img.height,
         selectPrompt.x, selectPrompt.y, img.width, img.height,
       )
     }
+  }
+  else {
+    // no screen or world position set
+
   }
 }

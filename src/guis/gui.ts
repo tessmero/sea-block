@@ -66,10 +66,13 @@ export type ElementDisplayParams = {
   readonly type: ElementType
   readonly border?: BorderVariant
   readonly icon?: ImageAssetUrl
+
   readonly label?: string
   readonly font?: FontVariant
   readonly color?: string
   readonly textAlign?: TextAlign
+
+  readonly gamepadPrompt?: 'confirm' | 'cancel'
 
   shouldClearBehind?: boolean
   isVisible?: boolean
@@ -106,7 +109,7 @@ export class Gui<TLayoutKey extends string = string> {
   private readonly hidden: Set<ElementId> = new Set() // subset of elements
   public hovered?: ElementId // element hovered by mouse
 
-  public resetElementStates() {
+  public resetElementStates(_seaBlock: SeaBlock) {
     resetLastDrawnStates(this)
     this.stuckDown.clear()
     this.hovered = undefined
@@ -407,7 +410,7 @@ export class Gui<TLayoutKey extends string = string> {
     }
   }
 
-  public keydown(seaBlock: SeaBlock, buttonCode: KeyCode | GamepadCode) {
+  public keydown(seaBlock: SeaBlock, buttonCode: KeyCode | GamepadCode): boolean {
     const { held } = this
 
     for (const key in held) {
@@ -420,8 +423,11 @@ export class Gui<TLayoutKey extends string = string> {
       const { display, hotkeys } = this.elements[id]
       if (display.isVisible && hotkeys?.includes(buttonCode)) {
         this._click({ seaBlock, buttonCode }, id as ElementId)
+        return true // consume event
       }
     }
+
+    return false // do not consume event
   }
 
   public keyup(seaBlock: SeaBlock, code: KeyCode | GamepadCode) {

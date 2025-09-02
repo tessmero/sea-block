@@ -139,7 +139,8 @@ export class FreeCamGame extends Game {
         // place cursor on pickable
         gguiCursorMesh.position.copy(pos)
         gguiCursorMesh.visible = true
-        setGguiSelectAction(() => {
+        setGguiSelectAction((_inputId, axisValue) => {
+          if (axisValue === 0) return // ignore un-press event
           const { clickAction } = freecamPickableElements[name]
           if (!clickAction) return
           clickAction({ seaBlock })

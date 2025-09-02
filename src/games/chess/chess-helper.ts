@@ -4,7 +4,7 @@
  * Chess logic functions referenced in chess-game and chess-gui.
  */
 
-import { Vector2, Vector3 } from 'three'
+import { Vector3 } from 'three'
 import type { GameElement } from '../game'
 import { type GameUpdateContext } from '../game'
 import { emptyScene, type SeaBlock } from 'sea-block'
@@ -36,9 +36,8 @@ import { showPhaseLabel } from './gui/chess-debug-elements'
 import { updateChessPhase } from './chess-update-helper'
 import { FREECAM_PLAYLIST, playNextTrack } from 'audio/song-player'
 import {
-  clickTile,
   flatViewPortClick, flatViewPortUnclick,
-  resetHeldChessInputs, unclickTile, updateHeldChessInputs,
+  resetHeldChessInputs, updateHeldChessInputs,
 } from './chess-input-helper'
 import { ChessWaveMaker } from './chess-wave-maker'
 import { ZoomTransition } from 'gfx/transitions/imp/zoom-transition'
@@ -46,10 +45,10 @@ import { acceptBtn } from './gui/chess-rewards-elements'
 import { updateRepaintEffect } from './gfx/chess-repaint-effect'
 import { rewardHelpDiagram, rewardHelpState } from './gui/chess-reward-help-elements'
 import { ChessScenery } from './levels/chess-scenery'
-import { gguiCursorMesh, hideGguiCursor, setGguiNavAction, setGguiSelectAction } from 'gfx/3d/ggui-3d-cursor'
+import { hideGguiCursor } from 'gfx/3d/ggui-3d-cursor'
 import { orbitWithRightJoystick } from 'guis/elements/joysticks'
 import { zoomWithTriggers } from 'games/imp/free-cam-game'
-import { setGamepadConfirmPrompt } from 'gfx/2d/gamepad-btn-prompts'
+import { putGguiCursorOnSomeValidMove } from './chess-ggui-nav'
 
 // no 3D terrrain in background when selecting reward
 export function chessAllow3DRender(): boolean {
@@ -93,79 +92,15 @@ export function resetChess(context: SeaBlock): Chess {
     chessBoardPipeline.setChess(instance)
   }
   resetHeldChessInputs()
-  if (context.isUsingGamepad) {
-    putGguiCursorOnSomeValidMove()
-  }
-  else {
-    hideGguiCursor()
-  }
+  // if (context.isUsingGamepad && !context.isShowingSettingsMenu) {
+  //   putGguiCursorOnSomeValidMove(instance)
+  // }
+  // else {
+  hideGguiCursor()
+  // }
   togglePauseMenu(instance, false)
 
   return instance
-}
-
-const targetVec = new Vector2()
-// const dummyVec = new Vector2()
-
-function putGguiCursorOnSomeValidMove(startFrom?: TileIndex, angle?: number) {
-  targetVec.set(0, 0)
-  if (startFrom && (typeof angle === 'number')) {
-    const seaBlock = instance.context
-    const { camera, orbitControls } = seaBlock
-    const camAngle = -Math.PI / 2 + Math.atan2(
-      camera.position.z - orbitControls.target.z,
-      camera.position.x - orbitControls.target.x,
-    )
-    targetVec.set(
-      startFrom.x + Math.cos(angle + camAngle),
-      startFrom.z + Math.sin(angle + camAngle),
-    )
-  }
-
-  // console.log(`chess ggui nav with angle ${angle}`)
-
-  const candidates = [...instance.hlTiles.allowedMoves]
-  let nearest: TileIndex | null = null
-  let nearestDistSq = Infinity
-  for (const i of candidates) {
-    if (startFrom && startFrom.i === i) continue
-    const tileIndex = instance.context.terrain.grid.tileIndices[i]
-    const dx = tileIndex.x - targetVec.x
-    const dz = tileIndex.z - targetVec.y
-    const distSq = dx * dx + dz * dz
-    if (distSq < nearestDistSq) {
-      nearest = tileIndex
-      nearestDistSq = distSq
-    }
-  }
-
-  if (nearest) {
-    const tileIndex = nearest
-    instance.hlTiles.hovered = tileIndex // color tile liek mouse hover
-
-    // put 3d cursor over tile
-    instance.getPosOnTile(tileIndex, gguiCursorMesh.position)
-    gguiCursorMesh.visible = true
-
-    // put 2d button prompt on cursor
-    // const screenPos = locateOnScreen(instance.context, gguiCursorMesh.position)
-    // setGamepadConfirmPrompt(screenPos.round()) // round to pixel
-    setGamepadConfirmPrompt(gguiCursorMesh.position)
-
-    //
-    setGguiSelectAction((inputId, axisValue) => {
-      if (axisValue) {
-        clickTile(instance, tileIndex, inputId)
-      }
-      else {
-        unclickTile(instance, tileIndex, inputId)
-      }
-    })
-    setGguiNavAction((angle) => {
-      resetHeldChessInputs()
-      putGguiCursorOnSomeValidMove(tileIndex, angle)
-    })
-  }
 }
 
 export function quitChess(chess: Chess): void {
@@ -214,8 +149,12 @@ export function updateChess(context: GameUpdateContext): void {
   //   return // do not update chess during transition
   // }
 
-  if (context.seaBlock.isUsingGamepad && (!gguiCursorMesh.visible || !instance.hlTiles.hovered)) {
-    putGguiCursorOnSomeValidMove()
+  if (context.seaBlock.isUsingGamepad
+    && instance.currentPhase !== 'reward-choice'
+    && !context.seaBlock.isShowingSettingsMenu
+    && (!instance.hlTiles.hovered)) {
+    // make sure gamepad cursor is visible in world or flat view
+    putGguiCursorOnSomeValidMove(instance)
   }
 
   updateHeldChessInputs()

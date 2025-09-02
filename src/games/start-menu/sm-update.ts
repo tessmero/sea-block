@@ -31,7 +31,11 @@ export function smUpdate(context: GameUpdateContext): void {
 
   // pick current segment
   elapsed += dt
-  const i = pickSegment(elapsed)
+  const i
+  = (context.seaBlock.config.flatConfig.transitionMode === 'skip')
+    ? smSequence.length - 1
+    : pickSegment(elapsed)
+
   if (i !== currentSegment) {
     // just started or switched segment
     // console.log(`switch from smsegment ${currentSegment} to ${i}`)

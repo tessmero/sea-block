@@ -11,10 +11,17 @@ const { btn } = standards
 
 const rowThickness = 8
 const rowWidth = 68 // width with margin inside of panel
+const labelwidth = 50
 
 const row = {
   height: rowThickness,
   width: rowWidth,
+  left: 'auto',
+} as const
+
+const label = {
+  height: rowThickness,
+  width: labelwidth,
   left: 'auto',
 } as const
 
@@ -42,7 +49,7 @@ export const SETTINGS_LAYOUT = {
   musicVolumeLabel: {
     parent: 'settingsPanel',
     top: rowThickness * 1,
-    ...row,
+    ...label,
   },
   musicVolumeRegion: {
     parent: 'settingsPanel',
@@ -57,7 +64,7 @@ export const SETTINGS_LAYOUT = {
   sfxVolumeLabel: {
     parent: 'settingsPanel',
     top: rowThickness * 3,
-    ...row,
+    ...label,
   },
   sfxVolumeRegion: {
     parent: 'settingsPanel',
@@ -72,7 +79,7 @@ export const SETTINGS_LAYOUT = {
   pixelScaleLabel: {
     parent: 'settingsPanel',
     top: rowThickness * 5,
-    ...row,
+    ...label,
   },
   pixelScaleRegion: {
     parent: 'settingsPanel',

@@ -27,6 +27,21 @@ export const puppetTestSequence = [
     test: 'button-changes-state',
     state: 'splash-screen',
     button: 'launch',
+    targetState: 'start-menu',
+  },
+  {
+    test: 'buttons-are-hoverable',
+    state: 'start-menu',
+    buttons: [
+      'smStartBtn',
+      'smSettingsBtn',
+    ],
+    backgroundPoint: [200, 100],
+  },
+  {
+    test: 'button-changes-state',
+    state: 'start-menu',
+    button: 'smStartBtn',
     targetState: 'free-cam',
   },
   {

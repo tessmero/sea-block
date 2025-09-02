@@ -88,6 +88,7 @@ export const grabbedMeshPlayButton: FreecamElem = {
   display: {
     type: 'button',
     label: 'Play',
+    gamepadPrompt: 'confirm',
     isVisible: false,
   },
   clickAction: playClicked,
@@ -98,6 +99,7 @@ export const grabbedMeshCancelButton: FreecamElem = {
   display: {
     type: 'button',
     label: 'Cancel',
+    gamepadPrompt: 'cancel',
     isVisible: false,
   },
   clickAction: cancelClicked,

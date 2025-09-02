@@ -18,6 +18,8 @@ import { updatePawnButtonLabel } from './gfx/chess-2d-gfx-helper'
 import type { PieceName } from './chess-enums'
 import type { Intersection } from 'three'
 import { togglePauseMenu } from './gui/chess-hud-dialog-elements'
+import { Gui } from 'guis/gui'
+import type { Rectangle } from 'util/layout-parser'
 
 // click action for flat viewport gui element
 export function flatViewPortClick(chess: Chess, inputEvent: ProcessedSubEvent) {
@@ -39,6 +41,9 @@ export function flatViewPortUnclick(chess: Chess, inputEvent: ProcessedSubEvent)
 
 // handle move that wasn't consumed by regular gui or orbit controls
 export function hoverChessWorld(chess: Chess, inputEvent: ProcessedSubEvent) {
+  // if (inputEvent.seaBlock.isShowingSettingsMenu) {
+  //   return
+  // }
   if (chess.currentPhase === 'game-over') {
     return
   }
@@ -68,6 +73,9 @@ export function hoverChessWorld(chess: Chess, inputEvent: ProcessedSubEvent) {
 
 // handle click that wasn't consumed by regular gui
 export function clickChessWorld(chess: Chess, inputEvent: ProcessedSubEvent): boolean {
+  // if (inputEvent.seaBlock.isShowingSettingsMenu) {
+  //   return false
+  // }
   togglePauseMenu(chess, false)
   if (chess.currentPhase === 'game-over') {
     return false
@@ -273,6 +281,20 @@ function fullClickTile(chess: Chess, clickedTile: TileIndex) {
     // not an allowed move
     playSound('chessCancel')
   }
+}
+
+export function getFlatViewTileRect(chess: Chess, tileIndex: TileIndex): Rectangle | undefined {
+  const gui = Gui.create('chess')
+  const layoutKey = 'flatViewport'
+  const rectangle = gui.overrideLayoutRectangles[layoutKey] || gui.layoutRectangles[layoutKey]
+  if (!rectangle) return undefined
+
+  const tileSize = 16
+  const col = 3 + tileIndex.x - chess.centerTile.x
+  const row = 3 + tileIndex.z - chess.centerTile.z
+  const x = rectangle.x + (col * tileSize)
+  const y = rectangle.y + (row * tileSize)
+  return { x, y, w: tileSize, h: tileSize }
 }
 
 export function pickTileInFlatView(chess: Chess, inputEvent: ProcessedSubEvent): TileIndex | undefined {

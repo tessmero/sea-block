@@ -10,6 +10,9 @@ import { drivingRaftElement,
   raftRig, resetRaftDrive, updateRaftDrive } from 'games/raft/raft-drive-helper'
 import type { SeaBlock } from 'sea-block'
 import { Vector3 } from 'three'
+import { raft } from 'games/raft/raft'
+import { gguiCursorMesh } from 'gfx/3d/ggui-3d-cursor'
+import { putGguiCursorOnSomeClickable } from 'games/raft/raft-ggui-nav'
 
 // camera relative to player x/z position
 const _camScale = 5
@@ -47,6 +50,14 @@ export class RaftGame extends FreeCamGame {
 
   public update(context: GameUpdateContext): void {
     // super.update(context)
+
+    if (context.seaBlock.isUsingGamepad
+      && raft.currentPhase !== 'idle'
+      && !context.seaBlock.isShowingSettingsMenu
+      && (!gguiCursorMesh.visible)) {
+      // make sure gamepad cursor is visible in world
+      putGguiCursorOnSomeClickable()
+    }
 
     this.cameraAnchor.position = raftRig.getCameraTarget()
     this.cameraAnchor.isGhost = true

@@ -36,7 +36,7 @@ describe('puppeteer/playwright tests', function () {
       const module = require('demo-tests') // eslint-disable-line @typescript-eslint/no-require-imports
       TestBatch = module.TestBatch
       HtmlRenderer = module.HtmlRenderer
-      isEnabled = false
+      isEnabled = true
     }
     catch {
       // demo-tests not installed

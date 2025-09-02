@@ -90,12 +90,16 @@ export class SeaBlock {
     this.isShowingSettingsMenu = !this.isShowingSettingsMenu
     if (this.isShowingSettingsMenu) {
       playSound('settingsOpen')
-      releaseGgui() // release gamepad cursor, now only settings can be navigated
+      // release gamepad cursor, now only settings can be navigated
+      releaseGgui() // 2d
+      hideGguiCursor() // 3d
+
+      // updateGamepadGui({ seaBlock: this, dt: 0 })
     }
     else {
       playSound('settingsClose')
     }
-    Gui.create('settings-menu').resetElementStates()
+    Gui.create('settings-menu').resetElementStates(this)
     this.onResize()
   }
 
@@ -410,7 +414,7 @@ export class SeaBlock {
     generator.refreshConfig()
 
     for (const gui of this.getLayeredGuis()) {
-      gui.resetElementStates()
+      gui.resetElementStates(this)
     }
 
     // check for special case: game changed

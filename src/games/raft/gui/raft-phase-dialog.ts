@@ -16,9 +16,11 @@ type RaftElem = GuiElement<RaftLayoutKey>
 
 const buildCancelBtn: RaftElem = {
   layoutKey: 'buildCancelBtn',
+  hotkeys: ['ButtonB'],
   display: {
     type: 'button',
     label: 'DONE',
+    gamepadPrompt: 'cancel',
     font: 'mini',
     isVisible: false,
   },

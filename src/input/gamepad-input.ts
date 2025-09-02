@@ -42,10 +42,18 @@ export function pollGamepadInput(seaBlock: SeaBlock) {
       if (isPressed && !prevButtonStates[code]) {
         // Button pressed
         seaBlock.isUsingGamepad = true
-        for (const gui of seaBlock.getLayeredGuis()) {
-          gui.keydown(seaBlock, code)
+        let hasConsumed = false
+        if (!hasConsumed) {
+          hasConsumed = navigateGuiWithGamepad(seaBlock, code as GamepadCode, 1)
         }
-        navigateGuiWithGamepad(seaBlock, code as GamepadCode, 1)
+        if (!hasConsumed) {
+          for (const gui of seaBlock.getLayeredGuis()) {
+            if (gui.keydown(seaBlock, code)) {
+              hasConsumed = true
+              break
+            }
+          }
+        }
       }
       else if (!isPressed && prevButtonStates[code]) {
         // Button released

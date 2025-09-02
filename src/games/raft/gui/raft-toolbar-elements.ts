@@ -5,12 +5,18 @@
  * (though they may be covered by a dialog).
  */
 
-import type { ElementEvent, GuiElement } from 'guis/gui'
+import type { GuiElement } from 'guis/gui'
 import type { RaftLayoutKey } from 'guis/keys/raft-layout-keys'
 import { raft } from '../raft'
 import type { ImageAssetUrl } from 'gfx/2d/image-asset-urls'
+import { type RaftPhase } from '../raft-enums'
 
 type RaftElem = GuiElement<RaftLayoutKey>
+
+export const RAFT_TOOLBAR_PHASES: Array<RaftPhase> = [
+  'place-floor',
+  'place-button', 'place-thruster', 'show-all-wires',
+]
 
 export const RAFT_TOOLBAR_BUTTONS = [
   'placeFloorBtn',
@@ -19,7 +25,7 @@ export const RAFT_TOOLBAR_BUTTONS = [
 
 type ButtonName = (typeof RAFT_TOOLBAR_BUTTONS)[number]
 
-const actions: Record<ButtonName, (e: ElementEvent) => void> = {
+const actions: Record<ButtonName, () => void> = {
   placeFloorBtn: () => {
     if (raft.currentPhase === 'place-floor') {
       raft.startPhase('idle')
@@ -83,8 +89,8 @@ export const raftToolbarElements: Array<RaftElem>
       icon: toolbarIcons[layoutKey],
       // label: userFriendlyLabels[layoutKey],
     },
-    clickAction: (e) => {
-      actions[layoutKey](e) // button-specific action
+    clickAction: () => {
+      actions[layoutKey]() // button-specific action
     },
   }))
 
@@ -94,6 +100,29 @@ export function setRaftToolbarPressed(pressedBtn?: ButtonName) {
     display.forcedState = (name === pressedBtn) ? 'pressed' : undefined
     display.needsUpdate = true
   }
+}
+
+export const prevToolBtn: RaftElem = {
+  layoutKey: 'prevToolBtn',
+  hotkeys: ['ButtonLB'],
+  display: {
+    type: 'button',
+    label: '<',
+  },
+  clickAction: () => {
+    cycleTool(-1)
+  },
+}
+export const nextToolBtn: RaftElem = {
+  layoutKey: 'nextToolBtn',
+  hotkeys: ['ButtonRB'],
+  display: {
+    type: 'button',
+    label: '>',
+  },
+  clickAction: () => {
+    cycleTool(1)
+  },
 }
 
 export const raftSettingsBtn: RaftElem = {
@@ -116,4 +145,11 @@ export const raftSettingsBtn: RaftElem = {
     //   },
     // })
   },
+}
+
+function cycleTool(delta: -1 | 1) {
+  const i = RAFT_TOOLBAR_PHASES.indexOf(raft.currentPhase)
+  const n = RAFT_TOOLBAR_BUTTONS.length
+  const buttonName = RAFT_TOOLBAR_BUTTONS[(i + delta + n) % n]
+  actions[buttonName]()
 }

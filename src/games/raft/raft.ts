@@ -154,14 +154,14 @@ export class Raft {
   //   //this.hlTiles.updateBuildableTiles(this)
   // }
 
-  hoverWorld(inputEvent: ProcessedSubEvent): boolean {
-    const { pickedTile } = inputEvent
+  // hoverWorld(inputEvent: ProcessedSubEvent): boolean {
+  //   const { pickedTile } = inputEvent
 
-    if (pickedTile) {
-      return true // consume event
-    }
-    return false
-  }
+  //   if (pickedTile) {
+  //     return true // consume event
+  //   }
+  //   return false
+  // }
 
   getPiecesOnTile(tile: TileIndex): Array<RenderablePiece> {
     const result: Array<RenderablePiece> = []

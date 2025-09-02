@@ -18,6 +18,7 @@ type ChessRun = {
 
 export const START_COLLECTED = [
   'rook', // ...PIECE_NAMES,
+  // 'dual-vector-foil'
 ] as const satisfies Array<CollectibleName>
 
 export const START_PAWNS = 1

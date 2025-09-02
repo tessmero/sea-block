@@ -16,6 +16,10 @@ export const RAFT_LAYOUT_KEYS = [
   'placeThrusterBtn',
   'wiresBtn',
 
+  // buttons to cycle through toolbar
+  'prevToolBtn',
+  'nextToolBtn',
+
   // top right quit game button
   'raftSettingsBtn',
 

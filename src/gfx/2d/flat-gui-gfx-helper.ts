@@ -106,7 +106,7 @@ export function updateFrontLayer(seaBlock: SeaBlock) {
 
       const lastState = lastDrawnState[id]
       if (stateToDraw !== lastState) {
-        // console.log(layoutKey, JSON.stringify(rect))
+        // button has changed state
 
         if (stateToDraw === 'pressed' && !shownAsPressed[id]) {
           playSound('click')
@@ -121,11 +121,13 @@ export function updateFrontLayer(seaBlock: SeaBlock) {
           // console.log(`hover on ${layoutKey}`)
         }
 
-        // special case for joystick regions: clear rectangle
         if (display.shouldClearBehind) {
+        // special case for joystick regions: clear rectangle
           ctx.clearRect(rect.x, rect.y, rect.w, rect.h)
         }
+
         if (display.type === 'sprite-atlas') {
+          // special case
           (gui as SpriteAtlasGui).drawAtlasView(ctx, rect)
         }
         else {

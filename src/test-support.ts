@@ -7,7 +7,7 @@
 import { getPickablePieceMeshPosition } from 'games/free-cam/freecam-pickable-meshes'
 import type { ChessGame } from 'games/imp/chess-game'
 import type { SeaBlock } from 'sea-block'
-import { locateOnScreen, tsLocateOnScreen } from 'util/locate-on-screen'
+import { tsLocateOnScreen } from 'util/locate-on-screen'
 
 export function getTestSupport(seaBlock: SeaBlock) {
   return {

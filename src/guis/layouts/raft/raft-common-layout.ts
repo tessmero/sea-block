@@ -20,6 +20,8 @@ export const RAFT_COMMON_LAYOUT = {
 
   toolbar: {
     height: 16,
+    width: RAFT_TOOLBAR_BUTTONS.length * buttonWidth,
+    left: 'auto',
   },
 
   raftSettingsBtn: {
@@ -35,6 +37,21 @@ export const RAFT_COMMON_LAYOUT = {
       left: buttonWidth * i,
     },
   ])),
+
+  prevToolBtn: {
+    parent: 'toolbar',
+    width: 32,
+    height: 16,
+    right: '100%',
+  },
+
+  nextToolBtn: {
+    parent: 'toolbar',
+    width: 32,
+    height: 16,
+    bottom: 0,
+    left: '100%',
+  },
 
   ...RAFT_PHASE_PANEL_LAYOUT,
   ...RAFT_PIECE_DIALOG_LAYOUT,
