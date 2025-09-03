@@ -9,7 +9,7 @@ import type { GameElement } from '../game'
 import { type GameUpdateContext } from '../game'
 import { emptyScene, type SeaBlock } from 'sea-block'
 import type { TileIndex } from 'core/grid-logic/indexed-grid'
-import { setTilePickY, type ProcessedSubEvent } from 'mouse-touch-input'
+import { setTilePickY, type ProcessedSubEvent } from 'input/mouse-touch-input'
 import type { RenderablePiece, UniquePiece } from './gfx/chess-3d-gfx-helper'
 import { resetMeshes, updateMeshes } from './gfx/chess-3d-gfx-helper'
 import { ChessHlTiles } from './chess-hl-tiles'
@@ -17,7 +17,7 @@ import { ChessMoveAnim } from './chess-move-anim'
 import type { ChessGui } from 'guis/imp/chess-gui'
 import { PIECE_NAMES, type ChessPhase, type PieceName } from './chess-enums'
 import { currentLevelId, loadChessLevel } from './levels/chess-level-parser'
-import { playSound } from 'audio/sound-effects'
+import { playSound } from 'audio/sound-effect-player'
 import {
   buildGoalDiagram, flatChessBackground,
   updateFlatView, updatePawnButtonLabel,
@@ -34,7 +34,7 @@ import { cancelPawnBtn, flatViewport, goalDisplays, pawnBtn, showCurrentPiece } 
 import { toggleGameOverMenu, togglePauseMenu } from './gui/chess-hud-dialog-elements'
 import { showPhaseLabel } from './gui/chess-debug-elements'
 import { updateChessPhase } from './chess-update-helper'
-import { FREECAM_PLAYLIST, playNextTrack } from 'audio/song-playlist'
+import { FREECAM_PLAYLIST, playNextTrack } from 'audio/song-player'
 import {
   flatViewPortClick, flatViewPortUnclick,
   resetHeldChessInputs, updateHeldChessInputs,
@@ -45,6 +45,10 @@ import { acceptBtn } from './gui/chess-rewards-elements'
 import { updateRepaintEffect } from './gfx/chess-repaint-effect'
 import { rewardHelpDiagram, rewardHelpState } from './gui/chess-reward-help-elements'
 import { ChessScenery } from './levels/chess-scenery'
+import { gguiHandler, hideGguiCursor } from 'gfx/3d/ggui-3d-cursor'
+import { orbitWithRightJoystick } from 'guis/elements/joysticks'
+import { zoomWithTriggers } from 'games/imp/free-cam-game'
+import { putGguiCursorOnSomeValidMove } from './chess-ggui-nav'
 
 // no 3D terrrain in background when selecting reward
 export function chessAllow3DRender(): boolean {
@@ -55,6 +59,20 @@ export function chessAllow3DRender(): boolean {
     return false
   }
   return true
+}
+
+export function chessAllowGgui3DCursor(): boolean {
+  if (instance.currentPhase === 'player-choice' || instance.currentPhase === 'place-pawn') {
+    return true
+  }
+  return false
+}
+
+export function chessAllowGgui(): boolean {
+  if (instance.currentPhase === 'reward-choice') {
+    return true
+  }
+  return false
 }
 
 export function clearChessRun(): void {
@@ -74,6 +92,12 @@ export function resetChess(context: SeaBlock): Chess {
     chessBoardPipeline.setChess(instance)
   }
   resetHeldChessInputs()
+  // if (context.isUsingGamepad && !context.isShowingSettingsMenu) {
+  //   putGguiCursorOnSomeValidMove(instance)
+  // }
+  // else {
+  hideGguiCursor()
+  // }
   togglePauseMenu(instance, false)
 
   return instance
@@ -124,6 +148,15 @@ export function updateChess(context: GameUpdateContext): void {
   // if (context.seaBlock.transition) {
   //   return // do not update chess during transition
   // }
+
+  if (context.seaBlock.isUsingGamepad
+    && instance.currentPhase !== 'reward-choice'
+    && !context.seaBlock.isShowingSettingsMenu
+    && (!instance.hlTiles.hovered || !gguiHandler)) {
+    // make sure gamepad cursor is visible in world or flat view
+    putGguiCursorOnSomeValidMove(instance)
+  }
+
   updateHeldChessInputs()
   if (rewardHelpState) {
     updateRepaintEffect(context.dt)
@@ -339,10 +372,13 @@ export class Chess {
     // advance phase-specific animation (may override mesh positions)
     updateChessPhase({ ...context, chess: this })
 
+    orbitWithRightJoystick(context)
+    zoomWithTriggers(context)
+
     this.updateFlatView()
   }
 
-  // used to support picking instanced meshes in chess-3d-gfx-helper
+  // used to identify picked mesh instance
   public identifyPiece(type: PieceName, index: number): RenderablePiece | undefined {
     const candidates = [this.player, ...this.pawns, ...this.enemies]
     for (const piece of candidates) {
@@ -354,7 +390,8 @@ export class Chess {
 
   private updateFlatView() {
     // if( this.context.config.flatConfig.chessViewMode === '2D' ){
-    if (chessRun.collected.includes('dual-vector-foil')) {
+    if (chessRun.collected.includes('dual-vector-foil')
+      && !this.context.isShowingSettingsMenu) {
       updateFlatView(this)
     }
     else {
@@ -457,7 +494,7 @@ export class Chess {
     const height = this.context.terrain.generatedTiles[tile.i]?.liveHeight
 
     const writeTo = target || positionDummy
-    writeTo.set(x, (height || 13), z)
+    writeTo.set(x, (height ?? 13), z)
 
     return writeTo
   }

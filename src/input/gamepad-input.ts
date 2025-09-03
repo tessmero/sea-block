@@ -1,0 +1,142 @@
+/**
+ * @file gamepad-input.ts
+ *
+ * Handle joystick/trigger/button inputs from physical controller device.
+ */
+
+import type { SeaBlock } from 'sea-block'
+import { GAMEPAD_AXES, GAMEPAD_BUTTONS, GAMEPAD_CODES, GAMEPAD_TRIGGERS } from './input-id'
+import type { GamepadCode } from './input-id'
+import { joyInputState, leftJoy, leftJoySlider, rightJoy, rightJoySlider } from 'guis/elements/joysticks'
+import type { GuiElement, Slider, SliderState } from 'guis/gui'
+import { navigateGuiWithGamepad } from './ggui-nav-wasd'
+import { navigateWithStick } from './ggui-nav-circular'
+
+export const gamepadState = {} as Record<GamepadCode, boolean | number>
+for (const code of GAMEPAD_CODES) {
+  gamepadState[code] = false
+}
+
+// Store previous button states for edge detection
+const prevButtonStates: Record<GamepadCode, boolean> = (() => {
+  const obj = {} as Record<GamepadCode, boolean>
+  for (const code of GAMEPAD_CODES) {
+    obj[code] = false
+  }
+  return obj
+})()
+
+export function pollGamepadInput(seaBlock: SeaBlock) {
+  // console.log(`start polling gamepad`)
+  // const startTime = performance.now()
+
+  const gamepads = navigator.getGamepads ? navigator.getGamepads() : []
+  for (const gp of gamepads) {
+    if (!gp) continue
+    // Buttons
+    for (const [name, idx] of Object.entries(GAMEPAD_BUTTONS)) {
+      const code = name as GamepadCode
+      const isPressed = !!gp.buttons[idx]?.pressed
+      gamepadState[code] = isPressed
+      // Edge detection for keydown/keyup
+      if (isPressed && !prevButtonStates[code]) {
+        // Button pressed
+        seaBlock.isUsingGamepad = true
+        let hasConsumed = false
+        if (!hasConsumed) {
+          hasConsumed = navigateGuiWithGamepad(seaBlock, code as GamepadCode, 1)
+        }
+        if (!hasConsumed) {
+          for (const gui of seaBlock.getLayeredGuis()) {
+            if (gui.keydown(seaBlock, code)) {
+              hasConsumed = true
+              break
+            }
+          }
+        }
+      }
+      else if (!isPressed && prevButtonStates[code]) {
+        // Button released
+        // seaBlock.isUsingGamepad = true
+        for (const gui of seaBlock.getLayeredGuis()) {
+          gui.keyup(seaBlock, code)
+        }
+        navigateGuiWithGamepad(seaBlock, code as GamepadCode, 0)
+      }
+      prevButtonStates[code] = isPressed
+    }
+    // Triggers (analog)
+    for (const [name, idx] of Object.entries(GAMEPAD_TRIGGERS)) {
+      const value = gp.buttons[idx]?.value ?? 0
+      if (Math.abs(value) > 0.1) {
+        seaBlock.isUsingGamepad = true
+      }
+      gamepadState[name as GamepadCode] = value
+    }
+    // Axes (analog value)
+    for (const [axis, idx] of Object.entries(GAMEPAD_AXES)) {
+      const value = gp.axes[idx] ?? 0
+      // if (Math.abs(value) > 0.1) {
+      //   seaBlock.isUsingGamepad = true
+      // }
+
+      // // handle as WASD here works,
+      // // but two axes would count as separate events
+      // navigateGuiWithGamepad(seaBlock, axis as GamepadCode, value)
+
+      gamepadState[axis] = value
+    }
+
+    navigateWithStick(seaBlock) // process 2D joystick axes
+
+    // pass state to virtual joysticks logic/display
+    updateStick(seaBlock,
+      gamepadState.AxisLX as number,
+      gamepadState.AxisLY as number,
+      leftJoy, leftJoySlider, 'left',
+    )
+    updateStick(seaBlock,
+      gamepadState.AxisRX as number,
+      gamepadState.AxisRY as number,
+      rightJoy, rightJoySlider, 'right',
+    )
+  }
+
+  // const endTime = performance.now()
+  // console.log(`gamepad polling took ${endTime-startTime} ms`)
+}
+
+function updateStick(
+  seaBlock: SeaBlock, rawX: number, rawY: number,
+  region: GuiElement, slider: Slider, name: 'left' | 'right',
+) {
+  if (Math.abs(rawX) > 0.01 || Math.abs(rawY) > 0.01) {
+    // limit radius
+    const mag = Math.hypot(rawX, rawY)
+    if (mag > 1) {
+      rawX /= mag
+      rawY /= mag
+    }
+
+    // set logical state for joysticks
+    joyInputState[name] = { x: rawX / 2 + 0.5, y: rawY / 2 + 0.5 }
+
+    // set state for onscreen joystick display
+    slider.display.forcedSliderState = joyInputState[name]
+    region.display.forcedState = 'pressed'
+    slider.display.forcedState = 'pressed'
+    region.display.needsUpdate = true
+  }
+  else if (slider.display.forcedState === 'pressed') {
+    // release onscreen joystick display
+    region.display.needsUpdate = true
+    region.display.forcedState = undefined
+    slider.display.forcedState = undefined
+    joyInputState[name] = neutral
+    delete seaBlock.game.gui.overrideLayoutRectangles[`${name}JoySlider`]
+  }
+}
+
+const neutral = {
+  x: 0.5, y: 0.5,
+} as const satisfies SliderState

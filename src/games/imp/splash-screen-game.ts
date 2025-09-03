@@ -5,7 +5,7 @@
  */
 
 import { Vector3 } from 'three'
-import { freeCamGameConfig } from 'configs/free-cam-game-config'
+import { freeCamGameConfig } from 'configs/imp/free-cam-game-config'
 import { Game, type GameUpdateContext } from '../game'
 import { FreeCamGame } from './free-cam-game'
 

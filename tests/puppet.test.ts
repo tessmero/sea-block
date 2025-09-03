@@ -28,7 +28,7 @@ const params = {
 
 let TestBatch: any // eslint-disable-line @typescript-eslint/no-explicit-any
 let HtmlRenderer: any // eslint-disable-line @typescript-eslint/no-explicit-any
-let wasSkipped = false
+let isEnabled = false
 
 describe('puppeteer/playwright tests', function () {
   before(function () {
@@ -36,10 +36,10 @@ describe('puppeteer/playwright tests', function () {
       const module = require('demo-tests') // eslint-disable-line @typescript-eslint/no-require-imports
       TestBatch = module.TestBatch
       HtmlRenderer = module.HtmlRenderer
+      isEnabled = true
     }
     catch {
       // demo-tests not installed
-      wasSkipped = true
       this.skip()
     }
   })
@@ -60,7 +60,7 @@ before(function () {
 })
 
 after(function () {
-  if (wasSkipped) return
+  if (!isEnabled) return
   const reportsFolder = `${process.cwd()}/reports`
   new HtmlRenderer(reportsFolder).renderReport('index')
 })

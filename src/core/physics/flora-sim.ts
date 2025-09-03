@@ -9,7 +9,7 @@
 import { createNoise2D } from 'simplex-noise'
 import type { TiledGrid } from '../grid-logic/tiled-grid'
 import type { Tile } from '../tile'
-import { floraConfig } from '../../configs/flora-config'
+import { floraConfig } from '../../configs/imp/flora-config'
 import { TileSim } from './tile-sim'
 
 const noise2D = createNoise2D()

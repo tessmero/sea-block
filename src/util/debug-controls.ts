@@ -51,7 +51,7 @@ export function showDebugControls(seaBlock: SeaBlock) {
       // hide after collapsing animation
       setTimeout(() => {
         gui.destroy()
-        seaBlock.game.gui.resetElementStates() // unclick button in in-game gui
+        seaBlock.game.gui.resetElementStates(seaBlock) // unclick button in in-game gui
       }, 200)
     }
   })

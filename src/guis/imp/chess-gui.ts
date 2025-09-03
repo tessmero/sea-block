@@ -6,9 +6,9 @@
  * so user can click terrain tiles used as chess board.
  */
 
-import type { ElementEvent, GuiElement, RegisteredGui } from '../gui'
+import type { GuiElement, RegisteredGui } from '../gui'
 import { Gui } from '../gui'
-import type { ProcessedSubEvent } from 'mouse-touch-input'
+import type { ProcessedSubEvent } from 'input/mouse-touch-input'
 import type { Chess } from 'games/chess/chess-helper'
 import { getChessPhase } from 'games/chess/chess-helper'
 import { CHESS_HUD_ELEMENTS } from 'games/chess/gui/chess-hud-elements'
@@ -22,6 +22,16 @@ import { CHESS_LAYOUT } from 'guis/layouts/chess/chess-layout'
 import { CHESS_REWARDS_LAYOUT } from 'guis/layouts/chess/chess-rewards-layout'
 import { CHESS_REWARD_HELP_ELEMENTS } from 'games/chess/gui/chess-reward-help-elements'
 
+const elements: Array<GuiElement<ChessLayoutKey>> = [
+  ...CHESS_DEBUG_ELEMENTS,
+  ...CHESS_HUD_ELEMENTS,
+  ...CHESS_HUD_DIALOG_ELEMENTS,
+
+  // separate layout
+  ...CHESS_REWARD_ELEMENTS,
+  ...CHESS_REWARD_HELP_ELEMENTS,
+]
+
 export class ChessGui extends Gui<ChessLayoutKey> {
   static {
     Gui.register('chess', {
@@ -33,16 +43,19 @@ export class ChessGui extends Gui<ChessLayoutKey> {
         }
         return CHESS_LAYOUT
       },
-      elements: [
-        ...CHESS_DEBUG_ELEMENTS,
-        ...CHESS_HUD_ELEMENTS,
-        ...CHESS_HUD_DIALOG_ELEMENTS,
-
-        // separate layout
-        ...CHESS_REWARD_ELEMENTS,
-        ...CHESS_REWARD_HELP_ELEMENTS,
-      ],
+      elements,
     } satisfies RegisteredGui<ChessLayoutKey>)
+
+    // link chessAction to clickAction for all elements
+    for (const elem of elements) {
+      if ('chessAction' in elem) {
+        const btn = elem as ChessButton
+        btn.clickAction = (event) => {
+          const { chess } = Gui.create('chess') as ChessGui
+          btn.chessAction({ ...event, chess })
+        }
+      }
+    }
   }
 
   // assigned in chess helper
@@ -59,17 +72,6 @@ export class ChessGui extends Gui<ChessLayoutKey> {
   public unclick(event: ProcessedSubEvent): void {
     super.unclick(event)
     unclickChessWorld(this.chess, event)
-  }
-
-  protected clickElem(elem: GuiElement<ChessLayoutKey>, event: ElementEvent): void {
-    const { chess } = this
-    if (chess && 'chessAction' in elem) {
-      const btn = elem as ChessButton
-      btn.chessAction({ ...event, chess })
-    }
-    else {
-      super.clickElem(elem, event) // allow regular buttons with clickAction to work
-    }
   }
 
   public move(inputEvent: ProcessedSubEvent): boolean {

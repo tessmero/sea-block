@@ -66,6 +66,14 @@ export abstract class Game {
     return true
   }
 
+  public doesAllowGgui(): boolean {
+    return false
+  }
+
+  public doesAllowGgui3DCursor(): boolean {
+    return false
+  }
+
   public doesAllow3DRender(): boolean {
     return true
   }
@@ -109,7 +117,7 @@ export abstract class Game {
       elem.mesh = mesh
       instance.meshes.push(mesh)
       if (elem.clickAction || elem.isPickable) {
-        linkGamElement(mesh, elem)
+        linkGameElement(mesh, elem)
         instance.pickableMeshes.push(mesh)
       }
     }))
@@ -128,7 +136,7 @@ export abstract class Game {
   }
 }
 
-function linkGamElement(mesh: Object3D, elem: GameElement) {
+function linkGameElement(mesh: Object3D, elem: GameElement) {
   // add property to element and descendants to check when picked (moust-touch-input.ts)
   (mesh as any).gameElement = elem // eslint-disable-line @typescript-eslint/no-explicit-any
   mesh.traverse((child) => {

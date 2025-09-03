@@ -9,7 +9,7 @@ import type { Tile } from '../tile'
 import type { TileGroup } from '../groups/tile-group'
 import { SPHERE_RADIUS, COLLISION_KERNEL_RADIUS } from '../../settings'
 import { STEP_DURATION } from '../../settings'
-import { physicsConfig } from '../../configs/physics-config'
+import { physicsConfig } from '../../configs/imp/physics-config'
 import type { FlatConfigMap } from '../../configs/configurable'
 import { Simulation } from './simulation'
 
@@ -39,11 +39,13 @@ export class SphereSim extends Simulation<Sphere> {
     for (let a = 0; a < spheres.length; a++) {
       const sphereA = spheres[a]
       if (!sphereA || sphereA.isGhost) {
+        // console.log('skip ghost sphere at index', a)
         continue
       }
       for (let b = a + 1; b < spheres.length; b++) {
         const sphereB = spheres[b]
         if (!sphereB || sphereB.isGhost) {
+        // console.log('skip ghost sphere at index', b)
           continue
         }
         collideSphereWithSphere(

@@ -6,10 +6,10 @@
  */
 
 import { Vector3 } from 'three'
-import { gfxConfig } from 'configs/gfx-config'
+import { gfxConfig } from 'configs/imp/gfx-config'
 import type { SeaBlock } from 'sea-block'
-import { freeCamGameConfig } from 'configs/free-cam-game-config'
-import { michaelConfig } from 'configs/michael-config'
+import { freeCamGameConfig } from 'configs/imp/free-cam-game-config'
+import { michaelConfig } from 'configs/imp/michael-config'
 import type { GameUpdateContext } from '../game'
 import { Game } from '../game'
 import { FreeCamGame } from './free-cam-game'

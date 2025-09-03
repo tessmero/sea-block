@@ -3,25 +3,27 @@
  *
  * Like sphere-test, but without the sphere.
  */
-import type { Group } from 'three'
-import { BoxGeometry, Color, Mesh, MeshBasicMaterial, MeshLambertMaterial, Quaternion, Vector3 } from 'three'
+import { Color, Vector3 } from 'three'
 import { CAMERA_LOOK_AT } from 'settings'
 import type { SeaBlock } from 'sea-block'
-import { freeCamGameConfig } from 'configs/free-cam-game-config'
+import { freeCamGameConfig } from 'configs/imp/free-cam-game-config'
 import type { Sphere } from 'core/sphere'
 import { wasdInputState } from 'guis/elements/wasd-buttons'
 import { getLeftJoystickInput, leftDead, orbitWithRightJoystick } from 'guis/elements/joysticks'
 import { Game } from '../game'
-import type { GameElement, GameUpdateContext } from '../game'
-import { type PieceName } from 'games/chess/chess-enums'
-import { randChoice } from 'util/rng'
-import { getMesh } from 'gfx/3d/mesh-asset-loader'
-import { grabbedMeshDiagram, grabbedMeshElements } from 'guis/elements/misc-buttons'
-import { buildGrabbedMeshDiagram } from 'games/chess/gfx/chess-2d-gfx-helper'
-import { setMaterial } from 'gfx/3d/gui-3d-gfx-helper'
-import { getOutlinedMesh } from 'games/chess/gfx/chess-outline-gfx'
-import { playSound } from 'audio/sound-effects'
+import type { GameUpdateContext } from '../game'
 import { ChessWaveMaker } from 'games/chess/chess-wave-maker'
+import { freecamPickableElements, getNearestFreecamPickable,
+  targetElements, updateFreecamPickables } from 'games/free-cam/freecam-pickable-meshes'
+import { gamepadState } from 'input/gamepad-input'
+import { gguiCursorMesh, hideGguiCursor, setGguiHandler } from 'gfx/3d/ggui-3d-cursor'
+import { grabbedMeshPanel } from 'games/free-cam/freecam-grabbed-mesh-dialog'
+import { setGamepadConfirmPrompt } from 'gfx/2d/gamepad-btn-prompts'
+
+// idle camera will center on mesh if nearby and using gamepad
+const gamepadSnapToPickableRadSq = Math.pow(10, 2)
+const gamepadSnapToPickableEps = Math.pow(0.1, 2) // close enough distance squared
+const gamepadSnapToPickableForce = 1e-4
 
 export const MOUSE_DEADZONE = 50 // (px) center of screen with zero force
 export const MOUSE_MAX_RAD = 200 // (px) radius with max force
@@ -29,7 +31,6 @@ export const MOUSE_MAX_RAD = 200 // (px) radius with max force
 const force = new Vector3()
 // const lastScreenPosDummy = new Vector2()
 const posDummy = new Vector3()
-const quatDummy = new Quaternion()
 
 // used when computing acel for cam anchor
 const fixedUp = { x: 0, y: 1, z: 0 } as const
@@ -37,133 +38,40 @@ const forward = new Vector3()
 const right = new Vector3()
 const moveVec = new Vector3()
 
-const flashSpeed = 5e-3 // ~ 1/ms
-const pickableFlashColors = [new Color(0x666666), new Color(0xdddddd)] as const
-const pickableMat = new MeshLambertMaterial({ color: pickableFlashColors[0] })
-const hoveredMat = new MeshLambertMaterial({ color: 0xffffff })
-
-// always-in-front material when locked to gui
-const grabbedMat = new MeshLambertMaterial({
-  color: 0xffffff,
-  depthTest: false,
-})
-
-const startPiece = randChoice(['rook']) as PieceName
-let pickablePieceMesh: Group
-
-/**
- * Returns the world position of the pickablePieceMesh.
- * Optionally, if camera and layeredViewport are provided, returns the screen position in pixels.
- */
-
-export function getPickablePieceMeshPosition(): Vector3 | undefined {
-  if (!pickablePieceMesh) return undefined
-  return pickablePieceMesh.getWorldPosition(new Vector3())
-}
-// let outlineMesh: Mesh
-const pickablePieceElement: GameElement = {
-  meshLoader: async () => {
-    pickablePieceMesh = getMesh(`chess/${startPiece}.obj`).clone()
-
-    pickablePieceMesh.traverse((child) => {
-      if (child instanceof Mesh) {
-        child.geometry.center()
-      }
-    })
-
-    const scale = 1
-    pickablePieceMesh.scale.set(scale, scale, scale)
-
-    // add black outline effect
-    pickablePieceMesh = getOutlinedMesh(pickablePieceMesh)
-
-    setMaterial(pickablePieceMesh, pickableMat)
-
-    return pickablePieceMesh
-  },
-  defaultMat: pickableMat,
-  hoverMat: hoveredMat,
-  clickAction: ({ seaBlock }) => {
-    playSound('click')
-    if (targetElement.layoutKey === 'grabbedMesh') {
-      ungrabChessPiece(seaBlock)
-      return
-    }
-    targetElement.layoutKey = 'grabbedMesh' // lock mesh to camera
-
-    // set materials
-    pickablePieceElement.defaultMat = grabbedMat
-    pickablePieceElement.hoverMat = grabbedMat
-    setMaterial(pickablePieceElement, grabbedMat)
-    // outlineMesh.material = outlineMat
-
-    FreeCamGame.hasGrabbedMeshReachedTarget = false // start smooth lerp
-
-    buildGrabbedMeshDiagram(grabbedMeshDiagram)
-
-    // show chess game launch prompt
-    grabbedMeshElements.forEach(({ display }) => {
-      display.isVisible = true
-      display.needsUpdate = true
-    })
-  },
-}
-
-export function ungrabChessPiece(seaBlock: SeaBlock) {
-  // if (targetElement.layoutKey === undefined) {
-  //   return
-  // }
-
-  targetElement.layoutKey = undefined
-  targetMesh.position.copy(originalTargetMeshPosition)
-
-  // restore default materials
-  pickablePieceElement.defaultMat = pickableMat
-  pickablePieceElement.hoverMat = hoveredMat
-  setMaterial(pickablePieceElement, pickableMat)
-  // outlineMesh.material = outlineMat
-
-  FreeCamGame.hasGrabbedMeshReachedTarget = false // start smooth lerp
-
-  for (const { display } of grabbedMeshElements) {
-    display.isVisible = false
-  }
-  seaBlock.layeredViewport.handleResize(seaBlock)
-}
-
-export const originalTargetMeshPosition = new Vector3()
-let hasSetOriginalPickablePos = false
-export let targetMesh: Mesh
-export const targetElement: GameElement = {
-
-  meshLoader: async () => {
-    targetMesh = new Mesh(
-      new BoxGeometry(1, 1, 1),
-      new MeshBasicMaterial({ color: 0xff0000 }),
-    )
-    targetMesh.visible = false
-    return targetMesh
-  },
-}
-
 export class FreeCamGame extends Game {
   static {
     Game.register('free-cam', {
       factory: () => new FreeCamGame(),
       guiName: 'free-cam',
       elements: [
-        pickablePieceElement, // chess piece appearing randomly on terrain
-        targetElement, // anchor that piece lerps towards
+        ...Object.values(freecamPickableElements), // chess piece appearing randomly on terrain
+        ...Object.values(targetElements), // anchor that piece lerps towards
       ],
     })
   }
 
-  public doesAllowOrbitControls(_context: SeaBlock): boolean {
-    // const lyt = context.config.flatConfig.freeCamLayout
-    // if (lyt === 'landscape') {
-    //   return false // use right joystick instead of orbit controls
-    // }
+  public doesAllowOrbitControls(): boolean {
     return true
+  }
+
+  public doesAllowGgui(): boolean {
+    return false
+    // if (grabbedMeshPanel.display.isVisible) {
+    //   // allow using gamepad to navigate grabbed mesh dialog
+    //   return true
+    // }
+    // else {
+    //   return false
+    // }
+  }
+
+  public doesAllowGgui3DCursor(): boolean {
+    if (grabbedMeshPanel.display.isVisible) {
+      return false
+    }
+    else {
+      return true
+    }
   }
 
   public readonly config = freeCamGameConfig
@@ -192,18 +100,8 @@ export class FreeCamGame extends Game {
     // pan terrain,camera,target based on anchor x/z
     this.centerOnAnchor(context)
 
-    // clickable mesh in world
-    this.initPickableChessPiece(context)
-  }
-
-  private initPickableChessPiece(context: SeaBlock) {
-    const { x, y, z } = context.orbitControls.target
-    if (!hasSetOriginalPickablePos) {
-      hasSetOriginalPickablePos = true
-      originalTargetMeshPosition.set(x, y + 2, z)
-    }
-    targetMesh.position.copy(originalTargetMeshPosition)
-    pickablePieceMesh.position.copy(targetMesh.position)
+    // clickable meshes in world
+    // initFreecamPickables(context)
   }
 
   public resetCamera(context: SeaBlock): void {
@@ -213,8 +111,6 @@ export class FreeCamGame extends Game {
     context.camera.position.set(x + cam.x, cam.y, z + cam.z)
   }
 
-  static hasGrabbedMeshReachedTarget = true
-
   public update(context: GameUpdateContext): void {
     const { seaBlock, dt } = context
 
@@ -223,37 +119,63 @@ export class FreeCamGame extends Game {
     //   pickablePieceMesh.rotateY(0.005 * dt) // add spinning animation
     // }
 
-    this.waveMaker.wmRadius = seaBlock.config.flatConfig.visibleRadius / 2
-    this.waveMaker.sphere.scalePressure = 0.5
+    updateFreecamPickables(dt)
 
-    // flashing animation
-    pickableMat.color.lerpColors(...pickableFlashColors,
-      0.5 + 0.5 * Math.sin(performance.now() * flashSpeed))
+    const moveVec = this._moveWithWasdOrLeftJoystick(context)
 
-    targetMesh.getWorldPosition(posDummy)
-    targetMesh.getWorldQuaternion(quatDummy)
-    if (FreeCamGame.hasGrabbedMeshReachedTarget) {
-      // fixed at point on screen
-      pickablePieceMesh.position.copy(posDummy)
-      pickablePieceMesh.quaternion.copy(quatDummy)
-    }
-    else {
-      // move towards point on screen
-      pickablePieceMesh.position.lerp(posDummy, 0.01 * dt)
-      pickablePieceMesh.quaternion.slerp(quatDummy, 0.01 * dt)
-      if (posDummy.subVectors(posDummy, pickablePieceMesh.position).lengthSq() < 1e-2) {
-        FreeCamGame.hasGrabbedMeshReachedTarget = true // reached target point on screen
+    // maybe snap camera to pickable
+    if (!grabbedMeshPanel.display.isVisible
+      && !seaBlock.isShowingSettingsMenu
+      && seaBlock.isUsingGamepad
+      && moveVec.x === 0 && moveVec.z === 0) {
+      // using gamepad but not actively panning camera
+      const { name, pos, distSq } = getNearestFreecamPickable(this.cameraAnchor.position)
+
+      if (distSq < gamepadSnapToPickableRadSq) {
+        // move anchor towards pickable
+        const frac = Math.max(0, (distSq - gamepadSnapToPickableEps)
+          / (gamepadSnapToPickableRadSq - gamepadSnapToPickableEps))
+        this.accelSphere(
+          this.cameraAnchor, pos,
+          dt * gamepadSnapToPickableForce * Math.pow(frac, 0.1),
+        )
+
+        // place cursor on pickable
+        setGamepadConfirmPrompt(pos)
+        gguiCursorMesh.position.copy(pos)
+        gguiCursorMesh.visible = true
+        setGguiHandler({
+          selectAction: (_inputId, axisValue) => {
+            if (axisValue === 0) return // ignore un-press event
+            const { clickAction } = freecamPickableElements[name]
+            if (!clickAction) return
+            clickAction({ seaBlock })
+            return true // consume event
+          },
+          navAction: () => {},
+        })
+      }
+      else {
+        // hide cursor
+        hideGguiCursor()
       }
     }
 
-    // pan grid if necessary
+    // pan terrain grid if necessary
     this.centerOnAnchor(seaBlock)
 
-    // accel wave maker towards center
+    // wave make sphere distrubs water
+    this.waveMaker.wmRadius = seaBlock.config.flatConfig.visibleRadius / 2
+    this.waveMaker.sphere.scalePressure = 0.5
     this.waveMaker.updateWaveMaker(context)
-    // this.updateWaveMaker(dt)
 
-    // accel cam anchor towards picked intersection point
+    // control camera
+    orbitWithRightJoystick(context) // gui/elements/joysticks.ts
+    zoomWithTriggers(context)
+  }
+
+  private _moveWithWasdOrLeftJoystick(context: GameUpdateContext): Vector3 {
+    const { seaBlock, dt } = context
     const { CAM_ACCEL } = this.config.flatConfig
     const { camera } = seaBlock
 
@@ -271,10 +193,12 @@ export class FreeCamGame extends Game {
     right.crossVectors(forward, fixedUp)
 
     // 3. Build movement vector from input
-    const isUpHeld = wasdInputState['upBtn']
-    const isDownHeld = wasdInputState['downBtn']
-    const isLeftHeld = wasdInputState['leftBtn']
-    const isRightHeld = wasdInputState['rightBtn']
+    const isInSettings = seaBlock.isShowingSettingsMenu
+    const isUpHeld = wasdInputState['upBtn'] && !isInSettings
+    const isDownHeld = wasdInputState['downBtn'] && !isInSettings
+    const isLeftHeld = wasdInputState['leftBtn'] && !isInSettings
+    const isRightHeld = wasdInputState['rightBtn'] && !isInSettings
+
     // if (
     //   mouseState && !mouseState.isTouch // desktop mouse on screen
     //   && !this.flatUi.hoveredButton // no buttons hovered
@@ -319,7 +243,7 @@ export class FreeCamGame extends Game {
 
     this.accelSphere(this.cameraAnchor, posDummy, dt * CAM_ACCEL * moveMagnitude)
 
-    orbitWithRightJoystick(seaBlock, dt) // gui/elements/joysticks.ts
+    return moveVec
   }
 
   protected accelSphere(sphere: Sphere, intersection: Vector3, magnitude: number) {
@@ -352,5 +276,26 @@ export class FreeCamGame extends Game {
     controls.update()
 
     terrain.panToCenter(x, z)
+  }
+}
+
+// expose private methods of OrbitControls
+type HackedOrbitControls = {
+  _getZoomScale: (number) => number
+  _dollyIn: (number) => void
+  _dollyOut: (number) => void
+}
+
+export function zoomWithTriggers(context: GameUpdateContext) {
+  const { seaBlock, dt } = context
+  const orbitControls = seaBlock.orbitControls as unknown as HackedOrbitControls
+  const input = (gamepadState.ButtonLT as number) - (gamepadState.ButtonRT as number)
+  const delta = 2e0 * dt * input
+
+  if (delta < 0) {
+    orbitControls._dollyIn(orbitControls._getZoomScale(delta))
+  }
+  else if (delta > 0) {
+    orbitControls._dollyOut(orbitControls._getZoomScale(delta))
   }
 }

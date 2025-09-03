@@ -8,18 +8,17 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { Gui } from 'guis/gui'
 import { preloadPixelTiles } from 'gfx/2d/pixel-tiles-gfx-helper'
-import { isDevMode } from 'configs/top-config'
 import type { ConfigButton, ConfigItem } from './configs/config-tree'
 import { TerrainGenerator } from './generators/terrain-generator'
 import type { TileGroupGfxHelper } from './gfx/3d/tile-group-gfx-helper'
 import { getStyle, STYLES } from './gfx/styles/styles-list'
-import type { ProcessedSubEvent } from './mouse-touch-input'
-import { initMouseListeners } from './mouse-touch-input'
+import type { ProcessedSubEvent } from './input/mouse-touch-input'
+import { initMouseListeners } from './input/mouse-touch-input'
 import { GRID_DETAIL, STEP_DURATION } from './settings'
 import { GAME, GUI, type GameName, type GeneratorName } from './imp-names'
 import { Game } from './games/game'
 import type { LayeredViewport } from './gfx/layered-viewport'
-import { seaBlockConfig } from './configs/sea-block-config'
+import { seaBlockConfig } from './configs/imp/sea-block-config'
 import type { SeablockScene } from './gfx/3d/scene'
 import { buildScene } from './gfx/3d/scene'
 import { SphereGroup } from './core/groups/sphere-group'
@@ -34,11 +33,19 @@ import { alignGuiGroup, alignMeshInGuiGroup } from 'gfx/3d/gui-3d-gfx-helper'
 import type { Transition } from 'gfx/transitions/transition'
 import { randomTransition } from 'gfx/transitions/transition'
 import { preloadChessSprites } from 'games/chess/gfx/chess-2d-gfx-helper'
-import { gfxConfig } from 'configs/gfx-config'
-import { physicsConfig } from 'configs/physics-config'
-import { freeCamGameConfig } from 'configs/free-cam-game-config'
+import { gfxConfig } from 'configs/imp/gfx-config'
+import { physicsConfig } from 'configs/imp/physics-config'
+import { freeCamGameConfig } from 'configs/imp/free-cam-game-config'
 import { preloadChessRewardHelpDiagrams } from 'games/chess/gui/chess-reward-help-elements'
 import { Chess } from 'games/chess/chess-helper'
+import { pollGamepadInput } from 'input/gamepad-input'
+import type { KeyCode } from 'input/input-id'
+import { preloadGrabbedMeshDiagrams } from 'games/free-cam/freecam-grabbed-mesh-dialog'
+import { isDevMode } from 'configs/imp/top-config'
+import { releaseGgui, updateGamepadGui } from 'input/ggui-nav-wasd'
+import { playSound } from 'audio/sound-effect-player'
+import { hideGguiCursor } from 'gfx/3d/ggui-3d-cursor'
+import { drawGamepadPrompts } from 'gfx/2d/gamepad-btn-prompts'
 
 // can only be constructed once
 let didConstruct = false
@@ -67,9 +74,34 @@ export class SeaBlock {
   orbitControls!: OrbitControls
   game!: Game // current game
 
+  // latch set on first gamepad input
+  hasConnectedGamepad: null | 'xbox' | 'playstation' = null
+
+  // set to true on any gamepad input, false on any mouse/touch
+  isUsingGamepad = false
+
   // defined only during transition sequence
   transition?: Transition
   midTransitionCallback?: () => void
+
+  public isShowingSettingsMenu = false
+
+  public toggleSettings() {
+    this.isShowingSettingsMenu = !this.isShowingSettingsMenu
+    if (this.isShowingSettingsMenu) {
+      playSound('settingsOpen')
+      this.game.gui.closeDialogs(this)
+      // release gamepad cursor, now only settings can be navigated
+      releaseGgui() // 2d
+      hideGguiCursor() // 3d
+
+      // updateGamepadGui({ seaBlock: this, dt: 0 })
+    }
+    else {
+      playSound('settingsClose')
+    }
+    this.onResize()
+  }
 
   constructor(public readonly layeredViewport: LayeredViewport) {
     if (didConstruct) {
@@ -118,13 +150,24 @@ export class SeaBlock {
     this.orbitControls.minDistance = 4
     this.orbitControls.maxDistance = 60
 
-    // Responsive resize
+    // update layout and graphics on resize
     window.addEventListener('resize', () => this.onResize())
+
+    // start polling gamepad when connected or first used
+    window.addEventListener('gamepadconnected', (e) => {
+      const gp = navigator.getGamepads()[e.gamepad.index] as Gamepad
+      const id = gp.id.toLowerCase()
+      if (id.includes('playstation') || id.includes('dualshock') || id.includes('dual sense')) {
+        this.hasConnectedGamepad = 'playstation' // display "X" button prompts
+      }
+      this.hasConnectedGamepad = 'xbox' // display "A" button prompts
+    })
 
     const loadPromises: Array<Promise<void | Array<void>>> = []
     loadPromises.push(preloadPixelTiles(Tiling.getAllShapes()))
     loadPromises.push(preloadChessSprites())
     loadPromises.push(preloadChessRewardHelpDiagrams())
+    loadPromises.push(preloadGrabbedMeshDiagrams())
 
     // start generating images/meshes for all guis
     for (const guiName of GUI.NAMES) {
@@ -143,12 +186,24 @@ export class SeaBlock {
 
   public isCovering = false // true during first half of transition animation
 
-  async animate(dt: number) {
+  async update(dt: number) {
     const { transition,
-      scene, camera, terrain, sphereGroup, floraGroup,
-      game,
+      scene, terrain, sphereGroup, floraGroup,
+      game, camera,
     } = this
 
+    if (this.hasConnectedGamepad) {
+      pollGamepadInput(this)
+      if (this.isUsingGamepad) {
+        // hide mouse cursor until next mousemove
+        document.documentElement.style.cursor = 'none'
+      }
+      // show or clear overlays
+      drawGamepadPrompts(this)
+      updateGamepadGui({ seaBlock: this, dt })
+    }
+
+    // update camera-locked
     this.alignGuiMeshes()
 
     if (transition) {
@@ -228,7 +283,7 @@ export class SeaBlock {
     updateFrontLayer(this)
   }
 
-  private onResize() {
+  public onResize() {
     const { layeredViewport, camera } = this
     layeredViewport.handleResize(this)
 
@@ -247,6 +302,7 @@ export class SeaBlock {
     // this.game.gui.refreshLayout(this)
     for (const gui of this.getLayeredGuis()) {
       gui.refreshLayout(this)
+      gui.resetElementStates(this)
     }
 
     // updateFrontLayer(this)
@@ -271,19 +327,14 @@ export class SeaBlock {
 
     // listen for keyboard, pass directly to gui
     window.addEventListener('keydown', (event) => {
-      this.game.gui.keydown(this, event)
+      this.game.gui.keydown(this, event.code as KeyCode)
     })
     window.addEventListener('keyup', (event) => {
-      this.game.gui.keyup(this, event)
+      this.game.gui.keyup(this, event.code as KeyCode)
     })
 
     // finished loading meshes and images
     this.didLoadAssets = true
-
-    // // align camera-locked meshes
-    // this.alignGuiMeshes()
-
-    this.showHideGameSpecificElems()
   }
 
   private alignGuiMeshes() {
@@ -337,27 +388,21 @@ export class SeaBlock {
 
   // called when user switches games
   public onGameChange() {
+    hideGguiCursor()
+
     this.scene.threeScene.remove(...this.game.meshes)
     this.game = Game.create(this.config.flatConfig.game, this)
-    this.scene.threeScene.add(...this.game.meshes)
-    this.showHideGameSpecificElems()
+    for (const mesh of this.game.meshes) {
+      if (mesh.parent) {
+        // mesh handled by game
+      }
+      else {
+        this.scene.threeScene.add(mesh)
+      }
+    }
+    // this.scene.threeScene.add(...this.game.meshes)
     this.layeredViewport.handleResize(this)
     // this.terrain.gfxHelper.restoreTileColors() // remove chess allowed-move highlights
-  }
-
-  private showHideGameSpecificElems() {
-    // for (const [gameName, elements] of Object.entries(elementsPerGame)) {
-    //   const shouldBeVisible = gameName === this.currentGameName
-    //   for (const loaded of elements) {
-    //     if ('mesh' in loaded) {
-    //       // 3d object
-    //       loaded.mesh.visible = shouldBeVisible
-    //     }
-    //     else {
-    //       // flat image
-    //     }
-    //   }
-    // }
   }
 
   // called when user changes a setting
@@ -370,7 +415,7 @@ export class SeaBlock {
     generator.refreshConfig()
 
     for (const gui of this.getLayeredGuis()) {
-      gui.resetElementStates()
+      gui.resetElementStates(this)
     }
 
     // check for special case: game changed
@@ -475,7 +520,6 @@ export class SeaBlock {
     this.currentGameName = this.config.flatConfig.game
     // this.game = Game.create(this.currentGameName, this)
     // StartSequenceGame.isColorTransformEnabled = this.currentGameName === 'start-sequence'
-    // this.showHideGameSpecificElems()
     // soft reset (graphics)
     this.style = getStyle(this.config.flatConfig.style)
     scene.setBackground(this.style.getBackgroundColor())
@@ -496,7 +540,7 @@ export class SeaBlock {
     // this.layeredViewport.ctx.fillRect( 20,20,20,20 )
     this.onResize()
 
-    resetFrontLayer()
+    resetFrontLayer(this)
     updateFrontLayer(this)
     // this.onResize()
 
@@ -515,12 +559,13 @@ export class SeaBlock {
     const result = [this.game.gui]
 
     const { testGui } = this.config.flatConfig
-    if (testGui === 'settings-menu') {
-      result.unshift(Gui.create('settings-menu')) // show settings menu on top
-    }
-    else if (testGui === 'sprite-atlas') {
+    if (testGui === 'sprite-atlas') {
       return [Gui.create('sprite-atlas')] // show sprite atlas alone
       // result.unshift(Gui.create('sprite-atlas'))
+    }
+
+    if (this.isShowingSettingsMenu) {
+      result.unshift(Gui.create('settings-menu')) // show settings menu on top
     }
 
     return result

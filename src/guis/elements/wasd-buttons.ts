@@ -6,7 +6,7 @@
 
 import type { GuiElement } from 'guis/gui'
 import type { FreecamLayoutKey } from 'guis/keys/freecam-layout-keys'
-import type { KeyCode } from 'input-id'
+import type { GamepadCode, KeyCode } from 'input/input-id'
 
 type FreecamElem = GuiElement<FreecamLayoutKey>
 export const wasdInputState = {
@@ -19,7 +19,7 @@ export const wasdInputState = {
 function wasdButton(
   layoutKey: FreecamLayoutKey,
   direction: 'up' | 'down' | 'left' | 'right',
-  hotkeys: ReadonlyArray<KeyCode>,
+  hotkeys: ReadonlyArray<KeyCode | GamepadCode>,
 ): FreecamElem {
   return {
     display: { type: 'button', icon: `icons/16x16-arrow-${direction}.png` },
@@ -36,8 +36,24 @@ function wasdButton(
 }
 
 export const wasdButtons: ReadonlyArray<FreecamElem> = [
-  wasdButton('upBtn', 'up', ['KeyW', 'ArrowUp']),
-  wasdButton('downBtn', 'down', ['KeyS', 'ArrowDown']),
-  wasdButton('leftBtn', 'left', ['KeyA', 'ArrowLeft']),
-  wasdButton('rightBtn', 'right', ['KeyD', 'ArrowRight']),
+  wasdButton('upBtn', 'up', [
+    'KeyW',
+    'ArrowUp',
+    'DPadUp',
+  ]),
+  wasdButton('downBtn', 'down', [
+    'KeyS',
+    'ArrowDown',
+    'DPadDown',
+  ]),
+  wasdButton('leftBtn', 'left', [
+    'KeyA',
+    'ArrowLeft',
+    'DPadLeft',
+  ]),
+  wasdButton('rightBtn', 'right', [
+    'KeyD',
+    'ArrowRight',
+    'DPadRight',
+  ]),
 ]

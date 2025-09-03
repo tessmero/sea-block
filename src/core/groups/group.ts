@@ -11,7 +11,7 @@
 import * as THREE from 'three'
 import type { SeaBlock } from 'sea-block'
 import type { Simulation } from '../physics/simulation'
-import { physicsConfig } from '../../configs/physics-config'
+import { physicsConfig } from '../../configs/imp/physics-config'
 import type { SubgroupParams } from './subgroup'
 import { Subgroup } from './subgroup'
 

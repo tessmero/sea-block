@@ -10,7 +10,7 @@ import type { Chess } from '../chess-helper'
 import { quitChess } from '../chess-helper'
 import type { SeaBlock } from 'sea-block'
 import type { ChessButton } from './chess-button'
-import { playSound } from 'audio/sound-effects'
+import { playSound } from 'audio/sound-effect-player'
 import type { ChessLayoutKey } from 'guis/keys/chess-layout-keys'
 import { PIECE_NAMES } from '../chess-enums'
 

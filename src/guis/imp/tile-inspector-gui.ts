@@ -4,7 +4,7 @@
  * Gui for tile inspector.
  */
 
-import type { ProcessedSubEvent } from 'mouse-touch-input'
+import type { ProcessedSubEvent } from 'input/mouse-touch-input'
 import { Gui } from '../gui'
 import type { TileIndex } from 'core/grid-logic/indexed-grid'
 

@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "concurrently \"npx vite build\" \"npx serve dist\"",
-    "zip": "cp -r reports dist && cd dist && zip -r sea-block.zip .",
     "build:prod": "vite build --config vite.config.prod.ts && npx mocha && npm run zip",
-    "build:quickprod": "vite build --config vite.config.prod.ts && npm run zip"
+    "build:quickprod": "vite build --config vite.config.prod.ts && npm run zip",
+    "zip": "cp -r reports dist && cd dist && zip -r sea-block.zip ."
   },
   "keywords": [],
   "author": "",
@@ -22,6 +22,7 @@
     "@types/three": "=0.177.0",
     "@typescript-eslint/rule-tester": "^8.34.1",
     "@typescript-eslint/utils": "^8.34.1",
+    "audio-decode": "^2.2.3",
     "canvas": "^3.1.2",
     "concurrently": "^9.1.2",
     "eslint": "^9.29.0",
@@ -33,6 +34,7 @@
     "mocha": "^11.7.0",
     "node-three-gltf": "^2.0.2",
     "patch-package": "^8.0.0",
+    "pitchfinder": "^2.3.2",
     "serve": "^14.2.4",
     "spessasynth_core": "^3.27.6",
     "tonal": "^6.4.2",

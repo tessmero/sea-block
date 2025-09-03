@@ -8,7 +8,7 @@
  * 4. Apply enter/exit animation offset.
  */
 
-import { gfxConfig } from 'configs/gfx-config'
+import { gfxConfig } from 'configs/imp/gfx-config'
 import type { Pipeline } from './pipeline'
 import { setOriginalTileColors } from '../tile-group-color-buffer'
 

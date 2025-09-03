@@ -10,11 +10,11 @@ import.meta.glob('./**/*.ts', { eager: true })
 import { randChoice } from 'util/rng'
 import { loadAllImages } from 'gfx/2d/image-asset-loader'
 import { TILING } from 'imp-names'
-import { gfxConfig } from './configs/gfx-config'
+import { gfxConfig } from './configs/imp/gfx-config'
 import { LayeredViewport } from './gfx/layered-viewport'
 import { SeaBlock } from './sea-block'
 import { loadAllMeshes } from 'gfx/3d/mesh-asset-loader'
-import { initAllSoundEffects } from 'audio/sound-effects'
+import { initAllSoundEffects } from 'audio/sound-effect-player'
 import { loadAllSounds } from 'audio/sound-asset-loader'
 import { getTestSupport } from 'test-support'
 
@@ -67,7 +67,7 @@ async function main() {
     const dt = Math.min(50, currentTime - lastTime)
     lastTime = currentTime
 
-    await seaBlock.animate(dt) // update everything
+    await seaBlock.update(dt) // update everything
   }
   animate() // start first loop
 }

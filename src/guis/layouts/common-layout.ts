@@ -11,19 +11,20 @@ const { btn, pad, point } = standards
 export const COMMON_LAYOUT = {
 
   // config on top left
-  configBtn: { ...btn,
+  debugBtn: { ...btn,
     top: pad,
     left: pad,
   },
 
   // play/stop on top right
-  musicBtn: { ...btn,
+  settingsBtn: { ...btn,
     top: pad,
     right: pad,
   },
 
-  // 2027-08-03 start chess game
-  chessBtn: { ...btn,
+  // 2025-08-21
+  raftBtn: { ...btn,
+    width: 40,
     top: pad,
     right: btn.width + 2 * pad,
   },

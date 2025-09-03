@@ -9,16 +9,19 @@ import type { Rectangle } from 'util/layout-parser'
 import { parseLayoutRectangles, type ComputedRects, type CssLayout } from 'util/layout-parser'
 import { computeElementOcclusions } from 'util/layout-occlusion-checker'
 import type { Vector2 } from 'three'
-import { type InputId, type KeyCode } from 'input-id'
-import type { ProcessedSubEvent } from 'mouse-touch-input'
+import type { GamepadCode } from 'input/input-id'
+import { type InputId, type KeyCode } from 'input/input-id'
+import type { ProcessedSubEvent } from 'input/mouse-touch-input'
 import type { SeaBlock } from 'sea-block'
 import type { GuiName } from 'imp-names'
 import type { BorderVariant, ElementImageset, ElementType } from 'gfx/2d/element-imageset-builder'
 import { getElementImageset } from 'gfx/2d/element-imageset-builder'
 import { resetLastDrawnStates } from 'gfx/2d/flat-gui-gfx-helper'
-import type { ImageAssetUrl } from 'gfx/2d/image-asset-loader'
-import type { FontVariant, TextAlign } from 'gfx/2d/text-gfx-helper'
+import type { FontVariant, TextAlign } from 'gfx/2d/text/text-gfx-helper'
 import { getElementDims } from './layouts/layout-helper'
+import type { ImageAssetUrl } from 'gfx/2d/image-asset-urls'
+import { pressedButtonId, selectedId } from 'input/ggui-nav-wasd'
+import type { PromptName } from 'gfx/2d/gamepad-btn-prompts'
 
 export type StaticElement<TLayoutKey extends string = string> = {
   layoutKey: TLayoutKey // must have layout rectangle
@@ -28,7 +31,13 @@ export type StaticElement<TLayoutKey extends string = string> = {
   unclickAction?: (event: ElementEvent) => void
   isSticky?: boolean
   isPickable?: boolean
-  hotkeys?: ReadonlyArray<KeyCode> // bound keyboard keys
+  hotkeys?: ReadonlyArray<KeyCode | GamepadCode> // bound keyboard keys
+
+  // optional virtual layout rectangle for gamepad navigation
+  gamepadNavBox?: TLayoutKey
+
+  rectangle?: Rectangle // assigned when rendered on screen
+  gguiNavRectangle?: Rectangle // assigned when rendered on screen
 }
 
 // sliders define "slideIn" property pointing to a layout key
@@ -41,8 +50,10 @@ export type GuiElement<TLayoutKey extends string = string> = StaticElement<TLayo
 
 // event passed to clickAction and other callbacks
 export type ElementEvent = {
+  // mouse/touch/key
   seaBlock: SeaBlock
-  inputEvent: ProcessedSubEvent | KeyboardEvent // mouse/touch/key
+  buttonCode?: KeyCode | GamepadCode // only for keyboard/gamepad
+  inputEvent?: ProcessedSubEvent // only for mouse/touch
   sliderState?: SliderState // only for sliders
 }
 
@@ -57,17 +68,28 @@ export type ElementDisplayParams = {
   readonly type: ElementType
   readonly border?: BorderVariant
   readonly icon?: ImageAssetUrl
+
   readonly label?: string
   readonly font?: FontVariant
+  readonly color?: string
   readonly textAlign?: TextAlign
+
+  readonly gamepadPrompt?: PromptParams
 
   shouldClearBehind?: boolean
   isVisible?: boolean
   needsUpdate?: boolean // request repaint
   forcedState?: ButtonState
   forcedSliderState?: SliderState
+  shouldSnapToPixel?: boolean // prevent anti-aliasing slider
 
   imageset?: ElementImageset // assigned after load
+}
+
+export type PromptParams = {
+  name?: PromptName // set to show prompt by default
+  offset?: [number, number] // offset prompt icon from center of element
+  isHidden?: boolean // true to never show prompt
 }
 
 export const BUTTON_STATES = ['default', 'pressed', 'hovered'] as const
@@ -94,9 +116,13 @@ export class Gui<TLayoutKey extends string = string> {
   private readonly panels: Set<ElementId> = new Set() // subset that only consume events
   private readonly stuckDown: Set<ElementId> = new Set() // subset of elements
   private readonly hidden: Set<ElementId> = new Set() // subset of elements
-  private hovered?: ElementId // element hovered by mouse
+  public hovered?: ElementId // element hovered by mouse
 
-  public resetElementStates() {
+  public closeDialogs(_seaBlock: SeaBlock) {
+    // do nothing
+  }
+
+  public resetElementStates(_seaBlock: SeaBlock) {
     resetLastDrawnStates(this)
     this.stuckDown.clear()
     this.hovered = undefined
@@ -107,6 +133,12 @@ export class Gui<TLayoutKey extends string = string> {
     // if( this.panels.has(name) ){
     //   return 'default'
     // }
+    if (id === pressedButtonId) {
+      return 'pressed'
+    }
+    if (id === selectedId) {
+      return 'hovered'
+    }
     if (this.stuckDown.has(id)) {
       return 'pressed'
     }
@@ -167,7 +199,7 @@ export class Gui<TLayoutKey extends string = string> {
     //       ${JSON.stringify(this.layoutRectangles)}`)
   }
 
-  protected pickElementAtPoint(p: Vector2): ElementId | undefined {
+  protected pickElementAtPoint(...points: Array<Vector2>): ElementId | undefined {
     // console.log(`picking button at point ${p.x}, ${p.y}: ${JSON.stringify(this.pickable)}`)
     for (const id in this.pickable) {
       // console.log(`gui ${this.constructor.name} try picking ${id} at ${this.pickable[id]}}`)
@@ -185,10 +217,12 @@ export class Gui<TLayoutKey extends string = string> {
         continue // element is not visible (not in current layout)
       }
       const { x, y, w, h } = rectangle
-      if ((p.x > x) && (p.x < (x + w)) && (p.y > y) && (p.y < (y + h))) {
+      for (const p of points) {
+        if ((p.x > x) && (p.x < (x + w)) && (p.y > y) && (p.y < (y + h))) {
         // console.log(`picked element: ${id} in ${this.pickable[id]}`)
         // document.documentElement.style.cursor = 'pointer'
-        return id as ElementId
+          return id as ElementId
+        }
       }
     }
     // console.log('picked no element ')
@@ -285,21 +319,23 @@ export class Gui<TLayoutKey extends string = string> {
     this._unclick(seaBlock, touchId)
   }
 
-  private _click(
-    event: ElementEvent,
-    elementId: ElementId) {
-    // console.log(`gui _click on ${layoutKey}`)
-
-    const { inputEvent } = event
-    const { lvPos } = inputEvent as ProcessedSubEvent
-    const inputId = inputEvent instanceof KeyboardEvent ? inputEvent.code as KeyCode : inputEvent.inputId
-    this.held[elementId] = inputId
-
+  private _click(event: ElementEvent, elementId: ElementId) {
     const elem = this.elements[elementId]
     const { isSticky } = elem
+    const { inputEvent, buttonCode } = event
 
-    if (lvPos && 'slideIn' in elem) {
-      event.sliderState = this._slide(elem, lvPos)
+    if (inputEvent) {
+      // event is mouse/touch with position on screen/world
+      this.held[elementId] = inputEvent.inputId
+
+      const { lvPos } = inputEvent as ProcessedSubEvent
+      if (lvPos && 'slideIn' in elem) {
+        event.sliderState = this._slide(elem, lvPos)
+      }
+    }
+    else if (buttonCode) {
+      // event is keyboard/gamepad button being used as hotkey to click button
+      this.held[elementId] = buttonCode
     }
     // else if (lvPos) {
     //   const { layoutKey } = elem
@@ -317,7 +353,7 @@ export class Gui<TLayoutKey extends string = string> {
     this.clickElem(elem, event)
   }
 
-  protected clickElem(elem: GuiElement<TLayoutKey>, event: ElementEvent) {
+  private clickElem(elem: GuiElement<TLayoutKey>, event: ElementEvent) {
     const { clickAction } = elem
     if (clickAction) {
       clickAction(event)
@@ -393,28 +429,29 @@ export class Gui<TLayoutKey extends string = string> {
     }
   }
 
-  public keydown(seaBlock: SeaBlock, inputEvent: KeyboardEvent) {
+  public keydown(seaBlock: SeaBlock, buttonCode: KeyCode | GamepadCode): boolean {
     const { held } = this
-    const touchId = inputEvent.code as KeyCode// use key code as touchId
 
     for (const key in held) {
-      if (held[key] === touchId) {
+      if (held[key] === buttonCode) {
         delete held[key]
       }
     }
 
     for (const id in this.elements) {
-      const { hotkeys } = this.elements[id]
-      if (hotkeys?.includes(inputEvent.code as KeyCode)) {
-        this._click({
-          seaBlock, inputEvent,
-        }, id as ElementId)
+      const elem = this.elements[id]
+      const { display, hotkeys } = elem
+      if (display.isVisible && elem.rectangle && hotkeys?.includes(buttonCode)) {
+        this._click({ seaBlock, buttonCode }, id as ElementId)
+        return true // consume event
       }
     }
+
+    return false // do not consume event
   }
 
-  public keyup(seaBlock: SeaBlock, event: KeyboardEvent) {
-    this._unclick(seaBlock, event.code) // use key code as touchId
+  public keyup(seaBlock: SeaBlock, code: KeyCode | GamepadCode) {
+    this._unclick(seaBlock, code) // use key code as touchId
   }
 
   // static registry pattern

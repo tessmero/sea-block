@@ -6,20 +6,7 @@
 
 import type { Group } from 'three'
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js'
-
-// find public/obj -type f | sed 's|^public/obj/||;s|$|\",|;s|^|\"|'
-export const MESH_ASSET_URLS = [
-
-  'kenney/chest.obj',
-
-  'chess/bishop.obj',
-  'chess/king.obj',
-  'chess/knight.obj',
-  'chess/pawn.obj',
-  'chess/queen.obj',
-  'chess/rook.obj',
-] as const
-export type MeshAssetUrl = (typeof MESH_ASSET_URLS)[number]
+import { MESH_ASSET_URLS, type MeshAssetUrl } from './mesh-asset-urls'
 
 const loader = new OBJLoader()
 const cache = new Map<MeshAssetUrl, Group>()

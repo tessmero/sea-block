@@ -1,66 +1,108 @@
 /**
  * @file settings-layout.ts
  *
- * Elements visible when settings menu is active.
+ * Layout for common settings dialog.
  */
 
+import type { SettingsLayoutKey } from 'guis/keys/settings-layout-keys'
 import type { CssLayout } from 'util/layout-parser'
-import { optionLayout } from 'guis/elements/option-selector'
 import { standards } from './layout-helper'
-
 const { btn } = standards
+
+const rowThickness = 8
+const rowWidth = 68 // width with margin inside of panel
+const labelwidth = 50
+
+const row = {
+  height: rowThickness,
+  width: rowWidth,
+  left: 'auto',
+} as const
+
+const label = {
+  height: rowThickness,
+  width: labelwidth,
+  left: 'auto',
+} as const
 
 export const SETTINGS_LAYOUT = {
 
-  // screen: {}, // rectangle that fills screen
-
-  backPanel: {
-    width: 128,
-    height: 128,
-    // left: 0,
-    // top: 16,
+  settingsPanel: {
+    width: 80,
+    height: 80,
     left: 'auto',
     top: 'auto',
   },
 
-  closeBtn: {
-    parent: 'backPanel',
+  settingsTitleBar: {
+    parent: 'settingsPanel',
+    top: 0,
+    height: rowThickness,
+  },
+
+  settingsCloseBtn: {
+    parent: 'settingsPanel',
     ...btn,
     right: 0,
   },
 
-  styleOption: {
-    parent: 'backPanel',
-    ...optionLayout,
-    top: 16,
-    left: 'auto',
+  settingsPanelInner: {
+    parent: 'settingsPanel',
+    top: 4, // offset for settings rows
   },
 
-  tilingOption: {
-    parent: 'backPanel',
-    ...optionLayout,
-    top: 40,
-    left: 'auto',
+  musicVolumeLabel: {
+    parent: 'settingsPanelInner',
+    top: rowThickness * 1,
+    ...label,
+  },
+  musicVolumeRegion: {
+    parent: 'settingsPanelInner',
+    top: rowThickness * 2,
+    ...row,
+  },
+  musicVolumeSlider: {
+    parent: 'musicVolumeRegion',
+    width: 10,
   },
 
-  generatorOption: {
-    parent: 'backPanel',
-    ...optionLayout,
-    top: 64,
-    left: 'auto',
+  sfxVolumeLabel: {
+    parent: 'settingsPanelInner',
+    top: rowThickness * 3,
+    ...label,
+  },
+  sfxVolumeRegion: {
+    parent: 'settingsPanelInner',
+    top: rowThickness * 4,
+    ...row,
+  },
+  sfxVolumeSlider: {
+    parent: 'sfxVolumeRegion',
+    width: 10,
   },
 
-  layoutOption: {
-    parent: 'backPanel',
-    ...optionLayout,
-    top: 88,
-    left: 'auto',
+  pixelScaleLabel: {
+    parent: 'settingsPanelInner',
+    top: rowThickness * 5,
+    ...label,
+  },
+  pixelScaleRegion: {
+    parent: 'settingsPanelInner',
+    top: rowThickness * 6,
+    ...row,
+  },
+  pixelScaleSlider: {
+    parent: 'pixelScaleRegion',
+    width: 10,
   },
 
-  debugBtn: {
-    parent: 'backPanel',
-    ...btn,
+  // big bottom center button
+  settingsQuitBtn: {
+    parent: 'settingsPanel',
+    width: rowWidth,
+    height: 16,
+    left: 'auto',
     bottom: 0,
   },
 
-} as const satisfies CssLayout
+} as const satisfies CssLayout<SettingsLayoutKey>

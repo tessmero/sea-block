@@ -31,13 +31,23 @@
 
     
     #controls-container {
+
+      
       width: 0px;
       height: 0px;
+
+      /* enable vertical scrolling long list of debug items */
+      /*
+      width: 25%;
+      height: 100%;
+      overflow-y: auto;
+      */
 
       /* workaround display issue  */
       border: 1px solid black;
 
       position: absolute; 
+
     }
   </style>
 
@@ -52,10 +62,17 @@
     z-index:1;
   }
 </style>
-<canvas id="midCanvas" style="z-index:2;"></canvas>
-<canvas id="frontCanvas" style="z-index:3;"></canvas>
 
-  <div id="controls-container" style="z-index:4"></div>
+<!-- hidden static ivy buffer used for start menu animation -->
+<canvas id="ivyBuffer" style ="z-index:2; display:none"></canvas>
+
+<!-- waving ivy visible during start menu animation -->
+<canvas id="ivyCanvas" style ="z-index:3; display:none"></canvas>
+
+<canvas id="midCanvas" style="z-index:4;"></canvas>
+<canvas id="frontCanvas" style="z-index:5;"></canvas>
+
+  <div id="controls-container" style="z-index:6"></div>
   <script type="module" src="/src/main.js"></script>
 
 <script>

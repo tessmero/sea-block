@@ -1,13 +1,10 @@
 /**
  * @file songs-list.ts
  *
- * List of midi songs to generate with build-songs.ts.
+ * List of midi songs to generate with tools/midi-music/build-songs.ts.
  * Each song will be saved as an .ogg file in public/music.
  *
  * Classical music midis: https://www.kunstderfuge.com.
- * Trap midis: https://old.reddit.com/r/trapproduction/comments/grh7qc/100_royalty_free_midi_kit_w_40_melodies_chord/
- *
- * Music scores are tracked in this repository in music-data.
  */
 
 import { SpessaSynthProcessor, SpessaSynthSequencer } from 'spessasynth_core'
@@ -23,19 +20,30 @@ export type SongParams = {
 }
 type Adjuster = (params: { synth: SpessaSynthProcessor, seq: SpessaSynthSequencer }) => void
 
-// const tsSrc = (name: string) => `./music-data/ts/${name}.ts`
-const classicalMidi = (name: string) => `./music-data/midi/www-kunstderfuge-com/${name}.mid`
+const tsSrc = (name: string) => `./music-data/ts/${name}.ts`
+// const classicalMidi = (name: string) => `./music-data/midi/www-kunstderfuge-com/${name}.mid`
 // const trapMidi = (name: string) => `./music-data/midi/mullen-solace/${name}.mid`
 
 export const SONGS_TO_BUILD: Record<string, SongParams> = {
 
-  // Chopin / Nocturne in E Flat Major
-  chopin: {
-    src: classicalMidi('chopin'),
-    adjust: ({ synth }) => {
-      synth.programChange(0, 12) // 12 marimba
-    },
-  },
+  'sea-block-intro': { src: tsSrc('sea-block-intro') },
+
+  // // Mendelssohn / Spring song
+  // mendelssohn: {
+  //   src: classicalMidi('mendelssohn'),
+  //   adjust: ({ synth }) => {
+  //     synth.programChange(0, 46) // 46 harp
+  //   },
+  // },
+
+  // // Chopin / Nocturne in E Flat Major
+  //  //  //Eb, F, G, Ab, Bb, C, D, Eb
+  // chopin: {
+  //   src: classicalMidi('chopin'),
+  //   adjust: ({ synth }) => {
+  //     synth.programChange(0, 12) // 12 marimba
+  //   },
+  // },
 
   // // Albeniz / Granada
   // albeniz: {

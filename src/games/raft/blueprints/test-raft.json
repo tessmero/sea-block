@@ -1,0 +1,166 @@
+[
+  {
+    "type": "floor",
+    "x": -2,
+    "z": -2
+  },
+  {
+    "type": "floor",
+    "x": -2,
+    "z": -1
+  },
+  {
+    "type": "floor",
+    "x": -2,
+    "z": 0
+  },
+  {
+    "type": "floor",
+    "x": -2,
+    "z": 1
+  },
+  {
+    "type": "floor",
+    "x": -2,
+    "z": 2
+  },
+  {
+    "type": "floor",
+    "x": -1,
+    "z": -2
+  },
+  {
+    "type": "floor",
+    "x": -1,
+    "z": -1
+  },
+  {
+    "type": "floor",
+    "x": -1,
+    "z": 0
+  },
+  {
+    "type": "floor",
+    "x": -1,
+    "z": 1
+  },
+  {
+    "type": "floor",
+    "x": -1,
+    "z": 2
+  },
+  {
+    "type": "floor",
+    "x": 0,
+    "z": -2
+  },
+  {
+    "type": "floor",
+    "x": 0,
+    "z": -1
+  },
+  {
+    "type": "floor",
+    "x": 0,
+    "z": 0
+  },
+  {
+    "type": "floor",
+    "x": 0,
+    "z": 1
+  },
+  {
+    "type": "floor",
+    "x": 0,
+    "z": 2
+  },
+  {
+    "type": "floor",
+    "x": 1,
+    "z": -2
+  },
+  {
+    "type": "floor",
+    "x": 1,
+    "z": -1
+  },
+  {
+    "type": "floor",
+    "x": 1,
+    "z": 0
+  },
+  {
+    "type": "floor",
+    "x": 1,
+    "z": 1
+  },
+  {
+    "type": "floor",
+    "x": 1,
+    "z": 2
+  },
+  {
+    "type": "floor",
+    "x": 2,
+    "z": -2
+  },
+  {
+    "type": "floor",
+    "x": 2,
+    "z": -1
+  },
+  {
+    "type": "floor",
+    "x": 2,
+    "z": 0
+  },
+  {
+    "type": "floor",
+    "x": 2,
+    "z": 1
+  },
+  {
+    "type": "floor",
+    "x": 2,
+    "z": 2
+  },
+  {
+    "type": "thruster",
+    "x": -3,
+    "z": 2
+  },
+  {
+    "type": "thruster",
+    "x": -3,
+    "z": 0
+  },
+  {
+    "type": "thruster",
+    "x": -3,
+    "z": -2
+  },
+  {
+    "type": "button",
+    "x": 1,
+    "z": 0,
+    "triggers": [
+      27
+    ]
+  },
+  {
+    "type": "button",
+    "x": 0,
+    "z": 1,
+    "triggers": [
+      28
+    ]
+  },
+  {
+    "type": "button",
+    "x": 0,
+    "z": -1,
+    "triggers": [
+      26
+    ]
+  }
+]

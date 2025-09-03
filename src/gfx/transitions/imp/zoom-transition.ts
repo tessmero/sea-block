@@ -9,7 +9,6 @@ import type { SeaBlock } from 'sea-block'
 import { Transition } from '../transition'
 import type { GuiElement } from 'guis/gui'
 import type { Rectangle } from 'util/layout-parser'
-import type { TransitionName } from 'imp-names'
 import { randChoice } from 'util/rng'
 
 export class ZoomTransition extends Transition {
@@ -93,10 +92,17 @@ export class ZoomTransition extends Transition {
     }
 
     // delegate to another transition for show
-    const showType: TransitionName = Transition.isFirstUncover
-      ? 'ss'
-      : randChoice(['ss', 'flat'] as const)
-    this.zoomShow = Transition.create(showType, context)
+    if (Transition.isLaunching) {
+      Transition.isLaunching = false
+      this.zoomShow = Transition.create('drop', context) // used as placeholder (not visible)
+    }
+    else if (Transition.isFirstUncover) {
+      this.zoomShow = Transition.create('ss', context)
+    }
+    else {
+      this.zoomShow = Transition.create(
+        randChoice(['ss', 'flat'] as const), context)
+    }
   }
 
   public _hide(t0: number, t1: number): void {

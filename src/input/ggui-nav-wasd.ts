@@ -1,0 +1,411 @@
+/**
+ * @file ggui-nav-wasd.ts
+ *
+ * Gamepad Graphical User Interface navigator.
+ * Navigates GUIs with up/down/left/right buttons.
+ */
+
+import type { GameUpdateContext } from 'games/game'
+import { Gui, type ElementId, type GuiElement } from 'guis/gui'
+import type { SeaBlock } from 'sea-block'
+import type { InputId } from './input-id'
+import type { Vector2Like } from 'three'
+import { Vector2 } from 'three'
+import type { Rectangle } from 'util/layout-parser'
+import { playSound } from 'audio/sound-effect-player'
+import { gguiHandler, hideGguiCursor } from 'gfx/3d/ggui-3d-cursor'
+import type { PromptName } from 'gfx/2d/gamepad-btn-prompts'
+import { setGamepadConfirmPrompt } from 'gfx/2d/gamepad-btn-prompts'
+
+// deadzone for any physical joysticks controlling gui
+export const guiNavJoystickDeadzone = 0.3
+
+export const minDelay = 10 // required ms between navigation events
+let lastNavTime = 0 // system time of last event
+
+export let selectedId: ElementId | undefined = undefined
+export let pressedButtonId: ElementId | undefined = undefined
+let selectedElem: GuiElement | undefined = undefined
+let isHorizontalSlider = false
+
+// attempts to move cursor
+const navInputs = {
+
+  AxisLX: ['left', 'right'],
+  AxisLY: ['up', 'down'],
+  AxisRX: ['left', 'right'],
+  AxisRY: ['up', 'down'],
+
+  DPadDown: ['down'],
+  DPadUp: ['up'],
+  DPadLeft: ['left'],
+  DPadRight: ['right'],
+
+} as const satisfies Partial<Record<InputId, Array<Direction>>>
+
+type Direction = 'up' | 'down' | 'left' | 'right'
+
+// counts as click
+const selectInputs: Array<InputId> = [
+  'ButtonA', // 'ButtonStart', 'ButtonLB', 'ButtonRB',
+]
+const DIR_ANGLES = {
+  up: -Math.PI / 2,
+  down: Math.PI / 2,
+  left: Math.PI,
+  right: 0,
+}
+
+// navigate oalong grid axis (not diagonal) called on active input
+export function navigateGuiWithGamepad(seaBlock: SeaBlock,
+  inputId: InputId, // button/axis
+  axisValue: number, // state of analog axis or digital button
+  angle?: number, // only when called through ggui-nav-circular
+): boolean {
+  // check if 3d in-world cursor can be controlled
+  if (!seaBlock.isShowingSettingsMenu && seaBlock.game.doesAllowGgui3DCursor()) {
+    // special case, consume event and only control 3d cursor in world
+    if (selectInputs.includes(inputId)) {
+      // input counts as click/confirm (or keyup with axisValue 0)
+      const hasConsumed = gguiHandler && gguiHandler.selectAction(inputId, axisValue)
+      if (hasConsumed) {
+        return true
+      }
+    }
+    else if (inputId in navInputs && axisValue !== 0) {
+      // input counts as navigation attempt for 3d cursor in world
+
+      if (typeof angle === 'number') {
+        // use precise joystick angle
+        if (gguiHandler) {
+          gguiHandler.navAction(angle)
+          playSound('smNav')
+        }
+        return true // consume event
+      }
+      else {
+        // interpret as wasd direction
+        const direction = _getDirection(navInputs[inputId], axisValue)
+        if (gguiHandler) {
+          gguiHandler.navAction(DIR_ANGLES[direction])
+          playSound('smNav')
+        }
+        return true // consume event
+      }
+    }
+  }
+  else {
+    // 3d cursor not enabled
+    hideGguiCursor()
+  }
+
+  // start check for 2d gui gamepad control
+
+  if (!seaBlock.isShowingSettingsMenu && !seaBlock.game.doesAllowGgui()) {
+    return false // gamepad is not used for gui in current game
+  }
+
+  // if ((inputId === 'AxisLX' || inputId === 'AxisLY')
+  //   && seaBlock.isShowingSettingsMenu && !seaBlock.game.doesAllowGgui()) {
+  //   return // don't use analog input to navigate settings when camera can be controlled instead
+  // }
+
+  // if (typeof axisValue === 'number') {
+  //   if (Math.abs(axisValue) < guiNavJoystickDeadzone) {
+  //     // joystick is in deadzone
+  //     lastAxisSign[inputId] = 0
+  //     return
+  //   }
+  //   else {
+  //     // joystick is being held beyond deadzone
+  //     seaBlock.isUsingGamepad = true
+  //   }
+  // }
+
+  // check for rapid input
+  const t = performance.now()
+  const delay = t - lastNavTime
+  if (delay < minDelay) {
+    return false // ignore rapid input
+  }
+  lastNavTime = t
+
+  // // check for joystick changing position but still in same direction
+  // if (axisValue) {
+  //   const sign = getSign(axisValue)
+  //   if (lastAxisSign[inputId] === sign) {
+  //     return // ignore
+  //   }
+  //   lastAxisSign[inputId] = sign
+  // }
+
+  if (inputId in navInputs && axisValue !== 0) {
+    // input counts as navigation or slide
+    const direction = _getDirection(navInputs[inputId], axisValue)
+
+    // check if input should move slider instead of navigate
+    if (selectedElem && isHorizontalSlider && (direction === 'left' || direction === 'right')) {
+      // get current slider state
+      const slider = selectedElem.rectangle as Rectangle
+      const container = selectedElem.gguiNavRectangle as Rectangle
+      let sliderState = selectedElem.display.forcedSliderState || {
+        x: (slider.x - container.x) / ((container.w - slider.w) || 1),
+        y: (slider.y - container.y) / ((container.h - slider.h) || 1),
+      }
+
+      // console.log(`old sliderstate: ${JSON.stringify(sliderState)}`)
+
+      // move slider
+      const [dx, _dy] = directionDeltas[direction]
+      sliderState = {
+        x: Math.max(0, Math.min(1, sliderState.x + 0.1 * dx)),
+        y: 0,
+      }
+
+      // console.log(direction, dx)
+
+      // console.log(`new sliderstate: ${JSON.stringify(sliderState)}`)
+
+      selectedElem.display.forcedSliderState = sliderState
+      selectedElem.display.needsUpdate = true
+      if (selectedElem.dragAction) {
+        selectedElem.dragAction({
+          seaBlock, sliderState,
+        })
+      }
+
+      // // debug
+      // for (const gui of seaBlock.getLayeredGuis()) {
+      //   for (const elem of Object.values(gui.elements)) {
+      //     elem.display.needsUpdate = true
+      //   }
+      // }
+
+      return true // consume event and don't navigate
+    }
+
+    // attempt to change selection.
+    selectNeighbor(seaBlock, allClickables, direction) // somethign in that direction
+    return true // consume event
+  }
+
+  else if (selectInputs.includes(inputId)) {
+    if (selectedElem && selectedElem.clickAction && (axisValue === 1)) {
+    // input counts as click
+
+      pressedButtonId = selectedId
+      // selectedElem.display.forcedState = 'pressed'
+      // selectedElem.display.needsUpdate = true
+      selectedElem.clickAction({ seaBlock })
+      return true
+    }
+    else if (selectedElem && selectedElem.unclickAction && (axisValue === 0)) {
+    // input counts as unclick
+      pressedButtonId = undefined
+      // selectedElem.display.forcedState = undefined
+      // selectedElem.display.needsUpdate = true
+      selectedElem.unclickAction({ seaBlock })
+      return true
+    }
+  }
+
+  return false
+}
+
+function _getDirection(arr: Array<Direction>, axisValue?: number): Direction {
+  if (arr[1] && (typeof axisValue === 'number') && (axisValue > 0)) {
+    return arr[1]
+  }
+  return arr[0]
+}
+
+// called periodically
+export function updateGamepadGui(context: GameUpdateContext) {
+  const { seaBlock } = context
+
+  if (!seaBlock.isUsingGamepad) {
+    _releaseSelected()
+    return
+  }
+
+  // un-hover mouse until next mouse move
+  seaBlock.getLayeredGuis().forEach(gui => gui.hovered = undefined)
+
+  _findClickableElements(seaBlock) // update allClickables
+
+  if (selectedId && !(selectedId in allClickables)) {
+    // selected element is no longer clickable (possibly switched guis)
+    _releaseSelected()
+
+    // attempt to select something relevant
+    selectSomething(seaBlock)
+  }
+
+  else if (!selectedId) {
+    // nothing selected
+    selectSomething(seaBlock)
+  }
+}
+
+const directionDeltas: Record<Direction, [number, number]> = {
+  up: [0, -1],
+  down: [0, 1],
+  left: [-1, 0],
+  right: [1, 0],
+}
+
+function selectNeighbor(
+  seaBlock: SeaBlock,
+  allClickables: Record<string, GuiElement>,
+  direction: Direction,
+) {
+  if (!selectedElem) {
+    return selectSomething(seaBlock)
+  }
+
+  // find starting point
+  if (!selectedElem.gguiNavRectangle) {
+    // unable to locate starting point
+    return selectSomething(seaBlock, selectedId)
+  }
+
+  // pick point to check for neighbor
+  const { x, y, w, h } = selectedElem.gguiNavRectangle
+  const [dx, dy] = directionDeltas[direction]
+
+  // start at edge of current element
+  const x0 = (x + w / 2) + (w / 2 * dx)
+  const y0 = (y + h / 2) + (h / 2 * dy)
+
+  // step in desired direction
+  const stepSize = 4
+  const screenWidth = seaBlock.layeredViewport.w
+  const screenHeight = seaBlock.layeredViewport.h
+  for (let stepIndex = 0; stepIndex < checkPoints.length; stepIndex++) {
+    checkPoints[stepIndex].set(
+      (x0 + dx * (stepIndex + 1) * stepSize) % screenWidth,
+      (y0 + dy * (stepIndex + 1) * stepSize) % screenHeight,
+    )
+  }
+
+  // check for neighbor
+  const picked = _pickElement(allClickables, checkPoints)
+  if (picked) {
+    _select(picked, allClickables[picked])
+  }
+}
+
+const checkPoints = Array.from({ length: 100 }, () => new Vector2())
+
+export function releaseGgui() {
+  _releaseSelected()
+}
+
+function _releaseSelected() {
+  if (!selectedElem) {
+    return
+  }
+  // selectedElem.display.forcedState = undefined
+  // selectedElem.display.needsUpdate = true
+  selectedElem = undefined
+  selectedId = undefined
+  pressedButtonId = undefined
+  isHorizontalSlider = false
+
+  // hide input prompt overlay
+  setGamepadConfirmPrompt(null)
+}
+
+function _select(id: ElementId, elem: GuiElement) {
+  _releaseSelected()
+
+  selectedId = id
+  selectedElem = elem
+
+  // check if slider
+  isHorizontalSlider = false
+  if ('slideIn' in elem && elem.rectangle && elem.gguiNavRectangle) {
+    const { rectangle, gguiNavRectangle } = elem
+    if (rectangle.h === gguiNavRectangle.h) {
+      isHorizontalSlider = true
+    }
+  }
+
+  // // hover new element
+  // selectedElem.display.forcedState = 'hovered'
+  // selectedElem.display.needsUpdate = true
+
+  // position button prompt overlay
+  if (elem.rectangle) {
+    const { x, y, w, h } = elem.rectangle
+    const { offset = [0, 0], isHidden } = elem.display.gamepadPrompt ?? {}
+    if (!isHidden) {
+      dummy.set(offset[0] + x + w / 2 - 8, offset[1] + y + h / 2 - 8) // center 16x16 icon on element
+      setGamepadConfirmPrompt(dummy)
+    }
+  }
+
+  playSound('smNav')
+}
+
+const dummy = new Vector2()
+
+function selectSomething(
+  _seaBlock: SeaBlock,
+  exclude?: ElementId,
+) {
+  // get some clickable button
+  for (const [id, elem] of Object.entries(allClickables)) {
+    if (id === exclude) continue // skip excluded element
+    // set/replace selection
+    _select(id as ElementId, elem)
+
+    return // don't check remaining clickables
+  }
+}
+
+export let allClickables: Record<ElementId, GuiElement> = {}
+export let visiblePrompts: Partial<Record<PromptName, GuiElement>> = {}
+
+function _findClickableElements(seaBlock: SeaBlock) {
+  allClickables = {}
+  visiblePrompts = {}
+  let guisToCheck: ReadonlyArray<Gui>
+  if (seaBlock.isShowingSettingsMenu) {
+    guisToCheck = [Gui.create('settings-menu')]
+  }
+  else {
+    guisToCheck = seaBlock.getLayeredGuis()
+  }
+  for (const gui of guisToCheck) {
+    for (const [id, elem] of Object.entries(gui.elements)) {
+      const { display } = elem
+      if (display.type === 'button' && elem.gamepadNavBox && display.isVisible) {
+        allClickables[id] = elem
+      }
+      if (display.isVisible && display.gamepadPrompt?.name) {
+        visiblePrompts[display.gamepadPrompt.name] = elem
+      }
+    }
+  }
+}
+
+function _pickElement(
+  allClickables: Record<string, GuiElement>,
+  points: Array<Vector2>,
+): ElementId | undefined {
+  //
+  for (const p of points) {
+    for (const [id, { gguiNavRectangle }] of Object.entries(allClickables)) {
+      if (_pointIsInRectangle(p, gguiNavRectangle)) {
+        return id as ElementId
+      }
+    }
+  }
+}
+
+function _pointIsInRectangle(p: Vector2Like, rectangle) {
+  if (!rectangle) return false
+  const { x, y, w, h } = rectangle
+  return (p.x >= x) && (p.x < (x + w)) && (p.y >= y) && (p.y < (y + h))
+}

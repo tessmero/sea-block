@@ -26,7 +26,13 @@ export class SsTransition extends Transition {
 
   protected reset(context: SeaBlock): void {
     this.context = context
-    this.ssdHide = this.buildSsHideSegments().map(seg => buildSweepTransition(context, seg))
+    if (Transition.isFirstUncover) {
+      // first hide does not have colors
+      this.ssdHide = showSegments.map(seg => buildSweepTransition(this.context, seg))
+    }
+    else {
+      this.ssdHide = this.buildSsHideSegments().map(seg => buildSweepTransition(context, seg))
+    }
   }
 
   protected buildSsHideSegments() {

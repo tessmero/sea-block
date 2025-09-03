@@ -4,11 +4,11 @@
  * Collectible pieces and passive powerups for chess roguelike.
  */
 
-import type { ImageAssetUrl } from 'gfx/2d/image-asset-loader'
 import type { CollectibleName } from './levels/chess-levels.json.d'
 import type { Chess } from './chess-helper'
 import { chessRun } from './chess-run'
 import { updatePawnButtonLabel } from './gfx/chess-2d-gfx-helper'
+import type { ImageAssetUrl } from 'gfx/2d/image-asset-urls'
 
 // unlock playable piece, or add one spawnable pawn, or add passive powerup
 export type Collectible = {

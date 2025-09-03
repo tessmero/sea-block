@@ -4,9 +4,9 @@
  * Sliders used as virtual joysticks in free-cam-gui.
  */
 
+import type { GameUpdateContext } from 'games/game'
 import type { ElementEvent, GuiElement, Slider, SliderState } from 'guis/gui'
 import type { FreecamLayoutKey } from 'guis/keys/freecam-layout-keys'
-import type { SeaBlock } from 'sea-block'
 
 // centered stick position
 const neutral = {
@@ -14,7 +14,7 @@ const neutral = {
 } as const satisfies SliderState
 
 // current state of the two joysticks
-export const joyInputState: Record<string, SliderState> = {
+export const joyInputState: Record<'left' | 'right', SliderState> = {
   left: neutral,
   right: neutral,
 }
@@ -117,7 +117,8 @@ export function getLeftJoystickInput(): { x: number, y: number } | null {
   return { x: dx, y: dy }
 }
 
-export function orbitWithRightJoystick(seaBlock: SeaBlock, dt: number) {
+export function orbitWithRightJoystick(context: GameUpdateContext) {
+  const { seaBlock, dt } = context
   const orbitControls = seaBlock.orbitControls as unknown as HackedOrbitControls
   const { x, y } = joyInputState.right
   let dx = (x - 0.5)
@@ -130,6 +131,7 @@ export function orbitWithRightJoystick(seaBlock: SeaBlock, dt: number) {
     dy = Math.sign(dy) * (Math.abs(dy) - rightYDead)
     orbitControls._rotateUp(5e-3 * dy * dt)
   }
+  context.seaBlock.orbitControls.update()
 }
 
 // expose private methods of OrbitControls

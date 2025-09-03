@@ -6,7 +6,7 @@
 import assert from 'assert'
 import fs from 'fs'
 import path from 'path'
-import { MESH_ASSET_URLS } from '../../src/gfx/3d/mesh-asset-loader'
+import { MESH_ASSET_URLS } from '../../src/gfx/3d/mesh-asset-urls'
 
 const PUBLIC_OBJ_DIR = path.resolve(__dirname, '../../public/obj')
 

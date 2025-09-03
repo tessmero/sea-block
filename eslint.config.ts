@@ -143,14 +143,13 @@ export default tseslint.config(
       'src/games/imp/**/*.ts',
       'src/guis/imp/**/*.ts',
       'src/gfx/transitions/imp/**/*.ts',
-      'src/configs/**/*.ts',
+      'src/configs/imp/**/*.ts',
       'src/gfx/grid-anims/**/*.ts',
     ],
     ignores: [
       // base classes are exempt (they define protected constructor)
       'src/grid-logic/tilings/tiling.ts',
       'src/generators/terrain-generator.ts',
-      'src/configs/configurable.ts',
       'src/gfx/grid-anims/grid-animation.ts',
     ],
     rules: {
@@ -200,7 +199,7 @@ export default tseslint.config(
           selector: ['variable', 'typeProperty'],
           types: ['boolean'],
           format: ['PascalCase'],
-          prefix: ['is', 'are', 'should', 'has', 'can', 'did', 'will', 'needs'],
+          prefix: ['is', 'was', 'are', 'should', 'has', 'can', 'did', 'will', 'needs'],
         },
         {
           // types must be PascalCase
@@ -219,7 +218,13 @@ export default tseslint.config(
 
   // require valid key enumeration files
   {
-    files: ['src/guis/keys/**/*.ts'],
+    files: [
+      'src/guis/keys/**/*.ts', // gui layout keys
+      'src/gfx/2d/image-asset-urls.ts', // 2d assets
+      'src/gfx/3d/mesh-asset-urls.ts', // 3d assets
+      'src/audio/sound-asset-urls.ts', // sound assets
+      'src/audio/sound-effect=names.ts', // sound keys
+    ],
     plugins: { '@typescript-eslint': tseslint.plugin },
     languageOptions: {
       parserOptions: {
@@ -228,7 +233,7 @@ export default tseslint.config(
       },
     },
     rules: {
-      'sb/valid-key-type': 'error',
+      'sb/valid-key-type': ['error', { allowedSuffixes: ['-keys.ts', '-urls.ts'] }],
     },
   },
 

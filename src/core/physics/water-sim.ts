@@ -9,7 +9,7 @@
 import type { Tile } from '../tile'
 import type { TiledGrid } from '../grid-logic/tiled-grid'
 import type { TileIndex } from '../grid-logic/indexed-grid'
-import { physicsConfig } from '../../configs/physics-config'
+import { physicsConfig } from '../../configs/imp/physics-config'
 import { TileSim } from './tile-sim'
 
 export class WaterSim extends TileSim {

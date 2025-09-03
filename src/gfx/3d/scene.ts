@@ -6,6 +6,7 @@
 import type { Color, Vector3 } from 'three'
 import { AmbientLight, DirectionalLight, Scene } from 'three'
 import type { SeaBlock } from 'sea-block'
+import { gguiCursorMesh } from './ggui-3d-cursor'
 
 export type SeablockScene = {
   threeScene: Scene
@@ -61,6 +62,9 @@ export function buildScene(seaBlock: SeaBlock): SeablockScene {
       scene.add(...currentGame.meshes)
     }
   }
+
+  // extra mesh to use gamepad to pick elements in world
+  scene.add(gguiCursorMesh)
 
   return {
     threeScene: scene,

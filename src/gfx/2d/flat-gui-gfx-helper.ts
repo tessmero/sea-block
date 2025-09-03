@@ -8,7 +8,7 @@
  */
 
 import type { SeaBlock } from 'sea-block'
-import { playSound } from 'audio/sound-effects'
+import { playSound } from 'audio/sound-effect-player'
 import type { ButtonState, ElementId, Gui, GuiElement } from 'guis/gui'
 import type { SpriteAtlasGui } from 'guis/imp/sprite-atlas-gui'
 import { getElementImageset } from './element-imageset-builder'
@@ -17,8 +17,10 @@ import { getElementImageset } from './element-imageset-builder'
 
 let lastDrawnState: Partial<Record<string, ButtonState>> = {} // for purposes of requesting repaint
 const shownAsPressed: Partial<Record<string, boolean>> = {} // for purposes of click/unclick sounds
-export function resetFrontLayer() {
+export function resetFrontLayer(seaBlock: SeaBlock) {
   lastDrawnState = {}
+  const { w, h } = seaBlock.layeredViewport
+  seaBlock.layeredViewport.ctx.clearRect(0, 0, w, h)
 }
 
 export function resetLastDrawnStates(gui: Gui) {
@@ -50,22 +52,41 @@ export function updateFrontLayer(seaBlock: SeaBlock) {
         continue // isVisible set to false
       }
 
-      const rect = overrideLayout[layoutKey] || layout[layoutKey]
-      if (!rect) {
-        continue // not in current layout
-      }
+      // get live position of element on screen
+      let rect = overrideLayout[layoutKey] || layout[layoutKey]
 
-      if (display.forcedSliderState && 'slideIn' in elem) {
+      if (rect && display.forcedSliderState && 'slideIn' in elem) {
         const { slideIn } = elem
         const { x, y } = display.forcedSliderState
         const { w, h } = rect // layout[layoutKey]
         const container = overrideLayout[slideIn] || layout[slideIn]
-        overrideLayout[layoutKey] = {
+        rect = {
           x: container.x + x * (container.w - w),
           y: container.y + y * (container.h - h),
           w, h,
         }
+        if (display.shouldSnapToPixel) {
+          rect = {
+            ...rect,
+            x: Math.round(rect.x),
+            y: Math.round(rect.y),
+          }
+        }
+        overrideLayout[layoutKey] = rect
         display.forcedSliderState = undefined
+      }
+
+      // assign rectangle for purposes of gamepad/keyboard navigation
+      if (elem.gamepadNavBox) {
+        elem.gguiNavRectangle = overrideLayout[elem.gamepadNavBox] || layout[elem.gamepadNavBox]
+      }
+      else {
+        elem.gguiNavRectangle = rect
+      }
+
+      if (!rect) {
+        elem.rectangle = undefined
+        continue // not in current layout
       }
 
       let stateToDraw = gui.getElementState(id as ElementId)
@@ -93,7 +114,7 @@ export function updateFrontLayer(seaBlock: SeaBlock) {
 
       const lastState = lastDrawnState[id]
       if (stateToDraw !== lastState) {
-        // console.log(layoutKey, JSON.stringify(rect))
+        // button has changed state
 
         if (stateToDraw === 'pressed' && !shownAsPressed[id]) {
           playSound('click')
@@ -108,16 +129,20 @@ export function updateFrontLayer(seaBlock: SeaBlock) {
           // console.log(`hover on ${layoutKey}`)
         }
 
-        // special case for joystick regions: clear rectangle
         if (display.shouldClearBehind) {
+        // special case for joystick regions: clear rectangle
           ctx.clearRect(rect.x, rect.y, rect.w, rect.h)
         }
+
         if (display.type === 'sprite-atlas') {
+          // special case
           (gui as SpriteAtlasGui).drawAtlasView(ctx, rect)
         }
         else {
           // not sprite-atlas
           // console.log(`drawing element with layout key ${layoutKey} state ${stateToDraw}`)
+          display.isVisible = true
+          elem.rectangle = rect
           ctx.drawImage(
             imageset[stateToDraw] as CanvasImageSource,
             rect.x,

@@ -61,10 +61,8 @@ export class SphereGroup extends Group<Sphere, SphereSim> {
          * ))
          */
 
-    const spherePositions = [
-      new Vector3(0, 30, 0),
-      new Vector3(0, 20, 0),
-    ]
+    const spherePositions = Array.from({ length: this.n },
+      (_, i) => new Vector3(0, i * 10, 0))
 
     // give spheres unique colors
     const sphereColors = Array.from(
@@ -99,6 +97,7 @@ export class SphereGroup extends Group<Sphere, SphereSim> {
           dummy.scale.set(1, 1, 1)
         }
         else {
+          // dummy.scale.set(1, 1, 1)
           dummy.scale.set(0, 0, 0)
         }
       }
