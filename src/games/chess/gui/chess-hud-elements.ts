@@ -74,10 +74,14 @@ const topLeftB: ChessElem = {
 
 const topRightBtn: ChessButton = {
   layoutKey: 'topRightBtn',
-  hotkeys: ['ButtonStart'],
+  hotkeys: ['Escape', 'ButtonStart'],
   display: {
     type: 'button',
     icon: 'icons/16x16-x.png',
+    gamepadPrompt: {
+      name: 'start',
+      offset: [-16, 0],
+    },
   },
   chessAction: ({ seaBlock, chess }) => {
     if (chess.currentPhase === 'game-over') {
@@ -182,7 +186,12 @@ export const pawnBtn: ChessButton = {
   display: {
     type: 'button',
     // icon: 'icons/chess/8x8-pawn.png',
+    gamepadPrompt: {
+      name: 'B',
+      offset: [-20, 0],
+    },
   },
+  hotkeys: ['ButtonB'],
   chessAction: ({ chess }) => {
     playSound('click')
     chess.startPlacePawn()
@@ -192,7 +201,6 @@ export const pawnBtn: ChessButton = {
 // label on pawn button
 export const pawnLabel: ChessElem = {
   layoutKey: 'pawnBtn',
-  hotkeys: ['ButtonB'],
   isPickable: false,
   display: {
     type: 'diagram',
@@ -202,11 +210,15 @@ export const pawnLabel: ChessElem = {
 
 export const cancelPawnBtn: ChessButton = {
   layoutKey: 'cancelPawnBtn',
-  hotkeys: ['ButtonB'],
   display: {
     type: 'button',
     label: 'CANCEL',
+    gamepadPrompt: {
+      name: 'B',
+      offset: [-30, 0],
+    },
   },
+  hotkeys: ['ButtonB'],
   chessAction: ({ chess }) => {
     playSound('click')
     chess.cancelPlacePawn()

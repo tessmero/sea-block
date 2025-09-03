@@ -15,8 +15,8 @@ const gfxConfigTree = {
   children: {
     pixelScale: { // controlled by in-game settings
       value: (4 * ((typeof window !== 'undefined') ? window.devicePixelRatio : 1)),
-      min: 1,
-      max: 20,
+      min: 2,
+      max: 16,
       step: 1,
     },
     visibleRadius: {

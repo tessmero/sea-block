@@ -46,13 +46,18 @@ export const SETTINGS_LAYOUT = {
     right: 0,
   },
 
-  musicVolumeLabel: {
+  settingsPanelInner: {
     parent: 'settingsPanel',
+    top: 4, // offset for settings rows
+  },
+
+  musicVolumeLabel: {
+    parent: 'settingsPanelInner',
     top: rowThickness * 1,
     ...label,
   },
   musicVolumeRegion: {
-    parent: 'settingsPanel',
+    parent: 'settingsPanelInner',
     top: rowThickness * 2,
     ...row,
   },
@@ -62,12 +67,12 @@ export const SETTINGS_LAYOUT = {
   },
 
   sfxVolumeLabel: {
-    parent: 'settingsPanel',
+    parent: 'settingsPanelInner',
     top: rowThickness * 3,
     ...label,
   },
   sfxVolumeRegion: {
-    parent: 'settingsPanel',
+    parent: 'settingsPanelInner',
     top: rowThickness * 4,
     ...row,
   },
@@ -77,12 +82,12 @@ export const SETTINGS_LAYOUT = {
   },
 
   pixelScaleLabel: {
-    parent: 'settingsPanel',
+    parent: 'settingsPanelInner',
     top: rowThickness * 5,
     ...label,
   },
   pixelScaleRegion: {
-    parent: 'settingsPanel',
+    parent: 'settingsPanelInner',
     top: rowThickness * 6,
     ...row,
   },
@@ -91,6 +96,7 @@ export const SETTINGS_LAYOUT = {
     width: 10,
   },
 
+  // big bottom center button
   settingsQuitBtn: {
     parent: 'settingsPanel',
     width: rowWidth,

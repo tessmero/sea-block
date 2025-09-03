@@ -163,7 +163,7 @@ function _buildSettingSliderImageset(params: ElementImagesetParams): ElementImag
   const image = new OffscreenCanvas(w, h)
   const ctx = image.getContext('2d') as OffscreenCanvasRenderingContext2D
 
-  ctx.fillStyle = 'rgb(192,192,192)'
+  ctx.fillStyle = 'rgb(128,128,128)'
   ctx.fillRect(0, 0, w, h)
 
   ctx.fillStyle = 'black'

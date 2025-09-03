@@ -20,7 +20,10 @@ const buildCancelBtn: RaftElem = {
   display: {
     type: 'button',
     label: 'DONE',
-    gamepadPrompt: 'cancel',
+    gamepadPrompt: {
+      name: 'B',
+      offset: [0, -16],
+    },
     font: 'mini',
     isVisible: false,
   },

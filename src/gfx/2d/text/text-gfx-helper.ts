@@ -36,7 +36,9 @@ export function drawText(ctx, params: DrawTextParams) {
   if (font === 'mini') {
     processedLabel = processedLabel.toUpperCase()
   }
-  const lines = processedLabel.trim().split('\n').map(line => line.trim())
+
+  // const lines = processedLabel.trim().split('\n').map(line => line.trim())
+  const lines = processedLabel.split('\n')
 
   const fontData = getFontData(font)
   const extHeight = fontData.lineHeight + basement

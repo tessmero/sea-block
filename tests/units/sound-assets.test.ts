@@ -17,11 +17,23 @@ const soundAssetUrls = Array.from(
   ),
 )
 
+// Read .gitignore from public/sounds/.gitignore
+const gitignorePath = path.resolve(PUBLIC_SOUNDS_DIR, '.gitignore')
+const gitignoreLines = fs.readFileSync(gitignorePath, 'utf8').split(/\r?\n/)
+
 describe('Sound Assets', function () {
   for (const url of soundAssetUrls) {
     it(`exists: ${url}`, function () {
       const filePath = path.join(PUBLIC_SOUNDS_DIR, url)
       assert.ok(fs.existsSync(filePath), `Missing sound asset: ${filePath}`)
+    })
+    it(`.gitignore includes: ${url}`, function () {
+      // Check for !<url> in .gitignore
+      const expectedLine = `!${url}`
+      assert.ok(
+        gitignoreLines.includes(expectedLine),
+        `.gitignore missing entry: ${expectedLine}`,
+      )
     })
   }
 })

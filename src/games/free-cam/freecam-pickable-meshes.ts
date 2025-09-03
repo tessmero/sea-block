@@ -18,6 +18,7 @@ import { grabbedMeshElements, updateGrabbedMeshDiagram } from './freecam-grabbed
 import type { ImageAssetUrl } from 'gfx/2d/image-asset-urls'
 import { allPickableParams } from './freecam-pickables'
 import type { MeshAssetUrl } from 'gfx/3d/mesh-asset-urls'
+import { setGamepadConfirmPrompt } from 'gfx/2d/gamepad-btn-prompts'
 
 export const PICKABLE_NAMES = ['rook', 'thruster'] as const
 export type PickableName = (typeof PICKABLE_NAMES)[number]
@@ -189,12 +190,13 @@ function _pickableClicked(
 ) {
   playSound('click')
   if (targetElements[pickableName].layoutKey === 'grabbedMesh') {
-    _ungrabPickable(seaBlock)
+    ungrabFreecamPickable(seaBlock)
     return
   }
 
   // ungrab any existing
-  _ungrabPickable(seaBlock)
+  setGamepadConfirmPrompt(null)
+  ungrabFreecamPickable(seaBlock)
 
   // start moving picked mesh to camera
   targetElements[pickableName].layoutKey = 'grabbedMesh'
@@ -223,7 +225,7 @@ export function cancelClicked({ seaBlock }: ElementEvent) {
   // restore original mesh position
 
   playSound('click')
-  _ungrabPickable(seaBlock)
+  ungrabFreecamPickable(seaBlock)
 }
 
 // user clicked a pickable then clicked 'play'
@@ -233,7 +235,7 @@ export function playClicked({ seaBlock }: ElementEvent) {
   const name = grabbedMeshName
 
   // restore original mesh position
-  _ungrabPickable(seaBlock)
+  ungrabFreecamPickable(seaBlock)
   // targetElement.layoutKey = undefined
   // targetMesh.position.copy(originalTargetMeshPosition)
 
@@ -250,7 +252,7 @@ export function playClicked({ seaBlock }: ElementEvent) {
   }
 }
 
-function _ungrabPickable(seaBlock: SeaBlock) {
+export function ungrabFreecamPickable(seaBlock: SeaBlock) {
   // if (targetElement.layoutKey === undefined) {
   //   return
   // }

@@ -13,7 +13,8 @@ import type { Vector2Like } from 'three'
 import { Vector2 } from 'three'
 import type { Rectangle } from 'util/layout-parser'
 import { playSound } from 'audio/sound-effect-player'
-import { gguiNavAction, gguiSelectAction, hideGguiCursor } from 'gfx/3d/ggui-3d-cursor'
+import { gguiHandler, hideGguiCursor } from 'gfx/3d/ggui-3d-cursor'
+import type { PromptName } from 'gfx/2d/gamepad-btn-prompts'
 import { setGamepadConfirmPrompt } from 'gfx/2d/gamepad-btn-prompts'
 
 // deadzone for any physical joysticks controlling gui
@@ -22,7 +23,8 @@ export const guiNavJoystickDeadzone = 0.3
 export const minDelay = 10 // required ms between navigation events
 let lastNavTime = 0 // system time of last event
 
-let selectedId: ElementId | undefined = undefined
+export let selectedId: ElementId | undefined = undefined
+export let pressedButtonId: ElementId | undefined = undefined
 let selectedElem: GuiElement | undefined = undefined
 let isHorizontalSlider = false
 
@@ -65,20 +67,29 @@ export function navigateGuiWithGamepad(seaBlock: SeaBlock,
     // special case, consume event and only control 3d cursor in world
     if (selectInputs.includes(inputId)) {
       // input counts as click/confirm (or keyup with axisValue 0)
-      gguiSelectAction(inputId, axisValue)
+      const hasConsumed = gguiHandler && gguiHandler.selectAction(inputId, axisValue)
+      if (hasConsumed) {
+        return true
+      }
     }
     else if (inputId in navInputs && axisValue !== 0) {
       // input counts as navigation attempt for 3d cursor in world
 
       if (typeof angle === 'number') {
         // use precise joystick angle
-        gguiNavAction(angle)
+        if (gguiHandler) {
+          gguiHandler.navAction(angle)
+          playSound('smNav')
+        }
         return true // consume event
       }
       else {
         // interpret as wasd direction
-        const dirs = navInputs[inputId]
-        gguiNavAction(DIR_ANGLES[dirs[(axisValue === -1 ? 0 : 1) % dirs.length]])
+        const direction = _getDirection(navInputs[inputId], axisValue)
+        if (gguiHandler) {
+          gguiHandler.navAction(DIR_ANGLES[direction])
+          playSound('smNav')
+        }
         return true // consume event
       }
     }
@@ -179,18 +190,20 @@ export function navigateGuiWithGamepad(seaBlock: SeaBlock,
   }
 
   else if (selectInputs.includes(inputId)) {
+    if (selectedElem && selectedElem.clickAction && (axisValue === 1)) {
     // input counts as click
-    if (selectedElem && selectedElem.clickAction && axisValue) {
-      // emulate click on selected element
-      selectedElem.display.forcedState = 'pressed'
-      selectedElem.display.needsUpdate = true
+
+      pressedButtonId = selectedId
+      // selectedElem.display.forcedState = 'pressed'
+      // selectedElem.display.needsUpdate = true
       selectedElem.clickAction({ seaBlock })
       return true
     }
-    else if (selectedElem && selectedElem.unclickAction && !axisValue) {
-      // emulate click on selected element
-      selectedElem.display.forcedState = undefined
-      selectedElem.display.needsUpdate = true
+    else if (selectedElem && selectedElem.unclickAction && (axisValue === 0)) {
+    // input counts as unclick
+      pressedButtonId = undefined
+      // selectedElem.display.forcedState = undefined
+      // selectedElem.display.needsUpdate = true
       selectedElem.unclickAction({ seaBlock })
       return true
     }
@@ -200,7 +213,7 @@ export function navigateGuiWithGamepad(seaBlock: SeaBlock,
 }
 
 function _getDirection(arr: Array<Direction>, axisValue?: number): Direction {
-  if (arr[1] && axisValue) {
+  if (arr[1] && (typeof axisValue === 'number') && (axisValue > 0)) {
     return arr[1]
   }
   return arr[0]
@@ -292,10 +305,11 @@ function _releaseSelected() {
   if (!selectedElem) {
     return
   }
-  selectedElem.display.forcedState = undefined
-  selectedElem.display.needsUpdate = true
+  // selectedElem.display.forcedState = undefined
+  // selectedElem.display.needsUpdate = true
   selectedElem = undefined
   selectedId = undefined
+  pressedButtonId = undefined
   isHorizontalSlider = false
 
   // hide input prompt overlay
@@ -317,15 +331,18 @@ function _select(id: ElementId, elem: GuiElement) {
     }
   }
 
-  // hover new element
-  selectedElem.display.forcedState = 'hovered'
-  selectedElem.display.needsUpdate = true
+  // // hover new element
+  // selectedElem.display.forcedState = 'hovered'
+  // selectedElem.display.needsUpdate = true
 
   // position button prompt overlay
   if (elem.rectangle) {
-    const { x, y } = elem.rectangle
-    dummy.set(x, y)
-    setGamepadConfirmPrompt(dummy)
+    const { x, y, w, h } = elem.rectangle
+    const { offset = [0, 0], isHidden } = elem.display.gamepadPrompt ?? {}
+    if (!isHidden) {
+      dummy.set(offset[0] + x + w / 2 - 8, offset[1] + y + h / 2 - 8) // center 16x16 icon on element
+      setGamepadConfirmPrompt(dummy)
+    }
   }
 
   playSound('smNav')
@@ -348,7 +365,7 @@ function selectSomething(
 }
 
 export let allClickables: Record<ElementId, GuiElement> = {}
-export let visiblePrompts: Partial<Record<'confirm' | 'cancel', GuiElement>> = {}
+export let visiblePrompts: Partial<Record<PromptName, GuiElement>> = {}
 
 function _findClickableElements(seaBlock: SeaBlock) {
   allClickables = {}
@@ -366,8 +383,8 @@ function _findClickableElements(seaBlock: SeaBlock) {
       if (display.type === 'button' && elem.gamepadNavBox && display.isVisible) {
         allClickables[id] = elem
       }
-      if (display.isVisible && display.gamepadPrompt) {
-        visiblePrompts[display.gamepadPrompt] = elem
+      if (display.isVisible && display.gamepadPrompt?.name) {
+        visiblePrompts[display.gamepadPrompt.name] = elem
       }
     }
   }

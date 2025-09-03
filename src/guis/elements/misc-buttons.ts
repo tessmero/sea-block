@@ -6,6 +6,7 @@
 
 import type { GuiElement } from 'guis/gui'
 import type { FreecamLayoutKey } from 'guis/keys/freecam-layout-keys'
+import { toggleDebugControls } from 'util/debug-controls'
 
 type FreecamElem = GuiElement<FreecamLayoutKey>
 
@@ -20,7 +21,14 @@ type FreecamElem = GuiElement<FreecamLayoutKey>
 // }
 
 export const fcSettingsBtn: FreecamElem = {
-  display: { type: 'button', icon: `icons/16x16-config.png` },
+  display: {
+    type: 'button',
+    icon: `icons/16x16-config.png`,
+    gamepadPrompt: {
+      name: 'start',
+      offset: [-16, 0],
+    },
+  },
   layoutKey: 'settingsBtn',
   hotkeys: ['Escape', 'ButtonStart'],
   clickAction: ({ seaBlock }) => {
@@ -28,30 +36,22 @@ export const fcSettingsBtn: FreecamElem = {
   },
 }
 
-// export const raftBtn: FreecamElem = {
-//   display: {
-//     type: 'button',
-//     // icon: `icons/16x16-chess.png`
-//     label: 'RAFT',
-//   },
-//   layoutKey: 'raftBtn',
-//   hotkeys: [],
-//   clickAction: ({ seaBlock }) => {
-//     const item = seaBlock.config.tree.children.game
-//     item.value = 'raft'
-//     seaBlock.onCtrlChange(item)
-//   },
-// }
-
 export const debugBtn: FreecamElem = {
-  display: { type: 'button', label: '~' },
+  display: {
+    type: 'button',
+    label: '~',
+    gamepadPrompt: {
+      name: 'back',
+      offset: [16, 0],
+    },
+  },
   layoutKey: 'debugBtn',
   hotkeys: [
     'Backquote', // backtick under esc on keyboard
     'ButtonBack', // small button on controller
   ],
   clickAction: ({ seaBlock }) => {
-    seaBlock.rebuildControls()
-    // seaBlock.toggleMenu()
+    // seaBlock.rebuildControls()
+    toggleDebugControls(seaBlock)
   },
 }

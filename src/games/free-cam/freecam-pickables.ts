@@ -44,7 +44,7 @@ export const allPickableParams: Record<PickableName, PickableParams> = {
     icon: 'icons/raft/16x16-thruster.png',
     iconOffset: [0, 14],
     title: 'THRUSTER',
-    subtitle: 'MACHINE PART',
+    subtitle: 'PART',
     playAction: (seaBlock) => {
       // switch to raft game
       ChessScenery.takeOriginalSnapshot(seaBlock)

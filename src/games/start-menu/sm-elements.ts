@@ -32,6 +32,9 @@ export const smStartBtn: SmElem = {
     font: 'mini',
     color: 'white',
     shouldClearBehind: true,
+    gamepadPrompt: {
+      offset: [0, 16],
+    },
   },
   clickAction: ({ seaBlock }) => {
     playSound('smStart')
@@ -56,6 +59,9 @@ export const smSettingsBtn: SmElem = {
     font: 'mini',
     color: 'white',
     shouldClearBehind: true,
+    gamepadPrompt: {
+      offset: [0, 16],
+    },
   },
   clickAction: ({ seaBlock }) => {
     seaBlock.toggleSettings()
@@ -73,7 +79,7 @@ export const smWarning: SmElem = {
   layoutKey: 'smText',
   display: {
     type: 'label',
-    label: 'warning:\nflashing lights',
+    label: '    warning\n\nflashing lights',
     color: 'white',
   },
 }

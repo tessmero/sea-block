@@ -13,6 +13,8 @@ export const RAFT_PHASE_PANEL_LAYOUT = {
   buildPhasePanel: {
     parent: 'toolbar',
     top: '100%',
+    width: 8 * 16,
+    left: 'auto',
   },
 
   buildCancelBtn: {

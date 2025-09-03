@@ -20,6 +20,8 @@ import { resetLastDrawnStates } from 'gfx/2d/flat-gui-gfx-helper'
 import type { FontVariant, TextAlign } from 'gfx/2d/text/text-gfx-helper'
 import { getElementDims } from './layouts/layout-helper'
 import type { ImageAssetUrl } from 'gfx/2d/image-asset-urls'
+import { pressedButtonId, selectedId } from 'input/ggui-nav-wasd'
+import type { PromptName } from 'gfx/2d/gamepad-btn-prompts'
 
 export type StaticElement<TLayoutKey extends string = string> = {
   layoutKey: TLayoutKey // must have layout rectangle
@@ -72,15 +74,22 @@ export type ElementDisplayParams = {
   readonly color?: string
   readonly textAlign?: TextAlign
 
-  readonly gamepadPrompt?: 'confirm' | 'cancel'
+  readonly gamepadPrompt?: PromptParams
 
   shouldClearBehind?: boolean
   isVisible?: boolean
   needsUpdate?: boolean // request repaint
   forcedState?: ButtonState
   forcedSliderState?: SliderState
+  shouldSnapToPixel?: boolean // prevent anti-aliasing slider
 
   imageset?: ElementImageset // assigned after load
+}
+
+export type PromptParams = {
+  name?: PromptName // set to show prompt by default
+  offset?: [number, number] // offset prompt icon from center of element
+  isHidden?: boolean // true to never show prompt
 }
 
 export const BUTTON_STATES = ['default', 'pressed', 'hovered'] as const
@@ -109,6 +118,10 @@ export class Gui<TLayoutKey extends string = string> {
   private readonly hidden: Set<ElementId> = new Set() // subset of elements
   public hovered?: ElementId // element hovered by mouse
 
+  public closeDialogs(_seaBlock: SeaBlock) {
+    // do nothing
+  }
+
   public resetElementStates(_seaBlock: SeaBlock) {
     resetLastDrawnStates(this)
     this.stuckDown.clear()
@@ -120,6 +133,12 @@ export class Gui<TLayoutKey extends string = string> {
     // if( this.panels.has(name) ){
     //   return 'default'
     // }
+    if (id === pressedButtonId) {
+      return 'pressed'
+    }
+    if (id === selectedId) {
+      return 'hovered'
+    }
     if (this.stuckDown.has(id)) {
       return 'pressed'
     }
@@ -420,8 +439,9 @@ export class Gui<TLayoutKey extends string = string> {
     }
 
     for (const id in this.elements) {
-      const { display, hotkeys } = this.elements[id]
-      if (display.isVisible && hotkeys?.includes(buttonCode)) {
+      const elem = this.elements[id]
+      const { display, hotkeys } = elem
+      if (display.isVisible && elem.rectangle && hotkeys?.includes(buttonCode)) {
         this._click({ seaBlock, buttonCode }, id as ElementId)
         return true // consume event
       }

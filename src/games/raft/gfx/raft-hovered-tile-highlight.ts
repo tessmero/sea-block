@@ -20,8 +20,8 @@ export const hoverCursorMesh = new Mesh(
 )
 type CursorMode = 'default' | 'buildable'
 const cursorMats: Record<CursorMode, MeshBasicMaterial> = {
-  default: new MeshBasicMaterial({ color: 'white' }),
-  buildable: new MeshBasicMaterial({ color: 'green' }),
+  default: new MeshBasicMaterial({ color: 0xcccccc }),
+  buildable: new MeshBasicMaterial({ color: 'white' }),
 }
 type XZ = { x: number, z: number }
 export function putHoverCursorOnTile(tile: XZ, mode: CursorMode = 'default') {

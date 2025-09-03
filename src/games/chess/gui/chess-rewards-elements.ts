@@ -30,6 +30,9 @@ export const leftRewardBtn: ChessButton = {
   display: {
     type: 'button',
     // isVisible: false,
+    gamepadPrompt: {
+      offset: [0, 16],
+    },
   },
   chessAction: ({ chess }) => {
     if (selectedReward === 'left') {
@@ -58,6 +61,9 @@ export const rightRewardBtn: ChessButton = {
   display: {
     type: 'button',
     // isVisible: false,
+    gamepadPrompt: {
+      offset: [0, 16],
+    },
   },
   chessAction: ({ chess }) => {
     if (selectedReward === 'right') {
@@ -115,6 +121,9 @@ export const acceptBtn: ChessButton = {
     type: 'button',
     label: 'ACCEPT',
     isVisible: false,
+    gamepadPrompt: {
+      offset: [-26, 0],
+    },
   },
   chessAction: ({ chess }) => {
     toggleRewardHelp(chess)
@@ -164,6 +173,7 @@ function updateRewardsDisplay(chess: Chess) {
   let cltIndex = -1
   leftRewardBtn.display.forcedState = undefined
   rightRewardBtn.display.forcedState = undefined
+  acceptBtn.display.forcedState = undefined
   acceptBtn.display.isVisible = false
 
   if (selectedReward === 'left') {

@@ -6,6 +6,7 @@
 
 export const SETTINGS_LAYOUT_KEYS = [
   'settingsPanel',
+  'settingsPanelInner', // helper
 
   // top row
   'settingsTitleBar',

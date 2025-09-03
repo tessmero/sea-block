@@ -16,8 +16,9 @@ import { ChessWaveMaker } from 'games/chess/chess-wave-maker'
 import { freecamPickableElements, getNearestFreecamPickable,
   targetElements, updateFreecamPickables } from 'games/free-cam/freecam-pickable-meshes'
 import { gamepadState } from 'input/gamepad-input'
-import { gguiCursorMesh, hideGguiCursor, setGguiSelectAction } from 'gfx/3d/ggui-3d-cursor'
+import { gguiCursorMesh, hideGguiCursor, setGguiHandler } from 'gfx/3d/ggui-3d-cursor'
 import { grabbedMeshPanel } from 'games/free-cam/freecam-grabbed-mesh-dialog'
+import { setGamepadConfirmPrompt } from 'gfx/2d/gamepad-btn-prompts'
 
 // idle camera will center on mesh if nearby and using gamepad
 const gamepadSnapToPickableRadSq = Math.pow(10, 2)
@@ -123,7 +124,10 @@ export class FreeCamGame extends Game {
     const moveVec = this._moveWithWasdOrLeftJoystick(context)
 
     // maybe snap camera to pickable
-    if (!grabbedMeshPanel.display.isVisible && seaBlock.isUsingGamepad && moveVec.x === 0 && moveVec.z === 0) {
+    if (!grabbedMeshPanel.display.isVisible
+      && !seaBlock.isShowingSettingsMenu
+      && seaBlock.isUsingGamepad
+      && moveVec.x === 0 && moveVec.z === 0) {
       // using gamepad but not actively panning camera
       const { name, pos, distSq } = getNearestFreecamPickable(this.cameraAnchor.position)
 
@@ -137,13 +141,18 @@ export class FreeCamGame extends Game {
         )
 
         // place cursor on pickable
+        setGamepadConfirmPrompt(pos)
         gguiCursorMesh.position.copy(pos)
         gguiCursorMesh.visible = true
-        setGguiSelectAction((_inputId, axisValue) => {
-          if (axisValue === 0) return // ignore un-press event
-          const { clickAction } = freecamPickableElements[name]
-          if (!clickAction) return
-          clickAction({ seaBlock })
+        setGguiHandler({
+          selectAction: (_inputId, axisValue) => {
+            if (axisValue === 0) return // ignore un-press event
+            const { clickAction } = freecamPickableElements[name]
+            if (!clickAction) return
+            clickAction({ seaBlock })
+            return true // consume event
+          },
+          navAction: () => {},
         })
       }
       else {
@@ -281,7 +290,7 @@ export function zoomWithTriggers(context: GameUpdateContext) {
   const { seaBlock, dt } = context
   const orbitControls = seaBlock.orbitControls as unknown as HackedOrbitControls
   const input = (gamepadState.ButtonLT as number) - (gamepadState.ButtonRT as number)
-  const delta = 1e0 * dt * input
+  const delta = 2e0 * dt * input
 
   if (delta < 0) {
     orbitControls._dollyIn(orbitControls._getZoomScale(delta))

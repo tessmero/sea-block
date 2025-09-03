@@ -45,7 +45,7 @@ import { acceptBtn } from './gui/chess-rewards-elements'
 import { updateRepaintEffect } from './gfx/chess-repaint-effect'
 import { rewardHelpDiagram, rewardHelpState } from './gui/chess-reward-help-elements'
 import { ChessScenery } from './levels/chess-scenery'
-import { hideGguiCursor } from 'gfx/3d/ggui-3d-cursor'
+import { gguiHandler, hideGguiCursor } from 'gfx/3d/ggui-3d-cursor'
 import { orbitWithRightJoystick } from 'guis/elements/joysticks'
 import { zoomWithTriggers } from 'games/imp/free-cam-game'
 import { putGguiCursorOnSomeValidMove } from './chess-ggui-nav'
@@ -62,7 +62,7 @@ export function chessAllow3DRender(): boolean {
 }
 
 export function chessAllowGgui3DCursor(): boolean {
-  if (instance.currentPhase === 'player-choice') {
+  if (instance.currentPhase === 'player-choice' || instance.currentPhase === 'place-pawn') {
     return true
   }
   return false
@@ -152,7 +152,7 @@ export function updateChess(context: GameUpdateContext): void {
   if (context.seaBlock.isUsingGamepad
     && instance.currentPhase !== 'reward-choice'
     && !context.seaBlock.isShowingSettingsMenu
-    && (!instance.hlTiles.hovered)) {
+    && (!instance.hlTiles.hovered || !gguiHandler)) {
     // make sure gamepad cursor is visible in world or flat view
     putGguiCursorOnSomeValidMove(instance)
   }
@@ -390,7 +390,8 @@ export class Chess {
 
   private updateFlatView() {
     // if( this.context.config.flatConfig.chessViewMode === '2D' ){
-    if (chessRun.collected.includes('dual-vector-foil')) {
+    if (chessRun.collected.includes('dual-vector-foil')
+      && !this.context.isShowingSettingsMenu) {
       updateFlatView(this)
     }
     else {

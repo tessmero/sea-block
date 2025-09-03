@@ -47,12 +47,12 @@ const allSliders: Record<SliderKey, SettingsSlider> = {
     onChange: updateAllSongVolumes,
   },
   sfxVolume: {
-    elements: buildSliderElements('sfxVolume', { label: 'SOUND EFFECTS' }),
+    elements: buildSliderElements('sfxVolume', { label: 'SOUNDS' }),
     item: audioConfig.tree.children.sfxVolume,
     onChange: updateAllSfxVolumes,
   },
   pixelScale: {
-    elements: buildSliderElements('pixelScale', { label: 'PIXEL SCALE' }),
+    elements: buildSliderElements('pixelScale', { label: 'SCALE' }),
     item: gfxConfig.tree.children.pixelScale,
     onChange: (seaBlock) => {
       seaBlock.onCtrlChange(gfxConfig.tree.children.pixelScale)
@@ -92,6 +92,8 @@ function buildSliderElements(key: SliderKey, params: SliderParams): SliderElemen
       display: {
         type: 'button',
         border: '16x16-btn-sm',
+        shouldSnapToPixel: true, // don't anti-alias slider
+        gamepadPrompt: { isHidden: true }, // no 'A' overlay when selected
       },
       clickAction: (e) => {
         _slideSetting(key, e)
@@ -149,6 +151,7 @@ function _updateSliderDisplay(ss: SettingsSlider) {
   slider.display.needsUpdate = true
 }
 
+// small x on top right
 const settingsCloseBtn: Selem = {
   layoutKey: 'settingsCloseBtn',
   gamepadNavBox: 'settingsTitleBar',
@@ -156,18 +159,25 @@ const settingsCloseBtn: Selem = {
   display: {
     type: 'button',
     icon: 'icons/16x16-x.png',
+    gamepadPrompt: {
+      offset: [-12, 0],
+    },
   },
   clickAction: ({ seaBlock }) => {
     seaBlock.toggleSettings()
   },
 }
 
+// wide quit button at bottom
 const settingsQuitBtn: Selem = {
   layoutKey: 'settingsQuitBtn',
   gamepadNavBox: 'settingsQuitBtn',
   display: {
     type: 'button',
     label: 'QUIT',
+    gamepadPrompt: {
+      offset: [-20, 0],
+    },
   },
   clickAction: ({ seaBlock }) => {
     seaBlock.toggleSettings()
@@ -187,6 +197,9 @@ const settingsOkayBtn: Selem = {
   display: {
     type: 'button',
     label: 'OKAY',
+    gamepadPrompt: {
+      offset: [-20, 0],
+    },
   },
   clickAction: ({ seaBlock }) => {
     seaBlock.toggleSettings()

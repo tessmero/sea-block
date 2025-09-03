@@ -7,36 +7,37 @@
 
 import type { TileIndex } from 'core/grid-logic/indexed-grid'
 import { raft } from './raft'
-import { Vector2 } from 'three'
+import { Vector2, Vector3 } from 'three'
 import { _hoverRaftTile, clickRaftTile } from './raft-mouse-input-helper'
-import { gguiCursorMesh, setGguiNavAction, setGguiSelectAction } from 'gfx/3d/ggui-3d-cursor'
+import { gguiCursorMesh, setGguiHandler } from 'gfx/3d/ggui-3d-cursor'
 import { setGamepadConfirmPrompt } from 'gfx/2d/gamepad-btn-prompts'
 import { resetHeldChessInputs } from 'games/chess/chess-input-helper'
 import { drivingRaftGroup } from './raft-drive-helper'
 
 const targetVec = new Vector2()
+const dummy = new Vector3()
 
 export function putGguiCursorOnSomeClickable(startFrom?: TileIndex, angle?: number) {
   targetVec.set(0, 0)
-  const is2d = false
   if (startFrom && (typeof angle === 'number')) {
     const seaBlock = raft.context
-    let camAngle = 0
-    if (!is2d) {
-      // adjust for camera angle in 3d world
-      const { camera, orbitControls } = seaBlock
-      camAngle = -Math.PI / 2 + Math.atan2(
-        camera.position.z - orbitControls.target.z,
-        camera.position.x - orbitControls.target.x,
-      )
-    }
+    // adjust for camera angle in 3d world
+    const { camera, orbitControls } = seaBlock
+    const camAngle = -Math.PI / 2 + Math.atan2(
+      camera.position.z - orbitControls.target.z,
+      camera.position.x - orbitControls.target.x,
+    )
+    // adjust for raft angle in 3d world
+    drivingRaftGroup.getWorldDirection(dummy)
+    const raftAngle = -Math.PI / 2 + Math.atan2(dummy.z, dummy.x)
+    // console.log('cam', camAngle, 'raft', raftAngle)
     targetVec.set(
-      startFrom.x + Math.cos(angle + camAngle),
-      startFrom.z + Math.sin(angle + camAngle),
+      startFrom.x + Math.cos(angle + camAngle - raftAngle),
+      startFrom.z + Math.sin(angle + camAngle - raftAngle),
     )
   }
 
-  const candidates = [...raft.hlTiles.clickable]
+  const candidates = raft.currentPhase === 'idle' ? raft.allTiles : [...raft.hlTiles.clickable]
   let nearest: TileIndex | null = null
   let nearestDistSq = Infinity
   for (const i of candidates) {
@@ -59,35 +60,29 @@ export function putGguiCursorOnSomeClickable(startFrom?: TileIndex, angle?: numb
     }
     _hoverRaftTile(raftTile, tileIndex) // color tile liek mouse hover
 
-    if (is2d) {
-    //   // chess is in 2D mode, not rendering world
-    //   const rect = getFlatViewTileRect(instance, tileIndex)
-    //   if (rect) {
-    //     setGamepadConfirmPrompt(rect)
-    //   }
-    }
-    else {
-      // place cursor in 3d world
-      raft.getPosOnTile(tileIndex, gguiCursorMesh.position)
-      drivingRaftGroup.updateMatrixWorld()
-      gguiCursorMesh.position.applyMatrix4(drivingRaftGroup.matrixWorld)
+    // place cursor in 3d world
+    raft.getPosOnTile(tileIndex, gguiCursorMesh.position)
+    drivingRaftGroup.updateMatrixWorld()
+    gguiCursorMesh.position.applyMatrix4(drivingRaftGroup.matrixWorld)
 
-      gguiCursorMesh.visible = true
-      setGamepadConfirmPrompt(gguiCursorMesh.position)
-    }
+    gguiCursorMesh.visible = true
+    setGamepadConfirmPrompt(gguiCursorMesh.position)
 
     //
-    setGguiSelectAction((inputId, axisValue) => {
-      if (axisValue) {
-        clickRaftTile(raftTile, tileIndex)
-      }
-      else {
+    setGguiHandler({
+      selectAction: (inputId, axisValue) => {
+        if (axisValue === 1) {
+          clickRaftTile(raftTile, tileIndex)
+          return true // consume event
+        }
+        else {
         // unclickTile(raftTile, tileIndex)
-      }
-    })
-    setGguiNavAction((angle) => {
-      resetHeldChessInputs()
-      putGguiCursorOnSomeClickable(tileIndex, angle)
+        }
+      },
+      navAction: (angle) => {
+        resetHeldChessInputs()
+        putGguiCursorOnSomeClickable(tileIndex, angle)
+      },
     })
   }
 }

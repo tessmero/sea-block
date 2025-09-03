@@ -13,6 +13,7 @@ export const RAFT_PIECE_DIALOG_LAYOUT = {
   pieceDialogPanel: {
     parent: 'toolbar',
     top: '100%',
+    width: 8 * 16,
     left: 'auto',
   },
 

@@ -17,11 +17,11 @@ const params = {
       ],
       url: 'http://localhost:8642/index.html',
     },
-    // {
-    //   shortName: 'site',
-    //   name: 'development build of tessmero.github.io',
-    //   url: 'http://localhost:4000/sea-block/',
-    // },
+    {
+      shortName: 'site',
+      name: 'development build of tessmero.github.io',
+      url: 'http://localhost:4000/sea-block/',
+    },
   ],
   sequence: puppetTestSequence,
 }

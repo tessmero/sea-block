@@ -9,8 +9,6 @@ import type { SoundAssetUrl } from 'audio/sound-asset-urls'
 // Separate object for sound sources only
 export const SOUND_SOURCES = {
 
-  // ...testSoundSources, // include all sound assets as sound effects
-
   hover: ['kenney/glass_005.ogg'],
   unhover: ['kenney/glass_006.ogg'],
   click: ['kenney/select_002.ogg'],

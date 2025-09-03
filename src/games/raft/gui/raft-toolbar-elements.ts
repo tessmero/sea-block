@@ -13,72 +13,80 @@ import { type RaftPhase } from '../raft-enums'
 
 type RaftElem = GuiElement<RaftLayoutKey>
 
-export const RAFT_TOOLBAR_PHASES: Array<RaftPhase> = [
-  'place-floor',
-  'place-button', 'place-thruster', 'show-all-wires',
-]
-
 export const RAFT_TOOLBAR_BUTTONS = [
   'placeFloorBtn',
-  'placeButtonBtn', 'placeThrusterBtn', 'wiresBtn',
+  'placeButtonBtn',
+  'placeThrusterBtn',
+  'wiresBtn',
 ] as const satisfies ReadonlyArray<RaftLayoutKey>
+type ToolName = (typeof RAFT_TOOLBAR_BUTTONS)[number]
 
-type ButtonName = (typeof RAFT_TOOLBAR_BUTTONS)[number]
-
-const actions: Record<ButtonName, () => void> = {
-  placeFloorBtn: () => {
-    if (raft.currentPhase === 'place-floor') {
-      raft.startPhase('idle')
-    }
-    else {
-      setRaftToolbarPressed('placeFloorBtn')
-      raft.startPhase(`place-floor`)
-      raft.hlTiles.updateBuildableTiles('floor')
-    }
-  },
-  placeButtonBtn: () => {
-    if (raft.currentPhase === `place-button`) {
-      raft.startPhase('idle')
-    }
-    else {
-      setRaftToolbarPressed('placeButtonBtn')
-      raft.startPhase(`place-button`)
-      raft.hlTiles.updateBuildableTiles('button')
-    }
-  },
-  placeThrusterBtn: () => {
-    if (raft.currentPhase === `place-thruster`) {
-      raft.startPhase('idle')
-    }
-    else {
-      setRaftToolbarPressed('placeThrusterBtn')
-      raft.startPhase(`place-thruster`)
-      raft.hlTiles.updateBuildableTiles('thruster')
-    }
-  },
-  wiresBtn: () => {
-    if (raft.currentPhase === 'show-all-wires') {
-      raft.startPhase('idle')
-    }
-    else {
-      setRaftToolbarPressed('wiresBtn')
-      raft.startPhase('show-all-wires')
-      raft.hlTiles.clear()
-    }
-  },
+type ToolButton = {
+  phase: RaftPhase
+  icon: ImageAssetUrl
+  action: () => void
 }
 
-// const userFriendlyLabels: Record<(typeof RAFT_TOOLBAR_BUTTONS)[number], string> = {
-//   placeFloorBtn: 'Floor',
-//   placeButtonBtn: 'Button',
-//   placeThrusterBtn: 'Thruster',
-//   wiresBtn: 'Wires',
-// }
-const toolbarIcons: Record<(typeof RAFT_TOOLBAR_BUTTONS)[number], ImageAssetUrl> = {
-  placeFloorBtn: 'icons/16x16-checkered.png',
-  placeButtonBtn: 'icons/raft/16x16-raft-button.png',
-  placeThrusterBtn: 'icons/raft/16x16-thruster.png',
-  wiresBtn: 'icons/raft/16x16-wire.png',
+const allToolButtons: Record<ToolName, ToolButton> = {
+  placeFloorBtn: {
+    phase: 'place-floor',
+    icon: 'icons/16x16-checkered.png',
+    action: () => {
+      if (raft.currentPhase === 'place-floor') {
+        raft.startPhase('idle')
+      }
+      else {
+        setRaftToolbarPressed('placeFloorBtn')
+        raft.startPhase(`place-floor`)
+        raft.hlTiles.updateBuildableTiles('floor')
+      }
+    },
+  },
+  placeButtonBtn: {
+    phase: 'place-button',
+    icon: 'icons/raft/16x16-raft-button.png',
+    action: () => {
+      if (raft.currentPhase === `place-button`) {
+        raft.startPhase('idle')
+      }
+      else {
+        setRaftToolbarPressed('placeButtonBtn')
+        raft.startPhase(`place-button`)
+        raft.hlTiles.updateBuildableTiles('button')
+      }
+    },
+  },
+
+  placeThrusterBtn: {
+    phase: 'place-thruster',
+    icon: 'icons/raft/16x16-thruster.png',
+    action: () => {
+      if (raft.currentPhase === `place-thruster`) {
+        raft.startPhase('idle')
+      }
+      else {
+        setRaftToolbarPressed('placeThrusterBtn')
+        raft.startPhase(`place-thruster`)
+        raft.hlTiles.updateBuildableTiles('thruster')
+      }
+    },
+  },
+
+  wiresBtn: {
+    phase: 'show-all-wires',
+    icon: 'icons/raft/16x16-wire.png',
+    action: () => {
+      if (raft.currentPhase === 'show-all-wires') {
+        raft.startPhase('idle')
+      }
+      else {
+        setRaftToolbarPressed('wiresBtn')
+        raft.startPhase('show-all-wires')
+        raft.hlTiles.clear()
+      }
+    },
+  },
+
 }
 
 export const raftToolbarElements: Array<RaftElem>
@@ -86,15 +94,12 @@ export const raftToolbarElements: Array<RaftElem>
     layoutKey,
     display: {
       type: 'button',
-      icon: toolbarIcons[layoutKey],
-      // label: userFriendlyLabels[layoutKey],
+      icon: allToolButtons[layoutKey].icon,
     },
-    clickAction: () => {
-      actions[layoutKey]() // button-specific action
-    },
+    clickAction: allToolButtons[layoutKey].action,
   }))
 
-export function setRaftToolbarPressed(pressedBtn?: ButtonName) {
+export function setRaftToolbarPressed(pressedBtn?: ToolName) {
   for (const [i, name] of RAFT_TOOLBAR_BUTTONS.entries()) {
     const { display } = raftToolbarElements[i]
     display.forcedState = (name === pressedBtn) ? 'pressed' : undefined
@@ -108,6 +113,7 @@ export const prevToolBtn: RaftElem = {
   display: {
     type: 'button',
     label: '<',
+    gamepadPrompt: { name: 'LB' },
   },
   clickAction: () => {
     cycleTool(-1)
@@ -119,6 +125,7 @@ export const nextToolBtn: RaftElem = {
   display: {
     type: 'button',
     label: '>',
+    gamepadPrompt: { name: 'RB' },
   },
   clickAction: () => {
     cycleTool(1)
@@ -132,6 +139,10 @@ export const raftSettingsBtn: RaftElem = {
     type: 'button',
     icon: 'icons/16x16-config.png',
     isVisible: true,
+    gamepadPrompt: {
+      name: 'start',
+      offset: [0, 16],
+    },
   },
   clickAction: ({ seaBlock }) => {
     seaBlock.toggleSettings()
@@ -148,8 +159,14 @@ export const raftSettingsBtn: RaftElem = {
 }
 
 function cycleTool(delta: -1 | 1) {
-  const i = RAFT_TOOLBAR_PHASES.indexOf(raft.currentPhase)
+  let currentButtonName
+  for (const [buttonName, params] of Object.entries(allToolButtons)) {
+    if (params.phase === raft.currentPhase) {
+      currentButtonName = buttonName
+    }
+  }
+  const i = RAFT_TOOLBAR_BUTTONS.indexOf(currentButtonName)
   const n = RAFT_TOOLBAR_BUTTONS.length
   const buttonName = RAFT_TOOLBAR_BUTTONS[(i + delta + n) % n]
-  actions[buttonName]()
+  allToolButtons[buttonName].action()
 }

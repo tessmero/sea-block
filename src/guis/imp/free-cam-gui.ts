@@ -5,6 +5,7 @@
  */
 
 import { grabbedMeshElements } from 'games/free-cam/freecam-grabbed-mesh-dialog'
+import { ungrabFreecamPickable } from 'games/free-cam/freecam-pickable-meshes'
 import { leftJoy, leftJoySlider, rightJoy, rightJoySlider } from 'guis/elements/joysticks'
 import { debugBtn, fcSettingsBtn } from 'guis/elements/misc-buttons'
 import { wasdButtons } from 'guis/elements/wasd-buttons'
@@ -69,5 +70,10 @@ export class FreeCamGui extends Gui<FreecamLayoutKey> {
         return FREECAM_DESKTOP_LAYOUT
       },
     } satisfies RegisteredGui<FreecamLayoutKey>)
+  }
+
+  public closeDialogs(seaBlock: SeaBlock): void {
+    super.closeDialogs(seaBlock)
+    ungrabFreecamPickable(seaBlock)
   }
 }

@@ -62,6 +62,7 @@ export class Raft {
   protected waveMaker: ChessWaveMaker // Replace 'any' with actual type if available
 
   public readonly grid: TiledGrid
+  public readonly allTiles: Array<number>
   public readonly hlTiles = new RaftHlTiles() // Highlighted tiles (raft-specific)
   public readonly raftTiles: Set<number>
   public readonly raftPieces: Array<RenderablePiece> = []
@@ -75,6 +76,7 @@ export class Raft {
     public readonly centerTile: TileIndex,
   ) {
     this.grid = raftGrid
+    this.allTiles = this.grid.tileIndices.map(({ i }) => i)
     this.getPosOnTile(centerTile, this.centerPos)
 
     // buildingRaftGroup.position.copy(this.centerPos)

@@ -52,7 +52,7 @@ export const smIvy = {
   resetDelay: 20 * 1000,
 
   hue: 0.5,
-  hueVariance: 0.5,
+  hueVariance: 0.6,
 
   // non-clearing tessmero/ivy buffer
   buffer: {} as HTMLCanvasElement,

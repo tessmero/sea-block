@@ -9,7 +9,7 @@ import { Vector2 } from 'three'
 import { chessRun } from './chess-run'
 import type { TileIndex } from 'core/grid-logic/indexed-grid'
 import type { Chess } from './chess-helper'
-import { gguiCursorMesh, setGguiNavAction, setGguiSelectAction } from 'gfx/3d/ggui-3d-cursor'
+import { gguiCursorMesh, setGguiHandler } from 'gfx/3d/ggui-3d-cursor'
 import { setGamepadConfirmPrompt } from 'gfx/2d/gamepad-btn-prompts'
 import { clickTile, getFlatViewTileRect, resetHeldChessInputs, unclickTile } from './chess-input-helper'
 
@@ -73,17 +73,21 @@ export function putGguiCursorOnSomeValidMove(instance: Chess, startFrom?: TileIn
     }
 
     //
-    setGguiSelectAction((inputId, axisValue) => {
-      if (axisValue) {
-        clickTile(instance, tileIndex, inputId)
-      }
-      else {
-        unclickTile(instance, tileIndex, inputId)
-      }
-    })
-    setGguiNavAction((angle) => {
-      resetHeldChessInputs()
-      putGguiCursorOnSomeValidMove(instance, tileIndex, angle)
+    setGguiHandler({
+      selectAction: (inputId, axisValue) => {
+        if (axisValue) {
+          clickTile(instance, tileIndex, inputId)
+          return true // consume event
+        }
+        else {
+          unclickTile(instance, tileIndex, inputId)
+          return true // consume event
+        }
+      },
+      navAction: (angle) => {
+        resetHeldChessInputs()
+        putGguiCursorOnSomeValidMove(instance, tileIndex, angle)
+      },
     })
   }
 }

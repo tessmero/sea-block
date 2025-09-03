@@ -65,6 +65,13 @@ export function updateFrontLayer(seaBlock: SeaBlock) {
           y: container.y + y * (container.h - h),
           w, h,
         }
+        if (display.shouldSnapToPixel) {
+          rect = {
+            ...rect,
+            x: Math.round(rect.x),
+            y: Math.round(rect.y),
+          }
+        }
         overrideLayout[layoutKey] = rect
         display.forcedSliderState = undefined
       }
@@ -78,6 +85,7 @@ export function updateFrontLayer(seaBlock: SeaBlock) {
       }
 
       if (!rect) {
+        elem.rectangle = undefined
         continue // not in current layout
       }
 

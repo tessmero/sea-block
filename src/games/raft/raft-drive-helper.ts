@@ -24,6 +24,7 @@ import { wiresMesh } from './gfx/raft-wires-overlay'
 import { selectedCursorMesh } from './gfx/raft-clicked-tile-highlight'
 import { flamesMesh } from './gfx/raft-thruster-flames'
 import { zoomWithTriggers } from 'games/imp/free-cam-game'
+import { isTouchDevice } from 'input/mouse-touch-input'
 
 const wc = new WalkingCube(1)
 wc.controlMode = 'raft'
@@ -67,7 +68,6 @@ export const drivingRaftElement = {
 export let raftRig: RaftRig // physics object made of spheres
 
 export function raftLayoutFactory() {
-  const isTouchDevice = true
   return isTouchDevice ? RAFT_LANDSCAPE_LAYOUT : RAFT_DESKTOP_LAYOUT
 }
 

@@ -26,7 +26,7 @@ export const GAME = {
   NAMES: ['splash-screen', 'start-menu',
     'start-sequence', 'free-cam',
     'sphere-test', 'tile-inspector',
-    'chess', 'free-chess', 'walking-cube', 'raft',
+    'chess', 'walking-cube', 'raft',
   ],
   SOURCES: ['src/games/imp/**/*.ts'],
 } as const satisfies ImpManifest
