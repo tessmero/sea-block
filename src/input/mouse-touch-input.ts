@@ -32,6 +32,7 @@ import type { GameElement } from 'games/game'
 import { setMaterial } from 'gfx/3d/gui-3d-gfx-helper'
 import { pickAabbTile } from 'util/aabb-raycaster'
 import { hideGguiCursor } from 'gfx/3d/ggui-3d-cursor'
+import { clickGuiLayers, mouseMoveGuiLayers, unclickGuiLayers } from 'gui-layers'
 
 export let isTouchDevice = false // set to true on first touch event -> ignore mouse events
 
@@ -106,7 +107,7 @@ const handlers: ReadonlyArray<EventHandler> = [
 
       if (!isDraggingOrbitControls && !isZoomingOrbitControls) {
         // check if hovering flat gui on front layer
-        hasConsumed = context.mouseMoveGuiLayers(event)
+        hasConsumed = mouseMoveGuiLayers(event)
 
         if (!hasConsumed && event.pickedMesh) {
           // console.log(`hovered mesh ${event.pickedMesh.constructor.name}`)
@@ -190,7 +191,7 @@ const handlers: ReadonlyArray<EventHandler> = [
         return // disable click during transition
       }
 
-      let hasConsumed = context.clickGuiLayers(event)
+      let hasConsumed = clickGuiLayers(event)
 
       if (!hasConsumed && event.pickedMesh) {
         // check for added property set in game.ts
@@ -250,7 +251,7 @@ const handlers: ReadonlyArray<EventHandler> = [
         zoomOrbitId = undefined
       }
 
-      context.unclickGuiLayers(event)
+      unclickGuiLayers(event)
       // context.game.gui.unclick(event)
       // event.preventDefault()
     },

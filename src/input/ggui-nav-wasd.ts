@@ -16,6 +16,7 @@ import { playSound } from 'audio/sound-effect-player'
 import { gguiHandler, hideGguiCursor } from 'gfx/3d/ggui-3d-cursor'
 import type { PromptName } from 'gfx/2d/gamepad-btn-prompts'
 import { setGamepadConfirmPrompt } from 'gfx/2d/gamepad-btn-prompts'
+import { getLayeredGuis } from 'gui-layers'
 
 // deadzone for any physical joysticks controlling gui
 export const guiNavJoystickDeadzone = 0.3
@@ -229,7 +230,7 @@ export function updateGamepadGui(context: GameUpdateContext) {
   }
 
   // un-hover mouse until next mouse move
-  seaBlock.getLayeredGuis().forEach(gui => gui.hovered = undefined)
+  getLayeredGuis(seaBlock).forEach(gui => gui.hovered = undefined)
 
   _findClickableElements(seaBlock) // update allClickables
 
@@ -375,7 +376,7 @@ function _findClickableElements(seaBlock: SeaBlock) {
     guisToCheck = [Gui.create('settings-menu')]
   }
   else {
-    guisToCheck = seaBlock.getLayeredGuis()
+    guisToCheck = getLayeredGuis(seaBlock)
   }
   for (const gui of guisToCheck) {
     for (const [id, elem] of Object.entries(gui.elements)) {

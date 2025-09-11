@@ -13,7 +13,6 @@ import type { ConfigButton, ConfigItem } from './configs/config-tree'
 import { TerrainGenerator } from './generators/terrain-generator'
 import type { TileGroupGfxHelper } from './gfx/3d/tile-group-gfx-helper'
 import { getStyle, STYLES } from './gfx/styles/styles-list'
-import type { ProcessedSubEvent } from './input/mouse-touch-input'
 import { initMouseListeners } from './input/mouse-touch-input'
 import { GRID_DETAIL, STEP_DURATION } from './settings'
 import { GAME, GUI, type GameName, type GeneratorName } from './imp-names'
@@ -41,7 +40,6 @@ import { preloadChessRewardHelpDiagrams } from 'games/chess/gui/chess-reward-hel
 import { pollGamepadInput } from 'input/gamepad-input'
 import type { KeyCode } from 'input/input-id'
 import { preloadGrabbedMeshDiagrams } from 'games/free-cam/freecam-grabbed-mesh-dialog'
-import { isDevMode } from 'configs/imp/top-config'
 import { releaseGgui, updateGamepadGui } from 'input/ggui-nav-wasd'
 import { initAllSoundEffects, playSound } from 'audio/sound-effect-player'
 import { hideGguiCursor } from 'gfx/3d/ggui-3d-cursor'
@@ -49,6 +47,8 @@ import { drawGamepadPrompts } from 'gfx/2d/gamepad-btn-prompts'
 import { loadAllMeshes } from 'gfx/3d/mesh-asset-loader'
 import { loadAllSounds } from 'audio/sound-asset-loader'
 import { SONGS } from 'audio/song-player'
+import { getLayeredGuis } from 'gui-layers'
+import { splashScreenMidTransition } from 'startup-renderer-replacer'
 
 // can only be constructed once
 let didConstruct = false
@@ -324,12 +324,13 @@ export class SeaBlock {
   // general refresh, like onResize but doesn't effect camera
   public refreshGui(resetStates = false) {
     resetFrontLayer(this)
-    for (const gui of this.getLayeredGuis()) {
+    for (const gui of getLayeredGuis(this)) {
       gui.refreshLayout(this)
       if (resetStates) {
         gui.resetElementStates(this)
       }
     }
+    this.transition?.cleanupHide()
   }
 
   // called when viewport changes
@@ -350,7 +351,7 @@ export class SeaBlock {
 
     // recompute visible layouts
     // this.game.gui.refreshLayout(this)
-    for (const gui of this.getLayeredGuis()) {
+    for (const gui of getLayeredGuis(this)) {
       gui.refreshLayout(this)
       gui.resetElementStates(this)
     }
@@ -466,7 +467,7 @@ export class SeaBlock {
     gfxConfig.refreshConfig()
     generator.refreshConfig()
 
-    for (const gui of this.getLayeredGuis()) {
+    for (const gui of getLayeredGuis(this)) {
       gui.resetElementStates(this)
     }
 
@@ -516,38 +517,7 @@ export class SeaBlock {
 
   private async onMidTransition() {
     if (this.currentGameName === 'splash-screen') {
-      this.currentGameName = 'free-cam'
-
-      // special case, just clicked "launch"
-      // replace back canvas and renderer
-      const renderer = this.layeredViewport.backRenderer
-      renderer.dispose()
-      renderer.domElement.remove()
-      const newCanvas = document.createElement('canvas') as HTMLCanvasElement
-      newCanvas.id = 'backCanvas'
-      document.body.appendChild(newCanvas)
-      this.layeredViewport.backCanvas = newCanvas
-      this.layeredViewport.backRenderer = new THREE.WebGLRenderer({
-        canvas: this.layeredViewport.backCanvas,
-        antialias: false,
-      })
-      this.orbitControls.domElement = newCanvas
-
-      // fullscreen
-      if (!isDevMode) {
-        // start switch to fullscreen
-        document.documentElement.requestFullscreen()
-
-        // after two animation frames, update layout
-        await new Promise<void>((resolve) => {
-          requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-              this.onResize()
-              resolve()
-            })
-          })
-        })
-      }
+      await splashScreenMidTransition(this)
     }
 
     const { generator, scene } = this
@@ -588,10 +558,12 @@ export class SeaBlock {
 
     const { x, y, w, h } = this.layeredViewport.screenRectangle
     this.layeredViewport.ctx.clearRect(x, y, w, h)
-    this.refreshGui()
 
+    this.onResize()
+
+    // console.log
     resetFrontLayer(this)
-    // updateFrontLayer(this) // draw now
+    updateFrontLayer(this) // draw now
 
     // Chess.queueHltUpdate()
   }
@@ -601,59 +573,5 @@ export class SeaBlock {
   public rebuildControls() {
     this.didBuildControls = true
     showDebugControls(this)
-  }
-
-  // get visible guis starting with the front-most
-  public getLayeredGuis(): ReadonlyArray<Gui> {
-    const result = [this.game.gui]
-
-    const { testGui } = this.config.flatConfig
-    if (testGui === 'sprite-atlas') {
-      return [Gui.create('sprite-atlas')] // show sprite atlas alone
-      // result.unshift(Gui.create('sprite-atlas'))
-    }
-
-    if (this.isShowingSettingsMenu) {
-      result.unshift(Gui.create('settings-menu')) // show settings menu on top
-    }
-
-    return result
-    // if (this.isSettingsMenuVisible && settingsGui) {
-    //   return [
-    //     settingsGui,
-    //     this.game.gui,
-    //   ]
-    // }
-
-    // return [
-    //   this.game.gui,
-    // ]
-  }
-
-  // allow gui layers to consume click/touch before orbit controls (mouse-touch-input.ts)
-  public clickGuiLayers(event: ProcessedSubEvent): boolean {
-    for (const gui of this.getLayeredGuis()) {
-      if (gui.click(event)) {
-        return true // consume event
-      }
-    }
-    return false // pass to orbit controls
-  }
-
-  public unclickGuiLayers(event: ProcessedSubEvent) {
-    for (const gui of this.getLayeredGuis()) {
-      gui.unclick(event)
-    }
-  }
-
-  // allow gui layers to consume drag before orbit controls (mouse-touch-input.ts)
-  public mouseMoveGuiLayers(event: ProcessedSubEvent): boolean {
-    document.documentElement.style.cursor = 'default'
-    for (const gui of this.getLayeredGuis()) {
-      if (gui.move(event)) { // may set cursor to pointer
-        return true // consume event
-      }
-    }
-    return false // pass to orbit controls
   }
 }

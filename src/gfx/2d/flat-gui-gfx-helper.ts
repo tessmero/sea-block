@@ -12,6 +12,7 @@ import { playSound } from 'audio/sound-effect-player'
 import type { ButtonState, ElementId, Gui, GuiElement } from 'guis/gui'
 import type { SpriteAtlasGui } from 'guis/imp/sprite-atlas-gui'
 import { getElementImageset } from './element-imageset-builder'
+import { getLayeredGuis } from 'gui-layers'
 
 // export const loadedImagesets: Record<string, ElementImageset> = {} // populated at startup
 
@@ -39,7 +40,7 @@ export function updateFrontLayer(seaBlock: SeaBlock) {
   const { ctx } = layeredViewport
 
   // draw back-most gui layer first
-  for (const gui of ([...seaBlock.getLayeredGuis()]).reverse()) {
+  for (const gui of ([...getLayeredGuis(seaBlock)]).reverse()) {
     const overrideLayout = gui.overrideLayoutRectangles
     const layout = gui.layoutRectangles
     const occlusions = gui.elementOcclusions // occlusions within layer

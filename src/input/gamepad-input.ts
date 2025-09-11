@@ -11,6 +11,7 @@ import { joyInputState, leftJoy, leftJoySlider, rightJoy, rightJoySlider } from 
 import type { GuiElement, Slider, SliderState } from 'guis/gui'
 import { navigateGuiWithGamepad } from './ggui-nav-wasd'
 import { navigateWithStick } from './ggui-nav-circular'
+import { getLayeredGuis } from 'gui-layers'
 
 export const gamepadState = {} as Record<GamepadCode, boolean | number>
 for (const code of GAMEPAD_CODES) {
@@ -59,7 +60,7 @@ export function pollGamepadInput(seaBlock: SeaBlock) {
           hasConsumed = navigateGuiWithGamepad(seaBlock, code as GamepadCode, 1)
         }
         if (!hasConsumed) {
-          for (const gui of seaBlock.getLayeredGuis()) {
+          for (const gui of getLayeredGuis(seaBlock)) {
             if (gui.keydown(seaBlock, code)) {
               hasConsumed = true
               break
@@ -70,7 +71,7 @@ export function pollGamepadInput(seaBlock: SeaBlock) {
       else if (!isPressed && prevButtonStates[code]) {
         // Button released
         // seaBlock.isUsingGamepad = true
-        for (const gui of seaBlock.getLayeredGuis()) {
+        for (const gui of getLayeredGuis(seaBlock)) {
           gui.keyup(seaBlock, code)
         }
         navigateGuiWithGamepad(seaBlock, code as GamepadCode, 0)
