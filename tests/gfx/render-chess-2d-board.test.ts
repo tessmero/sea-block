@@ -8,7 +8,7 @@ import { createCanvas } from 'canvas'
 import { drawFlatView } from '../../src/games/chess/gfx/chess-2d-gfx-helper'
 import { assertNotAntialiased, saveTestImage } from './gfx-test-util'
 import { mockChess } from '../util/chess-test-util'
-import { Chess } from '../../src/games/chess/chess-helper'
+import { Chess } from '../../src/games/chess/chess'
 
 type RGB = [number, number, number]
 

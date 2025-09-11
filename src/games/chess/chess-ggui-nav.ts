@@ -8,7 +8,7 @@
 import { Vector2 } from 'three'
 import { chessRun } from './chess-run'
 import type { TileIndex } from 'core/grid-logic/indexed-grid'
-import type { Chess } from './chess-helper'
+import type { Chess } from './chess'
 import { gguiCursorMesh, setGguiHandler } from 'gfx/3d/ggui-3d-cursor'
 import { setGamepadConfirmPrompt } from 'gfx/2d/gamepad-btn-prompts'
 import { clickTile, getFlatViewTileRect, resetHeldChessInputs, unclickTile } from './chess-input-helper'
@@ -60,7 +60,7 @@ export function putGguiCursorOnSomeValidMove(instance: Chess, startFrom?: TileIn
 
     if (is2d) {
       // chess is in 2D mode, not rendering world
-      const rect = getFlatViewTileRect(instance, tileIndex)
+      const rect = getFlatViewTileRect(tileIndex)
       if (rect) {
         setGamepadConfirmPrompt(rect)
       }
@@ -76,11 +76,11 @@ export function putGguiCursorOnSomeValidMove(instance: Chess, startFrom?: TileIn
     setGguiHandler({
       selectAction: (inputId, axisValue) => {
         if (axisValue) {
-          clickTile(instance, tileIndex, inputId)
+          clickTile(tileIndex, inputId)
           return true // consume event
         }
         else {
-          unclickTile(instance, tileIndex, inputId)
+          unclickTile(tileIndex, inputId)
           return true // consume event
         }
       },

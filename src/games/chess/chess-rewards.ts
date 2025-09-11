@@ -5,7 +5,7 @@
  */
 
 import type { CollectibleName } from './levels/chess-levels.json.d'
-import type { Chess } from './chess-helper'
+import type { Chess } from './chess'
 import { chessRun } from './chess-run'
 import { updatePawnButtonLabel } from './gfx/chess-2d-gfx-helper'
 import type { ImageAssetUrl } from 'gfx/2d/image-asset-urls'
@@ -15,8 +15,8 @@ export type Collectible = {
   title: string
   description: string
   icon: ImageAssetUrl
-  isValid: (chess: Chess) => boolean
-  collectAction?: (chess: Chess) => void
+  isValid: () => boolean
+  collectAction?: () => void
 }
 
 export function randomCollectible(context: Chess): CollectibleName {

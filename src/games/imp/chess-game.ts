@@ -4,14 +4,14 @@
  * Game implementation that points to modules in src/games/chess.
  */
 import { Game } from 'games/game'
-import type { Chess } from 'games/chess/chess-helper'
 import { chessAllow3DRender, chessAllowGgui,
-  chessAllowGgui3DCursor, resetChess, updateChess } from 'games/chess/chess-helper'
+  chessAllowGgui3DCursor, resetChess, updateChess } from 'games/chess/chess'
 import {
-  treasureChestElement, instancedPieceElements, getChessPipeline, getChessCamOffset,
+  treasureChestElement, instancedPieceElements, getChessCamOffset,
   outlinedPieceElements,
   resetChessCamera,
 } from 'games/chess/gfx/chess-3d-gfx-helper'
+import { chessBoardPipeline } from 'gfx/3d/pipelines/chess-board-pipeline'
 
 export class ChessGame extends Game {
   static {
@@ -26,8 +26,6 @@ export class ChessGame extends Game {
     })
   }
 
-  chess!: Chess
-
   // private static hasMadeChessPiecesPickable = false
   reset = (context) => {
   // snap to good camera position in case initial seamless-transition was skipped
@@ -38,7 +36,8 @@ export class ChessGame extends Game {
     // if (this.chess?.currentPhase === 'reward-choice') {
     //   return
     // }
-    this.chess = resetChess(context)
+
+    resetChess(context)
 
     // if (!ChessGame.hasMadeChessPiecesPickable) {
     //   ChessGame.hasMadeChessPiecesPickable = true
@@ -51,7 +50,7 @@ export class ChessGame extends Game {
 
   resetCamera = resetChessCamera
 
-  getTerrainRenderPipeline = tile => getChessPipeline(this.chess, tile)
+  getTerrainRenderPipeline = () => chessBoardPipeline
   update = updateChess
   doesAllowGgui = chessAllowGgui
   doesAllowGgui3DCursor = chessAllowGgui3DCursor

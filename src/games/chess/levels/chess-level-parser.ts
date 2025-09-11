@@ -14,7 +14,7 @@ import type { PieceName } from '../chess-enums.ts'
 import type { PieceColor } from './chess-levels.json.d'
 import type { Piece } from './chess-levels.json.d'
 import { chessRun } from '../chess-run'
-import type { Chess } from '../chess-helper'
+import type { Chess } from '../chess'
 
 type LevelStartState = {
   playerPiece: ParsedPiece

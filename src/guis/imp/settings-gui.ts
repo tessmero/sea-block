@@ -16,6 +16,8 @@ import { lerp } from 'three/src/math/MathUtils.js'
 import { updateAllSfxVolumes } from 'audio/sound-effect-player'
 import { updateAllSongVolumes } from 'audio/song-player'
 import type { SeaBlock } from 'sea-block'
+import { quitChess } from 'games/chess/chess'
+import { quitRaft } from 'games/raft/raft'
 
 type Selem = GuiElement<SettingsLayoutKey>
 const settingsPanel: Selem = {
@@ -56,6 +58,7 @@ const allSliders: Record<SliderKey, SettingsSlider> = {
     item: gfxConfig.tree.children.pixelScale,
     onChange: (seaBlock) => {
       seaBlock.onCtrlChange(gfxConfig.tree.children.pixelScale)
+      seaBlock.onResize()
     },
   },
 }
@@ -164,7 +167,8 @@ const settingsCloseBtn: Selem = {
     },
   },
   clickAction: ({ seaBlock }) => {
-    seaBlock.toggleSettings()
+    seaBlock.toggleSettings(false)
+    seaBlock.refreshGui()
   },
 }
 
@@ -180,6 +184,16 @@ const settingsQuitBtn: Selem = {
     },
   },
   clickAction: ({ seaBlock }) => {
+    if (seaBlock.currentGameName === 'chess') {
+      quitChess()
+      return
+    }
+
+    if (seaBlock.currentGameName === 'raft') {
+      quitRaft()
+      return
+    }
+
     seaBlock.toggleSettings()
     if (seaBlock.currentGameName === 'free-cam') {
       seaBlock.config.tree.children.game.value = 'start-menu'
@@ -202,7 +216,8 @@ const settingsOkayBtn: Selem = {
     },
   },
   clickAction: ({ seaBlock }) => {
-    seaBlock.toggleSettings()
+    seaBlock.toggleSettings(false)
+    seaBlock.refreshGui()
   },
 }
 

@@ -39,6 +39,10 @@ export function restoreSnapshot(seaBlock: SeaBlock, snapshot: Snapshot) {
     if (key in snapshot.config) {
       const value = snapshot.config[key]
       item.value = value
+
+      // if (key === 'generator') {
+      //   console.log('restore snapshot', key, value)
+      // }
     }
   })
   // traverse(michaelConfig.tree, (key, item) => {

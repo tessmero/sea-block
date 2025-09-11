@@ -26,12 +26,22 @@ const prevButtonStates: Record<GamepadCode, boolean> = (() => {
   return obj
 })()
 
+let activeGamepadIndex = -1
 export function pollGamepadInput(seaBlock: SeaBlock) {
   // console.log(`start polling gamepad`)
   // const startTime = performance.now()
 
-  const gamepads = navigator.getGamepads ? navigator.getGamepads() : []
-  for (const gp of gamepads) {
+  let gamepadsToPoll: Array<Gamepad | null>
+  if (activeGamepadIndex === -1) {
+    // poll all gamepads
+    gamepadsToPoll = navigator.getGamepads ? navigator.getGamepads() : []
+  }
+  else {
+    // poll one active gamepad
+    gamepadsToPoll = [navigator.getGamepads()[activeGamepadIndex]]
+  }
+
+  for (const gp of gamepadsToPoll) {
     if (!gp) continue
     // Buttons
     for (const [name, idx] of Object.entries(GAMEPAD_BUTTONS)) {
@@ -40,6 +50,8 @@ export function pollGamepadInput(seaBlock: SeaBlock) {
       gamepadState[code] = isPressed
       // Edge detection for keydown/keyup
       if (isPressed && !prevButtonStates[code]) {
+        activeGamepadIndex = gp.index
+
         // Button pressed
         seaBlock.isUsingGamepad = true
         let hasConsumed = false
@@ -87,7 +99,10 @@ export function pollGamepadInput(seaBlock: SeaBlock) {
       gamepadState[axis] = value
     }
 
-    navigateWithStick(seaBlock) // process 2D joystick axes
+    const isActive = navigateWithStick(seaBlock) // process 2D joystick axes
+    if (isActive) {
+      activeGamepadIndex = gp.index
+    }
 
     // pass state to virtual joysticks logic/display
     updateStick(seaBlock,

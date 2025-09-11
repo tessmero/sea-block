@@ -9,9 +9,8 @@ import type { PieceName } from '../chess-enums'
 import { PIECE_NAMES } from '../chess-enums'
 import { getImage } from 'gfx/2d/image-asset-loader'
 import { buildGoalDiagram } from '../gfx/chess-2d-gfx-helper'
-import type { ChessButton } from './chess-button'
 import { playSound } from 'audio/sound-effect-player'
-import { quitChess } from '../chess-helper'
+import { chess, quitChess } from '../chess'
 import type { ChessLayoutKey } from 'guis/keys/chess-layout-keys'
 
 type ChessElem = GuiElement<ChessLayoutKey>
@@ -72,24 +71,25 @@ const topLeftB: ChessElem = {
   },
 }
 
-const topRightBtn: ChessButton = {
+const topRightBtn: ChessElem = {
   layoutKey: 'topRightBtn',
   hotkeys: ['Escape', 'ButtonStart'],
   display: {
     type: 'button',
-    icon: 'icons/16x16-x.png',
+    icon: 'icons/16x16-config.png',
     gamepadPrompt: {
       name: 'start',
       offset: [-16, 0],
     },
   },
-  chessAction: ({ seaBlock, chess }) => {
+  clickAction: ({ seaBlock }) => {
     if (chess.currentPhase === 'game-over') {
       playSound('click')
-      quitChess(chess)
+      quitChess()
     }
 
     seaBlock.toggleSettings()
+    seaBlock.refreshGui()
     // togglePauseMenu(chess)
   },
 }
@@ -103,27 +103,27 @@ const topRightBtn: ChessButton = {
 //   },
 // }
 
-// const prevPiece: ChessButton = {
+// const prevPiece: ChessElem = {
 //   layoutKey: 'prevPiece',
 //   display: {
 //     type: 'button',
 //     icon: 'icons/16x16-arrow-left.png',
 //   },
-//   chessAction: ({ chess }) => {},
+//   clickAction: () => {},
 // }
-// const nextPiece: ChessButton = {
+// const nextPiece: ChessElem = {
 //   layoutKey: 'nextPiece',
 //   display: {
 //     type: 'button',
 //     icon: 'icons/16x16-arrow-right.png',
 //   },
-//   chessAction: ({ chess }) => {},
+//   clickAction: () => {},
 // }
 
-const currentPiece: ChessButton = {
+const currentPiece: ChessElem = {
   layoutKey: 'currentPieceButton',
   display: { type: 'button' },
-  chessAction: ({ chess }) => {
+  clickAction: () => {
     chess.switchCurrentPiece()
   },
 }
@@ -181,7 +181,7 @@ const pieceIcon: ChessElem = {
   },
 }
 
-export const pawnBtn: ChessButton = {
+export const pawnBtn: ChessElem = {
   layoutKey: 'pawnBtn',
   display: {
     type: 'button',
@@ -192,7 +192,7 @@ export const pawnBtn: ChessButton = {
     },
   },
   hotkeys: ['ButtonB'],
-  chessAction: ({ chess }) => {
+  clickAction: () => {
     playSound('click')
     chess.startPlacePawn()
   },
@@ -208,7 +208,7 @@ export const pawnLabel: ChessElem = {
   },
 }
 
-export const cancelPawnBtn: ChessButton = {
+export const cancelPawnBtn: ChessElem = {
   layoutKey: 'cancelPawnBtn',
   display: {
     type: 'button',
@@ -219,7 +219,7 @@ export const cancelPawnBtn: ChessButton = {
     },
   },
   hotkeys: ['ButtonB'],
-  chessAction: ({ chess }) => {
+  clickAction: () => {
     playSound('click')
     chess.cancelPlacePawn()
   },

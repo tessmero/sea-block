@@ -38,14 +38,16 @@ const DIR_ANGLES = {
 let lastNavAngle: number | null = null
 
 // navigate with analog direction
-export function navigateWithStick(seaBlock: SeaBlock) {
+export function navigateWithStick(seaBlock: SeaBlock): boolean {
   const x = gamepadState['AxisLX'] as number
   const y = gamepadState['AxisLY'] as number
+
   if (Math.abs(x) < 0.1 && Math.abs(y) < 0.1) {
     // seaBlock.isUsingGamepad = false
     // lastDir = undefined
     lastNavAngle = null
-    return
+
+    return false // not active
   }
 
   // stick is not in neutral position
@@ -67,9 +69,10 @@ export function navigateWithStick(seaBlock: SeaBlock) {
   // console.log(`treating joystick event as ${nearestDir} wasd button`)
 
   // check for stick held in same direction since last navigation
+  const da = getAngleDelta(lastNavAngle, angle)
   if ((typeof lastNavAngle === 'number')
-    && getAngleDelta(lastNavAngle, angle) < Math.PI / 2) {
-    return
+    && da < Math.PI / 2) {
+    return true // gamepad is active
   }
 
   // stick has moved and should count as navigation attempt
@@ -85,4 +88,6 @@ export function navigateWithStick(seaBlock: SeaBlock) {
     navigateGuiWithGamepad(seaBlock, 'AxisLY', -1, angle)
   if (nearestDir === 'down')
     navigateGuiWithGamepad(seaBlock, 'AxisLY', 1, angle)
+
+  return true // gamepad is active
 }

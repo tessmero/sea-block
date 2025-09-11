@@ -6,7 +6,7 @@
  */
 
 import type { ChessPhase } from './chess-enums'
-import type { Chess } from './chess-helper'
+import { chess, type Chess } from './chess'
 import type { RenderablePiece } from './gfx/chess-3d-gfx-helper'
 import { ChessMoveAnim } from './chess-move-anim'
 import { canLandOn, getAllowedMoves } from './chess-rules'
@@ -38,11 +38,11 @@ export const nextPhasePickers: Record<ChessPhase, (chess: Chess) => ChessPhase> 
 }
 
 // prep moves for enemy-anim phase
-export function buildEnemyMoves(chess: Chess): Array<ChessMoveAnim | null> {
+export function buildEnemyMoves(): Array<ChessMoveAnim | null> {
   const reserved: Set<number> = new Set()
-  return chess.enemies.map(p => pickEnemyMove(p, chess, reserved))
+  return chess.enemies.map(p => pickEnemyMove(p, reserved))
 }
-function pickEnemyMove(enemy: RenderablePiece, chess: Chess, reserved: Set<number>): ChessMoveAnim | null {
+function pickEnemyMove(enemy: RenderablePiece, reserved: Set<number>): ChessMoveAnim | null {
   // const { boardTiles } = chess
   const { terrain } = chess.context
 
@@ -69,10 +69,10 @@ function pickEnemyMove(enemy: RenderablePiece, chess: Chess, reserved: Set<numbe
 }
 
 // prep moves for pawn-anim phase
-export function buildPawnMoves(chess: Chess): Array<ChessMoveAnim | null> {
-  return chess.pawns.map(p => pickPawnMove(p, chess))
+export function buildPawnMoves(): Array<ChessMoveAnim | null> {
+  return chess.pawns.map(p => pickPawnMove(p))
 }
-function pickPawnMove(pawn: RenderablePiece, chess: Chess): ChessMoveAnim | null {
+function pickPawnMove(pawn: RenderablePiece): ChessMoveAnim | null {
   const { terrain } = chess.context
   // const { boardTiles } = chess
   const { grid } = terrain

@@ -6,7 +6,7 @@
 
 import type { GameUpdateContext } from 'games/game'
 import type { ChessPhase } from './chess-enums'
-import type { Chess } from './chess-helper'
+import { chess } from './chess'
 import { resetMeshes, setPiecePosition } from './gfx/chess-3d-gfx-helper'
 import { playSound } from 'audio/sound-effect-player'
 import { markLevelCompleted } from './levels/chess-level-parser'
@@ -17,13 +17,9 @@ import { toggleGameOverMenu } from './gui/chess-hud-dialog-elements'
 import { emptyScene } from 'sea-block'
 import { rewardChoiceBackground } from './gfx/chess-2d-gfx-helper'
 
-export function updateChessPhase(context: ChessUpdateContext) {
-  const func = PHASE_UPDATERS[context.chess.currentPhase]
+export function updateChessPhase(context: GameUpdateContext) {
+  const func = PHASE_UPDATERS[chess.currentPhase]
   func(context)
-}
-
-interface ChessUpdateContext extends GameUpdateContext {
-  chess: Chess
 }
 
 let ongoingMove: ChessMoveAnim | undefined = undefined
@@ -38,7 +34,7 @@ const PHASE_UPDATERS = {
   'player-choice': () => {},
 
   // player executes one chosen move
-  'player-anim': ({ chess, dt }) => {
+  'player-anim': ({ dt }) => {
     const { currentMove } = chess
     if (currentMove) {
       const isFinished = currentMove.update(dt)
@@ -69,12 +65,12 @@ const PHASE_UPDATERS = {
 
         // check if landed on treasure chest
         if (player.tile.i === chess.goalTile.i) {
-          completeLevel(chess)
+          completeLevel()
           chess.currentPhase = 'reached-chest'
         }
         else {
           // playSound('chessPlonk')
-          chess.hlTiles.updateAllowedMoves(chess)
+          chess.updateAllowedMoves()
           chess.gotoNextPhase()
         }
       }
@@ -90,7 +86,7 @@ const PHASE_UPDATERS = {
   },
 
   // pawns move one-by-one automatically
-  'pawn-anim': ({ chess, dt }) => {
+  'pawn-anim': ({ dt }) => {
     // find first non-null unfinished move
     const i = chess.pawnMoves.findIndex(move => move && !move.isFinished)
     if (i >= 0) {
@@ -112,7 +108,7 @@ const PHASE_UPDATERS = {
 
         // check if on treasure chest
         if (endTile.i === chess.goalTile.i) {
-          completeLevel(chess)
+          completeLevel()
         }
 
         // check if captured enemy
@@ -122,20 +118,20 @@ const PHASE_UPDATERS = {
             // enemy was captured
             playSound('chessGoodCapture')
             chess.enemies.splice(enemyIndex, 1) // delete captured enemy
-            resetMeshes(chess, chess.player, [...chess.pawns], [...chess.enemies])
+            resetMeshes(chess)
           }
         }
       }
     }
     else {
       // no pawn moves remaining
-      chess.hlTiles.updateAllowedMoves(chess)
+      chess.updateAllowedMoves()
       chess.gotoNextPhase()
     }
   },
 
   // enemies move one-by-one automatically
-  'enemy-anim': ({ chess, dt }) => {
+  'enemy-anim': ({ dt }) => {
     // find first non-null unfinished move
     const i = chess.enemyMoves.findIndex(move => move && !move.isFinished)
     if (i >= 0) {
@@ -164,7 +160,7 @@ const PHASE_UPDATERS = {
             // pawn was captured
             playSound('chessBadCapture')
             chess.pawns.splice(pawnIndex, 1) // delete captured pawn
-            resetMeshes(chess, chess.player, [...chess.pawns], [...chess.enemies])
+            resetMeshes(chess)
           }
           else if (capturedPiece === chess.player) {
             // player was captured
@@ -177,13 +173,13 @@ const PHASE_UPDATERS = {
     }
     else {
       // no enemy moves remaining
-      chess.hlTiles.updateAllowedMoves(chess)
+      chess.updateAllowedMoves()
       chess.gotoNextPhase()
     }
   },
-} as const satisfies Record<ChessPhase, (context: ChessUpdateContext) => void>
+} as const satisfies Record<ChessPhase, (context: GameUpdateContext) => void>
 
-function completeLevel(chess: Chess) {
+function completeLevel() {
   markLevelCompleted() // prevent level from loading again
   playSound('chessCelebrate')
 
@@ -197,7 +193,7 @@ function completeLevel(chess: Chess) {
       chess.currentPhase = 'reward-choice'
       emptyScene.background = rewardChoiceBackground
       chess.context.game.gui.refreshLayout(chess.context)
-      resetRewardsDisplay(chess)
+      resetRewardsDisplay()
     },
   })
 }

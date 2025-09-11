@@ -7,9 +7,7 @@
 import type { GuiElement } from 'guis/gui'
 import type { ChessLayoutKey } from 'guis/keys/chess-layout-keys'
 import { COLLECTIBLES } from '../chess-rewards'
-import type { Chess } from '../chess-helper'
 import type { CollectibleName } from '../levels/chess-levels.json.d'
-import type { ChessButton } from './chess-button'
 import { addToSpriteAtlas } from 'gfx/2d/sprite-atlas'
 import { getImage } from 'gfx/2d/image-asset-loader'
 import { drawText } from 'gfx/2d/text/text-gfx-helper'
@@ -17,6 +15,7 @@ import { PIECE_NAMES } from '../chess-enums'
 import type { PieceName } from '../chess-enums'
 import { drawMovesDiagram } from '../gfx/chess-help-diagrams'
 import { startRepaintEffect } from '../gfx/chess-repaint-effect'
+import { chess } from '../chess'
 
 type ChessElem = GuiElement<ChessLayoutKey>
 
@@ -29,14 +28,14 @@ export const rewardHelpPanel: ChessElem = {
   },
 }
 
-export const rewardHelpCloseBtn: ChessButton = {
+export const rewardHelpCloseBtn: ChessElem = {
   layoutKey: 'rewardHelpCloseBtn',
   display: {
     type: 'button',
     icon: 'icons/16x16-x.png',
     isVisible: false,
   },
-  chessAction: ({ chess }) => toggleRewardHelp(chess),
+  clickAction: () => toggleRewardHelp(),
 }
 
 // Single diagram element for reward help
@@ -112,7 +111,7 @@ export const CHESS_REWARD_HELP_ELEMENTS = [
 type RewardHelpState = 'left' | 'right' | undefined
 export let rewardHelpState: RewardHelpState = undefined
 
-export function toggleRewardHelp(chess: Chess, state?: RewardHelpState) {
+export function toggleRewardHelp(state?: RewardHelpState) {
   rewardHelpState = state
 
   const isRewardHelpVisible = (typeof state === 'string')
@@ -125,14 +124,14 @@ export function toggleRewardHelp(chess: Chess, state?: RewardHelpState) {
   rewardHelpDiagram.display.isVisible = (typeof state === 'string')
   rewardHelpDiagram.display.needsUpdate = true
 
-  const clt = pickCollectible(chess, state)
+  const clt = pickCollectible(state)
   updateRewardHelpDiagram(clt)
 
   //
   chess.context.layeredViewport.handleResize(chess.context)
 }
 
-function pickCollectible(chess: Chess, state: RewardHelpState): CollectibleName | undefined {
+function pickCollectible(state: RewardHelpState): CollectibleName | undefined {
   if (!state) {
     return undefined
   }

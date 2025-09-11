@@ -1,7 +1,7 @@
 /**
- * @file chess-helper.ts
+ * @file chess.ts
  *
- * Chess logic functions referenced in chess-game and chess-gui.
+ * Chess/chess singleton main object for chess game.
  */
 
 import { Vector3 } from 'three'
@@ -14,7 +14,6 @@ import type { RenderablePiece, UniquePiece } from './gfx/chess-3d-gfx-helper'
 import { resetMeshes, updateMeshes } from './gfx/chess-3d-gfx-helper'
 import { ChessHlTiles } from './chess-hl-tiles'
 import { ChessMoveAnim } from './chess-move-anim'
-import type { ChessGui } from 'guis/imp/chess-gui'
 import { PIECE_NAMES, type ChessPhase, type PieceName } from './chess-enums'
 import { currentLevelId, loadChessLevel } from './levels/chess-level-parser'
 import { playSound } from 'audio/sound-effect-player'
@@ -22,16 +21,14 @@ import {
   buildGoalDiagram, flatChessBackground,
   updateFlatView, updatePawnButtonLabel,
 } from './gfx/chess-2d-gfx-helper'
-import { Gui } from 'guis/gui'
 import { COLLECTIBLES, randomCollectible } from './chess-rewards'
 import type { CollectibleName } from './levels/chess-levels.json.d'
 import type { TilePosition } from 'core/grid-logic/tiled-grid'
 import { buildPawnMoves, buildEnemyMoves, nextPhasePickers } from './chess-sequences'
 import { randomTransition, Transition } from 'gfx/transitions/transition'
-import { chessBoardPipeline } from 'gfx/3d/pipelines/chess-board-pipeline'
 import { chessRun, START_COLLECTED, START_PAWNS } from './chess-run'
 import { cancelPawnBtn, flatViewport, goalDisplays, pawnBtn, showCurrentPiece } from './gui/chess-hud-elements'
-import { toggleGameOverMenu, togglePauseMenu } from './gui/chess-hud-dialog-elements'
+import { toggleGameOverMenu } from './gui/chess-hud-dialog-elements'
 import { showPhaseLabel } from './gui/chess-debug-elements'
 import { updateChessPhase } from './chess-update-helper'
 import { FREECAM_PLAYLIST, playNextTrack } from 'audio/song-player'
@@ -49,10 +46,11 @@ import { gguiHandler, hideGguiCursor } from 'gfx/3d/ggui-3d-cursor'
 import { orbitWithRightJoystick } from 'guis/elements/joysticks'
 import { zoomWithTriggers } from 'games/imp/free-cam-game'
 import { putGguiCursorOnSomeValidMove } from './chess-ggui-nav'
+import { chessBoardPipeline } from 'gfx/3d/pipelines/chess-board-pipeline'
 
 // no 3D terrrain in background when selecting reward
 export function chessAllow3DRender(): boolean {
-  if (instance.currentPhase === 'reward-choice') {
+  if (chess.currentPhase === 'reward-choice') {
     return false
   }
   if (chessRun.collected.includes('dual-vector-foil')) {
@@ -62,14 +60,14 @@ export function chessAllow3DRender(): boolean {
 }
 
 export function chessAllowGgui3DCursor(): boolean {
-  if (instance.currentPhase === 'player-choice' || instance.currentPhase === 'place-pawn') {
+  if (chess.currentPhase === 'player-choice' || chess.currentPhase === 'place-pawn') {
     return true
   }
   return false
 }
 
 export function chessAllowGgui(): boolean {
-  if (instance.currentPhase === 'reward-choice') {
+  if (chess.currentPhase === 'reward-choice') {
     return true
   }
   return false
@@ -83,13 +81,14 @@ export function clearChessRun(): void {
 }
 
 let isResetQueued = true
-export function resetChess(context: SeaBlock): Chess {
+export let chess: Chess
+export function resetChess(seaBlock: SeaBlock) {
   // console.log('reset chess')
 
   if (isResetQueued) {
     isResetQueued = false
-    instance = new Chess(context)
-    chessBoardPipeline.setChess(instance)
+    chess = new Chess(seaBlock)
+    chessBoardPipeline.setChess(chess)
   }
   resetHeldChessInputs()
   // if (context.isUsingGamepad && !context.isShowingSettingsMenu) {
@@ -98,47 +97,32 @@ export function resetChess(context: SeaBlock): Chess {
   // else {
   hideGguiCursor()
   // }
-  togglePauseMenu(instance, false)
-
-  return instance
+  seaBlock.toggleSettings(false)
 }
 
-export function quitChess(chess: Chess): void {
+export function quitChess(): void {
   const seaBlock = chess.context
 
-  // reset ui to default state
-  togglePauseMenu(chess, false)
-  toggleGameOverMenu(seaBlock, false)
-
-  // start transition back to original scenery
-
+  // start transition back to free-cam with original scenery
+  const item = seaBlock.config.tree.children.game
+  item.value = 'free-cam'
   seaBlock.startTransition({
     callback: () => {
+      // reset ui
+      seaBlock.toggleSettings(false)
+      toggleGameOverMenu(seaBlock, false)
+
+      // erase chess state and restore pre-chess scene
       clearChessRun()
       ChessScenery.restoreOriginalSnapshot(seaBlock)
       playNextTrack(FREECAM_PLAYLIST)
+      seaBlock.onCtrlChange(item)
     },
   })
-
-  // // start transition
-  // const item = seaBlock.config.tree.children.game
-  // item.value = 'free-cam'
-  // SeamlessTransition.desiredCameraOffset.copy(CAMERA)
-  // SeamlessTransition.snapshotTerrain(seaBlock)
-  // for (const i of chess.boardTiles) {
-  //   seaBlock.terrain.generatedTiles[i] = null
-  // }
-  // seaBlock.startTransition({
-  //   transition: Transition.create('seamless', seaBlock),
-  //   callback: () => {
-  //     playNextTrack(FREECAM_PLAYLIST)
-  //   },
-  // })
-  // seaBlock.onCtrlChange(item)
 }
 
 export function getChessPhase() {
-  const result = instance?.currentPhase || 'player-choice'
+  const result = chess?.currentPhase || 'player-choice'
   // console.log('get ches sphase', result, instance)
   return result
 }
@@ -150,11 +134,11 @@ export function updateChess(context: GameUpdateContext): void {
   // }
 
   if (context.seaBlock.isUsingGamepad
-    && instance.currentPhase !== 'reward-choice'
+    && chess.currentPhase !== 'reward-choice'
     && !context.seaBlock.isShowingSettingsMenu
-    && (!instance.hlTiles.hovered || !gguiHandler)) {
+    && (!chess.hlTiles.hovered || !gguiHandler)) {
     // make sure gamepad cursor is visible in world or flat view
-    putGguiCursorOnSomeValidMove(instance)
+    putGguiCursorOnSomeValidMove(chess)
   }
 
   updateHeldChessInputs()
@@ -162,10 +146,8 @@ export function updateChess(context: GameUpdateContext): void {
     updateRepaintEffect(context.dt)
     rewardHelpDiagram.display.needsUpdate = true
   }
-  instance.update(context)
+  chess.update(context)
 }
-
-let instance: Chess
 
 const positionDummy = new Vector3()
 
@@ -207,9 +189,6 @@ export class Chess {
     // this.currentPieceType = context.config.flatConfig.chessPieceType
     const { terrain } = context
 
-    const chessGui = Gui.create('chess') as ChessGui
-    chessGui.chess = this
-
     this.hlTiles = new ChessHlTiles()
 
     // find center tile based on camera target
@@ -240,17 +219,17 @@ export class Chess {
 
     // place player and goal based on parsed level
     // treasureChestMesh.position.copy(this.getPosOnTile(goalTile))
-    // this.hlTiles.updateAllowedMoves(this)
+    // this.updateAllowedMoves()
     // Chess.isHltUpdateQueued = true
 
     // build help diagrams
     buildGoalDiagram(playerPiece.type)
     this.updateFlatView()
     flatViewport.clickAction = ({ inputEvent }) => {
-      flatViewPortClick(this, inputEvent as ProcessedSubEvent)
+      flatViewPortClick(inputEvent as ProcessedSubEvent)
     }
     flatViewport.unclickAction = ({ inputEvent }) => {
-      flatViewPortUnclick(this, inputEvent as ProcessedSubEvent)
+      flatViewPortUnclick(inputEvent as ProcessedSubEvent)
     }
 
     // sphere to interact with water and make waves
@@ -282,7 +261,7 @@ export class Chess {
 
     buildGoalDiagram('pawn')
     this.currentPhase = 'place-pawn'
-    this.hlTiles.updateAllowedMoves(this)
+    this.updateAllowedMoves()
     pawnBtn.display.isVisible = false
     cancelPawnBtn.display.isVisible = true
     pawnBtn.display.needsUpdate = true
@@ -290,10 +269,14 @@ export class Chess {
     this.context.layeredViewport.handleResize(this.context)
   }
 
+  public updateAllowedMoves() {
+    this.hlTiles.updateAllowedMoves(this)
+  }
+
   public cancelPlacePawn() {
     buildGoalDiagram(this.player.type)
     this.currentPhase = 'player-choice'
-    this.hlTiles.updateAllowedMoves(this)
+    this.updateAllowedMoves()
     pawnBtn.display.isVisible = true
     cancelPawnBtn.display.isVisible = false
     pawnBtn.display.needsUpdate = true
@@ -305,10 +288,10 @@ export class Chess {
     const result = nextPhasePickers[this.currentPhase](this)
 
     if (result === 'pawn-anim') {
-      this.pawnMoves = buildPawnMoves(this)
+      this.pawnMoves = buildPawnMoves()
     }
     if (result === 'enemy-anim') {
-      this.enemyMoves = buildEnemyMoves(this)
+      this.enemyMoves = buildEnemyMoves()
     }
 
     this.currentPhase = result
@@ -324,7 +307,7 @@ export class Chess {
       return
     }
     // console.log('queue new hlt update')
-    if (instance?.hlTiles) instance.hlTiles.allowedMoves.clear()
+    if (chess?.hlTiles) chess.hlTiles.allowedMoves.clear()
     this.isHltUpdateQueued = true
   }
 
@@ -335,7 +318,7 @@ export class Chess {
 
     if (Chess.isHltUpdateQueued) {
       Chess.isHltUpdateQueued = false
-      this.hlTiles.updateAllowedMoves(this)
+      this.updateAllowedMoves()
     }
 
     // update gui animation
@@ -367,10 +350,10 @@ export class Chess {
     showPhaseLabel(this.currentPhase)
 
     // place meshes on logical tiles
-    updateMeshes(this)
+    updateMeshes()
 
     // advance phase-specific animation (may override mesh positions)
-    updateChessPhase({ ...context, chess: this })
+    updateChessPhase(context)
 
     orbitWithRightJoystick(context)
     zoomWithTriggers(context)
@@ -405,7 +388,7 @@ export class Chess {
     chessRun.collected.push(name) // add to history
     const { collectAction } = COLLECTIBLES[name]
     if (collectAction) {
-      collectAction(this) // do item-specific action (chess-rewards.ts)
+      collectAction() // do item-specific action (chess-rewards.ts)
     }
 
     isResetQueued = true
@@ -451,8 +434,8 @@ export class Chess {
       }
     }
 
-    resetMeshes(this, this.player, [...this.pawns], [...this.enemies])
-    this.hlTiles.updateAllowedMoves(this)
+    resetMeshes(this)
+    this.updateAllowedMoves()
     showCurrentPiece(this.player.type)
   }
 
@@ -468,7 +451,7 @@ export class Chess {
 
     // // highlight new tile already
     // this.player.tile = clickedTile
-    // this.hlTiles.updateAllowedMoves(this)
+    // this.updateAllowedMoves()
   }
 
   public getPieceOnTile(tile: TileIndex): RenderablePiece | undefined {

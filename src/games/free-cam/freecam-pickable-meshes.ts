@@ -180,6 +180,8 @@ function _buildPickableMesh(name: PickableName, params: PickableParams): Object3
 
   setMaterial(pickablePieceMesh, pickableMat)
 
+  pickablePieceMesh.name = `freecam-pickable-${name}`
+
   return pickablePieceMesh
 }
 

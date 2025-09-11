@@ -15,10 +15,9 @@ import type { PieceName } from '../chess-enums'
 import { PIECE_NAMES } from '../chess-enums'
 import { getImage } from 'gfx/2d/image-asset-loader'
 import type { TileIndex } from 'core/grid-logic/indexed-grid'
-import type { Chess } from '../chess-helper'
+import type { Chess } from '../chess'
+import { chess } from '../chess'
 import { showCurrentPiece } from '../gui/chess-hud-elements'
-import type { Pipeline } from 'gfx/3d/pipelines/pipeline'
-import { chessBoardPipeline } from 'gfx/3d/pipelines/chess-board-pipeline'
 import type { SeaBlock } from 'sea-block'
 import { getOutlinedMesh } from './chess-outline-gfx'
 import { setMaterial } from 'gfx/3d/gui-3d-gfx-helper'
@@ -45,14 +44,6 @@ export function resetChessCamera(context: SeaBlock): void {
   const cam = getChessCamOffset(context)
   const { y } = context.orbitControls.target
   context.camera.position.set(x + cam.x, y + cam.y, z + cam.z)
-}
-
-// replace pipeline for certain tiles
-export function getChessPipeline(_chess: Chess, _tile: TileIndex): Pipeline {
-  // if (chess && chess.boardTiles.includes(tile.i)) {
-  return chessBoardPipeline
-  // }
-  // return freeCamPipeline
 }
 
 // visible chess piece in world
@@ -257,7 +248,7 @@ function getInstancePosition(piece: InstancedPiece, writeTo: Vector3) {
   )
 }
 
-export function updateMeshes(chess: Chess) {
+export function updateMeshes() {
   const { player, pawns, enemies, goalTile } = chess
   for (const piece of ([player, ...pawns, ...enemies])) {
     setPiecePosition(piece, chess.getPosOnTile(piece.tile))
@@ -285,11 +276,16 @@ export function registerInstancedPiece(type: PieceName, tile: TileIndex, isEnemy
   return { instancedMesh, index, tile, type, isEnemy }
 }
 
-export function resetMeshes(chess: Chess,
-  player: { type: PieceName, tile: TileIndex },
-  pawns: Array<{ type: PieceName, tile: TileIndex }>,
-  enemies: Array<{ type: PieceName, tile: TileIndex }>,
+export function resetMeshes(
+  chess: Chess,
+  player?: { type: PieceName, tile: TileIndex },
+  pawns?: Array<{ type: PieceName, tile: TileIndex }>,
+  enemies?: Array<{ type: PieceName, tile: TileIndex }>,
 ) {
+  if (!player) player = chess.player
+  if (!pawns) pawns = [...chess.pawns]
+  if (!enemies) enemies = [...chess.enemies]
+
   // set flag for hud display
   showCurrentPiece(player.type)
 

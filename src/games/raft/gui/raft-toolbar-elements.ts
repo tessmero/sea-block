@@ -146,6 +146,7 @@ export const raftSettingsBtn: RaftElem = {
   },
   clickAction: ({ seaBlock }) => {
     seaBlock.toggleSettings()
+    seaBlock.refreshGui()
 
     // playSound('click')
     // // switch to free-cam game

@@ -6,10 +6,8 @@
  */
 
 import type { GuiElement } from 'guis/gui'
-import type { Chess } from '../chess-helper'
-import { quitChess } from '../chess-helper'
+import { quitChess } from '../chess'
 import type { SeaBlock } from 'sea-block'
-import type { ChessButton } from './chess-button'
 import { playSound } from 'audio/sound-effect-player'
 import type { ChessLayoutKey } from 'guis/keys/chess-layout-keys'
 import { PIECE_NAMES } from '../chess-enums'
@@ -24,13 +22,14 @@ type ChessElem = GuiElement<ChessLayoutKey>
 //     isVisible: false,
 //   },
 // }
-const pauseMenuPanel: ChessElem = {
-  layoutKey: 'pauseMenuPanel',
-  display: {
-    type: 'panel',
-    isVisible: false,
-  },
-}
+
+// const pauseMenuPanel: ChessElem = {
+//   layoutKey: 'pauseMenuPanel',
+//   display: {
+//     type: 'panel',
+//     isVisible: false,
+//   },
+// }
 
 // const resetBtn: ChessElem = {
 //   layoutKey: 'resetBtn',
@@ -40,19 +39,19 @@ const pauseMenuPanel: ChessElem = {
 //     isVisible: false,
 //   },
 // }
-const resumeBtn: ChessButton = {
-  layoutKey: 'resumeBtn',
-  display: {
-    type: 'button',
-    label: 'resume',
-    isVisible: false,
-  },
-  chessAction: ({ chess }) => {
-    playSound('click')
-    // quitChess(chess, seaBlock)
-    togglePauseMenu(chess, false)
-  },
-}
+// const resumeBtn: ChessElem = {
+//   layoutKey: 'resumeBtn',
+//   display: {
+//     type: 'button',
+//     label: 'resume',
+//     isVisible: false,
+//   },
+//   clickAction: () => {
+//     playSound('click')
+//     // quitChess(chess, seaBlock)
+//     togglePauseMenu(false)
+//   },
+// }
 // const gameOverPanel: ChessElem = {
 //   layoutKey: 'gameOverPanel',
 //   display: {
@@ -60,24 +59,24 @@ const resumeBtn: ChessButton = {
 //     isVisible: false,
 //   },
 // }
-const quitBtn: ChessButton = {
+const quitBtn: ChessElem = {
   layoutKey: 'quitBtn',
   display: {
     type: 'button',
     label: 'quit chess',
     isVisible: false,
   },
-  chessAction: ({ chess }) => {
+  clickAction: () => {
     playSound('click')
-    quitChess(chess)
+    quitChess()
   },
 }
 
-const pauseMenuElements = [
-  pauseMenuPanel,
-  // resetBtn,
-  resumeBtn, quitBtn,
-] as const satisfies Array<ChessElem>
+// const pauseMenuElements = [
+//   pauseMenuPanel,
+//   // resetBtn,
+//   resumeBtn, quitBtn,
+// ] as const satisfies Array<ChessElem>
 
 const gameOverElements = [
   // gameOverPanel,
@@ -121,12 +120,12 @@ const pieceHelpElements = [
 
 export const CHESS_HUD_DIALOG_ELEMENTS = [
   ...gameOverElements,
-  ...pauseMenuElements,
+  // ...pauseMenuElements,
   ...pieceHelpElements,
 ] as const satisfies Array<ChessElem>
 
 let isPieceHelpVisible = false
-export function togglePieceHelp(chess: Chess, state?: boolean) {
+export function togglePieceHelp(state?: boolean) {
   if (typeof state === 'boolean') {
     isPieceHelpVisible = state
   }
@@ -138,27 +137,6 @@ export function togglePieceHelp(chess: Chess, state?: boolean) {
     display.isVisible = isPieceHelpVisible
     display.needsUpdate = true
   }
-}
-
-let isPauseMenuVisible = false
-export function togglePauseMenu(chess: Chess, state?: boolean) {
-  if (typeof state === 'boolean') {
-    isPauseMenuVisible = state
-  }
-  else {
-    isPauseMenuVisible = !isPauseMenuVisible
-  }
-
-  for (const { display } of pauseMenuElements) {
-    display.isVisible = isPauseMenuVisible
-    display.needsUpdate = true
-  }
-
-  if (chess.currentPhase === 'game-over') {
-    quitBtn.display.isVisible = true
-  }
-
-  chess.context.layeredViewport.handleResize(chess.context)
 }
 
 let isGameOverMenuVisible = false

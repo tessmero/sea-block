@@ -6,9 +6,8 @@
  */
 
 import type { GuiElement } from 'guis/gui'
-import type { ChessButton } from './chess-button'
 import { COLLECTIBLES } from '../chess-rewards'
-import type { Chess } from '../chess-helper'
+import { chess } from '../chess'
 import { buildRewardChoiceDiagram } from '../gfx/chess-2d-gfx-helper'
 import type { ChessLayoutKey } from 'guis/keys/chess-layout-keys'
 import { toggleRewardHelp } from './chess-reward-help-elements'
@@ -24,7 +23,7 @@ const rewardsPanel: ChessElem = {
     // isVisible: false
   },
 }
-export const leftRewardBtn: ChessButton = {
+export const leftRewardBtn: ChessElem = {
   layoutKey: 'leftReward',
   gamepadNavBox: 'leftReward',
   display: {
@@ -34,14 +33,14 @@ export const leftRewardBtn: ChessButton = {
       offset: [0, 16],
     },
   },
-  chessAction: ({ chess }) => {
+  clickAction: () => {
     if (selectedReward === 'left') {
       selectedReward = undefined
     }
     else {
       selectedReward = 'left'
     }
-    updateRewardsDisplay(chess)
+    updateRewardsDisplay()
 
     // chess.collectReward(chess.leftReward)
   },
@@ -55,7 +54,7 @@ export const leftRewardDisplay: ChessElem = {
     // isVisible: false,
   },
 }
-export const rightRewardBtn: ChessButton = {
+export const rightRewardBtn: ChessElem = {
   layoutKey: 'rightReward',
   gamepadNavBox: 'rightReward',
   display: {
@@ -65,14 +64,14 @@ export const rightRewardBtn: ChessButton = {
       offset: [0, 16],
     },
   },
-  chessAction: ({ chess }) => {
+  clickAction: () => {
     if (selectedReward === 'right') {
       selectedReward = undefined
     }
     else {
       selectedReward = 'right'
     }
-    updateRewardsDisplay(chess)
+    updateRewardsDisplay()
 
     // chess.collectReward(chess.rightReward)
   },
@@ -86,23 +85,23 @@ export const rightRewardDisplay: ChessElem = {
     // isVisible: false,
   },
 }
-export const leftRewardHelpBtn: ChessButton = {
+export const leftRewardHelpBtn: ChessElem = {
   layoutKey: 'leftRewardHelpBtn',
   display: {
     type: 'button',
     label: '?',
     isVisible: false,
   },
-  chessAction: ({ chess }) => toggleRewardHelp(chess, 'left'),
+  clickAction: () => toggleRewardHelp('left'),
 }
-export const rightRewardHelpBtn: ChessButton = {
+export const rightRewardHelpBtn: ChessElem = {
   layoutKey: 'rightRewardHelpBtn',
   display: {
     type: 'button',
     label: '?',
     isVisible: false,
   },
-  chessAction: ({ chess }) => toggleRewardHelp(chess, 'right'),
+  clickAction: () => toggleRewardHelp('right'),
 }
 
 // covered when confirm button is visible
@@ -114,7 +113,7 @@ const bottomTitle: ChessElem = {
   },
 }
 
-export const acceptBtn: ChessButton = {
+export const acceptBtn: ChessElem = {
   layoutKey: 'confirmBtn',
   gamepadNavBox: 'confirmBtn',
   display: {
@@ -125,8 +124,8 @@ export const acceptBtn: ChessButton = {
       offset: [-26, 0],
     },
   },
-  chessAction: ({ chess }) => {
-    toggleRewardHelp(chess)
+  clickAction: () => {
+    toggleRewardHelp()
     if (selectedReward === 'left') {
       chess.collectReward(chess.leftReward)
     }
@@ -157,11 +156,11 @@ const collectibleTitles: Array<ChessElem>
       },
     }))
 
-export function resetRewardsDisplay(chess: Chess) {
+export function resetRewardsDisplay() {
   buildRewardChoiceDiagram(leftRewardDisplay, chess.leftReward)
   buildRewardChoiceDiagram(rightRewardDisplay, chess.rightReward)
   selectedReward = undefined
-  updateRewardsDisplay(chess)
+  updateRewardsDisplay()
 }
 
 function updateHelpBtnVisibility() {
@@ -169,7 +168,7 @@ function updateHelpBtnVisibility() {
   // rightRewardHelpBtn.display.isVisible = rightRewardBtn.display.forcedState === 'pressed'
 }
 
-function updateRewardsDisplay(chess: Chess) {
+function updateRewardsDisplay() {
   let cltIndex = -1
   leftRewardBtn.display.forcedState = undefined
   rightRewardBtn.display.forcedState = undefined

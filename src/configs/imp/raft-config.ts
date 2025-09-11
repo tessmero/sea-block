@@ -8,7 +8,7 @@ import type { ConfigTree } from 'configs/config-tree'
 import { Configurable } from 'configs/configurable'
 import { raftToJson } from 'games/raft/blueprints/raft-io'
 import type { RaftBlueprint } from 'games/raft/blueprints/raft.json'
-import { resetRaftBuild } from 'games/raft/raft'
+import { resetRaft } from 'games/raft/raft'
 import type { SeaBlock } from 'sea-block'
 
 const raftConfigTree = {
@@ -24,7 +24,7 @@ const raftConfigTree = {
       action: async (seablock: SeaBlock) => {
         const text = await navigator.clipboard.readText()
         const blueprint = JSON.parse(text) as RaftBlueprint
-        resetRaftBuild(seablock, blueprint)
+        resetRaft(seablock, blueprint)
       },
     },
   },

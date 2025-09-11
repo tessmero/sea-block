@@ -14,7 +14,7 @@ import { baseChessBoardColors, pickColorsForChessTile } from 'games/chess/gfx/ch
 import { restoreTileColors, setOriginalTileColors } from '../tile-group-color-buffer'
 import { isTileHeld } from 'games/chess/chess-input-helper'
 import { freeCamPipeline } from './free-cam-pipeline'
-import { Chess } from 'games/chess/chess-helper'
+import { Chess } from 'games/chess/chess'
 
 // pipeline with chess-specific method
 interface CPL extends Pipeline {

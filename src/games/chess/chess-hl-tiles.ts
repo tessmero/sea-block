@@ -6,7 +6,7 @@
 
 import type { TileIndex } from 'core/grid-logic/indexed-grid'
 import { canLandOn, getAllowedMoves } from './chess-rules'
-import type { Chess } from './chess-helper'
+import type { Chess } from './chess'
 
 const _HIGHLIGHTS = [
   'hover', 'hold', 'allowedMove', 'enemyMove',

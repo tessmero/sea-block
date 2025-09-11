@@ -5,7 +5,7 @@
  */
 import { PIECE_NAMES, type PieceName } from '../chess-enums'
 import { getImage } from 'gfx/2d/image-asset-loader'
-import type { Chess } from '../chess-helper'
+import type { Chess } from '../chess'
 import { COLLECTIBLES } from '../chess-rewards'
 import type { StaticElement } from 'guis/gui'
 import type { CollectibleName } from '../levels/chess-levels.json.d'

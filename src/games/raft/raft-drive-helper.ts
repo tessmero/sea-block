@@ -12,7 +12,7 @@ import type { RaftRig } from './raft-physics'
 import { buildRaftRig } from './raft-physics'
 import { WalkingCube } from 'games/walking-cube/walking-cube'
 import type { ElementEvent } from 'guis/gui'
-import { raft, resetRaftBuild } from './raft'
+import { raft, resetRaft } from './raft'
 import { RAFT_LANDSCAPE_LAYOUT } from 'guis/layouts/raft/raft-landscape-layout'
 import { fireAutoThrusters } from './raft-auto-thrusters'
 import { instancedPieceElements, instancedPieceMeshes } from './gfx/raft-gfx-helper'
@@ -73,7 +73,7 @@ export function raftLayoutFactory() {
 
 export function resetRaftDrive(context: SeaBlock) {
   if (!raft) {
-    resetRaftBuild(context)
+    resetRaft(context)
   }
   raft.hlTiles.clear()
 

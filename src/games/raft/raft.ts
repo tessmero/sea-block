@@ -1,7 +1,7 @@
 /**
  * @file raft.ts
  *
- * Raft/raft singleton main helper for raft-build game.
+ * Raft/raft singleton main object for raft game.
  */
 import type { SeaBlock } from 'sea-block'
 import type { TileIndex } from 'core/grid-logic/indexed-grid'
@@ -23,7 +23,6 @@ import type { RaftButton } from './raft-buttons'
 import { hidePieceDialog } from './gui/raft-piece-dialog'
 import { hideBuildPhasePanel, showBuildPhasePanel } from './gui/raft-phase-dialog'
 import { resetFrontLayer } from 'gfx/2d/flat-gui-gfx-helper'
-
 import testRaft from './blueprints/test-raft.json'
 import type { RaftBlueprint } from './blueprints/raft.json'
 import { raftFromJson, raftToJson } from './blueprints/raft-io'
@@ -31,12 +30,15 @@ import { hideRaftWires, showRaftWires } from './gfx/raft-wires-overlay'
 import { Tiling } from 'core/grid-logic/tilings/tiling'
 import { hideRaftClickables } from './gfx/raft-clickable-highlight'
 import { setRaftToolbarPressed } from './gui/raft-toolbar-elements'
-export const RAFT_MAX_RAD = 3
+import { ChessScenery } from 'games/chess/levels/chess-scenery'
+import { FREECAM_PLAYLIST, playNextTrack } from 'audio/song-player'
+
+export const RAFT_MAX_RAD = 3 // limit buildable area around center tile
 
 let raftGrid
 let raftCenterTile
 export let raft: Raft
-export function resetRaftBuild(context: SeaBlock, blueprint?: RaftBlueprint): void {
+export function resetRaft(context: SeaBlock, blueprint?: RaftBlueprint): void {
   // find center tile based on camera target
   // const { target } = orbitControls
   // const { x, z } = target
@@ -49,6 +51,25 @@ export function resetRaftBuild(context: SeaBlock, blueprint?: RaftBlueprint): vo
 
   raft = new Raft(context, raftCenterTile)
   raftFromJson(blueprint ?? testRaft as RaftBlueprint)
+}
+
+export function quitRaft(): void {
+  const seaBlock = raft.context
+
+  // start transition back to free-cam with original scenery
+  const item = seaBlock.config.tree.children.game
+  item.value = 'free-cam'
+  seaBlock.startTransition({
+    callback: () => {
+      // reset ui
+      seaBlock.toggleSettings(false)
+
+      // erase chess state and restore pre-chess scene
+      ChessScenery.restoreOriginalSnapshot(seaBlock)
+      playNextTrack(FREECAM_PLAYLIST)
+      seaBlock.onCtrlChange(item)
+    },
+  })
 }
 
 // export function updateRaftBuild(_context: GameUpdateContext): void {
@@ -266,7 +287,7 @@ export class Raft {
 
     // rebuild gfx meshes (replace this with new Raft instance)
     const blueprint = raftToJson() // blueprint encodees changes above
-    resetRaftBuild(this.context, blueprint)
+    resetRaft(this.context, blueprint)
   }
 
   buildPiece(pieceName: PlaceablePieceName, tile: TileIndex, triggers?: Array<AutoThruster>) {

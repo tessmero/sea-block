@@ -8,31 +8,23 @@
 import.meta.glob('./**/*.ts', { eager: true })
 
 import { randChoice } from 'util/rng'
-import { loadAllImages } from 'gfx/2d/image-asset-loader'
 import { TILING } from 'imp-names'
 import { gfxConfig } from './configs/imp/gfx-config'
 import { LayeredViewport } from './gfx/layered-viewport'
 import { SeaBlock } from './sea-block'
-import { loadAllMeshes } from 'gfx/3d/mesh-asset-loader'
-import { initAllSoundEffects } from 'audio/sound-effect-player'
-import { loadAllSounds } from 'audio/sound-asset-loader'
 import { getTestSupport } from 'test-support'
+import { Game } from 'games/game'
+import { Gui } from 'guis/gui'
+import { loadAllImages } from 'gfx/2d/image-asset-loader'
 
 async function main() {
-  // preload all assets (except music)
-  // console.log('start preload assets')
-  await Promise.all([
-    loadAllImages(),
-    loadAllMeshes(),
-    loadAllSounds(),
-  ])
-  initAllSoundEffects()
-  // console.log('finish preload assets')
-
   const layeredViewport = new LayeredViewport()
   gfxConfig.refreshConfig()
 
+  await loadAllImages()
   const seaBlock = new SeaBlock(layeredViewport)
+  await Gui.preload('splash-screen', seaBlock)
+  await Game.preload('splash-screen')
   layeredViewport.init(seaBlock)
 
   // load default config

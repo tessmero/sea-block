@@ -1,12 +1,12 @@
 /**
  * @file chess-input-helper.ts
  *
- * Handlers for mouse/touch inputs on chessboard flat view / terrain tiles.
+ * Handlers for mouse/touch inputs on chessboard flat view or terrain tiles.
  */
 
 import { isTouchDevice, type ProcessedSubEvent } from 'input/mouse-touch-input'
 import { chessRun } from './chess-run'
-import type { Chess } from './chess-helper'
+import { chess } from './chess'
 import type { TileIndex } from 'core/grid-logic/indexed-grid'
 import {
   instancedPieceMeshes, registerInstancedPiece,
@@ -17,30 +17,29 @@ import { playSound } from 'audio/sound-effect-player'
 import { updatePawnButtonLabel } from './gfx/chess-2d-gfx-helper'
 import type { PieceName } from './chess-enums'
 import type { Intersection } from 'three'
-import { togglePauseMenu } from './gui/chess-hud-dialog-elements'
 import { Gui } from 'guis/gui'
 import type { Rectangle } from 'util/layout-parser'
 
 // click action for flat viewport gui element
-export function flatViewPortClick(chess: Chess, inputEvent: ProcessedSubEvent) {
+export function flatViewPortClick(inputEvent: ProcessedSubEvent) {
   if ('lvPos' in inputEvent && chessRun.collected.includes('dual-vector-foil')) {
-    const tile = pickTileInFlatView(chess, inputEvent)
+    const tile = pickTileInFlatView(inputEvent)
     if (tile) {
-      clickTile(chess, tile, inputEvent.inputId)
+      clickTile(tile, inputEvent.inputId)
     }
   }
 }
-export function flatViewPortUnclick(chess: Chess, inputEvent: ProcessedSubEvent) {
+export function flatViewPortUnclick(inputEvent: ProcessedSubEvent) {
   if ('lvPos' in inputEvent && chessRun.collected.includes('dual-vector-foil')) {
-    const tile = pickTileInFlatView(chess, inputEvent)
+    const tile = pickTileInFlatView(inputEvent)
     if (tile) {
-      unclickTile(chess, tile, inputEvent.inputId)
+      unclickTile(tile, inputEvent.inputId)
     }
   }
 }
 
 // handle move that wasn't consumed by regular gui or orbit controls
-export function hoverChessWorld(chess: Chess, inputEvent: ProcessedSubEvent) {
+export function hoverChessWorld(inputEvent: ProcessedSubEvent) {
   // if (inputEvent.seaBlock.isShowingSettingsMenu) {
   //   return
   // }
@@ -50,41 +49,41 @@ export function hoverChessWorld(chess: Chess, inputEvent: ProcessedSubEvent) {
   // if (inputEvent.seaBlock.config.flatConfig.chessViewMode === '2D') {
   if (chessRun.collected.includes('dual-vector-foil')) {
     // hover 2d tile
-    const flatTile = pickTileInFlatView(chess, inputEvent)
-    hoverTile(chess, flatTile, inputEvent)
+    const flatTile = pickTileInFlatView(inputEvent)
+    hoverTile(flatTile, inputEvent)
   }
   else if (chess.currentPhase === 'reward-choice') {
     // do nothing
   }
   else {
     // check for mesh on 3d tile
-    const pickedPieceMesh = getPickedPieceMesh(chess, inputEvent)
+    const pickedPieceMesh = getPickedPieceMesh(inputEvent)
 
     if (pickedPieceMesh) {
       // act like hovering tile under piece
-      hoverTile(chess, pickedPieceMesh.tile, inputEvent)
+      hoverTile(pickedPieceMesh.tile, inputEvent)
     }
     else {
       // hover 3d tile
-      hoverTile(chess, inputEvent.pickedTile, inputEvent)
+      hoverTile(inputEvent.pickedTile, inputEvent)
     }
   }
 }
 
 // handle click that wasn't consumed by regular gui
-export function clickChessWorld(chess: Chess, inputEvent: ProcessedSubEvent): boolean {
+export function clickChessWorld(inputEvent: ProcessedSubEvent): boolean {
   // if (inputEvent.seaBlock.isShowingSettingsMenu) {
   //   return false
   // }
-  togglePauseMenu(chess, false)
+  inputEvent.seaBlock.toggleSettings(false)
   if (chess.currentPhase === 'game-over') {
     return false
   }
   if (chessRun.collected.includes('dual-vector-foil')) {
     // pick flat tile in 2d view
-    const flatTile = pickTileInFlatView(chess, inputEvent)
+    const flatTile = pickTileInFlatView(inputEvent)
     if (flatTile) {
-      clickTile(chess, flatTile, inputEvent.inputId)
+      clickTile(flatTile, inputEvent.inputId)
       return true // consume event
     }
   }
@@ -93,11 +92,11 @@ export function clickChessWorld(chess: Chess, inputEvent: ProcessedSubEvent): bo
   }
   else {
     // check for mesh on tile
-    const pickedPieceMesh = getPickedPieceMesh(chess, inputEvent)
+    const pickedPieceMesh = getPickedPieceMesh(inputEvent)
 
     if (pickedPieceMesh) {
       // act like clicking tile under piece
-      clickTile(chess, pickedPieceMesh.tile, inputEvent.inputId)
+      clickTile(pickedPieceMesh.tile, inputEvent.inputId)
       return true // consume event
     }
 
@@ -108,7 +107,7 @@ export function clickChessWorld(chess: Chess, inputEvent: ProcessedSubEvent): bo
       return false // do not consume event
     }
 
-    clickTile(chess, clickedTile, inputEvent.inputId)
+    clickTile(clickedTile, inputEvent.inputId)
     return true // consume event
   }
 
@@ -116,12 +115,12 @@ export function clickChessWorld(chess: Chess, inputEvent: ProcessedSubEvent): bo
 }
 
 // handle mouseup
-export function unclickChessWorld(chess: Chess, inputEvent: ProcessedSubEvent): void {
+export function unclickChessWorld(inputEvent: ProcessedSubEvent): void {
   if (chessRun.collected.includes('dual-vector-foil')) {
     // pick flat tile in 2d view
-    const flatTile = pickTileInFlatView(chess, inputEvent)
+    const flatTile = pickTileInFlatView(inputEvent)
     if (flatTile) {
-      unclickTile(chess, flatTile, inputEvent.inputId)
+      unclickTile(flatTile, inputEvent.inputId)
     }
   }
   else if (chess.currentPhase === 'reward-choice') {
@@ -129,15 +128,15 @@ export function unclickChessWorld(chess: Chess, inputEvent: ProcessedSubEvent): 
   }
   else {
     // check for mesh on tile
-    const pickedPieceMesh = getPickedPieceMesh(chess, inputEvent)
+    const pickedPieceMesh = getPickedPieceMesh(inputEvent)
 
     if (pickedPieceMesh) {
       // act like unclicking tile under piece
-      unclickTile(chess, pickedPieceMesh.tile, inputEvent.inputId)
+      unclickTile(pickedPieceMesh.tile, inputEvent.inputId)
     }
     else if (inputEvent.pickedTile) {
       // pick terrain tile in 3d view
-      unclickTile(chess, inputEvent.pickedTile, inputEvent.inputId)
+      unclickTile(inputEvent.pickedTile, inputEvent.inputId)
     }
     else {
       // unclick OOB
@@ -180,7 +179,7 @@ export function updateHeldChessInputs() {
   }
 }
 
-function hoverTile(chess: Chess, hoveredTile: TileIndex | undefined, event: ProcessedSubEvent) {
+function hoverTile(hoveredTile: TileIndex | undefined, event: ProcessedSubEvent) {
   const { inputId } = event
 
   // console.log('hover tile', JSON.stringify(hoveredTile))
@@ -220,7 +219,7 @@ function hoverTile(chess: Chess, hoveredTile: TileIndex | undefined, event: Proc
 }
 
 // click tile, either through flat view or 3d terrain
-export function clickTile(chess: Chess, clickedTile: TileIndex, inputId: InputId) {
+export function clickTile(clickedTile: TileIndex, inputId: InputId) {
   // console.log('click tile', clickedTile.i)
   playSound('chessClick')
   chessInputHolds[inputId] = {
@@ -229,7 +228,7 @@ export function clickTile(chess: Chess, clickedTile: TileIndex, inputId: InputId
   }
 }
 
-export function unclickTile(chess: Chess, unclickedTile: TileIndex, inputId: InputId) {
+export function unclickTile(unclickedTile: TileIndex, inputId: InputId) {
   // console.log('unclickedTile tile', unclickedTile.i)
   if (inputId in chessInputHolds) {
     const { tile, time } = chessInputHolds[inputId] as ChessInputHold
@@ -249,12 +248,12 @@ export function unclickTile(chess: Chess, unclickedTile: TileIndex, inputId: Inp
     }
 
     // detected deliberate click and unclick on the same tile
-    fullClickTile(chess, tile)
+    fullClickTile(tile)
   }
 }
 
 // called after deliberate short press and unpress on a piece/tile
-function fullClickTile(chess: Chess, clickedTile: TileIndex) {
+function fullClickTile(clickedTile: TileIndex) {
   // playSound('chessConfirm')
 
   // check if can move to clicked tile
@@ -283,7 +282,7 @@ function fullClickTile(chess: Chess, clickedTile: TileIndex) {
   }
 }
 
-export function getFlatViewTileRect(chess: Chess, tileIndex: TileIndex): Rectangle | undefined {
+export function getFlatViewTileRect(tileIndex: TileIndex): Rectangle | undefined {
   const gui = Gui.create('chess')
   const layoutKey = 'flatViewport'
   const rectangle = gui.overrideLayoutRectangles[layoutKey] || gui.layoutRectangles[layoutKey]
@@ -297,7 +296,7 @@ export function getFlatViewTileRect(chess: Chess, tileIndex: TileIndex): Rectang
   return { x, y, w: tileSize, h: tileSize }
 }
 
-export function pickTileInFlatView(chess: Chess, inputEvent: ProcessedSubEvent): TileIndex | undefined {
+export function pickTileInFlatView(inputEvent: ProcessedSubEvent): TileIndex | undefined {
   const { lvPos } = inputEvent
   const { gui } = inputEvent.seaBlock.game
 
@@ -327,7 +326,7 @@ export function pickTileInFlatView(chess: Chess, inputEvent: ProcessedSubEvent):
 }
 
 // pick chess piece or treasure chest
-function getPickedPieceMesh(chess: Chess, inputEvent: ProcessedSubEvent): { tile: TileIndex } | undefined {
+function getPickedPieceMesh(inputEvent: ProcessedSubEvent): { tile: TileIndex } | undefined {
   // hover mesh on 3d tile
   const { pickedMesh } = inputEvent
   if (pickedMesh) {

@@ -1,11 +1,11 @@
 /**
  * @file test-support.ts
  *
- * Interface to support automated report ath appears on tessmero.github.io.
+ * Interface to support automated report that appears on tessmero.github.io.
  */
 
+import { chess } from 'games/chess/chess'
 import { getPickablePieceMeshPosition } from 'games/free-cam/freecam-pickable-meshes'
-import type { ChessGame } from 'games/imp/chess-game'
 import type { SeaBlock } from 'sea-block'
 import { tsLocateOnScreen } from 'util/locate-on-screen'
 
@@ -50,8 +50,6 @@ export function getTestSupport(seaBlock: SeaBlock) {
     locateElement(id: string) {
       // // tile on chess board
       if (id.startsWith('chessBoard')) {
-        const chess = (seaBlock.game as ChessGame).chess
-
         // 'chessBoard(0-0)' = center tile
         const match = id.match(/chessBoard\(([-\d]+),([-\d]+)\)/)
         if (!match) return

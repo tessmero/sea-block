@@ -96,7 +96,7 @@ export abstract class Game {
     this._registry[name] = rg
   }
 
-  static preload(name: GameName, context: SeaBlock): Promise<Array<void>> {
+  static preload(name: GameName): Promise<Array<void>> {
     const { factory, guiName, elements = [] } = this._registry[name]
 
     // Games are singletons
@@ -107,9 +107,7 @@ export abstract class Game {
     // Game
     // post-construction setup
     instance.elements = elements
-    if (context) {
-      instance.gui = Gui.create(guiName)
-    }
+    instance.gui = Gui.create(guiName)
 
     // // preload all meshes
     return Promise.all(elements.map(async (elem) => {
@@ -130,7 +128,7 @@ export abstract class Game {
     }
 
     instance.reset(context)
-    instance.gui.refreshLayout(context)
+    instance.gui?.refreshLayout(context)
 
     return instance
   }

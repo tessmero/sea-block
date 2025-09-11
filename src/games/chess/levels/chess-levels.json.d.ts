@@ -11,6 +11,7 @@ declare module '*chess-levels.json' {
 
 export interface ChessLevelsData {
   levels: Array<ChessLevel>
+  poop: number
 }
 
 export interface ChessLevel {

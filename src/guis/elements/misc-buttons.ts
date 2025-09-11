@@ -33,6 +33,7 @@ export const fcSettingsBtn: FreecamElem = {
   hotkeys: ['Escape', 'ButtonStart'],
   clickAction: ({ seaBlock }) => {
     seaBlock.toggleSettings()
+    seaBlock.refreshGui()
   },
 }
 

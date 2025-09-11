@@ -5,6 +5,7 @@
  */
 
 import * as THREE from 'three'
+import { Howl } from 'howler'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { Gui } from 'guis/gui'
 import { preloadPixelTiles } from 'gfx/2d/pixel-tiles-gfx-helper'
@@ -37,15 +38,17 @@ import { gfxConfig } from 'configs/imp/gfx-config'
 import { physicsConfig } from 'configs/imp/physics-config'
 import { freeCamGameConfig } from 'configs/imp/free-cam-game-config'
 import { preloadChessRewardHelpDiagrams } from 'games/chess/gui/chess-reward-help-elements'
-import { Chess } from 'games/chess/chess-helper'
 import { pollGamepadInput } from 'input/gamepad-input'
 import type { KeyCode } from 'input/input-id'
 import { preloadGrabbedMeshDiagrams } from 'games/free-cam/freecam-grabbed-mesh-dialog'
 import { isDevMode } from 'configs/imp/top-config'
 import { releaseGgui, updateGamepadGui } from 'input/ggui-nav-wasd'
-import { playSound } from 'audio/sound-effect-player'
+import { initAllSoundEffects, playSound } from 'audio/sound-effect-player'
 import { hideGguiCursor } from 'gfx/3d/ggui-3d-cursor'
 import { drawGamepadPrompts } from 'gfx/2d/gamepad-btn-prompts'
+import { loadAllMeshes } from 'gfx/3d/mesh-asset-loader'
+import { loadAllSounds } from 'audio/sound-asset-loader'
+import { SONGS } from 'audio/song-player'
 
 // can only be constructed once
 let didConstruct = false
@@ -86,8 +89,18 @@ export class SeaBlock {
 
   public isShowingSettingsMenu = false
 
-  public toggleSettings() {
-    this.isShowingSettingsMenu = !this.isShowingSettingsMenu
+  public toggleSettings(isVisible?: boolean) {
+    if (typeof isVisible === 'undefined') {
+      isVisible = !this.isShowingSettingsMenu
+    }
+
+    if (this.isShowingSettingsMenu === isVisible) {
+      // not actually changing state
+      return // do nothing
+    }
+
+    this.isShowingSettingsMenu = isVisible
+
     if (this.isShowingSettingsMenu) {
       playSound('settingsOpen')
       this.game.gui.closeDialogs(this)
@@ -100,7 +113,8 @@ export class SeaBlock {
     else {
       playSound('settingsClose')
     }
-    this.onResize()
+
+    // this.refreshGui()
   }
 
   constructor(public readonly layeredViewport: LayeredViewport) {
@@ -163,25 +177,47 @@ export class SeaBlock {
       this.hasConnectedGamepad = 'xbox' // display "A" button prompts
     })
 
-    const loadPromises: Array<Promise<void | Array<void>>> = []
-    loadPromises.push(preloadPixelTiles(Tiling.getAllShapes()))
-    loadPromises.push(preloadChessSprites())
-    loadPromises.push(preloadChessRewardHelpDiagrams())
-    loadPromises.push(preloadGrabbedMeshDiagrams())
+    // preload all assets (except music)
+    // console.log('start preload assets')
+    const firstRoundPromises = [
+      // loadAllImages(),
+      loadAllMeshes(),
+      loadAllSounds(),
 
-    // start generating images/meshes for all guis
-    for (const guiName of GUI.NAMES) {
-      loadPromises.push(Gui.preload(guiName, this))
-    }
+      // must load start menu song (other songs can stream)
+      new Promise<void>((resolve, reject) => {
+        const howl = new Howl({
+          src: [SONGS['retroindiejosh_mysterious-wave'].src],
+          format: ['ogg'],
+        })
+        howl.once('load', resolve)
+        howl.once('loaderror', reject)
+      }),
+    ]
+    // console.log('finish preload assets')
 
-    // start generating meshes for all games
-    for (const gameName of GAME.NAMES) {
-      loadPromises.push(Game.preload(gameName, this))
-    }
+    Promise.all(firstRoundPromises).then(() => {
+      initAllSoundEffects()
 
-    Promise.all(
-      Object.values(loadPromises),
-    ).then(() => this.onFinishLoading())
+      const secondRoundPromises: Array<Promise<void | Array<void>>> = []
+      secondRoundPromises.push(preloadPixelTiles(Tiling.getAllShapes()))
+      secondRoundPromises.push(preloadChessSprites())
+      secondRoundPromises.push(preloadChessRewardHelpDiagrams())
+      secondRoundPromises.push(preloadGrabbedMeshDiagrams())
+
+      // start generating images/meshes for all guis
+      for (const guiName of GUI.NAMES) {
+        secondRoundPromises.push(Gui.preload(guiName, this))
+      }
+
+      // start generating meshes for all games
+      for (const gameName of GAME.NAMES) {
+        secondRoundPromises.push(Game.preload(gameName))
+      }
+      Promise.all(
+        secondRoundPromises,
+      ).then(() => this.onFinishLoading())
+    })
   }
 
   public isCovering = false // true during first half of transition animation
@@ -283,9 +319,19 @@ export class SeaBlock {
     updateFrontLayer(this)
   }
 
+  // general refresh, like onResize but doesn't effect camera
+  public refreshGui() {
+    resetFrontLayer(this)
+    for (const gui of this.getLayeredGuis()) {
+      gui.refreshLayout(this)
+      gui.resetElementStates(this)
+    }
+  }
+
+  // called when viewport changes
   public onResize() {
     const { layeredViewport, camera } = this
-    layeredViewport.handleResize(this)
+    layeredViewport.handleResize(this) // calls resetFrontLayer()
 
     camera.aspect = window.innerWidth / window.innerHeight
     camera.updateProjectionMatrix()
@@ -390,7 +436,9 @@ export class SeaBlock {
   public onGameChange() {
     hideGguiCursor()
 
-    this.scene.threeScene.remove(...this.game.meshes)
+    for (const mesh of this.game.meshes) {
+      this.scene.threeScene.remove(mesh)
+    }
     this.game = Game.create(this.config.flatConfig.game, this)
     for (const mesh of this.game.meshes) {
       if (mesh.parent) {
@@ -455,7 +503,7 @@ export class SeaBlock {
       this.style = getStyle(this.config.flatConfig.style)
       scene.setBackground(this.style.getBackgroundColor())
       terrain.resetColors()
-      this.onResize()
+      this.refreshGui()
     }
 
     // allow any config change to escape from special start seq colors
@@ -482,19 +530,20 @@ export class SeaBlock {
       this.orbitControls.domElement = newCanvas
 
       // fullscreen
-      if (!isDevMode) { // fullscreen
+      if (!isDevMode) {
+        // start switch to fullscreen
         document.documentElement.requestFullscreen()
-      }
 
-      // wait two animation frames
-      await new Promise<void>((resolve) => {
-        requestAnimationFrame(() => {
+        // after two animation frames, update layout
+        await new Promise<void>((resolve) => {
           requestAnimationFrame(() => {
-            this.onResize()
-            resolve()
+            requestAnimationFrame(() => {
+              this.onResize()
+              resolve()
+            })
           })
         })
-      })
+      }
     }
 
     const { generator, scene } = this
@@ -519,11 +568,11 @@ export class SeaBlock {
     // act as though game changed
     this.currentGameName = this.config.flatConfig.game
     // this.game = Game.create(this.currentGameName, this)
-    // StartSequenceGame.isColorTransformEnabled = this.currentGameName === 'start-sequence'
+
     // soft reset (graphics)
     this.style = getStyle(this.config.flatConfig.style)
     scene.setBackground(this.style.getBackgroundColor())
-    // this.onResize()
+    // this.refreshGui()
 
     // // reset camera
     // const { x, z } = terrain.centerXZ
@@ -535,16 +584,12 @@ export class SeaBlock {
 
     const { x, y, w, h } = this.layeredViewport.screenRectangle
     this.layeredViewport.ctx.clearRect(x, y, w, h)
-    // console.log('clear mid layer')
-    // this.layeredViewport.ctx.fillStyle = 'red'
-    // this.layeredViewport.ctx.fillRect( 20,20,20,20 )
-    this.onResize()
+    this.refreshGui()
 
     resetFrontLayer(this)
-    updateFrontLayer(this)
-    // this.onResize()
+    // updateFrontLayer(this) // draw now
 
-    Chess.queueHltUpdate()
+    // Chess.queueHltUpdate()
   }
 
   public didBuildControls = false // set to true after first build

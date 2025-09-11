@@ -71,7 +71,7 @@ export const smSettingsBtn: SmElem = {
         display.needsUpdate = true
       }
     }
-    // seaBlock.onResize()
+    seaBlock.refreshGui()
   },
 }
 
