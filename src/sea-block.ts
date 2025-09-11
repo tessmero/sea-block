@@ -99,6 +99,8 @@ export class SeaBlock {
       return // do nothing
     }
 
+    Gui.create('settings-menu').resetElementStates(this)
+
     this.isShowingSettingsMenu = isVisible
 
     if (this.isShowingSettingsMenu) {
@@ -320,11 +322,13 @@ export class SeaBlock {
   }
 
   // general refresh, like onResize but doesn't effect camera
-  public refreshGui() {
+  public refreshGui(resetStates = false) {
     resetFrontLayer(this)
     for (const gui of this.getLayeredGuis()) {
       gui.refreshLayout(this)
-      gui.resetElementStates(this)
+      if (resetStates) {
+        gui.resetElementStates(this)
+      }
     }
   }
 
